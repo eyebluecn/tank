@@ -69,6 +69,7 @@ echo "remove pack"
 rm -rf $distPath/pack
 
 echo "compress to tar.gz"
+echo "tar -zcvf $distFolder/$FINAL_NAME $distPath"
 tar -zcvf $distFolder/$FINAL_NAME $distPath
 
 cd $PRE_DIR
