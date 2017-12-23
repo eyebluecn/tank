@@ -42,7 +42,7 @@ echo "packaging..."
 distPath="$GOPATH/src/tank/dist"
 
 # if a directory
-if [ ! -d $distPath ] ; then
+if [ -d $distPath ] ; then
     echo "clear $distPath"
     rm -rf $distPath
 fi
@@ -54,7 +54,7 @@ echo "copying cmd tank"
 cp "$GOPATH/bin/tank" $distPath
 
 echo "copying build"
-cp -r "$GOPATH/src/tank/build" $distPath
+cp -r "$GOPATH/src/tank/build/." $distPath
 
 cd $PRE_DIR
 
