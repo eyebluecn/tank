@@ -8,7 +8,7 @@ echo "cd homePath"
 cd $homePath
 
 echo "shutdown tank"
-source $homePath/doc/script/shutdown.sh
+source $homePath/build/script/shutdown.sh
 
 echo "git reset"
 git reset --hard HEAD
