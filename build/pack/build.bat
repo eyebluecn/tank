@@ -65,6 +65,9 @@ xcopy %GOPATH%\src\tank\build %distPath% /e/h
 echo "remove pack"
 rmdir /s/q %distPath%\pack
 
+echo "remove service"
+rmdir /s/q %distPath%\service
+
 cd %PRE_DIR%
 
 echo check the dist file in %distPath%

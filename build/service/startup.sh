@@ -2,7 +2,9 @@
 
 # executable path
 DIR="$( cd "$( dirname "$0"  )" && pwd  )"
-EXE_PATH=$DIR/tank
+TANK_DIR=$(dirname $DIR)
+EXE_PATH=$TANK_DIR/tank
+
 
 if [ -f "$EXE_PATH" ]; then
  nohup $EXE_PATH >/dev/null 2>&1 &
