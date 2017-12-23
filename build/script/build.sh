@@ -39,7 +39,7 @@ echo "build tank ..."
 go install tank
 
 echo "packaging..."
-distPath="$GOPATH\src\tank\dist"
+distPath="$GOPATH/src/tank/dist"
 
 # if a directory
 if [ ! -d $distPath ] ; then
