@@ -9,6 +9,7 @@ fi
 PRE_DIR=$(pwd)
 
 VERSION_NAME=tank-1.0.0
+FINAL_NAME=$VERSION_NAME.linux-amd64.tar.gz
 
 cd $GOPATH
 
@@ -68,7 +69,7 @@ echo "remove pack"
 rm -rf $distPath/pack
 
 echo "compress to tar.gz"
-tar -zcvf $distFolder/$VERSION_NAME.tar.gz $distPath
+tar -zcvf $distFolder/$FINAL_NAME $distPath
 
 cd $PRE_DIR
 
