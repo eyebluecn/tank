@@ -6,8 +6,9 @@ if [ -z "$GOPATH" ] ; then
   exit 1
 fi
 
-
 PRE_DIR=$(pwd)
+
+VERSION_NAME=tank-1.0.0
 
 cd $GOPATH
 
@@ -39,7 +40,14 @@ echo "build tank ..."
 go install tank
 
 echo "packaging..."
-distPath="$GOPATH/src/tank/dist"
+distFolder="$GOPATH/src/tank/dist"
+
+# if a directory
+if [ ! -d distFolder ] ; then
+    mkdir $distFolder
+fi
+
+distPath=$distFolder/$VERSION_NAME
 
 # if a directory
 if [ -d $distPath ] ; then
@@ -58,6 +66,9 @@ cp -r "$GOPATH/src/tank/build/." $distPath
 
 echo "remove pack"
 rm -rf $distPath/pack
+
+echo "compress to tar.gz"
+tar -zcvf $distFolder/$VERSION_NAME.tar.gz $distPath
 
 cd $PRE_DIR
 

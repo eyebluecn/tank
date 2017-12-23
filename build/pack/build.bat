@@ -15,6 +15,9 @@ if "%GOPATH%"=="" (
 
 set PRE_DIR=%cd%
 
+@rem version name
+set VERSION_NAME=tank-1.0.0
+
 cd %GOPATH%
 
 echo golang.org . Please download from: https://github.com/MXi4oyu/golang.org and put in the directory with same level of github.com
@@ -47,7 +50,13 @@ echo build tank ...
 go install tank
 
 echo packaging
-set distPath=%GOPATH%\src\tank\dist
+
+set distFolder=%GOPATH%\src\tank\dist
+if not exist %distFolder% (
+    md %distFolder%
+)
+
+set distPath=%distFolder%\%VERSION_NAME%
 if exist %distPath% (
     echo clear %distPath%
     rmdir /s/q %distPath%
