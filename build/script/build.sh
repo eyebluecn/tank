@@ -41,7 +41,6 @@ go install tank
 echo "packaging..."
 distPath="$GOPATH\src\tank\dist"
 
-
 # if a directory
 if [ ! -d $distPath ] ; then
     echo "clear $distPath"
