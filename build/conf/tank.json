@@ -1,0 +1,12 @@
+{
+  "ServerPort": 9090,
+  "LogToConsole": true,
+  "MysqlPort": 3306,
+  "MysqlHost": "127.0.0.1",
+  "MysqlSchema": "tank",
+  "MysqlUserName": "tank",
+  "MysqlPassword": "tank123",
+  "AdminUsername": "admin",
+  "AdminEmail": "admin@tank.eyeblue.cn",
+  "AdminPassword": "123456"
+}
