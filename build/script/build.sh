@@ -55,7 +55,7 @@ echo "copying cmd tank"
 cp "$GOPATH/bin/tank" $distPath
 
 echo "copying build"
-cp -r "$GOPATH/src/tank/build" $distPath /e/h
+cp -r "$GOPATH/src/tank/build" $distPath
 
 cd $PRE_DIR
 
