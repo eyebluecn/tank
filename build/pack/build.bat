@@ -62,6 +62,9 @@ copy %GOPATH%\bin\tank.exe %distPath%
 echo copying build
 xcopy %GOPATH%\src\tank\build %distPath% /e/h
 
+echo "remove pack"
+rmdir /s/q %distPath%\pack
+
 cd %PRE_DIR%
 
 echo check the dist file in %distPath%

@@ -56,6 +56,9 @@ cp "$GOPATH/bin/tank" $distPath
 echo "copying build"
 cp -r "$GOPATH/src/tank/build/." $distPath
 
+echo "remove pack"
+rm -rf $distPath/pack
+
 cd $PRE_DIR
 
 echo "check the dist file in $distPath"
