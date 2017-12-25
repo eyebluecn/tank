@@ -104,6 +104,11 @@ func (this *Context) registerBeans() {
 	this.registerBean(new(MatterDao))
 	this.registerBean(new(MatterService))
 
+	//preference
+	this.registerBean(new(PreferenceController))
+	this.registerBean(new(PreferenceDao))
+	this.registerBean(new(PreferenceService))
+
 	//session
 	this.registerBean(new(SessionDao))
 

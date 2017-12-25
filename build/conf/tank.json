@@ -1,5 +1,5 @@
 {
-  "ServerPort": 9090,
+  "ServerPort": 6010,
   "LogToConsole": true,
   "MysqlPort": 3306,
   "MysqlHost": "127.0.0.1",

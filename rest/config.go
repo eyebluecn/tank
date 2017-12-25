@@ -1,13 +1,13 @@
 package rest
 
 import (
-	"fmt"
-	"github.com/json-iterator/go"
-	"time"
-	"unsafe"
-	"io/ioutil"
 	"encoding/json"
 	"flag"
+	"fmt"
+	"github.com/json-iterator/go"
+	"io/ioutil"
+	"time"
+	"unsafe"
 )
 
 const (
@@ -21,12 +21,22 @@ const (
 	VERSION = "1.0.0"
 )
 
+/*
+如果你需要在本地127.0.0.1创建默认的数据库和账号，使用以下语句。
+create database tank;
+grant all privileges on tank.* to tank identified by 'tank123';
+flush privileges;
+*/
+/*
+ 你也可以在运行时的参数中临时修改一些配置项：
+-MysqlHost=127.0.0.1 -MysqlPort=3306 -MysqlSchema=tank -MysqlUserName=tank -MysqlPassword=tank123
+*/
 var (
 	CONFIG = &Config{
 		//以下内容是默认配置项。
 
 		//默认监听端口号
-		ServerPort: 9090,
+		ServerPort: 6010,
 		//将日志输出到控制台。
 		LogToConsole: true,
 		//mysql相关配置。
@@ -40,7 +50,7 @@ var (
 		MysqlUserName: "tank",
 		//密码
 		MysqlPassword: "tank123",
-		//数据库连接信息。
+		//数据库连接信息。这一项是上面几项组合而得，不可直接配置。
 		MysqlUrl: "%MysqlUserName:%MysqlPassword@tcp(%MysqlHost:%MysqlPort)/%MysqlSchema?charset=utf8&parseTime=True&loc=Local",
 		//超级管理员用户名，只能包含英文和数字
 		AdminUsername: "admin",

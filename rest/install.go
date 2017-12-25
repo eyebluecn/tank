@@ -5,8 +5,8 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/nu7hatch/gouuid"
 
-	"time"
 	"regexp"
+	"time"
 )
 
 //首次运行的时候，将自动安装数据库等内容。
@@ -46,6 +46,18 @@ func InstallDatabase() {
 		LogInfo("创建Matter表")
 
 	}
+
+	preference := &Preference{}
+	hasTable = db.HasTable(preference)
+	if !hasTable {
+		createPreference := "CREATE TABLE `tank10_preference` (`uuid` char(36) NOT NULL,`name` varchar(45) DEFAULT NULL COMMENT '网站名称',`logo_url` varchar(255) DEFAULT NULL,`favicon_url` varchar(255) DEFAULT NULL,`footer_line1` varchar(1024) DEFAULT NULL,`footer_line2` varchar(1024) DEFAULT NULL,`sort` bigint(20) DEFAULT NULL,`modify_time` timestamp NULL DEFAULT NULL,`create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',PRIMARY KEY (`uuid`),UNIQUE KEY `id_UNIQUE` (`uuid`)) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='网站偏好设置表';"
+		db = db.Exec(createPreference)
+		if db.Error != nil {
+			LogPanic(db.Error)
+		}
+		LogInfo("创建Preference表")
+	}
+
 	session := &Session{}
 	hasTable = db.HasTable(session)
 	if !hasTable {
@@ -86,7 +98,6 @@ func InstallDatabase() {
 		if CONFIG.AdminEmail == "" {
 			LogPanic("超级管理员邮箱必填！")
 		}
-
 
 		createUser := "CREATE TABLE `tank10_user` (`uuid` char(36) NOT NULL,`role` varchar(45) DEFAULT 'USER',`username` varchar(255) DEFAULT NULL COMMENT '昵称',`password` varchar(255) DEFAULT NULL COMMENT '密码',`email` varchar(45) DEFAULT NULL COMMENT '邮箱',`phone` varchar(45) DEFAULT NULL COMMENT '电话',`gender` varchar(45) DEFAULT 'UNKNOWN' COMMENT '性别，默认未知',`city` varchar(45) DEFAULT NULL COMMENT '城市',`avatar_url` varchar(255) DEFAULT NULL COMMENT '头像链接',`last_time` datetime DEFAULT NULL COMMENT '上次登录使劲按',`last_ip` varchar(45) DEFAULT NULL,`status` varchar(45) DEFAULT 'OK',`sort` bigint(20) DEFAULT NULL,`modify_time` timestamp NULL DEFAULT NULL,`create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',PRIMARY KEY (`uuid`),UNIQUE KEY `id_UNIQUE` (`uuid`)) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='用户表描述';"
 		db = db.Exec(createUser)
