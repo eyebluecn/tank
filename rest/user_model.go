@@ -61,14 +61,3 @@ func GetRole(roleString string) string {
 		return USER_ROLE_USER
 	}
 }
-
-//检查某种用户角色对于某个功能点是否有访问权限。
-func (this *User) HasPermission(feature string) bool {
-	if this.Role == USER_ROLE_ADMINISTRATOR {
-		return true
-	} else if this.Role == USER_ROLE_USER {
-		return feature == FEATURE_PUBLIC || feature == FEATURE_USER_MINE
-	} else {
-		return feature == FEATURE_PUBLIC
-	}
-}
