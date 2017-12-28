@@ -138,6 +138,7 @@ func (this *UserController) Create(writer http.ResponseWriter, request *http.Req
 //编辑一个用户的资料。
 func (this *UserController) Edit(writer http.ResponseWriter, request *http.Request) *WebResult {
 
+	avatarUrl := request.FormValue("avatarUrl")
 	uuid := request.FormValue("uuid")
 	phone := request.FormValue("phone")
 	gender := request.FormValue("gender")
@@ -151,7 +152,7 @@ func (this *UserController) Edit(writer http.ResponseWriter, request *http.Reque
 	}
 
 	user := this.userDao.CheckByUuid(uuid)
-
+	user.AvatarUrl = avatarUrl
 	user.Phone = phone
 	user.Gender = GetGender(gender)
 	user.City = city

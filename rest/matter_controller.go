@@ -204,22 +204,26 @@ func (this *MatterController) Upload(writer http.ResponseWriter, request *http.R
 	}
 	user = this.userDao.CheckByUuid(userUuid)
 
-	puuid := request.FormValue("puuid")
-	if puuid == "" {
-		return this.Error("puuid必填")
-	} else {
-		if puuid != "root" {
-			//找出上一级的文件夹。
-			this.matterDao.FindByUuidAndUserUuid(puuid, userUuid)
-
-		}
-
-	}
-
 	alienStr := request.FormValue("alien")
 	alien := false
+	puuid := ""
 	if alienStr == "true" {
 		alien = true
+
+		//如果是应用文件的话，统一放在同一个地方。
+		puuid = this.matterService.GetDirUuid(userUuid, "/应用数据")
+
+	} else {
+		puuid = request.FormValue("puuid")
+		if puuid == "" {
+			return this.Error("puuid必填")
+		} else {
+			if puuid != "root" {
+				//找出上一级的文件夹。
+				this.matterDao.FindByUuidAndUserUuid(puuid, userUuid)
+
+			}
+		}
 	}
 
 	request.ParseMultipartForm(32 << 20)
