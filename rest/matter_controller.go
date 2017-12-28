@@ -216,12 +216,18 @@ func (this *MatterController) Upload(writer http.ResponseWriter, request *http.R
 
 	}
 
+	alienStr := request.FormValue("alien")
+	alien := false
+	if alienStr == "true" {
+		alien = true
+	}
+
 	request.ParseMultipartForm(32 << 20)
 	file, handler, err := request.FormFile("file")
 	this.PanicError(err)
 	defer file.Close()
 
-	matter := this.matterService.Upload(file, user, puuid, handler.Filename, true)
+	matter := this.matterService.Upload(file, user, puuid, handler.Filename, true, alien)
 
 	return this.Success(matter)
 }

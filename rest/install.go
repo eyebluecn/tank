@@ -37,7 +37,7 @@ func InstallDatabase() {
 	matter := &Matter{}
 	hasTable = db.HasTable(matter)
 	if !hasTable {
-		createMatter := "CREATE TABLE `tank10_matter` (`uuid` char(36) NOT NULL,`puuid` varchar(45) DEFAULT NULL COMMENT '上一级的uuid',`user_uuid` char(36) DEFAULT NULL COMMENT '上传的用户id',`dir` tinyint(1) DEFAULT NULL COMMENT '是否是文件夹',`name` varchar(255) DEFAULT NULL COMMENT '文件名称',`md5` varchar(45) DEFAULT NULL COMMENT '文件的md5值',`size` bigint(20) DEFAULT '0' COMMENT '文件大小',`privacy` tinyint(1) DEFAULT '0' COMMENT '文件是否是公有的',`path` varchar(255) DEFAULT NULL,`sort` bigint(20) DEFAULT NULL,`modify_time` timestamp NULL DEFAULT NULL,`create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',PRIMARY KEY (`uuid`),UNIQUE KEY `id_UNIQUE` (`uuid`)) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='file表';"
+		createMatter := "CREATE TABLE `tank10_matter` (`uuid` char(36) NOT NULL,`puuid` varchar(45) DEFAULT NULL COMMENT '上一级的uuid',`user_uuid` char(36) DEFAULT NULL COMMENT '上传的用户id',`dir` tinyint(1) DEFAULT '0' COMMENT '是否是文件夹',`alien` tinyint(1) DEFAULT '0',`name` varchar(255) DEFAULT NULL COMMENT '文件名称',`md5` varchar(45) DEFAULT NULL COMMENT '文件的md5值',`size` bigint(20) DEFAULT '0' COMMENT '文件大小',`privacy` tinyint(1) DEFAULT '0' COMMENT '文件是否是公有的',`path` varchar(255) DEFAULT NULL,`sort` bigint(20) DEFAULT NULL,`modify_time` timestamp NULL DEFAULT NULL,`create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',PRIMARY KEY (`uuid`),UNIQUE KEY `id_UNIQUE` (`uuid`)) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='file表';"
 		db = db.Exec(createMatter)
 		if db.Error != nil {
 			LogPanic(db.Error)

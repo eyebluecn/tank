@@ -6,7 +6,6 @@ import (
 	"os"
 	"regexp"
 	"strings"
-
 )
 
 //@Service
@@ -59,11 +58,12 @@ func (this *MatterService) GetDirUuid(userUuid string, dir string) string {
 
 		matter := this.matterDao.FindByUserUuidAndPuuidAndNameAndDirTrue(userUuid, puuid, name)
 		if matter == nil {
-			//创建一个文件夹。
+			//创建一个文件夹。这里一般都是通过alien接口来创建的文件夹。
 			matter = &Matter{
 				Puuid:    puuid,
 				UserUuid: userUuid,
 				Dir:      true,
+				Alien:    true,
 				Name:     name,
 			}
 			matter = this.matterDao.Create(matter)
@@ -76,8 +76,8 @@ func (this *MatterService) GetDirUuid(userUuid string, dir string) string {
 }
 
 //开始上传文件
-//上传文件
-func (this *MatterService) Upload(file multipart.File, user *User, puuid string, filename string, privacy bool) *Matter {
+//上传文件. alien表明文件是否是应用使用的文件。
+func (this *MatterService) Upload(file multipart.File, user *User, puuid string, filename string, privacy bool, alien bool) *Matter {
 
 	//获取文件应该存放在的物理路径的绝对路径和相对路径。
 	absolutePath, relativePath := GetUserFilePath(user.Username)
@@ -104,6 +104,7 @@ func (this *MatterService) Upload(file multipart.File, user *User, puuid string,
 		Puuid:    puuid,
 		UserUuid: user.Uuid,
 		Dir:      false,
+		Alien:    alien,
 		Name:     filename,
 		Md5:      "",
 		Size:     written,
