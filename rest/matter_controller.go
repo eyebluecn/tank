@@ -47,6 +47,7 @@ func (this *MatterController) RegisterRoutes() map[string]func(writer http.Respo
 	routeMap["/api/matter/delete"] = this.Wrap(this.Delete, USER_ROLE_USER)
 	routeMap["/api/matter/delete/batch"] = this.Wrap(this.DeleteBatch, USER_ROLE_USER)
 	routeMap["/api/matter/rename"] = this.Wrap(this.Rename, USER_ROLE_USER)
+	routeMap["/api/matter/change/privacy"] = this.Wrap(this.ChangePrivacy, USER_ROLE_USER)
 	routeMap["/api/matter/move"] = this.Wrap(this.Move, USER_ROLE_USER)
 	routeMap["/api/matter/detail"] = this.Wrap(this.Detail, USER_ROLE_USER)
 	routeMap["/api/matter/page"] = this.Wrap(this.Page, USER_ROLE_USER)
@@ -207,6 +208,7 @@ func (this *MatterController) Upload(writer http.ResponseWriter, request *http.R
 	alienStr := request.FormValue("alien")
 	alien := false
 	puuid := ""
+
 	if alienStr == "true" {
 		alien = true
 
@@ -226,12 +228,18 @@ func (this *MatterController) Upload(writer http.ResponseWriter, request *http.R
 		}
 	}
 
+	privacy := false
+	privacyStr := request.FormValue("privacy")
+	if privacyStr == "true" {
+		privacy = true
+	}
+
 	request.ParseMultipartForm(32 << 20)
 	file, handler, err := request.FormFile("file")
 	this.PanicError(err)
 	defer file.Close()
 
-	matter := this.matterService.Upload(file, user, puuid, handler.Filename, true, alien)
+	matter := this.matterService.Upload(file, user, puuid, handler.Filename, privacy, alien)
 
 	return this.Success(matter)
 }
@@ -299,7 +307,7 @@ func (this *MatterController) Rename(writer http.ResponseWriter, request *http.R
 	}
 
 	//找出该文件或者文件夹
-	matter := this.matterDao.FindByUuid(uuid)
+	matter := this.matterDao.CheckByUuid(uuid)
 
 	user := this.checkUser(writer, request)
 	if user.Role != USER_ROLE_ADMINISTRATOR && matter.UserUuid != user.Uuid {
@@ -321,6 +329,33 @@ func (this *MatterController) Rename(writer http.ResponseWriter, request *http.R
 	matter = this.matterDao.Save(matter)
 
 	return this.Success(matter)
+}
+
+//改变一个文件的公私有属性
+func (this *MatterController) ChangePrivacy(writer http.ResponseWriter, request *http.Request) *WebResult {
+	uuid := request.FormValue("uuid")
+	privacyStr := request.FormValue("privacy")
+	privacy := false
+	if privacyStr == "true" {
+		privacy = true
+	}
+	//找出该文件或者文件夹
+	matter := this.matterDao.CheckByUuid(uuid)
+
+	if matter.Privacy == privacy {
+		panic("公私有属性没有改变！")
+	}
+
+	//权限验证
+	user := this.checkUser(writer, request)
+	if user.Role != USER_ROLE_ADMINISTRATOR && matter.UserUuid != user.Uuid {
+		return this.Error(RESULT_CODE_UNAUTHORIZED)
+	}
+
+	matter.Privacy = privacy
+	this.matterDao.Save(matter)
+
+	return this.Success("设置成功")
 }
 
 //将一个文件夹或者文件移入到另一个文件夹下。
