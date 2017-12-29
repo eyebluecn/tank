@@ -1,6 +1,6 @@
 {
   "ServerPort": 6010,
-  "LogToConsole": true,
+  "LogToConsole": false,
   "MysqlPort": 3306,
   "MysqlHost": "127.0.0.1",
   "MysqlSchema": "tank",
