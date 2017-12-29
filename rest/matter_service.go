@@ -92,6 +92,13 @@ func (this *MatterService) Upload(file multipart.File, user *User, puuid string,
 	written, err := io.Copy(distFile, file)
 	this.PanicError(err)
 
+	//判断用户自身上传大小的限制。
+	if user.SizeLimit >= 0 {
+		if written > user.SizeLimit {
+			panic("您最大只能上传" + HumanFileSize(user.SizeLimit, false) + "的文件")
+		}
+	}
+
 	//查找文件夹下面是否有同名文件。
 	matters := this.matterDao.ListByUserUuidAndPuuidAndDirAndName(user.Uuid, puuid, false, filename)
 	//如果有同名的文件，那么我们直接覆盖同名文件。

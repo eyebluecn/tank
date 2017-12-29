@@ -93,16 +93,16 @@ func (this *UserController) Create(writer http.ResponseWriter, request *http.Req
 
 	username := request.FormValue("username")
 	if m, _ := regexp.MatchString(`^[0-9a-zA-Z_]+$`, username); !m {
-		return this.Error(`用户名必填，且只能包含字母，数字和'_''`)
+		panic(`用户名必填，且只能包含字母，数字和'_''`)
 	}
 	password := request.FormValue("password")
 	if len(password) < 6 {
-		return this.Error(`密码长度至少为6位`)
+		panic(`密码长度至少为6位`)
 	}
 
 	email := request.FormValue("email")
 	if email == "" {
-		return this.Error("邮箱必填！")
+		panic("邮箱必填！")
 	}
 
 	phone := request.FormValue("phone")
@@ -110,24 +110,38 @@ func (this *UserController) Create(writer http.ResponseWriter, request *http.Req
 	role := request.FormValue("role")
 	city := request.FormValue("city")
 
+	//判断用户上传大小限制。
+	sizeLimitStr := request.FormValue("sizeLimit")
+	var sizeLimit int64 = 0
+	if sizeLimitStr == "" {
+		panic("用户上传限制必填！")
+	} else {
+		intsizeLimit, err := strconv.Atoi(sizeLimitStr)
+		if err != nil {
+			this.PanicError(err)
+		}
+		sizeLimit = int64(intsizeLimit)
+	}
+
 	//判断重名。
 	if this.userDao.CountByUsername(username) > 0 {
-		return this.Error(username + "已经被其他用户占用。")
+		panic(username + "已经被其他用户占用。")
 	}
 	//判断邮箱重名
 	if this.userDao.CountByEmail(email) > 0 {
-		return this.Error(email + "已经被其他用户占用。")
+		panic(email + "已经被其他用户占用。")
 	}
 
 	user := &User{
-		Role:     GetRole(role),
-		Username: username,
-		Password: GetBcrypt(password),
-		Email:    email,
-		Phone:    phone,
-		Gender:   gender,
-		City:     city,
-		Status:   USER_STATUS_OK,
+		Role:      GetRole(role),
+		Username:  username,
+		Password:  GetBcrypt(password),
+		Email:     email,
+		Phone:     phone,
+		Gender:    gender,
+		City:      city,
+		SizeLimit: sizeLimit,
+		Status:    USER_STATUS_OK,
 	}
 
 	user = this.userDao.Create(user)
@@ -145,13 +159,29 @@ func (this *UserController) Edit(writer http.ResponseWriter, request *http.Reque
 	city := request.FormValue("city")
 
 	currentUser := this.checkUser(writer, request)
-	if currentUser.Role != USER_ROLE_ADMINISTRATOR {
+	user := this.userDao.CheckByUuid(uuid)
+
+	if currentUser.Role == USER_ROLE_ADMINISTRATOR {
+		//只有管理员可以改变用户上传的大小
+		//判断用户上传大小限制。
+		sizeLimitStr := request.FormValue("sizeLimit")
+		var sizeLimit int64 = 0
+		if sizeLimitStr == "" {
+			panic("用户上传限制必填！")
+		} else {
+			intsizeLimit, err := strconv.Atoi(sizeLimitStr)
+			if err != nil {
+				this.PanicError(err)
+			}
+			sizeLimit = int64(intsizeLimit)
+		}
+		user.SizeLimit = sizeLimit
+	} else {
 		if currentUser.Uuid != uuid {
 			return this.Error(RESULT_CODE_UNAUTHORIZED)
 		}
 	}
 
-	user := this.userDao.CheckByUuid(uuid)
 	user.AvatarUrl = avatarUrl
 	user.Phone = phone
 	user.Gender = GetGender(gender)

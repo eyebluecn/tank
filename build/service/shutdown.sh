@@ -11,5 +11,5 @@ then
 else
         kill -9 $EDASPID
         echo $EXE_PATH
-        echo 'Shutdown successfully.'
+        echo 'Shutdown tank successfully.'
 fi
