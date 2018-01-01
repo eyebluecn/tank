@@ -18,9 +18,9 @@ func HumanFileSize(bytes int64, si bool) string {
 	if bytes < thresh {
 		return fmt.Sprintf("%dB", bytes)
 	}
-	var units = []string{"kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"}
+	var units = []string{"B", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"}
 	if si {
-		units = []string{"KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"}
+		units = []string{"B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"}
 	}
 	var u = 0
 	var tmp = float64(bytes)

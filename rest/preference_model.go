@@ -7,6 +7,7 @@ type Preference struct {
 	FaviconUrl  string `json:"faviconUrl"`
 	FooterLine1 string `json:"footerLine1"`
 	FooterLine2 string `json:"footerLine2"`
+	Version     string `json:"version"`
 }
 
 // set File's table name to be `profiles`

@@ -20,6 +20,7 @@ func (this *PreferenceDao) Fetch() *Preference {
 
 		if db.Error.Error() == "record not found" {
 			preference.Name = "蓝眼云盘"
+			preference.Version = VERSION
 			this.Create(preference)
 			return preference
 		} else {
