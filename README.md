@@ -14,6 +14,8 @@
 
 蓝眼云盘可以作为团队内部或个人私有的云盘使用，亦可当作专门处理图片，音频，视频等二进制文件的第三方编程辅助工具。
 
+如果您觉得蓝眼云盘对您有帮助，请不要吝惜您的star :smile:
+
 ### 使用安装包安装
 
 #### a) 准备工作
@@ -113,8 +115,6 @@ golang                   #环境变量GOPATH所在路径
 
 5. 准备项目依赖的第三方库
 
-    项目中依赖了以下第三方库
-
 - golang.org/x
 - github.com/disintegration/imaging
 - github.com/json-iterator/go
@@ -138,3 +138,14 @@ cd tank/build/pack/
 利用得到的安装包即可参考上文的`使用安装包安装`。
 
 
+### Contribution
+
+感谢所有蓝眼云盘的贡献者 [@zicla](https://github.com/zicla)，[@seaheart](https://github.com/seaheart)，@heying，[@hxsherry](https://github.com/hxsherry)
+
+如果您也想参与进来，请尽情的fork, star, post issue, pull requests
+
+### License
+
+[MIT](http://opensource.org/licenses/MIT)
+
+Copyright (c) 2017-present, eyeblue.cn
