@@ -2,7 +2,7 @@
 
 # 蓝眼云盘
 
-##### [在线Demo](http://tank.eyeblue.cn) 
+##### [在线Demo](http://tank.eyeblue.cn) (体验账号： demo@tank.eyeblue.cn 密码：123456)
 
 ##### [配套前端tank-front](https://github.com/eyebluecn/tank-front)
 
