@@ -13,7 +13,7 @@ FINAL_NAME=$VERSION_NAME.linux-amd64.tar.gz
 
 cd $GOPATH
 
-echo "golang.org . Please download from: https://github.com/MXi4oyu/golang.org and put in the directory with same level of github.com"
+echo "golang.org . Please download from: https://github.com/eyebluecn/golang.org and put in the directory with same level of github.com"
 # echo "go get golang.org/x"
 # go get golang.org/x
 
