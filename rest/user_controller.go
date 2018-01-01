@@ -24,7 +24,7 @@ func (this *UserController) RegisterRoutes() map[string]func(writer http.Respons
 
 	//每个Controller需要主动注册自己的路由。
 	routeMap["/api/user/create"] = this.Wrap(this.Create, USER_ROLE_ADMINISTRATOR)
-	routeMap["/api/user/edit"] = this.Wrap(this.Edit, USER_ROLE_ADMINISTRATOR)
+	routeMap["/api/user/edit"] = this.Wrap(this.Edit, USER_ROLE_USER)
 	routeMap["/api/user/change/password"] = this.Wrap(this.ChangePassword, USER_ROLE_USER)
 	routeMap["/api/user/reset/password"] = this.Wrap(this.ResetPassword, USER_ROLE_ADMINISTRATOR)
 	routeMap["/api/user/login"] = this.Wrap(this.Login, USER_ROLE_GUEST)
