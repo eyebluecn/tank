@@ -85,6 +85,11 @@ func (this *UserController) Login(writer http.ResponseWriter, request *http.Requ
 		Expires: expiration}
 	http.SetCookie(writer, &cookie)
 
+	//更新用户上次登录时间和ip
+	user.LastTime = time.Now()
+	user.LastIp = GetIpAddress(request)
+	this.userDao.Save(user)
+
 	return this.Success(user)
 }
 
@@ -105,6 +110,7 @@ func (this *UserController) Create(writer http.ResponseWriter, request *http.Req
 		panic("邮箱必填！")
 	}
 
+	avatarUrl := request.FormValue("avatarUrl")
 	phone := request.FormValue("phone")
 	gender := request.FormValue("gender")
 	role := request.FormValue("role")
@@ -140,6 +146,7 @@ func (this *UserController) Create(writer http.ResponseWriter, request *http.Req
 		Phone:     phone,
 		Gender:    gender,
 		City:      city,
+		AvatarUrl: avatarUrl,
 		SizeLimit: sizeLimit,
 		Status:    USER_STATUS_OK,
 	}

@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
+	"fmt"
 )
 
 type MatterController struct {
@@ -213,7 +215,7 @@ func (this *MatterController) Upload(writer http.ResponseWriter, request *http.R
 		alien = true
 
 		//如果是应用文件的话，统一放在同一个地方。
-		puuid = this.matterService.GetDirUuid(userUuid, "/应用数据")
+		puuid = this.matterService.GetDirUuid(userUuid, fmt.Sprintf("/应用数据/%s", time.Now().Local().Format("20060102150405")))
 
 	} else {
 		puuid = request.FormValue("puuid")

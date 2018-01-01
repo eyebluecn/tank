@@ -95,7 +95,7 @@ func (this *MatterService) Upload(file multipart.File, user *User, puuid string,
 	//判断用户自身上传大小的限制。
 	if user.SizeLimit >= 0 {
 		if written > user.SizeLimit {
-			panic("您最大只能上传" + HumanFileSize(user.SizeLimit, false) + "的文件")
+			panic("您最大只能上传" + HumanFileSize(user.SizeLimit) + "的文件")
 		}
 	}
 

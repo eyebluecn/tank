@@ -7,11 +7,9 @@ import (
 
 //把一个大小转变成方便读的格式
 //human readable file size
-func HumanFileSize(bytes int64, si bool) string {
-	var thresh int64 = 1000
-	if si {
-		thresh = 1024
-	}
+func HumanFileSize(bytes int64) string {
+	var thresh int64 = 1024
+
 	if bytes < 0 {
 		bytes = 0
 	}
@@ -19,9 +17,7 @@ func HumanFileSize(bytes int64, si bool) string {
 		return fmt.Sprintf("%dB", bytes)
 	}
 	var units = []string{"B", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"}
-	if si {
-		units = []string{"B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"}
-	}
+
 	var u = 0
 	var tmp = float64(bytes)
 	var standard = float64(thresh)
