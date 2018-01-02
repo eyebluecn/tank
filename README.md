@@ -145,7 +145,7 @@ cd tank/build/pack/
 
 ### 文档
 
-[编程接口](https://github.com/eyebluecn/tank/blob/master/build/doc/alien_zh.md)
+[蓝眼云盘编程接口](https://github.com/eyebluecn/tank/blob/master/build/doc/alien_zh.md)
 
 ### Contribution
 
