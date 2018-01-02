@@ -1,4 +1,4 @@
-![蓝眼云盘logo](https://raw.githubusercontent.com/eyebluecn/tank/dev/build/doc/logo.png)
+![蓝眼云盘logo](https://raw.githubusercontent.com/eyebluecn/tank/master/build/doc/img/logo.png)
 
 # 蓝眼云盘
 
@@ -11,6 +11,7 @@
 
 - 主要用于快速搭建私人云盘，可以简单理解为部署在自己服务器上的[百度云盘](https://pan.baidu.com/)。
 - 蓝眼云盘提供了编程接口，可以使用接口上传文件，作为其他网站、系统、app的资源存储器，可以当作单机版的[七牛云](https://www.qiniu.com)或[阿里云OSS](https://www.aliyun.com/product/oss)使用。
+- 蓝眼云盘还提供了账号管理系统，超级管理员可以管理用户，查看用户文件，普通用户只能查看自己的文件，修改自己的资料。上面提供的体验账号就是一个普通用户的账号。
 
 蓝眼云盘可以作为团队内部或个人私有的云盘使用，亦可当作专门处理图片，音频，视频等二进制文件的第三方编程辅助工具。
 
@@ -22,7 +23,7 @@
 
 1. 一台windows/linux服务器，当然你可以使用自己的电脑充当这台服务器
 
-2. Mysql数据库
+2. [安装好Mysql数据库](https://www.mysql.com/downloads/)
 
 3. [在这里](https://github.com/eyebluecn/tank/releases)下载服务器对应的安装包
 
@@ -82,6 +83,10 @@ cd 应用目录路径/service
 
 浏览器中打开 http://127.0.0.1:6010 (127.0.0.1请使用服务器所在ip，6010请使用`tank.json`中配置的`ServerPort`) 可以看到以下登录页面：
 
+![蓝眼云盘登录页面](https://raw.githubusercontent.com/eyebluecn/tank/master/build/doc/img/login.png)
+
+使用上方配置文件中的邮箱和密码登录后可以看到如下界面：
+![蓝眼云盘登录页面](https://raw.githubusercontent.com/eyebluecn/tank/master/build/doc/img/matters.png)
 
 ### 使用源代码自行打包
 
@@ -110,7 +115,7 @@ golang                   #环境变量GOPATH所在路径
 ................pack     #打包的脚本
 ................service  #将tank当作服务启动的脚本
 ............dist         #运行打包脚本后获得的安装包目录
-............rest
+............rest         #golang源代码
 ```
 
 5. 准备项目依赖的第三方库
