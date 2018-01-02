@@ -10,7 +10,7 @@
 蓝眼云盘是 [蓝眼系列开源软件](https://github.com/eyebluecn) 中的第一个
 
 - 主要用于快速搭建私人云盘，可以简单理解为部署在自己服务器上的[百度云盘](https://pan.baidu.com/)。
-- 蓝眼云盘提供了编程接口，可以使用接口上传文件，作为其他网站、系统、app的资源存储器，可以当作单机版的[七牛云](https://www.qiniu.com)或[阿里云OSS](https://www.aliyun.com/product/oss)使用。在即将发布的[《蓝眼博客》](https://github.com/eyebluecn/blog)软件中将会有详细的使用。
+- 蓝眼云盘提供了[编程接口](https://github.com/eyebluecn/tank/blob/master/build/doc/alien_zh.md)，可以使用接口上传文件，作为其他网站、系统、app的资源存储器，可以当作单机版的[七牛云](https://www.qiniu.com)或[阿里云OSS](https://www.aliyun.com/product/oss)使用。在即将发布的[《蓝眼博客》](https://github.com/eyebluecn/blog)软件中将会有详细的使用。
 - 蓝眼云盘还提供了账号管理系统，超级管理员可以管理用户，查看用户文件，普通用户只能查看自己的文件，修改自己的资料。上面提供的体验账号就是一个普通用户的账号。
 
 蓝眼云盘可以作为团队内部或个人私有的云盘使用，亦可当作专门处理图片，音频，视频等二进制文件的第三方编程辅助工具。
@@ -142,6 +142,10 @@ cd tank/build/pack/
 
 利用得到的安装包即可参考上文的`使用安装包安装`。
 
+
+### 文档
+
+[编程接口](https://github.com/eyebluecn/tank/blob/master/build/doc/alien_zh.md)
 
 ### Contribution
 
