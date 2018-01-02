@@ -101,21 +101,22 @@ cd 应用目录路径/service
 4. 安装Golang，环境变量 `GOPATH`配置到工程目录，建议工程目录结构如下：
 
 ```
-golang                   #环境变量GOPATH所在路径
-....bin                  #编译生成的可执行文件目录
-....pkg                  #编译生成第三方库
-....src                  #golang工程源代码
-........github.com       #来自github的第三方库
-........golang.org       #来自golang.org的第三方库
-........tank             #clone下来的tank根目录
-............build        #用来辅助打包的文件夹
-................conf     #默认的配置文件
-................doc      #文档
-................html     #前端静态资源，从项目tank-front编译获得
-................pack     #打包的脚本
-................service  #将tank当作服务启动的脚本
-............dist         #运行打包脚本后获得的安装包目录
-............rest         #golang源代码
+golang                                          #环境变量GOPATH所在路径
+├── bin                                         #编译生成的可执行文件目录
+├── pkg                                         #编译生成第三方库
+├── src                                         #golang工程源代码
+│   ├── github.com                              #来自github的第三方库
+│   ├── golang.org                              #来自golang.org的第三方库
+│   ├── tank                                    #clone下来的tank根目录
+│   │   ├── build                               #用来辅助打包的文件夹
+│   │   │   ├── conf                            #默认的配置文件
+│   │   │   ├── doc                             #文档
+│   │   │   ├── html                            #前端静态资源，从项目tank-front编译获得
+│   │   │   ├── pack                            #打包的脚本
+│   │   │   ├── service                         #将tank当作服务启动的脚本
+│   │   ├── dist                                #运行打包脚本后获得的安装包目录
+│   │   ├── rest                                #golang源代码
+      
 ```
 
 5. 准备项目依赖的第三方库
