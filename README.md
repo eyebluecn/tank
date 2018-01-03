@@ -150,7 +150,7 @@ cd tank/build/pack/
 
 ### Contribution
 
-感谢所有蓝眼云盘的贡献者 [@zicla](https://github.com/zicla)，[@seaheart](https://github.com/seaheart)，@heying，[@hxsherry](https://github.com/hxsherry)
+感谢所有蓝眼云盘的贡献者 [@zicla](https://github.com/zicla)，[@seaheart](https://github.com/seaheart)，[@yemuhe](https://github.com/yemuhe)，[@hxsherry](https://github.com/hxsherry)
 
 如果您也想参与进来，请尽情的fork, star, post issue, pull requests
 
