@@ -9,11 +9,12 @@
 ### 简介
 蓝眼云盘是 [蓝眼系列开源软件](https://github.com/eyebluecn) 中的第一个
 
-- 主要用于快速搭建私人云盘，可以简单理解为部署在自己服务器上的[百度云盘](https://pan.baidu.com/)。
-- 蓝眼云盘提供了[编程接口](https://github.com/eyebluecn/tank/blob/master/build/doc/alien_zh.md)，可以使用接口上传文件，作为其他网站、系统、app的资源存储器，可以当作单机版的[七牛云](https://www.qiniu.com)或[阿里云OSS](https://www.aliyun.com/product/oss)使用。在即将发布的[《蓝眼博客》](https://github.com/eyebluecn/blog)软件中将会有详细的使用。
+- 可用于快速搭建私人云盘，可以简单理解为在自己服务器上部署一个[百度云盘](https://pan.baidu.com/)。
+- 蓝眼云盘提供了[编程接口](https://github.com/eyebluecn/tank/blob/master/build/doc/alien_zh.md)，可以使用编程接口上传文件，作为其他网站、系统、app的资源存储器，可以当作单机版的[七牛云](https://www.qiniu.com)或[阿里云OSS](https://www.aliyun.com/product/oss)使用。在即将发布的[《蓝眼博客》](https://github.com/eyebluecn/blog)软件中将会有详细的使用。
+- 蓝眼云盘有详细的[后台api文档](https://github.com/eyebluecn/tank/blob/master/build/doc/api_zh.md)，对于学习前端的童鞋而言可以快速部署一个正式而又具有丰富接口的后端供学习使用。
 - 蓝眼云盘还提供了账号管理系统，超级管理员可以管理用户，查看用户文件，普通用户只能查看自己的文件，修改自己的资料。上面提供的体验账号就是一个普通用户的账号。
 
-蓝眼云盘可以作为团队内部或个人私有的云盘使用，亦可当作专门处理图片，音频，视频等二进制文件的第三方编程辅助工具。
+蓝眼云盘力求小而精，可以作为团队内部或个人私有的云盘使用，亦可当作专门处理图片，音频，视频等二进制文件的第三方编程辅助工具，同时也可作为学习资源使用。
 
 如果您觉得蓝眼云盘对您有帮助，请不要吝惜您的star :smile:
 
@@ -145,6 +146,8 @@ cd tank/build/pack/
 
 
 ### 文档
+
+[蓝眼云盘后端api](https://github.com/eyebluecn/tank/blob/master/build/doc/api_zh.md)
 
 [蓝眼云盘编程接口](https://github.com/eyebluecn/tank/blob/master/build/doc/alien_zh.md)
 

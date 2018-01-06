@@ -87,7 +87,15 @@ func (this *MatterController) Detail(writer http.ResponseWriter, request *http.R
 func (this *MatterController) CreateDirectory(writer http.ResponseWriter, request *http.Request) *WebResult {
 
 	puuid := request.FormValue("puuid")
+
 	name := request.FormValue("name")
+	//验证参数。
+	if name == "" {
+		return this.Error("name参数必填")
+	}
+	if m, _ := regexp.MatchString(`[<>|*?/\\]`, name); m {
+		return this.Error(`名称中不能包含以下特殊符号：< > | * ? / \`)
+	}
 
 	userUuid := request.FormValue("userUuid")
 	user := this.checkUser(writer, request)
@@ -96,13 +104,8 @@ func (this *MatterController) CreateDirectory(writer http.ResponseWriter, reques
 	}
 	user = this.userDao.CheckByUuid(userUuid)
 
-	//验证参数。
-	if name == "" {
-		return this.Error("name参数必填")
-	}
-	if m, _ := regexp.MatchString(`[<>|*?/\\]`, name); m {
-		return this.Error(`名称中不能包含以下特殊符号：< > | * ? / \`)
-	}
+
+
 
 	if puuid != "" && puuid != "root" {
 		//找出上一级的文件夹。
