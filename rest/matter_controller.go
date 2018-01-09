@@ -104,9 +104,6 @@ func (this *MatterController) CreateDirectory(writer http.ResponseWriter, reques
 	}
 	user = this.userDao.CheckByUuid(userUuid)
 
-
-
-
 	if puuid != "" && puuid != "root" {
 		//找出上一级的文件夹。
 		this.matterDao.FindByUuidAndUserUuid(puuid, user.Uuid)
@@ -389,11 +386,12 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 	user = this.userDao.CheckByUuid(userUuid)
 
 	//验证dest是否有问题
+	var destMatter *Matter
 	if destUuid == "" {
 		return this.Error("destUuid参数必填")
 	} else {
 		if destUuid != "root" {
-			destMatter := this.matterDao.FindByUuid(destUuid)
+			destMatter = this.matterDao.FindByUuid(destUuid)
 
 			if user.Role != USER_ROLE_ADMINISTRATOR && destMatter.UserUuid != user.Uuid {
 				return this.Error(RESULT_CODE_UNAUTHORIZED)
@@ -420,6 +418,14 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 
 		if count > 0 {
 			return this.Error("【" + srcMatter.Name + "】在目标文件夹已经存在了，操作失败。")
+		}
+
+
+		//判断和目标文件夹是否是同一个主人。
+		if destUuid != "root" {
+			if srcMatter.UserUuid != destMatter.UserUuid {
+				panic("文件和目标文件夹的拥有者不是同一人")
+			}
 		}
 
 		srcMatters = append(srcMatters, srcMatter)
