@@ -8,7 +8,7 @@ fi
 
 PRE_DIR=$(pwd)
 
-VERSION_NAME=tank-1.0.0
+VERSION_NAME=tank-1.0.1
 FINAL_NAME=$VERSION_NAME.linux-amd64.tar.gz
 
 cd $GOPATH
