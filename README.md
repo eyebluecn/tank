@@ -12,7 +12,7 @@
 
 **1. 软件体积小，跨平台，运行简单**
 
-- 蓝眼云盘[安装包]((https://github.com/eyebluecn/tank/releases)6M左右，在`windows`  `linux`  `mac OS`操作系统中均可安装运行；
+- 蓝眼云盘[安装包](https://github.com/eyebluecn/tank/releases)6M左右，在`windows`  `linux`  `mac OS`操作系统中均可安装运行；
 
 - 蓝眼云盘为绿色软件，将安装包解压缩，修改配置文件后即可一行命令立即运行。
 
