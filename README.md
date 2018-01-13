@@ -40,11 +40,11 @@
 
 ### 软件截图
 
-![](http://tank.eyeblue.cn/api/alien/download/3e71763a-99a2-42a4-5718-6a198c9fa486/tank0.png "tank0.png")
+![](https://raw.githubusercontent.com/eyebluecn/tank/master/build/doc/img/tank0.png)
 
-![](http://tank.eyeblue.cn/api/alien/download/779e3a82-579a-41e6-40ee-c9c47545f02f/tank1.png "tank1.png")
+![](https://raw.githubusercontent.com/eyebluecn/tank/master/build/doc/img/tank1.png)
 
-![](http://tank.eyeblue.cn/api/alien/download/ebf44ac7-9fa0-4191-7e8c-821870d5fb96/tank2.png "tank2.png")
+![](https://raw.githubusercontent.com/eyebluecn/tank/master/build/doc/img/tank2.png)
 
 ### 安装
 
