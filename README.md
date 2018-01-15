@@ -1,4 +1,4 @@
-![蓝眼云盘logo](https://raw.githubusercontent.com/eyebluecn/tank/master/build/doc/img/logo.png)
+[![蓝眼云盘logo](https://raw.githubusercontent.com/eyebluecn/tank/master/build/doc/img/logo.png)](https://github.com/eyebluecn/tank)
 
 # 蓝眼云盘
 
@@ -8,7 +8,7 @@
 
 
 ### 简介
-蓝眼云盘是 [蓝眼系列开源软件](https://github.com/eyebluecn) 之一，也是蓝眼系列其他软件的基础服务软件。蓝眼博客具有以下几大特色：
+蓝眼云盘是 [蓝眼系列开源软件](https://github.com/eyebluecn) 之一，也是蓝眼系列其他软件的基础服务软件。蓝眼云盘具有以下几大特色：
 
 **1. 软件体积小，跨平台，运行简单**
 
