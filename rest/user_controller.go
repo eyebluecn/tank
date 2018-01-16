@@ -321,6 +321,11 @@ func (this *UserController) ChangePassword(writer http.ResponseWriter, request *
 
 	user := this.checkUser(writer, request)
 
+	//如果是demo账号，不提供修改密码的功能。
+	if user.Username == "demo" {
+		return this.Success(user)
+	}
+
 	if !MatchBcrypt(oldPassword, user.Password) {
 		return this.Error("旧密码不正确！")
 	}
