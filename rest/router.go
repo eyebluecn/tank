@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-
 )
 
 //用于处理所有前来的请求
@@ -117,7 +116,7 @@ func (this *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 			filePath = dir + "/index.html"
 			exists, _ = PathExists(filePath)
 			if !exists {
-				panic("404 not found")
+				panic(fmt.Sprintf("404 not found:%s", requestURI))
 			}
 		}
 

@@ -68,8 +68,8 @@ func (this *MatterDao) FindByUserUuidAndPuuidAndNameAndDirTrue(userUuid string, 
 	return matter
 }
 
-//按照id和userUuid来查找。
-func (this *MatterDao) FindByUuidAndUserUuid(uuid string, userUuid string) *Matter {
+//按照id和userUuid来查找。找不到抛异常。
+func (this *MatterDao) CheckByUuidAndUserUuid(uuid string, userUuid string) *Matter {
 
 	// Read
 	var matter = &Matter{}
