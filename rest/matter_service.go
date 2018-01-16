@@ -50,8 +50,17 @@ func (this *MatterService) GetDirUuid(userUuid string, dir string) string {
 	//递归找寻文件的上级目录uuid.
 	folders := strings.Split(dir, "/")
 
+	if len(folders) > 32 {
+		panic("文件夹最多32层。")
+	}
+
 	puuid := "root"
 	for k, name := range folders {
+
+		if len(name) > 200 {
+			panic("每级文件夹的最大长度为200")
+		}
+
 		if k == 0 {
 			continue
 		}
@@ -75,9 +84,32 @@ func (this *MatterService) GetDirUuid(userUuid string, dir string) string {
 	return puuid
 }
 
+//获取某个文件的详情，会把父级依次倒着装进去。如果中途出错，直接抛出异常。
+func (this *MatterService) Detail(uuid string) *Matter {
+
+	matter := this.matterDao.CheckByUuid(uuid)
+
+	//组装file的内容，展示其父组件。
+	puuid := matter.Puuid
+	tmpMatter := matter
+	for puuid != "root" {
+		pFile := this.matterDao.CheckByUuid(puuid)
+		tmpMatter.Parent = pFile
+		tmpMatter = pFile
+		puuid = pFile.Puuid
+	}
+
+	return matter
+}
+
 //开始上传文件
 //上传文件. alien表明文件是否是应用使用的文件。
 func (this *MatterService) Upload(file multipart.File, user *User, puuid string, filename string, privacy bool, alien bool) *Matter {
+
+	//文件名不能太长。
+	if len(filename) > 200 {
+		panic("文件名不能超过200")
+	}
 
 	//获取文件应该存放在的物理路径的绝对路径和相对路径。
 	absolutePath, relativePath := GetUserFilePath(user.Username)

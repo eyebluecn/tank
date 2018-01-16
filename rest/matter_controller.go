@@ -65,18 +65,14 @@ func (this *MatterController) Detail(writer http.ResponseWriter, request *http.R
 		return this.Error("文件的uuid必填")
 	}
 
-	matter := this.matterDao.FindByUuid(uuid)
+	matter := this.matterService.Detail(uuid)
 
-	//组装file的内容，展示其父组件。
-	puuid := matter.Puuid
-	tmpMatter := matter
-	for puuid != "root" {
-		pFile := this.matterDao.FindByUuid(puuid)
-
-		tmpMatter.Parent = pFile
-		tmpMatter = pFile
-		puuid = pFile.Puuid
-
+	//验证当前之人是否有权限查看这么详细。
+	user := this.checkUser(writer, request)
+	if user.Role != USER_ROLE_ADMINISTRATOR {
+		if matter.UserUuid != user.Uuid {
+			panic("没有权限查看该文件")
+		}
 	}
 
 	return this.Success(matter)
@@ -89,10 +85,15 @@ func (this *MatterController) CreateDirectory(writer http.ResponseWriter, reques
 	puuid := request.FormValue("puuid")
 
 	name := request.FormValue("name")
+	name = strings.TrimSpace(name)
 	//验证参数。
 	if name == "" {
-		return this.Error("name参数必填")
+		return this.Error("name参数必填，并且不能全是空格")
 	}
+	if len(name) > 200 {
+		panic("name长度不能超过200")
+	}
+
 	if m, _ := regexp.MatchString(`[<>|*?/\\]`, name); m {
 		return this.Error(`名称中不能包含以下特殊符号：< > | * ? / \`)
 	}
@@ -104,9 +105,27 @@ func (this *MatterController) CreateDirectory(writer http.ResponseWriter, reques
 	}
 	user = this.userDao.CheckByUuid(userUuid)
 
-	if puuid != "" && puuid != "root" {
-		//找出上一级的文件夹。
-		this.matterDao.FindByUuidAndUserUuid(puuid, user.Uuid)
+	if puuid == "" {
+		panic("puuid必填")
+	}
+	if puuid != "root" {
+		//验证目标文件夹存在。
+		this.matterDao.CheckByUuidAndUserUuid(puuid, user.Uuid)
+
+		//获取上级的详情
+		pMatter := this.matterService.Detail(puuid)
+
+		//文件夹最多只能有32层。
+		count := 1
+		tmpMatter := pMatter
+		for tmpMatter != nil {
+			count++
+			tmpMatter = tmpMatter.Parent
+		}
+		if count >= 32 {
+			panic("文件夹最多32层")
+		}
+
 	}
 
 	//判断同级文件夹中是否有同名的文件。
@@ -224,7 +243,7 @@ func (this *MatterController) Upload(writer http.ResponseWriter, request *http.R
 		} else {
 			if puuid != "root" {
 				//找出上一级的文件夹。
-				this.matterDao.FindByUuidAndUserUuid(puuid, userUuid)
+				this.matterDao.CheckByUuidAndUserUuid(puuid, userUuid)
 
 			}
 		}
@@ -419,7 +438,6 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 		if count > 0 {
 			return this.Error("【" + srcMatter.Name + "】在目标文件夹已经存在了，操作失败。")
 		}
-
 
 		//判断和目标文件夹是否是同一个主人。
 		if destUuid != "root" {
