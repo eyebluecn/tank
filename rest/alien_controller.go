@@ -451,6 +451,13 @@ func (this *AlienController) Download(writer http.ResponseWriter, request *http.
 		}
 	} else {
 
+		//显示文件大小。
+		fileInfo, err := diskFile.Stat()
+		if err != nil {
+			panic(err)
+		}
+		writer.Header().Set("Content-Length", strconv.Itoa(int(fileInfo.Size())))
+
 		_, err = io.Copy(writer, diskFile)
 		this.PanicError(err)
 
