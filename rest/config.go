@@ -152,7 +152,7 @@ func PrepareConfigs() {
 	filePath := GetConfPath() + "/tank.json"
 	content, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		LogWarning(fmt.Sprintf("无法找到配置文件，使用默认配置项：%s,%v", filePath, err))
+		LogWarning(fmt.Sprintf("无法找到配置文件：%s,错误：%v\n将使用config.go中的默认配置项。", filePath, err))
 	} else {
 		// 用 json.Unmarshal
 		err := json.Unmarshal(content, CONFIG)

@@ -410,7 +410,7 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 		return this.Error("destUuid参数必填")
 	} else {
 		if destUuid != "root" {
-			destMatter = this.matterDao.FindByUuid(destUuid)
+			destMatter = this.matterService.Detail(destUuid)
 
 			if user.Role != USER_ROLE_ADMINISTRATOR && destMatter.UserUuid != user.Uuid {
 				return this.Error(RESULT_CODE_UNAUTHORIZED)
@@ -422,7 +422,7 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 	//验证src是否有问题。
 	for _, uuid := range srcUuids {
 		//找出该文件或者文件夹
-		srcMatter := this.matterDao.FindByUuid(uuid)
+		srcMatter := this.matterDao.CheckByUuid(uuid)
 
 		if user.Role != USER_ROLE_ADMINISTRATOR && srcMatter.UserUuid != user.Uuid {
 			return this.Error(RESULT_CODE_UNAUTHORIZED)
@@ -444,6 +444,16 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 			if srcMatter.UserUuid != destMatter.UserUuid {
 				panic("文件和目标文件夹的拥有者不是同一人")
 			}
+
+			//文件夹不能把自己移入到自己中，也不可以移入到自己的子文件夹下。
+			tmpMatter := destMatter
+			for tmpMatter != nil {
+				if uuid == tmpMatter.Uuid {
+					panic("文件夹不能把自己移入到自己中，也不可以移入到自己的子文件夹下。")
+				}
+				tmpMatter = tmpMatter.Parent
+			}
+
 		}
 
 		srcMatters = append(srcMatters, srcMatter)
