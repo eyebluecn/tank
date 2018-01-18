@@ -327,6 +327,11 @@ func (this *MatterController) Rename(writer http.ResponseWriter, request *http.R
 		return this.Error(`名称中不能包含以下特殊符号：< > | * ? / \`)
 	}
 
+	if len(name) > 200 {
+		panic("name长度不能超过200")
+	}
+
+
 	//找出该文件或者文件夹
 	matter := this.matterDao.CheckByUuid(uuid)
 
