@@ -50,7 +50,7 @@ func (this *BaseController) HandleRoutes(writer http.ResponseWriter, request *ht
 }
 
 //需要进行登录验证的wrap包装
-func (this *BaseController) Wrap(f func(writer http.ResponseWriter, request *http.Request) *WebResult, role string) func(w http.ResponseWriter, r *http.Request) {
+func (this *BaseController) Wrap(f func(writer http.ResponseWriter, request *http.Request) *WebResult, qualifiedRole string) func(w http.ResponseWriter, r *http.Request) {
 
 	return func(writer http.ResponseWriter, request *http.Request) {
 
@@ -59,13 +59,20 @@ func (this *BaseController) Wrap(f func(writer http.ResponseWriter, request *htt
 		var webResult *WebResult = nil
 
 		//只有游客接口不需要登录
-		if role != USER_ROLE_GUEST {
+		if qualifiedRole != USER_ROLE_GUEST {
 			user := this.checkUser(writer, request)
-			if role == USER_ROLE_ADMINISTRATOR && user.Role != USER_ROLE_ADMINISTRATOR {
-				webResult = ConstWebResult(RESULT_CODE_UNAUTHORIZED)
+
+			if user.Status == USER_STATUS_DISABLED {
+				//判断用户是否被禁用。
+				webResult = ConstWebResult(RESULT_CODE_LOGIN_INVALID)
 			} else {
-				webResult = f(writer, request)
+				if qualifiedRole == USER_ROLE_ADMINISTRATOR && user.Role != USER_ROLE_ADMINISTRATOR {
+					webResult = ConstWebResult(RESULT_CODE_UNAUTHORIZED)
+				} else {
+					webResult = f(writer, request)
+				}
 			}
+
 		} else {
 			webResult = f(writer, request)
 		}

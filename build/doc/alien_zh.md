@@ -76,19 +76,6 @@ matterUuid | `string` | 【必填】文件uuid，要想下载的文件`uuid`
 expire | `int` | 【选填】UploadToken过期时间，单位：s。默认 86400s 即24h
 
 
-#### /api/alien/fetch/download/token
-
-功能：一个蓝眼云盘受信任的用户请求一个`DownloadToken`，用于给另一个用户下载蓝眼云盘上的私有文件。
-
-一般的使用场景是`应用服务器`向`蓝眼云盘`请求`DownloadToken`，然后将此`DownloadToken`交由`浏览器`去向`蓝眼云盘`下载文件。
-
-参数 | 类型 | 描述
---------- | ---- | -----------
-email | `string` | 【必填】邮箱，用于确定请求者身份
-password | `string` | 【必填】密码，用于确定请求者身份
-matterUuid | `string` | 【必填】文件uuid，要想下载的文件`uuid`
-expire | `int` | 【选填】UploadToken过期时间，单位：s。默认 86400s 即24h
-
 #### /api/alien/download/{uuid}/{filename}
 
 功能：在浏览器中下载文件

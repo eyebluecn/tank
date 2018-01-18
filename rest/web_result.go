@@ -82,7 +82,7 @@ func ConstWebResult(code int) *WebResult {
 
 		//该登录用户不是有效用户
 	case RESULT_CODE_LOGIN_INVALID:
-		wr.Msg = "该登录用户不是有效用户"
+		wr.Msg = "该登录用户不是有效用户或者用户已被禁用"
 
 		//提交的表单验证不通过
 	case RESULT_CODE_FORM_INVALID:

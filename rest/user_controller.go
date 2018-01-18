@@ -240,6 +240,7 @@ func (this *UserController) Page(writer http.ResponseWriter, request *http.Reque
 	username := request.FormValue("username")
 	email := request.FormValue("email")
 	phone := request.FormValue("phone")
+	status := request.FormValue("status")
 	orderLastTime := request.FormValue("orderLastTime")
 	orderCreateTime := request.FormValue("orderCreateTime")
 
@@ -267,7 +268,7 @@ func (this *UserController) Page(writer http.ResponseWriter, request *http.Reque
 		},
 	}
 
-	pager := this.userDao.Page(page, pageSize, username, email, phone, sortArray)
+	pager := this.userDao.Page(page, pageSize, username, email, phone, status, sortArray)
 
 	return this.Success(pager)
 }
@@ -278,6 +279,11 @@ func (this *UserController) Disable(writer http.ResponseWriter, request *http.Re
 	uuid := request.FormValue("uuid")
 
 	user := this.userDao.CheckByUuid(uuid)
+
+	loginUser := this.checkUser(writer, request)
+	if uuid == loginUser.Uuid {
+		return this.Error("你不能操作自己的状态。")
+	}
 
 	if user.Status == USER_STATUS_DISABLED {
 		return this.Error("用户已经被禁用，操作无效。")
@@ -297,6 +303,10 @@ func (this *UserController) Enable(writer http.ResponseWriter, request *http.Req
 	uuid := request.FormValue("uuid")
 
 	user := this.userDao.CheckByUuid(uuid)
+	loginUser := this.checkUser(writer, request)
+	if uuid == loginUser.Uuid {
+		return this.Error("你不能操作自己的状态。")
+	}
 
 	if user.Status == USER_STATUS_OK {
 		return this.Error("用户已经是正常状态，操作无效。")

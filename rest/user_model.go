@@ -20,7 +20,9 @@ const (
 )
 
 const (
+	//正常状态
 	USER_STATUS_OK       = "OK"
+	//被禁用
 	USER_STATUS_DISABLED = "DISABLED"
 )
 

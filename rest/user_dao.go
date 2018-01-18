@@ -64,7 +64,7 @@ func (this *UserDao) FindByEmail(email string) *User {
 }
 
 //显示用户列表。
-func (this *UserDao) Page(page int, pageSize int, username string, email string, phone string, sortArray []OrderPair) *Pager {
+func (this *UserDao) Page(page int, pageSize int, username string, email string, phone string, status string, sortArray []OrderPair) *Pager {
 
 	var wp = &WherePair{}
 
@@ -78,6 +78,10 @@ func (this *UserDao) Page(page int, pageSize int, username string, email string,
 
 	if phone != "" {
 		wp = wp.And(&WherePair{Query: "phone = ?", Args: []interface{}{phone}})
+	}
+
+	if status != "" {
+		wp = wp.And(&WherePair{Query: "status = ?", Args: []interface{}{status}})
 	}
 
 	count := 0
