@@ -16,6 +16,15 @@
     versionName: 'x.x.x'
 
 
+2018-01-19
+tank-1.0.2
+1. 修复了下载时无法估算文件大小的bug，header头重添加了Content-Type. [#2](https://github.com/eyebluecn/tank/issues/2)
+2. 修复了移动端样式混乱的问题.[#3](https://github.com/eyebluecn/tank/issues/3)
+3. 修复了文夹层数无上限的bug. [#4](https://github.com/eyebluecn/tank/issues/4)
+4. 修复了文件夹自己移动到自己后就全部消失的bug. [#8](https://github.com/eyebluecn/tank/issues/8)
+5. 统一不能删除用户，但是可以禁用或者启用用户. [#9](https://github.com/eyebluecn/tank/issues/9)
+
+
 2018-01-12
 tank-1.0.1
 1. 修复面包屑回退的bug [#1](https://github.com/eyebluecn/tank/issues/1)

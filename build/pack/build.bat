@@ -16,7 +16,7 @@ if "%GOPATH%"=="" (
 set PRE_DIR=%cd%
 
 @rem version name
-set VERSION_NAME=tank-1.0.1
+set VERSION_NAME=tank-1.0.2
 
 cd %GOPATH%
 
