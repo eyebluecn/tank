@@ -40,11 +40,17 @@
 
 ### 软件截图
 
+#### PC端截图
+
 ![](https://raw.githubusercontent.com/eyebluecn/tank/master/build/doc/img/tank0.png)
 
 ![](https://raw.githubusercontent.com/eyebluecn/tank/master/build/doc/img/tank1.png)
 
 ![](https://raw.githubusercontent.com/eyebluecn/tank/master/build/doc/img/tank2.png)
+
+#### 手机端截图
+
+![](https://raw.githubusercontent.com/eyebluecn/tank/master/build/doc/img/mobile.png)
 
 ### 安装
 
