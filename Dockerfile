@@ -1,14 +1,19 @@
-# 使用最新的golang作为母镜像
-FROM golang:latest
+# 使用1.8的golang作为母镜像
+FROM golang:1.8
 
 # 维护者信息
 MAINTAINER eyeblue "eyebluecn@126.com"
 
-WORKDIR $GOPATH/src/hellodocker
-ADD . $GOPATH/src/hellodocker
-RUN go build .
+# 指定工作目录就是 tank
+WORKDIR $GOPATH/src/tank
 
+# 将tank项目下的所有文件移动到golang镜像中去
+ADD . $GOPATH/src/tank
 
-EXPOSE 8080
+# 开始编译
+RUN ./build/pack/build.sh
 
-ENTRYPOINT ["./hellodocker"]
+# 暴露6010端口
+EXPOSE 6010
+
+ENTRYPOINT ["../../bin/tank"]
