@@ -8,7 +8,7 @@ MAINTAINER eyeblue "eyebluecn@126.com"
 WORKDIR $GOPATH/src/tank
 
 # 将tank项目下的所有文件移动到golang镜像中去
-ADD . $GOPATH/src/tank
+COPY . $GOPATH/src/tank
 
 # 开始编译
 RUN ./build/pack/build.sh
