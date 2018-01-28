@@ -1,10 +1,29 @@
-version: '3'
+version: "1.0.2"
 services:
 
-  web:
-    build: .
-    ports:
-     - "5000:5000"
+   db:
+     image: mysql:5.7
+     volumes:
+       - db_data:/var/lib/mysql
+     restart: always
+     environment:
+       MYSQL_ROOT_PASSWORD: tank123
+       MYSQL_DATABASE: tank
+       MYSQL_USER: tank
+       MYSQL_PASSWORD: tank123
 
-  redis:
-    image: "redis:alpine"
+   tank:
+     build: .
+     depends_on:
+       - db
+     ports:
+       - "6010:6010"
+     restart: always
+     environment:
+       TANK_DB_HOST: db
+       TANK_DB_PORT: 3306
+       TANK_DB_USER: tank
+       TANK_DB_PASSWORD: tank123
+
+volumes:
+    db_data:

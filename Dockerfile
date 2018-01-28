@@ -16,4 +16,5 @@ RUN ./build/pack/build.sh
 # 暴露6010端口
 EXPOSE 6010
 
-ENTRYPOINT ["../../bin/tank"]
+# tank作为执行文件
+ENTRYPOINT ["./dist/tank-1.0.2/tank"]
