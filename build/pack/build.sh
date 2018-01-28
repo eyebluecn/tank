@@ -15,7 +15,8 @@ cd $GOPATH
 
 # echo "go get golang.org/x"
 # go get golang.org/x
-if [ -z "$GOPATH/src/golang.org" ] ; then
+if [ ! -d "$GOPATH/src/golang.org" ] ; then
+  echo "git clone https://github.com/eyebluecn/golang.org.git"
   git clone https://github.com/eyebluecn/golang.org.git $GOPATH/src/golang.org
 fi
 
