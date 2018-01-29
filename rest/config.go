@@ -8,6 +8,8 @@ import (
 	"io/ioutil"
 	"time"
 	"unsafe"
+	"os"
+	"strconv"
 )
 
 const (
@@ -29,7 +31,7 @@ flush privileges;
 */
 /*
  你也可以在运行时的参数中临时修改一些配置项：
--MysqlHost=127.0.0.1 -MysqlPort=3306 -MysqlSchema=tank -MysqlUserName=tank -MysqlPassword=tank123
+-MysqlHost=127.0.0.1 -MysqlPort=3306 -MysqlSchema=tank -MysqlUsername=tank -MysqlPassword=tank123
 */
 var (
 	CONFIG = &Config{
@@ -47,11 +49,11 @@ var (
 		//数据库名字
 		MysqlSchema: "tank",
 		//用户名
-		MysqlUserName: "tank",
+		MysqlUsername: "tank",
 		//密码
 		MysqlPassword: "tank123",
 		//数据库连接信息。这一项是上面几项组合而得，不可直接配置。
-		MysqlUrl: "%MysqlUserName:%MysqlPassword@tcp(%MysqlHost:%MysqlPort)/%MysqlSchema?charset=utf8&parseTime=True&loc=Local",
+		MysqlUrl: "%MysqlUsername:%MysqlPassword@tcp(%MysqlHost:%MysqlPort)/%MysqlSchema?charset=utf8&parseTime=True&loc=Local",
 		//超级管理员用户名，只能包含英文和数字
 		AdminUsername: "admin",
 		//超级管理员邮箱
@@ -77,7 +79,7 @@ type Config struct {
 	//数据库名字
 	MysqlSchema string
 	//用户名
-	MysqlUserName string
+	MysqlUsername string
 	//密码
 	MysqlPassword string
 	//数据库连接信息。
@@ -98,8 +100,8 @@ func (this *Config) validate() {
 		LogPanic("ServerPort 未配置")
 	}
 
-	if this.MysqlUserName == "" {
-		LogPanic("MysqlUserName 未配置")
+	if this.MysqlUsername == "" {
+		LogPanic("MysqlUsername 未配置")
 	}
 
 	if this.MysqlPassword == "" {
@@ -118,7 +120,7 @@ func (this *Config) validate() {
 		LogPanic("MysqlSchema 未配置")
 	}
 
-	this.MysqlUrl = fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8&parseTime=True&loc=Local", this.MysqlUserName, this.MysqlPassword, this.MysqlHost, this.MysqlPort, this.MysqlSchema)
+	this.MysqlUrl = fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8&parseTime=True&loc=Local", this.MysqlUsername, this.MysqlPassword, this.MysqlHost, this.MysqlPort, this.MysqlSchema)
 
 }
 
@@ -143,11 +145,8 @@ func init() {
 	}, nil)
 }
 
-//从conf/tank.json中获取变量。
-
-//从flag中或者conf/tank.json中装填变量
-func PrepareConfigs() {
-
+//第一级. 从配置文件conf/tank.json中读取配置项
+func LoadConfigFromFile() {
 	//读取配置文件
 	filePath := GetConfPath() + "/tank.json"
 	content, err := ioutil.ReadFile(filePath)
@@ -161,6 +160,65 @@ func PrepareConfigs() {
 		}
 	}
 
+}
+
+//第二级. 从环境变量中读取配置项
+func LoadConfigFromEnvironment() {
+
+	tmpServerPort := os.Getenv("TANK_SERVER_PORT")
+	if tmpServerPort != "" {
+		i, e := strconv.Atoi(tmpServerPort)
+		if e == nil {
+			CONFIG.ServerPort = i
+		} else {
+			LogPanic(fmt.Sprintf("环境变量TANK_SERVER_PORT必须为整数！%v", tmpServerPort))
+		}
+	}
+
+	tmpMysqlPort := os.Getenv("TANK_MYSQL_PORT")
+	if tmpMysqlPort != "" {
+		i, e := strconv.Atoi(tmpMysqlPort)
+		if e == nil {
+			CONFIG.MysqlPort = i
+		} else {
+			LogPanic(fmt.Sprintf("环境变量TANK_MYSQL_PORT必须为整数！%v", tmpMysqlPort))
+		}
+	}
+
+	tmpMysqlHost := os.Getenv("TANK_MYSQL_HOST")
+	if tmpMysqlHost != "" {
+		CONFIG.MysqlHost = tmpMysqlHost
+	}
+	tmpMysqlSchema := os.Getenv("TANK_MYSQL_SCHEMA")
+	if tmpMysqlSchema != "" {
+		CONFIG.MysqlSchema = tmpMysqlSchema
+	}
+	tmpMysqlUsername := os.Getenv("TANK_MYSQL_USERNAME")
+	if tmpMysqlUsername != "" {
+		CONFIG.MysqlUsername = tmpMysqlUsername
+	}
+	tmpMysqlPassword := os.Getenv("TANK_MYSQL_PASSWORD")
+	if tmpMysqlPassword != "" {
+		CONFIG.MysqlPassword = tmpMysqlPassword
+	}
+	tmpAdminUsername := os.Getenv("TANK_ADMIN_USERNAME")
+	if tmpAdminUsername != "" {
+		CONFIG.AdminUsername = tmpAdminUsername
+	}
+	tmpAdminEmail := os.Getenv("TANK_ADMIN_EMAIL")
+	if tmpAdminEmail != "" {
+		CONFIG.AdminEmail = tmpAdminEmail
+	}
+	tmpAdminPassword := os.Getenv("TANK_ADMIN_PASSWORD")
+	if tmpAdminPassword != "" {
+		CONFIG.AdminPassword = tmpAdminPassword
+	}
+
+}
+
+//第三级. 从程序参数中读取配置项
+func LoadConfigFromArguments() {
+
 	//从运行时参数中读取，运行时参数具有更高优先级。
 	//系统端口号
 	ServerPortPtr := flag.Int("ServerPort", CONFIG.ServerPort, "server port")
@@ -172,7 +230,7 @@ func PrepareConfigs() {
 	MysqlPortPtr := flag.Int("MysqlPort", CONFIG.MysqlPort, "mysql port")
 	MysqlHostPtr := flag.String("MysqlHost", CONFIG.MysqlHost, "mysql host")
 	MysqlSchemaPtr := flag.String("MysqlSchema", CONFIG.MysqlSchema, "mysql schema")
-	MysqlUserNamePtr := flag.String("MysqlUserName", CONFIG.MysqlUserName, "mysql username")
+	MysqlUsernamePtr := flag.String("MysqlUsername", CONFIG.MysqlUsername, "mysql username")
 	MysqlPasswordPtr := flag.String("MysqlPassword", CONFIG.MysqlPassword, "mysql password")
 
 	//超级管理员信息
@@ -203,8 +261,8 @@ func PrepareConfigs() {
 		CONFIG.MysqlSchema = *MysqlSchemaPtr
 	}
 
-	if *MysqlUserNamePtr != CONFIG.MysqlUserName {
-		CONFIG.MysqlUserName = *MysqlUserNamePtr
+	if *MysqlUsernamePtr != CONFIG.MysqlUsername {
+		CONFIG.MysqlUsername = *MysqlUsernamePtr
 	}
 
 	if *MysqlPasswordPtr != CONFIG.MysqlPassword {
@@ -222,6 +280,20 @@ func PrepareConfigs() {
 	if *AdminPasswordPtr != CONFIG.AdminPassword {
 		CONFIG.AdminPassword = *AdminPasswordPtr
 	}
+
+}
+
+//三种方式指定配置项，后面的策略会覆盖前面的策略。
+func PrepareConfigs() {
+
+	//第一级. 从配置文件conf/tank.json中读取配置项
+	LoadConfigFromFile()
+
+	//第二级. 从环境变量中读取配置项
+	LoadConfigFromEnvironment()
+
+	//第三级. 从程序参数中读取配置项
+	LoadConfigFromArguments()
 
 	//验证配置项的正确性
 	CONFIG.validate()

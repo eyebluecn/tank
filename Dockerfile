@@ -1,5 +1,5 @@
 # 使用1.8的golang作为母镜像
-FROM golang:1.8
+FROM golang:1.9
 
 # 维护者信息
 MAINTAINER eyeblue "eyebluecn@126.com"

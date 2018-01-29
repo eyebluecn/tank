@@ -21,10 +21,14 @@ services:
        - "6010:6010"
      restart: always
      environment:
-       TANK_DB_HOST: db
-       TANK_DB_PORT: 3306
-       TANK_DB_USER: tank
-       TANK_DB_PASSWORD: tank123
+       TANK_MYSQL_PORT: 3306
+       TANK_MYSQL_HOST: db
+       TANK_MYSQL_SCHEMA: tank
+       TANK_MYSQL_USERNAME: tank
+       TANK_MYSQL_PASSWORD: tank123
+       TANK_ADMIN_USERNAME: lish
+       TANK_ADMIN_EMAIL: lish@tank.eyeblue.cn
+       TANK_ADMIN_PASSWORD: 123456
 
 volumes:
     db_data:

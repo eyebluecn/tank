@@ -77,7 +77,7 @@
   //Mysql数据库名称
   "MysqlSchema": "tank",
   //Mysql用户名，建议为蓝眼云盘创建一个用户，不建议使用root
-  "MysqlUserName": "tank",
+  "MysqlUsername": "tank",
   //Mysql密码
   "MysqlPassword": "tank123",
   //超级管理员用户名，只能是字母和数字
