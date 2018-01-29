@@ -17,4 +17,4 @@ RUN ./build/pack/build.sh
 EXPOSE 6010
 
 # tank作为执行文件
-ENTRYPOINT ["$GOPATH/src/tank/dist/tank-1.0.2/tank"]
+ENTRYPOINT ["/go/src/tank/dist/tank-1.0.2/tank"]
