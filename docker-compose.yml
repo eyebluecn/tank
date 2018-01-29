@@ -13,8 +13,7 @@ services:
        MYSQL_PASSWORD: tank123
 
    tank:
-     build: .
-     image: tank:1.0.2
+     image: eyeblue/tank:1.0.2
      depends_on:
        - db
      ports:

@@ -52,6 +52,18 @@
 
 ![](https://raw.githubusercontent.com/eyebluecn/tank/master/build/doc/img/mobile.png)
 
+### 使用Docker 安装
+
+** a) 下载文件 `docker-compose.yml` **
+
+`docker-compose.yml`内容如下：
+```
+
+```
+
+** b)  `docker-compose.yml` **
+
+
 ### 安装
 
 ** a) 准备工作 **
