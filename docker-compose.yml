@@ -4,7 +4,7 @@ services:
    db:
      image: mysql:5.7
      volumes:
-       - db_data:/var/lib/mysql
+       - ~/data/mysql:/data/log
      restart: always
      environment:
        MYSQL_ROOT_PASSWORD: tank123
@@ -26,12 +26,9 @@ services:
        TANK_MYSQL_SCHEMA: tank
        TANK_MYSQL_USERNAME: tank
        TANK_MYSQL_PASSWORD: tank123
-       TANK_ADMIN_USERNAME: lish
-       TANK_ADMIN_EMAIL: lish@tank.eyeblue.cn
+       TANK_ADMIN_USERNAME: admin
+       TANK_ADMIN_EMAIL: admin@tank.eyeblue.cn
        TANK_ADMIN_PASSWORD: 123456
      volumes:
-       - ~/data/log:/data/log
-       - ~/data/matter:/data/matter
-
-volumes:
-    db_data:
+       - ~/data/tank/log:/data/log
+       - ~/data/tank/matter:/data/matter
