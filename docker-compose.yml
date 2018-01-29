@@ -4,7 +4,7 @@ services:
    db:
      image: mysql:5.7
      volumes:
-       - ~/data/mysql:/data/log
+       - ~/data/mysql:/var/lib/mysql
      restart: always
      environment:
        MYSQL_ROOT_PASSWORD: tank123
