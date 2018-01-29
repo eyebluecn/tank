@@ -226,7 +226,7 @@ func (this *MatterDao) Delete(matter *Matter) {
 		this.PanicError(db.Error)
 
 		//删除文件
-		err := os.Remove(GetFilePath() + matter.Path)
+		err := os.Remove(CONFIG.MatterPath + matter.Path)
 
 		LogError(fmt.Sprintf("删除磁盘上的文件出错，不做任何处理"))
 

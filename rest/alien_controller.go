@@ -345,7 +345,7 @@ func (this *AlienController) Download(writer http.ResponseWriter, request *http.
 		}
 	}
 
-	diskFile, err := os.Open(GetFilePath() + matter.Path)
+	diskFile, err := os.Open(CONFIG.MatterPath + matter.Path)
 	this.PanicError(err)
 	defer diskFile.Close()
 	// 防止中文乱码

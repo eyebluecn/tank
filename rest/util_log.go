@@ -10,7 +10,7 @@ import (
 func Log(prefix string, content string) {
 
 	//日志输出到文件中
-	filePath := GetLogPath() + "/tank-" + time.Now().Local().Format("2006-01-02") + ".log"
+	filePath := CONFIG.LogPath + "/tank-" + time.Now().Local().Format("2006-01-02") + ".log"
 	f, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		fmt.Errorf("error opening file: %v", err)

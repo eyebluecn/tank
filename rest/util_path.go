@@ -50,45 +50,23 @@ func GetHtmlPath() string {
 	return filePath
 }
 
-//获取上传文件存放的位置。
-//例如：C:\Users\lishuang\AppData\Local\Temp/matter
-func GetFilePath() string {
+//如果文件夹存在就不管，不存在就创建。 例如：/var/www/matter
+func MakeDirAll(dirPath string) string {
 
-	homePath := GetHomePath()
-	filePath := homePath + "/matter"
-	exists, err := PathExists(filePath)
+	exists, err := PathExists(dirPath)
 	if err != nil {
-		panic("判断上传文件是否存在时出错！")
+		panic("判断文件是否存在时出错！")
 	}
 	if !exists {
-		err = os.MkdirAll(filePath, 0777)
+		err = os.MkdirAll(dirPath, 0666)
 		if err != nil {
-			panic("创建上传文件夹时出错！")
+			panic("创建文件夹时出错！")
 		}
 	}
 
-	return filePath
+	return dirPath
 }
 
-//获取日志存放的位置。
-//例如：C:\Users\lishuang\AppData\Local\Temp/log
-func GetLogPath() string {
-
-	homePath := GetHomePath()
-	filePath := homePath + "/log"
-	exists, err := PathExists(filePath)
-	if err != nil {
-		panic("判断日志文件夹是否存在时出错！")
-	}
-	if !exists {
-		err = os.MkdirAll(filePath, 0666)
-		if err != nil {
-			panic("创建日志文件夹时出错！")
-		}
-	}
-
-	return filePath
-}
 
 //获取配置文件存放的位置
 //例如：C:\Users\lishuang\AppData\Local\Temp/conf
@@ -119,7 +97,7 @@ func GetUserFilePath(username string) (string, string) {
 	//毫秒时间戳
 	timestamp := now.UnixNano() / 1e6
 
-	filePath := GetFilePath()
+	filePath := CONFIG.MatterPath
 	absolutePath := fmt.Sprintf("%s/%s/%s/%d", filePath, username, datePath, timestamp)
 	relativePath := fmt.Sprintf("/%s/%s/%d", username, datePath, timestamp)
 

@@ -41,6 +41,10 @@ var (
 		ServerPort: 6010,
 		//将日志输出到控制台。
 		LogToConsole: true,
+		//日志的保存路径，如果没有指定，默认在根目录下的log文件夹中
+		LogPath: "",
+		//上传的文件路径，如果没有指定，默认在根目录下的matter文件夹中
+		MatterPath: "",
 		//mysql相关配置。
 		//数据库端口
 		MysqlPort: 3306,
@@ -70,6 +74,11 @@ type Config struct {
 
 	//将日志输出到控制台。
 	LogToConsole bool
+
+	//日志的保存路径，要求不以/结尾。如果没有指定，默认在根目录下的log文件夹中。eg: /var/log/tank
+	LogPath string
+	//上传的文件路径，要求不以/结尾。如果没有指定，默认在根目录下的matter文件夹中。eg: /var/www/matter
+	MatterPath string
 
 	//mysql相关配置。
 	//数据库端口
@@ -175,6 +184,16 @@ func LoadConfigFromEnvironment() {
 		}
 	}
 
+	tmpLogPath := os.Getenv("TANK_LOG_PATH")
+	if tmpLogPath != "" {
+		CONFIG.LogPath = tmpLogPath
+	}
+
+	tmpMatterPath := os.Getenv("TANK_MATTER_PATH")
+	if tmpMatterPath != "" {
+		CONFIG.MatterPath = tmpMatterPath
+	}
+
 	tmpMysqlPort := os.Getenv("TANK_MYSQL_PORT")
 	if tmpMysqlPort != "" {
 		i, e := strconv.Atoi(tmpMysqlPort)
@@ -226,6 +245,10 @@ func LoadConfigFromArguments() {
 	//系统端口号
 	LogToConsolePtr := flag.Bool("LogToConsole", CONFIG.LogToConsole, "write log to console. for debug.")
 
+	//日志和上传文件的路径
+	LogPathPtr := flag.String("LogPath", CONFIG.LogPath, "log path")
+	MatterPathPtr := flag.String("MatterPath", CONFIG.MatterPath, "matter path")
+
 	//mysql相关配置。
 	MysqlPortPtr := flag.Int("MysqlPort", CONFIG.MysqlPort, "mysql port")
 	MysqlHostPtr := flag.String("MysqlHost", CONFIG.MysqlHost, "mysql host")
@@ -247,6 +270,14 @@ func LoadConfigFromArguments() {
 
 	if *LogToConsolePtr != CONFIG.LogToConsole {
 		CONFIG.LogToConsole = *LogToConsolePtr
+	}
+
+	if *LogPathPtr != CONFIG.LogPath {
+		CONFIG.LogPath = *LogPathPtr
+	}
+
+	if *MatterPathPtr != CONFIG.MatterPath {
+		CONFIG.MatterPath = *MatterPathPtr
 	}
 
 	if *MysqlPortPtr != CONFIG.MysqlPort {
@@ -294,6 +325,16 @@ func PrepareConfigs() {
 
 	//第三级. 从程序参数中读取配置项
 	LoadConfigFromArguments()
+
+	//对于日志路径和文件路径还需要进行特殊处理
+	if CONFIG.LogPath == "" {
+		CONFIG.LogPath = GetHomePath() + "/log"
+	}
+	MakeDirAll(CONFIG.LogPath)
+	if CONFIG.MatterPath == "" {
+		CONFIG.MatterPath = GetHomePath() + "/matter"
+	}
+	MakeDirAll(CONFIG.MatterPath)
 
 	//验证配置项的正确性
 	CONFIG.validate()
