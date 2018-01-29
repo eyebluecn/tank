@@ -2,7 +2,7 @@
   "ServerPort": 6010,
   "LogToConsole": false,
   "MysqlPort": 3306,
-  "MysqlHost": "db",
+  "MysqlHost": "127.0.0.1",
   "MysqlSchema": "tank",
   "MysqlUserName": "tank",
   "MysqlPassword": "tank123",

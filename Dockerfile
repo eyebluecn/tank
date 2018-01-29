@@ -11,10 +11,17 @@ WORKDIR $GOPATH/src/tank
 COPY . $GOPATH/src/tank
 
 # 开始编译
-RUN ./build/pack/build.sh
+RUN git clone https://github.com/eyebluecn/golang.org.git $GOPATH/src/golang.org \
+    && go get github.com/disintegration/imaging \
+    && go get github.com/json-iterator/go \
+    && go get github.com/go-sql-driver/mysql \
+    && go get github.com/jinzhu/gorm \
+    && go get github.com/nu7hatch/gouuid \
+    && go install tank \
+    && cp -r $GOPATH/src/tank/build/* $GOPATH/bin
 
 # 暴露6010端口
 EXPOSE 6010
 
 # tank作为执行文件
-ENTRYPOINT ["/go/src/tank/dist/tank-1.0.2/tank"]
+ENTRYPOINT ["/go/bin/tank"]
