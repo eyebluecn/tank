@@ -29,6 +29,9 @@ services:
        TANK_ADMIN_USERNAME: lish
        TANK_ADMIN_EMAIL: lish@tank.eyeblue.cn
        TANK_ADMIN_PASSWORD: 123456
+      volumes:
+        - ~/data/log:/data/log
+        - ~/data/matter:/data/matter
 
 volumes:
     db_data:
