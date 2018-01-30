@@ -64,6 +64,7 @@
 蓝眼云盘在运行时依赖`mysql`数据库，因此最好的方式是使用`docker-compose`来运行，如果你对`docker-compose`不熟悉，可以参考这篇文章：[《Docker Compose 项目》](https://yeasy.gitbooks.io/docker_practice/content/compose/introduction.html) 
 
 ** 1.准备 docker-compose.yml 文件 **
+
 `docker-compose.yml`描述了镜像启动的数据卷，环境变量，启动方式，依赖项等。该文件位于项目的根目录下，内容如下：
 ```shell
 #docker-compose版本，这里的3不要动
@@ -122,6 +123,7 @@ services:
 ```
 
 ** 2.运行项目 **
+
 首先保证当前目录是`docker-compose.yml`所在的目录，然后执行以下指令即可运行蓝眼云盘：
 ```shell
 $ docker-compose up -d
