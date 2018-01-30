@@ -20,9 +20,14 @@ set VERSION_NAME=tank-1.0.2
 
 cd %GOPATH%
 
-echo golang.org . Please download from: https://github.com/eyebluecn/golang.org and put in the directory with same level of github.com
+@rem echo golang.org . Please download from: https://github.com/eyebluecn/golang.org and put in the directory with same level of github.com
 @rem echo go get golang.org/x
 @rem go get golang.org/x
+echo git clone https://github.com/eyebluecn/golang.org.git %golangOrgFolder%
+set golangOrgFolder=%GOPATH%\src\golang.org
+if not exist %golangOrgFolder% (
+    git clone https://github.com/eyebluecn/golang.org.git %golangOrgFolder%
+)
 
 @rem resize image
 echo go get github.com/disintegration/imaging

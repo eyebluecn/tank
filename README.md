@@ -2,21 +2,26 @@
 
 # 蓝眼云盘
 
-##### [在线Demo](http://tank.eyeblue.cn) (体验账号： demo@tank.eyeblue.cn 密码：123456)
+[在线Demo](https://tank.eyeblue.cn) (体验账号： demo@tank.eyeblue.cn 密码：123456)
 
-##### [配套前端tank-front](https://github.com/eyebluecn/tank-front)
+![](https://tank.eyeblue.cn/api/alien/download/df372827-ba56-415e-42d1-0e3a34fdb2a1/github20x20.png "github20x20.png") [后端tank地址](https://github.com/eyebluecn/tank)
 
+![](https://tank.eyeblue.cn/api/alien/download/df372827-ba56-415e-42d1-0e3a34fdb2a1/github20x20.png "github20x20.png") [前端tank-front地址](https://github.com/eyebluecn/tank-front)
 
 ### 简介
-蓝眼云盘是 [蓝眼系列开源软件](https://github.com/eyebluecn) 之一，也是蓝眼系列其他软件的基础服务软件。蓝眼云盘具有以下几大特色：
+蓝眼云盘是 [蓝眼系列开源软件](https://github.com/eyebluecn) 之一，也是蓝眼系列其他软件的基础服务软件。蓝眼博客具有以下几大特色：
 
-**1. 软件体积小，跨平台，运行简单**
+**1. 支持docker**
+
+- 蓝眼云盘的docker镜像已经发布到了Docker Hub，可以一行指令运行。
+
+**2. 软件体积小，跨平台，运行简单**
 
 - 蓝眼云盘[安装包](https://github.com/eyebluecn/tank/releases) 6M左右，在`windows`  `linux`  `mac OS`操作系统中均可安装运行；
 
 - 蓝眼云盘为绿色软件，将安装包解压缩，修改配置文件后即可一行命令立即运行。
 
-**2. 使用方便，核心功能齐全**
+**3. 使用方便，核心功能齐全**
 
 - 蓝眼云盘主要支持pc web端，同时手机web也具有不错的响应性支持。
 
@@ -24,13 +29,15 @@
 
 - 蓝眼云盘提供能账号管理系统，超级管理员可以管理用户，查看用户文件，普通用户只能查看自己的文件，修改自己的资料。上面提供的体验账号就是一个普通用户的账号。
 
-**3. 支持接口编程**
+**4. 支持接口编程**
 
 - 蓝眼云盘提供了[编程接口](https://github.com/eyebluecn/tank/blob/master/build/doc/alien_zh.md)，实现了云存储（如：[七牛云](https://www.qiniu.com)，[阿里云OSS](https://www.aliyun.com/product/oss)）的核心功能，可以使用编程接口上传文件，作为其他网站、系统、app的资源存储器。可以在下载图片时对图片做缩放裁剪处理，可以有效地节省客户端流量。
 
-- 蓝眼系列开源软件之二的[《蓝眼博客》](https://github.com/eyebluecn/blog)正是使用蓝眼云盘作为第三方资源存储器。蓝眼博客中的所有图片，附件均是存储在蓝眼云盘中。
+- 蓝眼系列开源软件之二的[《蓝眼博客》](https://github.com/eyebluecn/blog)正是使用蓝眼博客作为第三方资源存储器。蓝眼博客中的所有图片，附件均是存储在蓝眼云盘中。
 
-**4. 前后端分离，文档丰富**
+**5. 前后端分离，文档丰富**
+
+- 项目后端使用golang开发，前端使用vue套件开发。
 
 - 蓝眼云盘有详细的[后台api文档](https://github.com/eyebluecn/tank/blob/master/build/doc/api_zh.md)，对于学习前端的童鞋而言可以快速部署一个正式而又具有丰富接口的后端供学习使用。
 
@@ -52,19 +59,100 @@
 
 ![](https://raw.githubusercontent.com/eyebluecn/tank/master/build/doc/img/mobile.png)
 
-### 使用Docker 安装
+### Docker方式运行
 
-** a) 下载文件 `docker-compose.yml` **
+蓝眼云盘在运行时依赖`mysql`数据库，因此最好的方式是使用`docker-compose`来运行，如果你对`docker-compose`不熟悉，可以参考这篇文章：[《Docker Compose 项目》](https://yeasy.gitbooks.io/docker_practice/content/compose/introduction.html) 
 
-`docker-compose.yml`内容如下：
+** 1.准备 docker-compose.yml 文件 **
+`docker-compose.yml`描述了镜像启动的数据卷，环境变量，启动方式，依赖项等。该文件位于项目的根目录下，内容如下：
+```shell
+#docker-compose版本，这里的3不要动
+version: "3"
+services:
+
+   # 数据库的镜像信息
+   # 使用mysql:5.7的镜像
+   db:
+     image: mysql:5.7
+     volumes:
+       # 数据库文件存放在宿主机的`~/data/mysql`位置，如果宿主机目录不存在，则会自动创建
+       - ~/data/mysql:/var/lib/mysql
+     # 如果启动失败，则总是会重启。因为镜像有依赖的情况，不停重启可以保证依赖项启动成功后自己再运行
+     restart: always
+     environment:
+       # 指定root密码为`tank123`，并且创建一个新数据库`tank`，同时用户名和密码为`tank` `tank123`
+       MYSQL_ROOT_PASSWORD: tank123
+       MYSQL_DATABASE: tank
+       MYSQL_USER: tank
+       MYSQL_PASSWORD: tank123
+
+   # 蓝眼云盘的镜像信息
+   # 依赖 mysql:5.7 的镜像
+   tank:
+     image: eyeblue/tank:1.0.2
+     depends_on:
+       - db
+     ports:
+       # 端口映射关系，宿主机端口:镜像端口
+       - "6010:6010"
+     # 如果启动失败，则总是会重启。因为镜像有依赖的情况，不停重启可以保证依赖项启动成功后自己再运行
+     restart: always
+     environment:
+       # mysql的端口
+       TANK_MYSQL_PORT: 3306
+       # Mysql的主机，和services的第一个节点一致。
+       TANK_MYSQL_HOST: db
+       # 数据库
+       TANK_MYSQL_SCHEMA: tank
+       # 数据库的用户名
+       TANK_MYSQL_USERNAME: tank
+       # 数据库的密码
+       TANK_MYSQL_PASSWORD: tank123
+       # 超级管理员的昵称。只能是英文或数字
+       TANK_ADMIN_USERNAME: admin
+       # 超级管理员邮箱，作为登录账号
+       TANK_ADMIN_EMAIL: admin@tank.eyeblue.cn
+       # 超级管理员密码，作为登录密码
+       TANK_ADMIN_PASSWORD: 123456
+     volumes:
+       # 日志文件存放在宿主机的`~/data/tank/log`位置，如果宿主机目录不存在，则会自动创建
+       - ~/data/tank/log:/data/log
+       # 上传文件存放在宿主机的`~/data/tank/matter`位置，如果宿主机目录不存在，则会自动创建
+       - ~/data/tank/matter:/data/matter
 ```
 
+** 2.运行项目 **
+首先保证当前目录是`docker-compose.yml`所在的目录，然后执行以下指令即可运行蓝眼云盘：
+```shell
+$ docker-compose up -d
 ```
 
-** b)  `docker-compose.yml` **
+** 3.验证 **
 
+由于数据库启动需要一定的时间，因此大约20s后，打开浏览器访问`http://127.0.0.1:6010`，如果看到登录界面则表示运行成功。
 
-### 安装
+** 4.停止项目**
+
+方法一：使用以下命令来停止蓝眼云盘
+``` shell
+$ docker-compose stop
+```
+
+方法二：当然你也可以用停止容器的方式来停止蓝眼云盘
+``` shell
+$ docker container ls
+
+CONTAINER ID        IMAGE                COMMAND                  CREATED             STATUS              PORTS                    NAMES
+f5f64735fc53        eyeblue/tank:1.0.2   "/go/bin/tank"           20 minutes ago      Up 13 seconds       0.0.0.0:6010->6010/tcp   tank_tank_1
+3a859cad3e7e        mysql:5.7            "docker-entrypoint.s…"   20 minutes ago      Up 14 seconds       3306/tcp                 tank_db_1
+
+$ docker container stop f5
+$ docker container stop 3a
+```
+
+如果你比较关心如何使用docker来构建蓝眼云盘，请参考 [《Docker 化你的开源项目》](https://blog.eyeblue.cn/home/article/510f9316-9ca1-40fe-b1b3-5285505a527d) 
+
+### 常规安装
 
 ** a) 准备工作 **
 
@@ -89,7 +177,7 @@
   //Mysql数据库名称
   "MysqlSchema": "tank",
   //Mysql用户名，建议为蓝眼云盘创建一个用户，不建议使用root
-  "MysqlUsername": "tank",
+  "MysqlUserName": "tank",
   //Mysql密码
   "MysqlPassword": "tank123",
   //超级管理员用户名，只能是字母和数字
@@ -134,7 +222,7 @@ cd 应用目录路径/service
 
 
 **前端项目打包**
-1. clone ![](http://tank.eyeblue.cn/api/alien/download/df372827-ba56-415e-42d1-0e3a34fdb2a1/github20x20.png "github20x20.png") [tank-front](https://github.com/eyebluecn/tank-front)
+1. clone ![](https://tank.eyeblue.cn/api/alien/download/df372827-ba56-415e-42d1-0e3a34fdb2a1/github20x20.png "github20x20.png") [tank-front](https://github.com/eyebluecn/tank-front)
 
 2. 安装依赖项
 ```
@@ -148,26 +236,26 @@ npm run build
 
 **后端项目打包**
 
-1. clone ![](http://tank.eyeblue.cn/api/alien/download/df372827-ba56-415e-42d1-0e3a34fdb2a1/github20x20.png "github20x20.png") [tank](https://github.com/eyebluecn/tank)
+1. clone ![](https://tank.eyeblue.cn/api/alien/download/df372827-ba56-415e-42d1-0e3a34fdb2a1/github20x20.png "github20x20.png") [tank](https://github.com/eyebluecn/tank)
 
 2. 安装Golang，环境变量`GOPATH`配置到工程目录，建议工程目录结构如下：
 
 ```
-golang                                          #环境变量GOPATH所在路径
-├── bin                                         #编译生成的可执行文件目录
-├── pkg                                         #编译生成第三方库
-├── src                                         #golang工程源代码
-│   ├── github.com                              #来自github的第三方库
-│   ├── golang.org                              #来自golang.org的第三方库
-│   ├── tank                                    #clone下来的tank根目录
-│   │   ├── build                               #用来辅助打包的文件夹
-│   │   │   ├── conf                            #默认的配置文件
-│   │   │   ├── doc                             #文档
-│   │   │   ├── html                            #前端静态资源，从项目tank-front编译获得
-│   │   │   ├── pack                            #打包的脚本
-│   │   │   ├── service                         #将tank当作服务启动的脚本
-│   │   ├── dist                                #运行打包脚本后获得的安装包目录
-│   │   ├── rest                                #golang源代码
+golang                       #环境变量GOPATH所在路径
+├── bin                      #编译生成的可执行文件目录
+├── pkg                      #编译生成第三方库
+├── src                      #golang工程源代码
+│   ├── github.com           #来自github的第三方库
+│   ├── golang.org           #来自golang.org的第三方库
+│   ├── tank                 #clone下来的tank根目录
+│   │   ├── build            #用来辅助打包的文件夹
+│   │   │   ├── conf         #默认的配置文件
+│   │   │   ├── doc          #文档
+│   │   │   ├── html         #前端静态资源，从项目tank-front编译获得
+│   │   │   ├── pack         #打包的脚本
+│   │   │   ├── service      #将tank当作服务启动的脚本
+│   │   ├── dist             #运行打包脚本后获得的安装包目录
+│   │   ├── rest             #golang源代码
       
 ```
 
@@ -180,7 +268,7 @@ golang                                          #环境变量GOPATH所在路径
 - github.com/jinzhu/gorm
 - github.com/nu7hatch/gouuid
 
-其中`golang.org/x`国内无法下载，请从[这里](https://github.com/eyebluecn/golang.org)下载，并按上文推荐的目录结构放置。其余依赖项均可通过安装脚本自动下载。
+其中`golang.org/x`国内无法下载，默认会通过git clone 的方式从 [这里](https://github.com/eyebluecn/golang.org)下载。其余依赖项均会通过`go get`的方式下载。
 
 4. 打包
 
@@ -202,7 +290,9 @@ cd tank/build/pack/
 
 [蓝眼云盘编程接口](https://github.com/eyebluecn/tank/blob/master/build/doc/alien_zh.md)
 
-[快速使用Let's Encrypt开启个人网站的https](https://blog.eyeblue.cn/home/article/9f580b3f-5679-4a9d-be6f-4d9f0dd417af)
+[快速使用Let's Encrypt开启个人网站的https](https://blog.eyeblue.cn/home/article/9f580b3f-5679-4a9d-be6f-4d9f0dd417af) 
+
+ [Docker 化你的开源项目](https://blog.eyeblue.cn/home/article/510f9316-9ca1-40fe-b1b3-5285505a527d)  
 
 ### Contribution
 
