@@ -47,7 +47,7 @@ services:
        # 超级管理员密码，作为登录密码
        TANK_ADMIN_PASSWORD: 123456
      volumes:
-       # 日志文件存放在宿主机的`~/data/tank/log`位置，如果宿主机目录不存在，则会自动创建
-       - ~/data/tank/log:/data/log
-       # 上传文件存放在宿主机的`~/data/tank/matter`位置，如果宿主机目录不存在，则会自动创建
-       - ~/data/tank/matter:/data/matter
+       # 日志文件存放在宿主机的`~/data/eyeblue/tank/log`位置，如果宿主机目录不存在，则会自动创建
+       - ~/data/eyeblue/tank/log:/data/log
+       # 上传文件存放在宿主机的`~/data/eyeblue/tank/matter`位置，如果宿主机目录不存在，则会自动创建
+       - ~/data/eyeblue/tank/matter:/data/matter
