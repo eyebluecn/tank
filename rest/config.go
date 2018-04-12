@@ -20,7 +20,7 @@ const (
 	TABLE_PREFIX = "tank10_"
 
 	//当前版本
-	VERSION = "1.0.2"
+	VERSION = "1.0.3"
 )
 
 /*

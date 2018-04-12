@@ -1,13 +1,16 @@
-#docker-compose版本，这里的3不要动
-version: "3"
+#docker-compose版本，这里的2不要动
+version: "2"
 services:
 
    # 数据库的镜像信息
    # 使用mysql:5.7的镜像
    db:
      image: mysql:5.7
+     ports:
+      # 端口映射关系，宿主机端口:镜像端口
+      - "13306:3306"
      volumes:
-       # 数据库文件存放在宿主机的`~/data/mysql`位置，如果宿主机目录不存在，则会自动创建
+       # 数据库文件存放在宿主机的`~/data/mysql`位置，如果宿主机目录不存在，则会自动创建。这里最好不要使用相对路径。
        - ~/data/mysql:/var/lib/mysql
      # 如果启动失败，则总是会重启。因为镜像有依赖的情况，不停重启可以保证依赖项启动成功后自己再运行
      restart: always
@@ -21,7 +24,7 @@ services:
    # 蓝眼云盘的镜像信息
    # 依赖 mysql:5.7 的镜像
    tank:
-     image: eyeblue/tank:1.0.2
+     image: eyeblue/tank:1.0.3
      depends_on:
        - db
      ports:
@@ -47,7 +50,7 @@ services:
        # 超级管理员密码，作为登录密码
        TANK_ADMIN_PASSWORD: 123456
      volumes:
-       # 日志文件存放在宿主机的`~/data/eyeblue/tank/log`位置，如果宿主机目录不存在，则会自动创建
+       # 日志文件存放在宿主机的`~/data/eyeblue/tank/log`位置，如果宿主机目录不存在，则会自动创建。这里最好不要使用相对路径。
        - ~/data/eyeblue/tank/log:/data/log
-       # 上传文件存放在宿主机的`~/data/eyeblue/tank/matter`位置，如果宿主机目录不存在，则会自动创建
+       # 上传文件存放在宿主机的`~/data/eyeblue/tank/matter`位置，如果宿主机目录不存在，则会自动创建。这里最好不要使用相对路径。
        - ~/data/eyeblue/tank/matter:/data/matter

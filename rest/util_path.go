@@ -58,7 +58,7 @@ func MakeDirAll(dirPath string) string {
 		panic("判断文件是否存在时出错！")
 	}
 	if !exists {
-		err = os.MkdirAll(dirPath, 0666)
+		err = os.MkdirAll(dirPath, 0777)
 		if err != nil {
 			panic("创建文件夹时出错！")
 		}
@@ -66,7 +66,6 @@ func MakeDirAll(dirPath string) string {
 
 	return dirPath
 }
-
 
 //获取配置文件存放的位置
 //例如：C:\Users\lishuang\AppData\Local\Temp/conf
@@ -79,7 +78,7 @@ func GetConfPath() string {
 		panic("判断日志文件夹是否存在时出错！")
 	}
 	if !exists {
-		err = os.MkdirAll(filePath, 0666)
+		err = os.MkdirAll(filePath, 0777)
 		if err != nil {
 			panic("创建日志文件夹时出错！")
 		}
@@ -103,7 +102,7 @@ func GetUserFilePath(username string) (string, string) {
 
 	exists, err := PathExists(absolutePath)
 	if err != nil {
-		panic("判断上传文件是否存在时出错！")
+		panic("判断上传文件是否存在时出错！请检查文件夹 " + filePath + " 的访问权限。")
 	}
 	if !exists {
 		err = os.MkdirAll(absolutePath, 0777)

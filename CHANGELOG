@@ -21,6 +21,44 @@
 6. readme.md 修改 eyeblue/tank:1.0.2
     eyeblue/tank:x.x.x
 
+
+## 新版本发布流程
+1.docker版本的发布。[参考](https://blog.eyeblue.cn/home/article/510f9316-9ca1-40fe-b1b3-5285505a527d)
+
+```
+cd tank根目录
+# 停止旧版本，并删除旧版本
+docker container stop xxx
+docker container prune
+# 构建新版本 (最后的.不能少)
+docker build -t eyeblue/tank:x.x.x .
+# 本地测试
+docker-compose up -d
+# 没问题后，推送到远程
+docker push eyeblue/tank:x.x.x
+```
+
+2.linux版本的发布。
+
+a. 执行`src/tank/build/pack/build.sh`脚本
+b. 上传 tank-x.x.x.linux-amd64.tar.gz 到蓝眼云盘
+c. 在github上发布新版本。
+
+3.windows版本发布
+
+a. 执行`src/tank/build/pack/build.bat`脚本
+b. 上传 tank-x.x.x.windows-x86_64.zip 到蓝眼云盘
+c. 在github上发布新版本。
+
+
+
+2018-04-12
+tank-1.0.3
+1. 添加了多文件同时上传的功能.
+2. 开发情况下有可能上传的文件路径没有权限，添加了更多提示.
+
+
+
 2018-01-19
 tank-1.0.2
 1. 修复了下载时无法估算文件大小的bug，header头重添加了Content-Type. [#2](https://github.com/eyebluecn/tank/issues/2)
