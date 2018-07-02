@@ -116,7 +116,7 @@ func (this *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 			filePath = dir + "/index.html"
 			exists, _ = PathExists(filePath)
 			if !exists {
-				panic(fmt.Sprintf("404 not found:%s", requestURI))
+				panic(fmt.Sprintf("404 not found:%s", filePath))
 			}
 		}
 
