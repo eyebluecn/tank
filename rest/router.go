@@ -40,16 +40,28 @@ func (this *Router) GlobalPanicHandler(writer http.ResponseWriter, request *http
 
 		var webResult *WebResult = nil
 		if value, ok := err.(string); ok {
+			writer.WriteHeader(http.StatusBadRequest)
 			webResult = &WebResult{Code: RESULT_CODE_UTIL_EXCEPTION, Msg: value}
 		} else if value, ok := err.(int); ok {
+			writer.WriteHeader(http.StatusBadRequest)
 			webResult = ConstWebResult(value)
 		} else if value, ok := err.(*WebResult); ok {
+			writer.WriteHeader(http.StatusBadRequest)
 			webResult = value
 		} else if value, ok := err.(WebResult); ok {
+			writer.WriteHeader(http.StatusBadRequest)
 			webResult = &value
+		} else if value, ok := err.(*WebError); ok {
+			writer.WriteHeader(value.Code)
+			webResult = &WebResult{Code: RESULT_CODE_UTIL_EXCEPTION, Msg: value.Msg}
+		} else if value, ok := err.(WebError); ok {
+			writer.WriteHeader((&value).Code)
+			webResult = &WebResult{Code: RESULT_CODE_UTIL_EXCEPTION, Msg: (&value).Msg}
 		} else if value, ok := err.(error); ok {
+			writer.WriteHeader(http.StatusBadRequest)
 			webResult = &WebResult{Code: RESULT_CODE_UTIL_EXCEPTION, Msg: value.Error()}
 		} else {
+			writer.WriteHeader(http.StatusInternalServerError)
 			webResult = &WebResult{Code: RESULT_CODE_UTIL_EXCEPTION, Msg: "服务器未知错误"}
 		}
 
@@ -60,11 +72,6 @@ func (this *Router) GlobalPanicHandler(writer http.ResponseWriter, request *http
 		var json = jsoniter.ConfigCompatibleWithStandardLibrary
 		b, _ := json.Marshal(webResult)
 
-		if webResult.Code == RESULT_CODE_OK {
-			writer.WriteHeader(http.StatusOK)
-		} else {
-			writer.WriteHeader(http.StatusBadRequest)
-		}
 		fmt.Fprintf(writer, string(b))
 	}
 }
