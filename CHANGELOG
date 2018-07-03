@@ -15,10 +15,10 @@
 4. tank-front 修改 vuex/index.js
     versionName: 'x.x.x'
 
-5. docker-compose 修改 eyeblue/tank:1.0.2
+5. docker-compose 修改 eyeblue/tank:x.x.x
     eyeblue/tank:x.x.x
 
-6. readme.md 修改 eyeblue/tank:1.0.2
+6. readme.md 修改 eyeblue/tank:x.x.x
     eyeblue/tank:x.x.x
 
 
