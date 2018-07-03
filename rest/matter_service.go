@@ -167,7 +167,11 @@ func (this *MatterService) Upload(file multipart.File, user *User, puuid string,
 }
 
 //图片预处理功能。
-func (this *MatterService) ResizeImage(writer http.ResponseWriter, request *http.Request, matter *Matter, diskFile *os.File) {
+func (this *MatterService) ResizeImage(writer http.ResponseWriter, request *http.Request, matter *Matter) {
+
+	diskFile, err := os.Open(CONFIG.MatterPath + matter.Path)
+	this.PanicError(err)
+	defer diskFile.Close()
 
 	// 防止中文乱码
 	fileName := url.QueryEscape(matter.Name)
@@ -265,8 +269,35 @@ func (this *MatterService) ResizeImage(writer http.ResponseWriter, request *http
 
 }
 
+// httpRange specifies the byte range to be sent to the client.
+type httpRange struct {
+	start, length int64
+}
+
+func (r httpRange) contentRange(size int64) string {
+	return fmt.Sprintf("bytes %d-%d/%d", r.start, r.start+r.length-1, size)
+}
+
+func (r httpRange) mimeHeader(contentType string, size int64) textproto.MIMEHeader {
+	return textproto.MIMEHeader{
+		"Content-Range": {r.contentRange(size)},
+		"Content-Type":  {contentType},
+	}
+}
+
+// countingWriter counts how many bytes have been written to it.
+type countingWriter int64
+
+func (w *countingWriter) Write(p []byte) (n int, err error) {
+	*w += countingWriter(len(p))
+	return len(p), nil
+}
+
+
+
+
 //检查Last-Modified头。返回true: 请求已经完成了。（言下之意，文件没有修改过） 返回false：文件修改过。
-func checkLastModified(w http.ResponseWriter, r *http.Request, modifyTime time.Time) bool {
+func (this *MatterService) checkLastModified(w http.ResponseWriter, r *http.Request, modifyTime time.Time) bool {
 	if modifyTime.IsZero() {
 		return false
 	}
@@ -293,7 +324,7 @@ func checkLastModified(w http.ResponseWriter, r *http.Request, modifyTime time.T
 //
 // The return value is the effective request "Range" header to use and
 // whether this request is now considered done.
-func checkETag(w http.ResponseWriter, r *http.Request, modtime time.Time) (rangeReq string, done bool) {
+func (this *MatterService) checkETag(w http.ResponseWriter, r *http.Request, modtime time.Time) (rangeReq string, done bool) {
 	etag := w.Header().Get("Etag")
 	rangeReq = r.Header.Get("Range")
 
@@ -323,7 +354,7 @@ func checkETag(w http.ResponseWriter, r *http.Request, modtime time.Time) (range
 			return rangeReq, false
 		}
 
-		// TODO(bradfitz): non-GET/HEAD requests require more work:
+		// (bradfitz): non-GET/HEAD requests require more work:
 		// sending a different status code on matches, and
 		// also can't use weak cache validators (those with a "W/
 		// prefix).  But most users of ServeContent will be using
@@ -332,7 +363,7 @@ func checkETag(w http.ResponseWriter, r *http.Request, modtime time.Time) (range
 			return rangeReq, false
 		}
 
-		// TODO(bradfitz): deal with comma-separated or multiple-valued
+		// (bradfitz): deal with comma-separated or multiple-valued
 		// list of If-None-match values.  For now just handle the common
 		// case of a single item.
 		if inm == etag || inm == "*" {
@@ -346,24 +377,9 @@ func checkETag(w http.ResponseWriter, r *http.Request, modtime time.Time) (range
 	return rangeReq, false
 }
 
-// httpRange specifies the byte range to be sent to the client.
-type httpRange struct {
-	start, length int64
-}
-
-func (r httpRange) contentRange(size int64) string {
-	return fmt.Sprintf("bytes %d-%d/%d", r.start, r.start+r.length-1, size)
-}
-
-func (r httpRange) mimeHeader(contentType string, size int64) textproto.MIMEHeader {
-	return textproto.MIMEHeader{
-		"Content-Range": {r.contentRange(size)},
-		"Content-Type":  {contentType},
-	}
-}
 
 // parseRange parses a Range header string as per RFC 2616.
-func parseRange(s string, size int64) ([]httpRange, error) {
+func (this *MatterService) parseRange(s string, size int64) ([]httpRange, error) {
 	if s == "" {
 		return nil, nil // header not present
 	}
@@ -420,17 +436,10 @@ func parseRange(s string, size int64) ([]httpRange, error) {
 	return ranges, nil
 }
 
-// countingWriter counts how many bytes have been written to it.
-type countingWriter int64
-
-func (w *countingWriter) Write(p []byte) (n int, err error) {
-	*w += countingWriter(len(p))
-	return len(p), nil
-}
 
 // rangesMIMESize returns the number of bytes it takes to encode the
 // provided ranges as a multipart response.
-func rangesMIMESize(ranges []httpRange, contentType string, contentSize int64) (encSize int64) {
+func (this *MatterService) rangesMIMESize(ranges []httpRange, contentType string, contentSize int64) (encSize int64) {
 	var w countingWriter
 	mw := multipart.NewWriter(&w)
 	for _, ra := range ranges {
@@ -442,7 +451,7 @@ func rangesMIMESize(ranges []httpRange, contentType string, contentSize int64) (
 	return
 }
 
-func sumRangesSize(ranges []httpRange) (size int64) {
+func (this *MatterService) sumRangesSize(ranges []httpRange) (size int64) {
 	for _, ra := range ranges {
 		size += ra.length
 	}
@@ -450,20 +459,31 @@ func sumRangesSize(ranges []httpRange) (size int64) {
 }
 
 //文件下载功能。
-func (this *MatterService) DownloadFile(w http.ResponseWriter, r *http.Request, matter *Matter, content *os.File) {
+func (this *MatterService) DownloadFile(writer http.ResponseWriter, request *http.Request, matter *Matter) {
+
+	diskFile, err := os.Open(CONFIG.MatterPath + matter.Path)
+	this.PanicError(err)
+	defer diskFile.Close()
+
+	//如果是图片或者文本或者视频就直接打开。其余的一律以下载形式返回。
+	fileName := url.QueryEscape(matter.Name)
+	mimeType := GetMimeType(fileName)
+	if strings.Index(mimeType, "image") != 0 && strings.Index(mimeType, "text") != 0 && strings.Index(mimeType, "video") != 0 {
+		writer.Header().Set("content-disposition", "attachment; filename=\""+fileName+"\"")
+	}
 
 	//显示文件大小。
-	fileInfo, err := content.Stat()
+	fileInfo, err := diskFile.Stat()
 	if err != nil {
-		panic(err)
+		this.PanicWebError(err.Error(), http.StatusInternalServerError)
 	}
 
-	modtime := fileInfo.ModTime()
+	modifyTime := fileInfo.ModTime()
 
-	if checkLastModified(w, r, modtime) {
+	if this.checkLastModified(writer, request, modifyTime) {
 		return
 	}
-	rangeReq, done := checkETag(w, r, modtime)
+	rangeReq, done := this.checkETag(writer, request, modifyTime)
 	if done {
 		return
 	}
@@ -476,22 +496,22 @@ func (this *MatterService) DownloadFile(w http.ResponseWriter, r *http.Request, 
 
 	// If Content-Type isn't set, use the file's extension to find it, but
 	// if the Content-Type is unset explicitly, do not sniff the type.
-	ctypes, haveType := w.Header()["Content-Type"]
+	ctypes, haveType := writer.Header()["Content-Type"]
 	var ctype string
 	if !haveType {
 		ctype = mime.TypeByExtension(filepath.Ext(fileInfo.Name()))
 		if ctype == "" {
 			// read a chunk to decide between utf-8 text and binary
 			var buf [sniffLen]byte
-			n, _ := io.ReadFull(content, buf[:])
+			n, _ := io.ReadFull(diskFile, buf[:])
 			ctype = http.DetectContentType(buf[:n])
-			_, err := content.Seek(0, os.SEEK_SET) // rewind to output whole file
+			_, err := diskFile.Seek(0, os.SEEK_SET) // rewind to output whole file
 			if err != nil {
 				this.PanicWebError("无法准确定位文件", http.StatusInternalServerError)
 				return
 			}
 		}
-		w.Header().Set("Content-Type", ctype)
+		writer.Header().Set("Content-Type", ctype)
 	} else if len(ctypes) > 0 {
 		ctype = ctypes[0]
 	}
@@ -500,15 +520,15 @@ func (this *MatterService) DownloadFile(w http.ResponseWriter, r *http.Request, 
 
 	// handle Content-Range header.
 	sendSize := size
-	var sendContent io.Reader = content
+	var sendContent io.Reader = diskFile
 	if size >= 0 {
-		ranges, err := parseRange(rangeReq, size)
+		ranges, err := this.parseRange(rangeReq, size)
 		if err != nil {
 			panic("range header出错")
 			this.PanicWebError("range header error", http.StatusRequestedRangeNotSatisfiable)
 			return
 		}
-		if sumRangesSize(ranges) > size {
+		if this.sumRangesSize(ranges) > size {
 			// The total number of bytes in all the ranges
 			// is larger than the size of the file by
 			// itself, so this is probably an attack, or a
@@ -529,20 +549,20 @@ func (this *MatterService) DownloadFile(w http.ResponseWriter, r *http.Request, 
 			// A response to a request for a single range MUST NOT
 			// be sent using the multipart/byteranges media type."
 			ra := ranges[0]
-			if _, err := content.Seek(ra.start, os.SEEK_SET); err != nil {
+			if _, err := diskFile.Seek(ra.start, io.SeekStart); err != nil {
 				this.PanicWebError(err.Error(), http.StatusRequestedRangeNotSatisfiable)
 				return
 			}
 			sendSize = ra.length
 			code = http.StatusPartialContent
-			w.Header().Set("Content-Range", ra.contentRange(size))
+			writer.Header().Set("Content-Range", ra.contentRange(size))
 		case len(ranges) > 1:
-			sendSize = rangesMIMESize(ranges, ctype, size)
+			sendSize = this.rangesMIMESize(ranges, ctype, size)
 			code = http.StatusPartialContent
 
 			pr, pw := io.Pipe()
 			mw := multipart.NewWriter(pw)
-			w.Header().Set("Content-Type", "multipart/byteranges; boundary="+mw.Boundary())
+			writer.Header().Set("Content-Type", "multipart/byteranges; boundary="+mw.Boundary())
 			sendContent = pr
 			defer pr.Close() // cause writing goroutine to fail and exit if CopyN doesn't finish.
 			go func() {
@@ -552,11 +572,11 @@ func (this *MatterService) DownloadFile(w http.ResponseWriter, r *http.Request, 
 						pw.CloseWithError(err)
 						return
 					}
-					if _, err := content.Seek(ra.start, os.SEEK_SET); err != nil {
+					if _, err := diskFile.Seek(ra.start, io.SeekStart); err != nil {
 						pw.CloseWithError(err)
 						return
 					}
-					if _, err := io.CopyN(part, content, ra.length); err != nil {
+					if _, err := io.CopyN(part, diskFile, ra.length); err != nil {
 						pw.CloseWithError(err)
 						return
 					}
@@ -566,16 +586,16 @@ func (this *MatterService) DownloadFile(w http.ResponseWriter, r *http.Request, 
 			}()
 		}
 
-		w.Header().Set("Accept-Ranges", "bytes")
-		if w.Header().Get("Content-Encoding") == "" {
-			w.Header().Set("Content-Length", strconv.FormatInt(sendSize, 10))
+		writer.Header().Set("Accept-Ranges", "bytes")
+		if writer.Header().Get("Content-Encoding") == "" {
+			writer.Header().Set("Content-Length", strconv.FormatInt(sendSize, 10))
 		}
 	}
 
-	w.WriteHeader(code)
+	writer.WriteHeader(code)
 
-	if r.Method != "HEAD" {
-		io.CopyN(w, sendContent, sendSize)
+	if request.Method != "HEAD" {
+		io.CopyN(writer, sendContent, sendSize)
 	}
 
 }

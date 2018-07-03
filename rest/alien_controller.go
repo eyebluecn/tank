@@ -3,12 +3,9 @@ package rest
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"regexp"
 	"strconv"
 	"time"
-	"strings"
-	"net/url"
 )
 
 type AlienController struct {
@@ -343,52 +340,12 @@ func (this *AlienController) Download(writer http.ResponseWriter, request *http.
 		}
 	}
 
-	diskFile, err := os.Open(CONFIG.MatterPath + matter.Path)
-	this.PanicError(err)
-	defer diskFile.Close()
-
 	//对图片做缩放处理。
 	imageProcess := request.FormValue("imageProcess")
 	if imageProcess == "resize" {
-		this.matterService.ResizeImage(writer, request, matter, diskFile)
+		this.matterService.ResizeImage(writer, request, matter)
 	} else {
-
-		//如果是图片或者文本或者视频就直接打开。其余的一律以下载形式返回。
-		fileName := url.QueryEscape(matter.Name)
-		mimeType := GetMimeType(fileName)
-		if strings.Index(mimeType, "image") != 0 && strings.Index(mimeType, "text") != 0 && strings.Index(mimeType, "video") != 0 {
-			writer.Header().Set("content-disposition", "attachment; filename=\""+fileName+"\"")
-		}
-
-		this.matterService.DownloadFile(writer, request, matter, diskFile)
-
-		//显示文件大小。
-		//fileInfo, err := diskFile.Stat()
-		//if err != nil {
-		//	panic(err)
-		//}
-		//
-		//contentLength := strconv.Itoa(int(fileInfo.Size()))
-		//writer.Header().Set("Content-Length", contentLength)
-		//
-		////如果是视频，支持断点下载。
-		//if strings.Index(mimeType, "video") == 0 {
-		//
-		//	if request.Header.Get("Range") == "" {
-		//		writer.Header().Set("Accept-Ranges", "bytes")
-		//	} else {
-		//		writer.Header().Set("Accept-Ranges", fmt.Sprintf("bytes 0-%s/%s", contentLength, contentLength))
-		//	}
-		//	writer.Header().Set("Connection", "keep-alive")
-		//	//writer.Header().Set("ETag", "5b376c95-355866")
-		//	writer.Header().Set("Last-Modified", "Sat, 30 Jun 2018 11:42:13 GMT")
-		//	//writer.Header().Set("Server", "nginx/1.12.2")
-		//
-		//}
-		//
-		//_, err = io.Copy(writer, diskFile)
-		//this.PanicError(err)
-
+		this.matterService.DownloadFile(writer, request, matter)
 	}
 
 }
