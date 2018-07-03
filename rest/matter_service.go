@@ -204,7 +204,7 @@ func (this *MatterService) ResizeImage(writer http.ResponseWriter, request *http
 	imageResizeWStr := request.FormValue("imageResizeW")
 	var imageResizeW int
 	if imageResizeWStr != "" {
-		imageResizeW, err := strconv.Atoi(imageResizeWStr)
+		imageResizeW, err = strconv.Atoi(imageResizeWStr)
 		this.PanicError(err)
 		if imageResizeW < 1 || imageResizeW > 4096 {
 			panic("缩放尺寸不能超过4096")
@@ -213,7 +213,7 @@ func (this *MatterService) ResizeImage(writer http.ResponseWriter, request *http
 	imageResizeHStr := request.FormValue("imageResizeH")
 	var imageResizeH int
 	if imageResizeHStr != "" {
-		imageResizeH, err := strconv.Atoi(imageResizeHStr)
+		imageResizeH, err = strconv.Atoi(imageResizeHStr)
 		this.PanicError(err)
 		if imageResizeH < 1 || imageResizeH > 4096 {
 			panic("缩放尺寸不能超过4096")

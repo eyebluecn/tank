@@ -50,6 +50,9 @@ a. 执行`src/tank/build/pack/build.bat`脚本
 b. 上传 tank-x.x.x.windows-x86_64.zip 到蓝眼云盘
 c. 在github上发布新版本。
 
+2018-07-03
+tank-1.0.3
+1. 添加了文件分段功能，支持断点续传。
 
 
 2018-04-12
