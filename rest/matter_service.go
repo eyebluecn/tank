@@ -459,6 +459,7 @@ func (this *MatterService) sumRangesSize(ranges []httpRange) (size int64) {
 }
 
 //文件下载功能。
+//下载功能参考：https://github.com/Masterminds/go-fileserver
 func (this *MatterService) DownloadFile(writer http.ResponseWriter, request *http.Request, matter *Matter) {
 
 	diskFile, err := os.Open(CONFIG.MatterPath + matter.Path)
