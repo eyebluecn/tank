@@ -326,7 +326,7 @@ func (this *AlienController) Download(writer http.ResponseWriter, request *http.
 			}
 
 			//下载之后立即过期掉。
-			downloadToken.ExpireTime = time.Now()
+			downloadToken.ExpireTime = time.Now().AddDate(0, 0, 1);
 			this.downloadTokenDao.Save(downloadToken)
 
 		} else {
