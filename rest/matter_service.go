@@ -207,14 +207,10 @@ func (this *MatterService) Crawl(url string, filename string, user *User, puuid 
 
 	//使用临时文件存放
 	fmt.Printf("存放于%s", absolutePath)
-	size, err := this.httpDownloadFile(absolutePath+".tmp", url)
+	size, err := this.httpDownloadFile(absolutePath, url)
 	this.PanicError(err)
 
-	//完成了之后重命名
-	err = os.Rename(absolutePath+".tmp", absolutePath)
-	this.PanicError(err)
-
-	//TODO:判断用户自身上传大小的限制。
+	//判断用户自身上传大小的限制。
 	if user.SizeLimit >= 0 {
 		if size > user.SizeLimit {
 			panic("您最大只能上传" + HumanFileSize(user.SizeLimit) + "的文件")
