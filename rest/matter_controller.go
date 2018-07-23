@@ -46,6 +46,7 @@ func (this *MatterController) RegisterRoutes() map[string]func(writer http.Respo
 	//每个Controller需要主动注册自己的路由。
 	routeMap["/api/matter/create/directory"] = this.Wrap(this.CreateDirectory, USER_ROLE_USER)
 	routeMap["/api/matter/upload"] = this.Wrap(this.Upload, USER_ROLE_USER)
+	routeMap["/api/matter/crawl"] = this.Wrap(this.Crawl, USER_ROLE_USER)
 	routeMap["/api/matter/delete"] = this.Wrap(this.Delete, USER_ROLE_USER)
 	routeMap["/api/matter/delete/batch"] = this.Wrap(this.DeleteBatch, USER_ROLE_USER)
 	routeMap["/api/matter/rename"] = this.Wrap(this.Rename, USER_ROLE_USER)
@@ -265,6 +266,47 @@ func (this *MatterController) Upload(writer http.ResponseWriter, request *http.R
 	return this.Success(matter)
 }
 
+//从一个Url中去爬取资源
+func (this *MatterController) Crawl(writer http.ResponseWriter, request *http.Request) *WebResult {
+
+	userUuid := request.FormValue("userUuid")
+	user := this.checkUser(writer, request)
+	if user.Role != USER_ROLE_ADMINISTRATOR {
+		userUuid = user.Uuid
+	}
+	user = this.userDao.CheckByUuid(userUuid)
+
+	puuid := request.FormValue("puuid")
+	if puuid == "" {
+		return this.Error("puuid必填")
+	} else {
+		if puuid != "root" {
+			//找出上一级的文件夹。
+			this.matterDao.CheckByUuidAndUserUuid(puuid, userUuid)
+		}
+	}
+
+	privacy := false
+	privacyStr := request.FormValue("privacy")
+	if privacyStr == "true" {
+		privacy = true
+	}
+
+	url := request.FormValue("url")
+	if url == "" || (!strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://")) {
+		panic("资源url必填，并且应该以http://或者https://开头")
+	}
+
+	filename := request.FormValue("filename")
+	if filename == "" {
+		panic("文件名必传")
+	}
+
+	matter := this.matterService.Crawl(url, filename, user, puuid, privacy)
+
+	return this.Success(matter)
+}
+
 //删除一个文件
 func (this *MatterController) Delete(writer http.ResponseWriter, request *http.Request) *WebResult {
 
@@ -330,7 +372,6 @@ func (this *MatterController) Rename(writer http.ResponseWriter, request *http.R
 	if len(name) > 200 {
 		panic("name长度不能超过200")
 	}
-
 
 	//找出该文件或者文件夹
 	matter := this.matterDao.CheckByUuid(uuid)

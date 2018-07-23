@@ -166,6 +166,86 @@ func (this *MatterService) Upload(file multipart.File, user *User, puuid string,
 	return matter
 }
 
+// 从指定的url下载一个文件。参考：https://golangcode.com/download-a-file-from-a-url/
+func (this *MatterService) httpDownloadFile(filepath string, url string) (int64, error) {
+
+	// Create the file
+	out, err := os.Create(filepath)
+	if err != nil {
+		return 0, err
+	}
+	defer out.Close()
+
+	// Get the data
+	resp, err := http.Get(url)
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+
+	// Write the body to file
+	size, err := io.Copy(out, resp.Body)
+	if err != nil {
+		return 0, err
+	}
+
+	return size, nil
+}
+
+//去指定的url中爬文件
+func (this *MatterService) Crawl(url string, filename string, user *User, puuid string, privacy bool) *Matter {
+
+	//文件名不能太长。
+	if len(filename) > 200 {
+		panic("文件名不能超过200")
+	}
+
+	//获取文件应该存放在的物理路径的绝对路径和相对路径。
+	absolutePath, relativePath := GetUserFilePath(user.Username)
+	absolutePath = absolutePath + "/" + filename
+	relativePath = relativePath + "/" + filename
+
+	//使用临时文件存放
+	fmt.Printf("存放于%s", absolutePath)
+	size, err := this.httpDownloadFile(absolutePath+".tmp", url)
+	this.PanicError(err)
+
+	//完成了之后重命名
+	err = os.Rename(absolutePath+".tmp", absolutePath)
+	this.PanicError(err)
+
+	//TODO:判断用户自身上传大小的限制。
+	if user.SizeLimit >= 0 {
+		if size > user.SizeLimit {
+			panic("您最大只能上传" + HumanFileSize(user.SizeLimit) + "的文件")
+		}
+	}
+
+	//查找文件夹下面是否有同名文件。
+	matters := this.matterDao.ListByUserUuidAndPuuidAndDirAndName(user.Uuid, puuid, false, filename)
+	//如果有同名的文件，那么我们直接覆盖同名文件。
+	for _, dbFile := range matters {
+		this.matterDao.Delete(dbFile)
+	}
+
+	//将文件信息存入数据库中。
+	matter := &Matter{
+		Puuid:    puuid,
+		UserUuid: user.Uuid,
+		Dir:      false,
+		Alien:    false,
+		Name:     filename,
+		Md5:      "",
+		Size:     size,
+		Privacy:  privacy,
+		Path:     relativePath,
+	}
+
+	matter = this.matterDao.Create(matter)
+
+	return matter
+}
+
 //图片预处理功能。
 func (this *MatterService) ResizeImage(writer http.ResponseWriter, request *http.Request, matter *Matter) {
 
@@ -293,9 +373,6 @@ func (w *countingWriter) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
-
-
-
 //检查Last-Modified头。返回true: 请求已经完成了。（言下之意，文件没有修改过） 返回false：文件修改过。
 func (this *MatterService) checkLastModified(w http.ResponseWriter, r *http.Request, modifyTime time.Time) bool {
 	if modifyTime.IsZero() {
@@ -377,7 +454,6 @@ func (this *MatterService) checkETag(w http.ResponseWriter, r *http.Request, mod
 	return rangeReq, false
 }
 
-
 // parseRange parses a Range header string as per RFC 2616.
 func (this *MatterService) parseRange(s string, size int64) ([]httpRange, error) {
 	if s == "" {
@@ -435,7 +511,6 @@ func (this *MatterService) parseRange(s string, size int64) ([]httpRange, error)
 	}
 	return ranges, nil
 }
-
 
 // rangesMIMESize returns the number of bytes it takes to encode the
 // provided ranges as a multipart response.
