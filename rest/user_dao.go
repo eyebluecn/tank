@@ -45,6 +45,10 @@ func (this *UserDao) FindByUuid(uuid string) *User {
 //按照Id查询用户,找不到抛panic
 func (this *UserDao) CheckByUuid(uuid string) *User {
 
+	if uuid == "" {
+		panic("uuid必须指定")
+	}
+
 	// Read
 	var user *User = &User{}
 	db := this.context.DB.Where(&User{Base: Base{Uuid: uuid}}).First(user)

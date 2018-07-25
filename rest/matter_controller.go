@@ -273,7 +273,12 @@ func (this *MatterController) Crawl(writer http.ResponseWriter, request *http.Re
 	user := this.checkUser(writer, request)
 	if user.Role != USER_ROLE_ADMINISTRATOR {
 		userUuid = user.Uuid
+	} else {
+		if userUuid == "" {
+			userUuid = user.Uuid
+		}
 	}
+
 	user = this.userDao.CheckByUuid(userUuid)
 
 	puuid := request.FormValue("puuid")
