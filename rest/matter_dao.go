@@ -228,7 +228,9 @@ func (this *MatterDao) Delete(matter *Matter) {
 		//删除文件
 		err := os.Remove(CONFIG.MatterPath + matter.Path)
 
-		LogError(fmt.Sprintf("删除磁盘上的文件出错，不做任何处理"))
+		if err != nil {
+			LogError(fmt.Sprintf("删除磁盘上的文件出错，不做任何处理"))
+		}
 
 		this.PanicError(err)
 
