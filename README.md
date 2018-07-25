@@ -90,7 +90,7 @@ services:
    # 蓝眼云盘的镜像信息
    # 依赖 mysql:5.7 的镜像
    tank:
-     image: eyeblue/tank:1.0.4
+     image: eyeblue/tank:1.0.5
      depends_on:
        - db
      ports:
@@ -145,7 +145,7 @@ $ docker-compose stop
 $ docker container ls
 
 CONTAINER ID        IMAGE                COMMAND                  CREATED             STATUS              PORTS                    NAMES
-f5f64735fc53        eyeblue/tank:1.0.4   "/go/bin/tank"           20 minutes ago      Up 13 seconds       0.0.0.0:6010->6010/tcp   tank_tank_1
+f5f64735fc53        eyeblue/tank:1.0.5   "/go/bin/tank"           20 minutes ago      Up 13 seconds       0.0.0.0:6010->6010/tcp   tank_tank_1
 3a859cad3e7e        mysql:5.7            "docker-entrypoint.s…"   20 minutes ago      Up 14 seconds       3306/tcp                 tank_db_1
 
 $ docker container stop f5

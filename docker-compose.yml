@@ -24,7 +24,7 @@ services:
    # 蓝眼云盘的镜像信息
    # 依赖 mysql:5.7 的镜像
    tank:
-     image: eyeblue/tank:1.0.3
+     image: eyeblue/tank:1.0.5
      depends_on:
        - db
      ports:

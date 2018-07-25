@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strconv"
 	"time"
+	"strings"
 )
 
 type AlienController struct {
@@ -52,6 +53,7 @@ func (this *AlienController) RegisterRoutes() map[string]func(writer http.Respon
 	routeMap["/api/alien/fetch/download/token"] = this.Wrap(this.FetchDownloadToken, USER_ROLE_GUEST)
 	routeMap["/api/alien/confirm"] = this.Wrap(this.Confirm, USER_ROLE_GUEST)
 	routeMap["/api/alien/upload"] = this.Wrap(this.Upload, USER_ROLE_GUEST)
+	routeMap["/api/alien/crawl"] = this.Wrap(this.Crawl, USER_ROLE_GUEST)
 
 	return routeMap
 }
@@ -235,6 +237,45 @@ func (this *AlienController) Upload(writer http.ResponseWriter, request *http.Re
 	}
 
 	matter := this.matterService.Upload(file, user, uploadToken.FolderUuid, uploadToken.Filename, uploadToken.Privacy, true)
+
+	//更新这个uploadToken的信息.
+	uploadToken.ExpireTime = time.Now()
+	this.uploadTokenDao.Save(uploadToken)
+
+	return this.Success(matter)
+}
+
+
+//给一个指定的url，从该url中去拉取文件回来。
+func (this *AlienController) Crawl(writer http.ResponseWriter, request *http.Request) *WebResult {
+	//允许跨域请求。
+	this.allowCORS(writer)
+	if request.Method == "OPTIONS" {
+		return this.Success("OK")
+	}
+
+	uploadTokenUuid := request.FormValue("uploadTokenUuid")
+	if uploadTokenUuid == "" {
+		panic("uploadTokenUuid必填")
+	}
+
+	uploadToken := this.uploadTokenDao.FindByUuid(uploadTokenUuid)
+	if uploadToken == nil {
+		panic("uploadTokenUuid无效")
+	}
+
+	if uploadToken.ExpireTime.Before(time.Now()) {
+		panic("uploadToken已失效")
+	}
+
+	user := this.userDao.CheckByUuid(uploadToken.UserUuid)
+
+	url := request.FormValue("url")
+	if url == "" || (!strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://")) {
+		panic("资源url必填，并且应该以http://或者https://开头")
+	}
+
+	matter := this.matterService.Crawl(url, uploadToken.Filename, user, uploadToken.FolderUuid, uploadToken.Privacy)
 
 	//更新这个uploadToken的信息.
 	uploadToken.ExpireTime = time.Now()
