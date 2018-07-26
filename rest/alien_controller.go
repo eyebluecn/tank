@@ -53,7 +53,8 @@ func (this *AlienController) RegisterRoutes() map[string]func(writer http.Respon
 	routeMap["/api/alien/fetch/download/token"] = this.Wrap(this.FetchDownloadToken, USER_ROLE_GUEST)
 	routeMap["/api/alien/confirm"] = this.Wrap(this.Confirm, USER_ROLE_GUEST)
 	routeMap["/api/alien/upload"] = this.Wrap(this.Upload, USER_ROLE_GUEST)
-	routeMap["/api/alien/crawl"] = this.Wrap(this.Crawl, USER_ROLE_GUEST)
+	routeMap["/api/alien/crawl/token"] = this.Wrap(this.CrawlToken, USER_ROLE_GUEST)
+	routeMap["/api/alien/crawl/direct"] = this.Wrap(this.CrawlDirect, USER_ROLE_GUEST)
 
 	return routeMap
 }
@@ -245,9 +246,8 @@ func (this *AlienController) Upload(writer http.ResponseWriter, request *http.Re
 	return this.Success(matter)
 }
 
-
-//给一个指定的url，从该url中去拉取文件回来。
-func (this *AlienController) Crawl(writer http.ResponseWriter, request *http.Request) *WebResult {
+//给一个指定的url，从该url中去拉取文件回来。此处采用uploadToken的模式。
+func (this *AlienController) CrawlToken(writer http.ResponseWriter, request *http.Request) *WebResult {
 	//允许跨域请求。
 	this.allowCORS(writer)
 	if request.Method == "OPTIONS" {
@@ -283,6 +283,49 @@ func (this *AlienController) Crawl(writer http.ResponseWriter, request *http.Req
 
 	return this.Success(matter)
 }
+
+//通过一个url直接上传，无需借助uploadToken.
+func (this *AlienController) CrawlDirect(writer http.ResponseWriter, request *http.Request) *WebResult {
+
+	//文件名。
+	filename := request.FormValue("filename")
+	if filename == "" {
+		panic("文件名必填")
+	} else if m, _ := regexp.MatchString(`[<>|*?/\\]`, filename); m {
+		panic(fmt.Sprintf(`【%s】不符合要求，文件名中不能包含以下特殊符号：< > | * ? / \`, filename))
+	}
+
+	url := request.FormValue("url")
+	if url == "" || (!strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://")) {
+		panic("资源url必填，并且应该以http://或者https://开头")
+	}
+
+	//文件公有或私有
+	privacyStr := request.FormValue("privacy")
+	var privacy bool
+	if privacyStr == "" {
+		panic(`文件公有性必填`)
+	} else {
+		if privacyStr == "true" {
+			privacy = true
+		} else if privacyStr == "false" {
+			privacy = false
+		} else {
+			panic(`文件公有性不符合规范`)
+		}
+	}
+
+	//文件夹路径，以 / 开头。
+	dir := request.FormValue("dir")
+	user := this.CheckRequestUser(request.FormValue("email"), request.FormValue("password"))
+	dirUuid := this.matterService.GetDirUuid(user.Uuid, dir)
+
+	matter := this.matterService.Crawl(url, filename, user, dirUuid, privacy)
+
+	return this.Success(matter)
+}
+
+
 
 //系统中的用户x要获取一个DownloadToken，用于提供给x信任的用户下载文件。
 func (this *AlienController) FetchDownloadToken(writer http.ResponseWriter, request *http.Request) *WebResult {
