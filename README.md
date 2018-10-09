@@ -9,7 +9,7 @@
 ![](https://tank.eyeblue.cn/api/alien/download/df372827-ba56-415e-42d1-0e3a34fdb2a1/github20x20.png "github20x20.png") [前端tank-front地址](https://github.com/eyebluecn/tank-front)
 
 ### 简介
-蓝眼云盘是 [蓝眼系列开源软件](https://github.com/eyebluecn) 之一，也是蓝眼系列其他软件的基础服务软件。蓝眼博客具有以下几大特色：
+蓝眼云盘是 [蓝眼系列开源软件](https://github.com/eyebluecn) 之一，也是蓝眼系列其他软件的基础服务软件。蓝眼云盘具有以下几大特色：
 
 **1. 支持docker**
 
