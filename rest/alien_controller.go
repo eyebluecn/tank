@@ -438,7 +438,6 @@ func (this *AlienController) Download(writer http.ResponseWriter, request *http.
 	//缓存
 	var uri string = request.RequestURI
 	//this.imageCacheDao.FindByUri(uri)
-	fmt.Sprintf(uri)
 	fmt.Printf(uri)
 
 	//对图片做缩放处理。
