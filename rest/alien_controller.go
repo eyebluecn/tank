@@ -11,10 +11,12 @@ import (
 
 type AlienController struct {
 	BaseController
-	uploadTokenDao   *UploadTokenDao
-	downloadTokenDao *DownloadTokenDao
-	matterDao        *MatterDao
-	matterService    *MatterService
+	uploadTokenDao    *UploadTokenDao
+	downloadTokenDao  *DownloadTokenDao
+	matterDao         *MatterDao
+	matterService     *MatterService
+	imageCacheDao     *ImageCacheDao
+	imageCacheService *ImageCacheService
 }
 
 //初始化方法
@@ -41,6 +43,17 @@ func (this *AlienController) Init(context *Context) {
 	if c, ok := b.(*MatterService); ok {
 		this.matterService = c
 	}
+
+	b = context.GetBean(this.imageCacheDao)
+	if c, ok := b.(*ImageCacheDao); ok {
+		this.imageCacheDao = c
+	}
+
+	b = context.GetBean(this.imageCacheService)
+	if c, ok := b.(*ImageCacheService); ok {
+		this.imageCacheService = c
+	}
+
 }
 
 //注册自己的路由。
@@ -325,8 +338,6 @@ func (this *AlienController) CrawlDirect(writer http.ResponseWriter, request *ht
 	return this.Success(matter)
 }
 
-
-
 //系统中的用户x要获取一个DownloadToken，用于提供给x信任的用户下载文件。
 func (this *AlienController) FetchDownloadToken(writer http.ResponseWriter, request *http.Request) *WebResult {
 
@@ -424,9 +435,11 @@ func (this *AlienController) Download(writer http.ResponseWriter, request *http.
 		}
 	}
 
-
 	//缓存
-
+	var uri string = request.RequestURI
+	//this.imageCacheDao.FindByUri(uri)
+	fmt.Sprintf(uri)
+	fmt.Printf(uri)
 
 	//对图片做缩放处理。
 	imageProcess := request.FormValue("imageProcess")
