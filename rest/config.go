@@ -16,8 +16,8 @@ const (
 	//用户身份的cookie字段名
 	COOKIE_AUTH_KEY = "_ak"
 
-	//数据库表前缀 tank100表示当前应用版本是tank:1.0.x版，数据库结构发生变化必然是中型升级
-	TABLE_PREFIX = "tank10_"
+	//数据库表前缀 tank200表示当前应用版本是tank:2.0.x版，数据库结构发生变化必然是中型升级
+	TABLE_PREFIX = "tank20_"
 
 	//当前版本
 	VERSION = "1.0.5"

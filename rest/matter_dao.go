@@ -230,9 +230,8 @@ func (this *MatterDao) Delete(matter *Matter) {
 
 		if err != nil {
 			LogError(fmt.Sprintf("删除磁盘上的文件出错，不做任何处理"))
+			//this.PanicError(err)
 		}
-
-		this.PanicError(err)
 
 	}
 }

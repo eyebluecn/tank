@@ -99,6 +99,11 @@ func (this *Context) registerBeans() {
 	//downloadToken
 	this.registerBean(new(DownloadTokenDao))
 
+	//imageCache
+	this.registerBean(new(ImageCacheController))
+	this.registerBean(new(ImageCacheDao))
+	this.registerBean(new(ImageCacheService))
+
 	//matter
 	this.registerBean(new(MatterController))
 	this.registerBean(new(MatterDao))

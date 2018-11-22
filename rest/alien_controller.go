@@ -424,6 +424,10 @@ func (this *AlienController) Download(writer http.ResponseWriter, request *http.
 		}
 	}
 
+
+	//缓存
+
+
 	//对图片做缩放处理。
 	imageProcess := request.FormValue("imageProcess")
 	if imageProcess == "resize" {
