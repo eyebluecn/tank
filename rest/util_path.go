@@ -3,8 +3,8 @@ package rest
 import (
 	"fmt"
 	"os"
-	"time"
 	"path/filepath"
+	"time"
 )
 
 //判断文件或文件夹是否已经存在
@@ -89,13 +89,17 @@ func GetConfPath() string {
 
 //获取某个用户文件应该存放的位置。这个是相对GetFilePath的路径
 //例如：/zicla/2006-01-02/1510122428000
-func GetUserFilePath(username string) (string, string) {
+func GetUserFilePath(username string, cache bool) (string, string) {
 
 	now := time.Now()
 	datePath := now.Format("2006-01-02")
 	//毫秒时间戳
 	timestamp := now.UnixNano() / 1e6
-
+	
+	//如果是缓存文件夹，那么统一放在cache这个文件夹下面
+	if cache {
+		datePath = fmt.Sprintf("cache/%s", datePath)
+	}
 	filePath := CONFIG.MatterPath
 	absolutePath := fmt.Sprintf("%s/%s/%s/%d", filePath, username, datePath, timestamp)
 	relativePath := fmt.Sprintf("/%s/%s/%d", username, datePath, timestamp)

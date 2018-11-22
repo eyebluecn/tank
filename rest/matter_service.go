@@ -1,37 +1,43 @@
 package rest
 
 import (
-	"io"
-	"mime/multipart"
-	"os"
-	"regexp"
-	"strings"
-	"net/http"
-	"github.com/disintegration/imaging"
-	"strconv"
-	"mime"
-	"path/filepath"
-	"net/url"
 	"errors"
-	"time"
 	"fmt"
+	"github.com/disintegration/imaging"
+	"image"
+	"io"
+	"mime"
+	"mime/multipart"
+	"net/http"
 	"net/textproto"
+	"net/url"
+	"os"
+	"path/filepath"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
 )
 
 //@Service
 type MatterService struct {
 	Bean
 	matterDao *MatterDao
+	userDao   *UserDao
 }
 
 //初始化方法
 func (this *MatterService) Init(context *Context) {
 
 	//手动装填本实例的Bean. 这里必须要用中间变量方可。
-
 	b := context.GetBean(this.matterDao)
 	if b, ok := b.(*MatterDao); ok {
 		this.matterDao = b
+	}
+
+	b = context.GetBean(this.userDao)
+	if b, ok := b.(*UserDao); ok {
+		this.userDao = b
 	}
 
 }
@@ -122,7 +128,7 @@ func (this *MatterService) Upload(file multipart.File, user *User, puuid string,
 	}
 
 	//获取文件应该存放在的物理路径的绝对路径和相对路径。
-	absolutePath, relativePath := GetUserFilePath(user.Username)
+	absolutePath, relativePath := GetUserFilePath(user.Username, false)
 	absolutePath = absolutePath + "/" + filename
 	relativePath = relativePath + "/" + filename
 
@@ -201,7 +207,7 @@ func (this *MatterService) Crawl(url string, filename string, user *User, puuid 
 	}
 
 	//获取文件应该存放在的物理路径的绝对路径和相对路径。
-	absolutePath, relativePath := GetUserFilePath(user.Username)
+	absolutePath, relativePath := GetUserFilePath(user.Username, false)
 	absolutePath = absolutePath + "/" + filename
 	relativePath = relativePath + "/" + filename
 
@@ -243,33 +249,11 @@ func (this *MatterService) Crawl(url string, filename string, user *User, puuid 
 }
 
 //图片预处理功能。
-func (this *MatterService) ResizeImage(writer http.ResponseWriter, request *http.Request, matter *Matter) {
+func (this *MatterService) ResizeImage(request *http.Request, filePath string) *image.NRGBA {
 
-	diskFile, err := os.Open(CONFIG.MatterPath + matter.Path)
+	diskFile, err := os.Open(filePath)
 	this.PanicError(err)
 	defer diskFile.Close()
-
-	// 防止中文乱码
-	fileName := url.QueryEscape(matter.Name)
-	mimeType := GetMimeType(fileName)
-	writer.Header().Set("Content-Type", mimeType)
-
-	//当前的文件是否是图片，只有图片才能处理。
-	extension := GetExtension(matter.Name)
-	formats := map[string]imaging.Format{
-		".jpg":  imaging.JPEG,
-		".jpeg": imaging.JPEG,
-		".png":  imaging.PNG,
-		".tif":  imaging.TIFF,
-		".tiff": imaging.TIFF,
-		".bmp":  imaging.BMP,
-		".gif":  imaging.GIF,
-	}
-
-	format, ok := formats[extension]
-	if !ok {
-		panic("该图片格式不支持处理")
-	}
 
 	imageResizeM := request.FormValue("imageResizeM")
 	if imageResizeM == "" {
@@ -302,19 +286,14 @@ func (this *MatterService) ResizeImage(writer http.ResponseWriter, request *http
 		if imageResizeW > 0 {
 			src, err := imaging.Decode(diskFile)
 			this.PanicError(err)
-			dst := imaging.Resize(src, imageResizeW, 0, imaging.Lanczos)
+			return imaging.Resize(src, imageResizeW, 0, imaging.Lanczos)
 
-			err = imaging.Encode(writer, dst, format)
-			this.PanicError(err)
 		} else if imageResizeH > 0 {
 			//将图缩略成高度为100，宽度按比例处理。
 			src, err := imaging.Decode(diskFile)
 			this.PanicError(err)
-			dst := imaging.Resize(src, 0, imageResizeH, imaging.Lanczos)
+			return imaging.Resize(src, 0, imageResizeH, imaging.Lanczos)
 
-			err = imaging.Encode(writer, dst, format)
-
-			this.PanicError(err)
 		} else {
 			panic("单边缩略必须指定imageResizeW或imageResizeH")
 		}
@@ -323,9 +302,8 @@ func (this *MatterService) ResizeImage(writer http.ResponseWriter, request *http
 		if imageResizeW > 0 && imageResizeH > 0 {
 			src, err := imaging.Decode(diskFile)
 			this.PanicError(err)
-			dst := imaging.Fill(src, imageResizeW, imageResizeH, imaging.Center, imaging.Lanczos)
-			err = imaging.Encode(writer, dst, format)
-			this.PanicError(err)
+			return imaging.Fill(src, imageResizeW, imageResizeH, imaging.Center, imaging.Lanczos)
+
 		} else {
 			panic("固定宽高，自动裁剪 必须同时指定imageResizeW和imageResizeH")
 		}
@@ -334,15 +312,47 @@ func (this *MatterService) ResizeImage(writer http.ResponseWriter, request *http
 		if imageResizeW > 0 && imageResizeH > 0 {
 			src, err := imaging.Decode(diskFile)
 			this.PanicError(err)
-			dst := imaging.Resize(src, imageResizeW, imageResizeH, imaging.Lanczos)
+			return imaging.Resize(src, imageResizeW, imageResizeH, imaging.Lanczos)
 
-			err = imaging.Encode(writer, dst, format)
-			this.PanicError(err)
 		} else {
 			panic("强制宽高缩略必须同时指定imageResizeW和imageResizeH")
 		}
+	} else {
+		panic("不支持" + imageResizeM + "处理模式")
+	}
+}
+
+//下载处理后的图片
+func (this *MatterService) DownloadImage(writer http.ResponseWriter, fileWriter io.Writer, dstImage *image.NRGBA, filename string) {
+
+	// 防止中文乱码
+	fileName := url.QueryEscape(filename)
+	mimeType := GetMimeType(fileName)
+	writer.Header().Set("Content-Type", mimeType)
+
+	//当前的文件是否是图片，只有图片才能处理。
+	extension := GetExtension(filename)
+	formats := map[string]imaging.Format{
+		".jpg":  imaging.JPEG,
+		".jpeg": imaging.JPEG,
+		".png":  imaging.PNG,
+		".tif":  imaging.TIFF,
+		".tiff": imaging.TIFF,
+		".bmp":  imaging.BMP,
+		".gif":  imaging.GIF,
 	}
 
+	format, ok := formats[extension]
+	if !ok {
+		panic("该图片格式不支持处理")
+	}
+
+	err := imaging.Encode(writer, dstImage, format)
+	this.PanicError(err)
+
+	//处理后的图片存放在本地
+	err = imaging.Encode(fileWriter, dstImage, format)
+	this.PanicError(err)
 }
 
 // httpRange specifies the byte range to be sent to the client.
@@ -529,18 +539,20 @@ func (this *MatterService) sumRangesSize(ranges []httpRange) (size int64) {
 	return
 }
 
-//文件下载功能。
+//文件下载。具有进度功能。
 //下载功能参考：https://github.com/Masterminds/go-fileserver
-func (this *MatterService) DownloadFile(writer http.ResponseWriter, request *http.Request, matter *Matter) {
+func (this *MatterService) DownloadFile(writer http.ResponseWriter, request *http.Request, filePath string, filename string) {
 
-	diskFile, err := os.Open(CONFIG.MatterPath + matter.Path)
+	diskFile, err := os.Open(filePath)
 	this.PanicError(err)
 	defer diskFile.Close()
 
 	//如果是图片或者文本或者视频就直接打开。其余的一律以下载形式返回。
-	fileName := url.QueryEscape(matter.Name)
+	fileName := url.QueryEscape(filename)
 	mimeType := GetMimeType(fileName)
-	if strings.Index(mimeType, "image") != 0 && strings.Index(mimeType, "text") != 0 && strings.Index(mimeType, "video") != 0 {
+	if strings.Index(mimeType, "image") != 0 &&
+		strings.Index(mimeType, "text") != 0 &&
+		strings.Index(mimeType, "video") != 0 {
 		writer.Header().Set("content-disposition", "attachment; filename=\""+fileName+"\"")
 	}
 

@@ -24,3 +24,4 @@ func (this *ImageCacheService) Detail(uuid string) *ImageCache {
 
 	return imageCache
 }
+
