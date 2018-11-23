@@ -185,7 +185,7 @@ func (this *UserController) Edit(writer http.ResponseWriter, request *http.Reque
 		user.SizeLimit = sizeLimit
 	} else {
 		if currentUser.Uuid != uuid {
-			return this.Error(RESULT_CODE_UNAUTHORIZED)
+			return this.Error(CODE_WRAPPER_UNAUTHORIZED)
 		}
 	}
 
@@ -362,7 +362,7 @@ func (this *UserController) ResetPassword(writer http.ResponseWriter, request *h
 	currentUser := this.checkUser(writer, request)
 
 	if currentUser.Role != USER_ROLE_ADMINISTRATOR {
-		return this.Error(RESULT_CODE_UNAUTHORIZED)
+		return this.Error(CODE_WRAPPER_UNAUTHORIZED)
 	}
 
 	user := this.userDao.CheckByUuid(userUuid)

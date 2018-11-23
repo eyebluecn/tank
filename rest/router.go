@@ -41,10 +41,10 @@ func (this *Router) GlobalPanicHandler(writer http.ResponseWriter, request *http
 		var webResult *WebResult = nil
 		if value, ok := err.(string); ok {
 			writer.WriteHeader(http.StatusBadRequest)
-			webResult = &WebResult{Code: RESULT_CODE_UTIL_EXCEPTION, Msg: value}
-		} else if value, ok := err.(int); ok {
+			webResult = &WebResult{Code: CODE_WRAPPER_UNKNOWN.Code, Msg: value}
+		} else if _, ok := err.(int); ok {
 			writer.WriteHeader(http.StatusBadRequest)
-			webResult = ConstWebResult(value)
+			webResult = ConstWebResult(CODE_WRAPPER_UNKNOWN)
 		} else if value, ok := err.(*WebResult); ok {
 			writer.WriteHeader(http.StatusBadRequest)
 			webResult = value
@@ -53,16 +53,16 @@ func (this *Router) GlobalPanicHandler(writer http.ResponseWriter, request *http
 			webResult = &value
 		} else if value, ok := err.(*WebError); ok {
 			writer.WriteHeader(value.Code)
-			webResult = &WebResult{Code: RESULT_CODE_UTIL_EXCEPTION, Msg: value.Msg}
+			webResult = &WebResult{Code: CODE_WRAPPER_UNKNOWN.Code, Msg: value.Msg}
 		} else if value, ok := err.(WebError); ok {
 			writer.WriteHeader((&value).Code)
-			webResult = &WebResult{Code: RESULT_CODE_UTIL_EXCEPTION, Msg: (&value).Msg}
+			webResult = &WebResult{Code: CODE_WRAPPER_UNKNOWN.Code, Msg: (&value).Msg}
 		} else if value, ok := err.(error); ok {
 			writer.WriteHeader(http.StatusBadRequest)
-			webResult = &WebResult{Code: RESULT_CODE_UTIL_EXCEPTION, Msg: value.Error()}
+			webResult = &WebResult{Code: CODE_WRAPPER_UNKNOWN.Code, Msg: value.Error()}
 		} else {
 			writer.WriteHeader(http.StatusInternalServerError)
-			webResult = &WebResult{Code: RESULT_CODE_UTIL_EXCEPTION, Msg: "服务器未知错误"}
+			webResult = &WebResult{Code: CODE_WRAPPER_UNKNOWN.Code, Msg: "服务器未知错误"}
 		}
 
 		//输出的是json格式 返回的内容申明是json，utf-8

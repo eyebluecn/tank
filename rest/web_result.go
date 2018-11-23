@@ -1,7 +1,9 @@
 package rest
 
+import "net/http"
+
 type WebResult struct {
-	Code int       `json:"code"`
+	Code string      `json:"code"`
 	Msg  string      `json:"msg"`
 	Data interface{} `json:"data"`
 }
@@ -10,106 +12,70 @@ func (this *WebResult) Error() string {
 	return this.Msg
 }
 
-const (
-	//正常
-	RESULT_CODE_OK = 200
+type CodeWrapper struct {
+	Code        string
+	HttpStatus  int
+	Description string
+}
 
-	//未登录
-	RESULT_CODE_LOGIN = -400
-
-	//没有权限
-	RESULT_CODE_UNAUTHORIZED = -401
-
-	//请求错误
-	RESULT_CODE_BAD_REQUEST = -402
-
-	//没有找到
-	RESULT_CODE_NOT_FOUND = -404
-
-	//登录过期
-	RESULT_CODE_LOGIN_EXPIRED = -405
-
-	//该登录用户不是有效用户
-	RESULT_CODE_LOGIN_INVALID = -406
-
-	//提交的表单验证不通过
-	RESULT_CODE_FORM_INVALID = -410
-
-	//请求太频繁
-	RESULT_CODE_FREQUENCY = -420
-
-	//服务器出错。
-	RESULT_CODE_SERVER_ERROR = -500
-
-	//远程服务不可用
-	RESULT_CODE_NOT_AVAILABLE = -501
-
-	//并发异常
-	RESULT_CODE_CONCURRENCY = -511
-
-	//远程微服务没有找到
-	RESULT_CODE_SERVICE_NOT_FOUND = -600
-
-	//远程微服务连接超时
-	RESULT_CODE_SERVICE_TIME_OUT = -610
-
-	//通用的异常
-	RESULT_CODE_UTIL_EXCEPTION = -700
+var (
+	CODE_WRAPPER_OK                      = &CodeWrapper{Code: "OK", HttpStatus: http.StatusOK, Description: "成功"}
+	CODE_WRAPPER_BAD_REQUEST             = &CodeWrapper{Code: "BAD_REQUEST", HttpStatus: http.StatusBadRequest, Description: "请求不合法"}
+	CODE_WRAPPER_CAPTCHA_ERROR           = &CodeWrapper{Code: "CAPTCHA_ERROR", HttpStatus: http.StatusBadRequest, Description: "验证码错误"}
+	CODE_WRAPPER_NEED_CAPTCHA            = &CodeWrapper{Code: "NEED_CAPTCHA", HttpStatus: http.StatusBadRequest, Description: "验证码必填"}
+	CODE_WRAPPER_USERNAME_PASSWORD_ERROR = &CodeWrapper{Code: "USERNAME_PASSWORD_ERROR", HttpStatus: http.StatusBadRequest, Description: "用户名或密码错误"}
+	CODE_WRAPPER_PARAMS_ERROR            = &CodeWrapper{Code: "PARAMS_ERROR", HttpStatus: http.StatusBadRequest, Description: "用户名或密码错误"}
+	CODE_WRAPPER_LOGIN                   = &CodeWrapper{Code: "LOGIN", HttpStatus: http.StatusUnauthorized, Description: "未登录，禁止访问"}
+	CODE_WRAPPER_LOGIN_EXPIRE            = &CodeWrapper{Code: "LOGIN_EXPIRE", HttpStatus: http.StatusUnauthorized, Description: "登录过期，请重新登录"}
+	CODE_WRAPPER_USER_DISABLED           = &CodeWrapper{Code: "USER_DISABLED", HttpStatus: http.StatusForbidden, Description: "账户被禁用，禁止访问"}
+	CODE_WRAPPER_UNAUTHORIZED            = &CodeWrapper{Code: "LOGIN", HttpStatus: http.StatusUnauthorized, Description: "没有权限，禁止访问"}
+	CODE_WRAPPER_NOT_FOUND               = &CodeWrapper{Code: "NOT_FOUND", HttpStatus: http.StatusNotFound, Description: "内容不存在"}
+	CODE_WRAPPER_UNKNOWN                 = &CodeWrapper{Code: "UNKNOWN", HttpStatus: http.StatusInternalServerError, Description: "服务器未知错误"}
 )
 
-func ConstWebResult(code int) *WebResult {
-
-	wr := &WebResult{}
-	switch code {
-	//正常
-	case RESULT_CODE_OK:
-		wr.Msg = "成功"
-		//未登录
-	case RESULT_CODE_LOGIN:
-		wr.Msg = "没有登录，禁止访问"
-		//没有权限
-	case RESULT_CODE_UNAUTHORIZED:
-		wr.Msg = "没有权限"
-		//请求错误
-	case RESULT_CODE_BAD_REQUEST:
-		wr.Msg = "请求错误"
-		//没有找到
-	case RESULT_CODE_NOT_FOUND:
-		wr.Msg = "没有找到"
-		//登录过期
-	case RESULT_CODE_LOGIN_EXPIRED:
-		wr.Msg = "登录过期"
-
-		//该登录用户不是有效用户
-	case RESULT_CODE_LOGIN_INVALID:
-		wr.Msg = "该登录用户不是有效用户或者用户已被禁用"
-
-		//提交的表单验证不通过
-	case RESULT_CODE_FORM_INVALID:
-		wr.Msg = "提交的表单验证不通过"
-		//请求太频繁
-	case RESULT_CODE_FREQUENCY:
-		wr.Msg = "请求太频繁"
-		//服务器出错。
-	case RESULT_CODE_SERVER_ERROR:
-		wr.Msg = "服务器出错"
-		//远程服务不可用
-	case RESULT_CODE_NOT_AVAILABLE:
-		wr.Msg = "远程服务不可用"
-		//并发异常
-	case RESULT_CODE_CONCURRENCY:
-		wr.Msg = "并发异常"
-		//远程微服务没有找到
-	case RESULT_CODE_SERVICE_NOT_FOUND:
-		wr.Msg = "远程微服务没有找到"
-		//远程微服务连接超时
-	case RESULT_CODE_SERVICE_TIME_OUT:
-		wr.Msg = "远程微服务连接超时"
-	default:
-		code = RESULT_CODE_UTIL_EXCEPTION
-		wr.Msg = "服务器未知错误"
+//根据 CodeWrapper来获取对应的HttpStatus
+func FetchHttpStatus(code string) int {
+	if code == CODE_WRAPPER_OK.Code {
+		return CODE_WRAPPER_OK.HttpStatus
+	} else if code == CODE_WRAPPER_BAD_REQUEST.Code {
+		return CODE_WRAPPER_BAD_REQUEST.HttpStatus
+	} else if code == CODE_WRAPPER_CAPTCHA_ERROR.Code {
+		return CODE_WRAPPER_CAPTCHA_ERROR.HttpStatus
+	} else if code == CODE_WRAPPER_NEED_CAPTCHA.Code {
+		return CODE_WRAPPER_NEED_CAPTCHA.HttpStatus
+	} else if code == CODE_WRAPPER_USERNAME_PASSWORD_ERROR.Code {
+		return CODE_WRAPPER_USERNAME_PASSWORD_ERROR.HttpStatus
+	} else if code == CODE_WRAPPER_PARAMS_ERROR.Code {
+		return CODE_WRAPPER_PARAMS_ERROR.HttpStatus
+	} else if code == CODE_WRAPPER_LOGIN.Code {
+		return CODE_WRAPPER_LOGIN.HttpStatus
+	} else if code == CODE_WRAPPER_LOGIN_EXPIRE.Code {
+		return CODE_WRAPPER_LOGIN_EXPIRE.HttpStatus
+	} else if code == CODE_WRAPPER_USER_DISABLED.Code {
+		return CODE_WRAPPER_USER_DISABLED.HttpStatus
+	} else if code == CODE_WRAPPER_UNAUTHORIZED.Code {
+		return CODE_WRAPPER_UNAUTHORIZED.HttpStatus
+	} else if code == CODE_WRAPPER_NOT_FOUND.Code {
+		return CODE_WRAPPER_NOT_FOUND.HttpStatus
+	} else {
+		return CODE_WRAPPER_UNKNOWN.HttpStatus
 	}
-	wr.Code = code
-	return wr
+}
 
+func ConstWebResult(codeWrapper *CodeWrapper) *WebResult {
+
+	wr := &WebResult{
+		Code: codeWrapper.Code,
+		Msg:  codeWrapper.Description,
+	}
+	return wr
+}
+
+func CustomWebResult(codeWrapper *CodeWrapper, description string) *WebResult {
+
+	wr := &WebResult{
+		Code: codeWrapper.Code,
+		Msg:  description,
+	}
+	return wr
 }

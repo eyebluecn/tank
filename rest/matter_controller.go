@@ -325,7 +325,7 @@ func (this *MatterController) Delete(writer http.ResponseWriter, request *http.R
 	//判断文件的所属人是否正确
 	user := this.checkUser(writer, request)
 	if user.Role != USER_ROLE_ADMINISTRATOR && matter.UserUuid != user.Uuid {
-		return this.Error(RESULT_CODE_UNAUTHORIZED)
+		return this.Error(CODE_WRAPPER_UNAUTHORIZED)
 	}
 
 	this.matterDao.Delete(matter)
@@ -350,7 +350,7 @@ func (this *MatterController) DeleteBatch(writer http.ResponseWriter, request *h
 		//判断文件的所属人是否正确
 		user := this.checkUser(writer, request)
 		if user.Role != USER_ROLE_ADMINISTRATOR && matter.UserUuid != user.Uuid {
-			return this.Error(RESULT_CODE_UNAUTHORIZED)
+			return this.Error(CODE_WRAPPER_UNAUTHORIZED)
 		}
 
 		this.matterDao.Delete(matter)
@@ -383,7 +383,7 @@ func (this *MatterController) Rename(writer http.ResponseWriter, request *http.R
 
 	user := this.checkUser(writer, request)
 	if user.Role != USER_ROLE_ADMINISTRATOR && matter.UserUuid != user.Uuid {
-		return this.Error(RESULT_CODE_UNAUTHORIZED)
+		return this.Error(CODE_WRAPPER_UNAUTHORIZED)
 	}
 
 	if name == matter.Name {
@@ -421,7 +421,7 @@ func (this *MatterController) ChangePrivacy(writer http.ResponseWriter, request 
 	//权限验证
 	user := this.checkUser(writer, request)
 	if user.Role != USER_ROLE_ADMINISTRATOR && matter.UserUuid != user.Uuid {
-		return this.Error(RESULT_CODE_UNAUTHORIZED)
+		return this.Error(CODE_WRAPPER_UNAUTHORIZED)
 	}
 
 	matter.Privacy = privacy
@@ -464,7 +464,7 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 			destMatter = this.matterService.Detail(destUuid)
 
 			if user.Role != USER_ROLE_ADMINISTRATOR && destMatter.UserUuid != user.Uuid {
-				return this.Error(RESULT_CODE_UNAUTHORIZED)
+				return this.Error(CODE_WRAPPER_UNAUTHORIZED)
 			}
 		}
 	}
@@ -476,7 +476,7 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 		srcMatter := this.matterDao.CheckByUuid(uuid)
 
 		if user.Role != USER_ROLE_ADMINISTRATOR && srcMatter.UserUuid != user.Uuid {
-			return this.Error(RESULT_CODE_UNAUTHORIZED)
+			return this.Error(CODE_WRAPPER_UNAUTHORIZED)
 		}
 
 		if srcMatter.Puuid == destUuid {

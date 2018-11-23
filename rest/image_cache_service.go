@@ -45,7 +45,7 @@ func (this *ImageCacheService) Detail(uuid string) *ImageCache {
 func (this *ImageCacheService) ResizeParams(request *http.Request) (needProcess bool, resizeMode string, resizeWidth int, resizeHeight int) {
 	var err error
 
-	//老模式准备逐步废弃掉
+	//1.0 模式准备逐步废弃掉
 	if request.FormValue("imageProcess") == "resize" {
 		//老模式使用 imageResizeM,imageResizeW,imageResizeH
 		imageResizeM := request.FormValue("imageResizeM")

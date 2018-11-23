@@ -417,7 +417,7 @@ func (this *AlienController) Download(writer http.ResponseWriter, request *http.
 
 			tokenUser := this.userDao.CheckByUuid(downloadToken.UserUuid)
 			if matter.UserUuid != tokenUser.Uuid {
-				panic(RESULT_CODE_UNAUTHORIZED)
+				panic(CODE_WRAPPER_UNAUTHORIZED)
 			}
 
 			//下载之后立即过期掉。
@@ -429,7 +429,7 @@ func (this *AlienController) Download(writer http.ResponseWriter, request *http.
 			//判断文件的所属人是否正确
 			user := this.checkUser(writer, request)
 			if user.Role != USER_ROLE_ADMINISTRATOR && matter.UserUuid != user.Uuid {
-				panic(RESULT_CODE_UNAUTHORIZED)
+				panic(CODE_WRAPPER_UNAUTHORIZED)
 			}
 
 		}

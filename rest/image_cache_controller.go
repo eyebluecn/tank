@@ -122,7 +122,7 @@ func (this *ImageCacheController) Delete(writer http.ResponseWriter, request *ht
 	//判断文件的所属人是否正确
 	user := this.checkUser(writer, request)
 	if user.Role != USER_ROLE_ADMINISTRATOR && imageCache.UserUuid != user.Uuid {
-		return this.Error(RESULT_CODE_UNAUTHORIZED)
+		return this.Error(CODE_WRAPPER_UNAUTHORIZED)
 	}
 
 	this.imageCacheDao.Delete(imageCache)
@@ -147,7 +147,7 @@ func (this *ImageCacheController) DeleteBatch(writer http.ResponseWriter, reques
 		//判断文件的所属人是否正确
 		user := this.checkUser(writer, request)
 		if user.Role != USER_ROLE_ADMINISTRATOR && imageCache.UserUuid != user.Uuid {
-			return this.Error(RESULT_CODE_UNAUTHORIZED)
+			return this.Error(CODE_WRAPPER_UNAUTHORIZED)
 		}
 
 		this.imageCacheDao.Delete(imageCache)

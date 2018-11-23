@@ -64,10 +64,10 @@ func (this *BaseController) Wrap(f func(writer http.ResponseWriter, request *htt
 
 			if user.Status == USER_STATUS_DISABLED {
 				//判断用户是否被禁用。
-				webResult = ConstWebResult(RESULT_CODE_LOGIN_INVALID)
+				webResult = ConstWebResult(CODE_WRAPPER_USER_DISABLED)
 			} else {
 				if qualifiedRole == USER_ROLE_ADMINISTRATOR && user.Role != USER_ROLE_ADMINISTRATOR {
-					webResult = ConstWebResult(RESULT_CODE_UNAUTHORIZED)
+					webResult = ConstWebResult(CODE_WRAPPER_UNAUTHORIZED)
 				} else {
 					webResult = f(writer, request)
 				}
@@ -84,13 +84,11 @@ func (this *BaseController) Wrap(f func(writer http.ResponseWriter, request *htt
 
 			//用json的方式输出返回值。
 			var json = jsoniter.ConfigCompatibleWithStandardLibrary
-			b, _ := json.Marshal(webResult)
+			b, err := json.Marshal(webResult)
 
-			if webResult.Code == RESULT_CODE_OK {
-				writer.WriteHeader(http.StatusOK)
-			} else {
-				writer.WriteHeader(http.StatusBadRequest)
-			}
+			this.PanicError(err)
+
+			writer.WriteHeader(FetchHttpStatus(webResult.Code))
 
 			fmt.Fprintf(writer, string(b))
 		} else {
@@ -105,13 +103,13 @@ func (this *BaseController) Wrap(f func(writer http.ResponseWriter, request *htt
 func (this *BaseController) Success(data interface{}) *WebResult {
 	var webResult *WebResult = nil
 	if value, ok := data.(string); ok {
-		webResult = &WebResult{Code: RESULT_CODE_OK, Msg: value}
+		webResult = &WebResult{Code: CODE_WRAPPER_OK.Code, Msg: value}
 	} else if value, ok := data.(*WebResult); ok {
 		webResult = value
 	} else if _, ok := data.(types.Nil); ok {
-		webResult = ConstWebResult(RESULT_CODE_OK)
+		webResult = ConstWebResult(CODE_WRAPPER_OK)
 	} else {
-		webResult = &WebResult{Code: RESULT_CODE_OK, Data: data}
+		webResult = &WebResult{Code: CODE_WRAPPER_OK.Code, Data: data}
 	}
 	return webResult
 }
@@ -120,15 +118,15 @@ func (this *BaseController) Success(data interface{}) *WebResult {
 func (this *BaseController) Error(err interface{}) *WebResult {
 	var webResult *WebResult = nil
 	if value, ok := err.(string); ok {
-		webResult = &WebResult{Code: RESULT_CODE_UTIL_EXCEPTION, Msg: value}
-	} else if value, ok := err.(int); ok {
-		webResult = ConstWebResult(value)
+		webResult = &WebResult{Code: CODE_WRAPPER_UNKNOWN.Code, Msg: value}
+	} else if _, ok := err.(int); ok {
+		webResult = ConstWebResult(CODE_WRAPPER_UNKNOWN)
 	} else if value, ok := err.(*WebResult); ok {
 		webResult = value
 	} else if value, ok := err.(error); ok {
-		webResult = &WebResult{Code: RESULT_CODE_UTIL_EXCEPTION, Msg: value.Error()}
+		webResult = &WebResult{Code: CODE_WRAPPER_UNKNOWN.Code, Msg: value.Error()}
 	} else {
-		webResult = &WebResult{Code: RESULT_CODE_UTIL_EXCEPTION, Msg: "服务器未知错误"}
+		webResult = &WebResult{Code: CODE_WRAPPER_UNKNOWN.Code, Msg: "服务器未知错误"}
 	}
 	return webResult
 }
@@ -138,20 +136,20 @@ func (this *BaseController) checkLogin(writer http.ResponseWriter, request *http
 	//验证用户是否已经登录。
 	sessionCookie, err := request.Cookie(COOKIE_AUTH_KEY)
 	if err != nil {
-		panic(ConstWebResult(RESULT_CODE_LOGIN))
+		panic(ConstWebResult(CODE_WRAPPER_LOGIN))
 	}
 
 	session := this.sessionDao.FindByUuid(sessionCookie.Value)
 	if session == nil {
-		panic(ConstWebResult(RESULT_CODE_LOGIN))
+		panic(ConstWebResult(CODE_WRAPPER_LOGIN))
 	} else {
 		if session.ExpireTime.Before(time.Now()) {
-			panic(ConstWebResult(RESULT_CODE_LOGIN_EXPIRED))
+			panic(ConstWebResult(CODE_WRAPPER_LOGIN_EXPIRE))
 		} else {
 
 			user := this.userDao.FindByUuid(session.UserUuid)
 			if user == nil {
-				panic(ConstWebResult(RESULT_CODE_LOGIN_INVALID))
+				panic(ConstWebResult(CODE_WRAPPER_LOGIN))
 			} else {
 				return session, user
 			}
