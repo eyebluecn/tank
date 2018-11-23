@@ -3,7 +3,6 @@ package rest
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -441,40 +440,13 @@ func (this *AlienController) Download(writer http.ResponseWriter, request *http.
 	if imageProcess == "resize" {
 
 		//如果是图片，那么能用缓存就用缓存
-		uri := request.RequestURI
-		imageCache := this.imageCacheDao.FindByUri(uri)
-		if imageCache != nil {
-
-			//直接使用缓存中的信息
-			this.matterService.DownloadFile(writer, request, CONFIG.MatterPath+imageCache.Path, matter.Name)
-
-		} else {
-
-			//resize图片
-			dstImage := this.matterService.ResizeImage(request, CONFIG.MatterPath+matter.Path)
-
-			user := this.userDao.FindByUuid(matter.UserUuid)
-			//获取文件应该存放在的物理路径的绝对路径和相对路径。
-			absolutePath, relativePath := GetUserFilePath(user.Username, true)
-			absolutePath = absolutePath + "/" + filename
-			relativePath = relativePath + "/" + filename
-
-			fileWriter, err := os.Create(absolutePath)
-			this.PanicError(err)
-			defer fileWriter.Close()
-
-			//生成的图片输出到两个writer中去
-			this.matterService.DownloadImage(writer, fileWriter, dstImage, matter.Name)
-
-			//相关信息写到缓存中去
-			imageCache = &ImageCache{
-				UserUuid:   matter.UserUuid,
-				MatterUuid: matter.Uuid,
-				Uri:        uri,
-				Path:       relativePath,
-			}
-			this.imageCacheDao.Create(imageCache)
+		imageCache := this.imageCacheDao.FindByUri(request.RequestURI)
+		if imageCache == nil {
+			imageCache = this.imageCacheService.cacheImage(writer, request, matter)
 		}
+
+		//直接使用缓存中的信息
+		this.matterService.DownloadFile(writer, request, CONFIG.MatterPath+imageCache.Path, matter.Name)
 
 	} else {
 		this.matterService.DownloadFile(writer, request, CONFIG.MatterPath+matter.Path, matter.Name)
