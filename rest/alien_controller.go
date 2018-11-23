@@ -435,9 +435,9 @@ func (this *AlienController) Download(writer http.ResponseWriter, request *http.
 		}
 	}
 
-	//对图片做缩放处理。
-	imageProcess := request.FormValue("imageProcess")
-	if imageProcess == "resize" {
+	//对图片处理。
+	needProcess, _, _, _ := this.imageCacheService.ResizeParams(request)
+	if needProcess {
 
 		//如果是图片，那么能用缓存就用缓存
 		imageCache := this.imageCacheDao.FindByUri(request.RequestURI)

@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"github.com/disintegration/imaging"
 	"net/url"
+	"strings"
 )
 
 //@Service
@@ -40,6 +41,79 @@ func (this *ImageCacheService) Detail(uuid string) *ImageCache {
 	return imageCache
 }
 
+//获取预处理时必要的参数
+func (this *ImageCacheService) ResizeParams(request *http.Request) (needProcess bool, resizeMode string, resizeWidth int, resizeHeight int) {
+	var err error
+
+	//老模式准备逐步废弃掉
+	if request.FormValue("imageProcess") == "resize" {
+		//老模式使用 imageResizeM,imageResizeW,imageResizeH
+		imageResizeM := request.FormValue("imageResizeM")
+		if imageResizeM == "" {
+			imageResizeM = "fit"
+		} else if imageResizeM != "fit" && imageResizeM != "fill" && imageResizeM != "fixed" {
+			panic("imageResizeM参数错误")
+		}
+		imageResizeWStr := request.FormValue("imageResizeW")
+		var imageResizeW int
+		if imageResizeWStr != "" {
+			imageResizeW, err = strconv.Atoi(imageResizeWStr)
+			this.PanicError(err)
+			if imageResizeW < 1 || imageResizeW > 4096 {
+				panic("缩放尺寸不能超过4096")
+			}
+		}
+		imageResizeHStr := request.FormValue("imageResizeH")
+		var imageResizeH int
+		if imageResizeHStr != "" {
+			imageResizeH, err = strconv.Atoi(imageResizeHStr)
+			this.PanicError(err)
+			if imageResizeH < 1 || imageResizeH > 4096 {
+				panic("缩放尺寸不能超过4096")
+			}
+		}
+
+		return true, imageResizeM, imageResizeW, imageResizeH
+	} else if request.FormValue("ir") != "" {
+		//新模式使用 mode_w_h  如果w或者h为0表示这项值不设置
+		imageResizeStr := request.FormValue("ir")
+		arr := strings.Split(imageResizeStr, "_")
+		if len(arr) != 3 {
+			panic("参数不符合规范，格式要求为mode_w_h")
+		}
+
+		imageResizeM := arr[0]
+		if imageResizeM == "" {
+			imageResizeM = "fit"
+		} else if imageResizeM != "fit" && imageResizeM != "fill" && imageResizeM != "fixed" {
+			panic("imageResizeM参数错误")
+		}
+		imageResizeWStr := arr[1]
+		var imageResizeW int
+		if imageResizeWStr != "" {
+			imageResizeW, err = strconv.Atoi(imageResizeWStr)
+			this.PanicError(err)
+			if imageResizeW < 0 || imageResizeW > 4096 {
+				panic("缩放尺寸不能超过4096")
+			}
+		}
+		imageResizeHStr := arr[2]
+		var imageResizeH int
+		if imageResizeHStr != "" {
+			imageResizeH, err = strconv.Atoi(imageResizeHStr)
+			this.PanicError(err)
+			if imageResizeH < 0 || imageResizeH > 4096 {
+				panic("缩放尺寸不能超过4096")
+			}
+		}
+		return true, imageResizeM, imageResizeW, imageResizeH
+	} else {
+		LogInfo("没有有效的处理参数，不进行图片处理")
+		return false, "", 0, 0
+	}
+
+}
+
 //图片预处理功能。
 func (this *ImageCacheService) ResizeImage(request *http.Request, filePath string) *image.NRGBA {
 
@@ -47,47 +121,24 @@ func (this *ImageCacheService) ResizeImage(request *http.Request, filePath strin
 	this.PanicError(err)
 	defer diskFile.Close()
 
-	imageResizeM := request.FormValue("imageResizeM")
-	if imageResizeM == "" {
-		imageResizeM = "fit"
-	} else if imageResizeM != "fit" && imageResizeM != "fill" && imageResizeM != "fixed" {
-		panic("imageResizeM参数错误")
-	}
-	imageResizeWStr := request.FormValue("imageResizeW")
-	var imageResizeW int
-	if imageResizeWStr != "" {
-		imageResizeW, err = strconv.Atoi(imageResizeWStr)
-		this.PanicError(err)
-		if imageResizeW < 1 || imageResizeW > 4096 {
-			panic("缩放尺寸不能超过4096")
-		}
-	}
-	imageResizeHStr := request.FormValue("imageResizeH")
-	var imageResizeH int
-	if imageResizeHStr != "" {
-		imageResizeH, err = strconv.Atoi(imageResizeHStr)
-		this.PanicError(err)
-		if imageResizeH < 1 || imageResizeH > 4096 {
-			panic("缩放尺寸不能超过4096")
-		}
-	}
+	_, imageResizeM, imageResizeW, imageResizeH := this.ResizeParams(request)
 
 	//单边缩略
 	if imageResizeM == "fit" {
 		//将图缩略成宽度为100，高度按比例处理。
-		if imageResizeW > 0 {
+		if imageResizeW != 0 {
 			src, err := imaging.Decode(diskFile)
 			this.PanicError(err)
 			return imaging.Resize(src, imageResizeW, 0, imaging.Lanczos)
 
-		} else if imageResizeH > 0 {
+		} else if imageResizeH != 0 {
 			//将图缩略成高度为100，宽度按比例处理。
 			src, err := imaging.Decode(diskFile)
 			this.PanicError(err)
 			return imaging.Resize(src, 0, imageResizeH, imaging.Lanczos)
 
 		} else {
-			panic("单边缩略必须指定imageResizeW或imageResizeH")
+			panic("单边缩略必须指定宽或者高")
 		}
 	} else if imageResizeM == "fill" {
 		//固定宽高，自动裁剪
@@ -97,7 +148,7 @@ func (this *ImageCacheService) ResizeImage(request *http.Request, filePath strin
 			return imaging.Fill(src, imageResizeW, imageResizeH, imaging.Center, imaging.Lanczos)
 
 		} else {
-			panic("固定宽高，自动裁剪 必须同时指定imageResizeW和imageResizeH")
+			panic("固定宽高，自动裁剪 必须同时指定宽和高")
 		}
 	} else if imageResizeM == "fixed" {
 		//强制宽高缩略
@@ -107,7 +158,7 @@ func (this *ImageCacheService) ResizeImage(request *http.Request, filePath strin
 			return imaging.Resize(src, imageResizeW, imageResizeH, imaging.Lanczos)
 
 		} else {
-			panic("强制宽高缩略必须同时指定imageResizeW和imageResizeH")
+			panic("强制宽高缩略必须同时指定宽和高")
 		}
 	} else {
 		panic("不支持" + imageResizeM + "处理模式")
