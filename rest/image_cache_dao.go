@@ -80,12 +80,16 @@ func (this *ImageCacheDao) ListByUserUuidAndPuuidAndDirAndName(userUuid string) 
 }
 
 //获取某个文件夹下所有的文件和子文件
-func (this *ImageCacheDao) Page(page int, pageSize int, userUuid string, sortArray []OrderPair) *Pager {
+func (this *ImageCacheDao) Page(page int, pageSize int, userUuid string, matterUuid string, sortArray []OrderPair) *Pager {
 
 	var wp = &WherePair{}
 
 	if userUuid != "" {
 		wp = wp.And(&WherePair{Query: "user_uuid = ?", Args: []interface{}{userUuid}})
+	}
+
+	if matterUuid != "" {
+		wp = wp.And(&WherePair{Query: "matter_uuid = ?", Args: []interface{}{matterUuid}})
 	}
 
 	var conditionDB *gorm.DB

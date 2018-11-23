@@ -72,6 +72,7 @@ func (this *ImageCacheController) Page(writer http.ResponseWriter, request *http
 	pageStr := request.FormValue("page")
 	pageSizeStr := request.FormValue("pageSize")
 	userUuid := request.FormValue("userUuid")
+	matterUuid := request.FormValue("matterUuid")
 	orderCreateTime := request.FormValue("orderCreateTime")
 	orderSize := request.FormValue("orderSize")
 
@@ -104,7 +105,7 @@ func (this *ImageCacheController) Page(writer http.ResponseWriter, request *http
 		},
 	}
 
-	pager := this.imageCacheDao.Page(page, pageSize, userUuid, sortArray)
+	pager := this.imageCacheDao.Page(page, pageSize, userUuid, matterUuid, sortArray)
 
 	return this.Success(pager)
 }
