@@ -188,7 +188,7 @@ func (this *MatterDao) Create(matter *Matter) *Matter {
 	timeUUID, _ := uuid.NewV4()
 	matter.Uuid = string(timeUUID.String())
 	matter.CreateTime = time.Now()
-	matter.ModifyTime = time.Now()
+	matter.UpdateTime = time.Now()
 	db := this.context.DB.Create(matter)
 	this.PanicError(db.Error)
 
@@ -198,7 +198,7 @@ func (this *MatterDao) Create(matter *Matter) *Matter {
 //修改一个文件
 func (this *MatterDao) Save(matter *Matter) *Matter {
 
-	matter.ModifyTime = time.Now()
+	matter.UpdateTime = time.Now()
 	db := this.context.DB.Save(matter)
 	this.PanicError(db.Error)
 

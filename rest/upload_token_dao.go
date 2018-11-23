@@ -31,7 +31,7 @@ func (this *UploadTokenDao) Create(uploadToken *UploadToken) *UploadToken {
 	uploadToken.Uuid = string(timeUUID.String())
 
 	uploadToken.CreateTime = time.Now()
-	uploadToken.ModifyTime = time.Now()
+	uploadToken.UpdateTime = time.Now()
 
 	db := this.context.DB.Create(uploadToken)
 	this.PanicError(db.Error)
@@ -42,7 +42,7 @@ func (this *UploadTokenDao) Create(uploadToken *UploadToken) *UploadToken {
 //修改一个uploadToken
 func (this *UploadTokenDao) Save(uploadToken *UploadToken) *UploadToken {
 
-	uploadToken.ModifyTime = time.Now()
+	uploadToken.UpdateTime = time.Now()
 	db := this.context.DB.Save(uploadToken)
 	this.PanicError(db.Error)
 

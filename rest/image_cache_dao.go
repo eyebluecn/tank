@@ -109,7 +109,7 @@ func (this *ImageCacheDao) Create(imageCache *ImageCache) *ImageCache {
 	timeUUID, _ := uuid.NewV4()
 	imageCache.Uuid = string(timeUUID.String())
 	imageCache.CreateTime = time.Now()
-	imageCache.ModifyTime = time.Now()
+	imageCache.UpdateTime = time.Now()
 	db := this.context.DB.Create(imageCache)
 	this.PanicError(db.Error)
 
@@ -119,7 +119,7 @@ func (this *ImageCacheDao) Create(imageCache *ImageCache) *ImageCache {
 //修改一个文件
 func (this *ImageCacheDao) Save(imageCache *ImageCache) *ImageCache {
 
-	imageCache.ModifyTime = time.Now()
+	imageCache.UpdateTime = time.Now()
 	db := this.context.DB.Save(imageCache)
 	this.PanicError(db.Error)
 

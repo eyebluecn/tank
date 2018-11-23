@@ -11,7 +11,7 @@ type Time time.Time
 type Base struct {
 	Uuid       string    `gorm:"primary_key" json:"uuid"`
 	Sort       int64     `json:"sort"`
-	ModifyTime time.Time `json:"modifyTime"`
+	UpdateTime time.Time `json:"updateTime"`
 	CreateTime time.Time `json:"createTime"`
 }
 

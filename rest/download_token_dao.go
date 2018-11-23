@@ -41,7 +41,7 @@ func (this *DownloadTokenDao) Create(downloadToken *DownloadToken) *DownloadToke
 	downloadToken.Uuid = string(timeUUID.String())
 
 	downloadToken.CreateTime = time.Now()
-	downloadToken.ModifyTime = time.Now()
+	downloadToken.UpdateTime = time.Now()
 
 	db := this.context.DB.Create(downloadToken)
 	this.PanicError(db.Error)
@@ -52,7 +52,7 @@ func (this *DownloadTokenDao) Create(downloadToken *DownloadToken) *DownloadToke
 //修改一个downloadToken
 func (this *DownloadTokenDao) Save(downloadToken *DownloadToken) *DownloadToken {
 
-	downloadToken.ModifyTime = time.Now()
+	downloadToken.UpdateTime = time.Now()
 	db := this.context.DB.Save(downloadToken)
 	this.PanicError(db.Error)
 

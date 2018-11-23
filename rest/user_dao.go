@@ -20,7 +20,7 @@ func (this *UserDao) Create(user *User) *User {
 	timeUUID, _ := uuid.NewV4()
 	user.Uuid = string(timeUUID.String())
 	user.CreateTime = time.Now()
-	user.ModifyTime = time.Now()
+	user.UpdateTime = time.Now()
 	user.LastTime = time.Now()
 	user.Sort = time.Now().UnixNano() / 1e6
 
@@ -132,7 +132,7 @@ func (this *UserDao) CountByEmail(email string) int {
 //保存用户
 func (this *UserDao) Save(user *User) *User {
 
-	user.ModifyTime = time.Now()
+	user.UpdateTime = time.Now()
 	db := this.context.DB.
 		Save(user)
 	this.PanicError(db.Error)

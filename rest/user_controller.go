@@ -73,7 +73,7 @@ func (this *UserController) Login(writer http.ResponseWriter, request *http.Requ
 		Ip:         GetIpAddress(request),
 		ExpireTime: expiration,
 	}
-	session.ModifyTime = time.Now()
+	session.UpdateTime = time.Now()
 	session.CreateTime = time.Now()
 	session = this.sessionDao.Create(session)
 

@@ -109,7 +109,7 @@ func InstallDatabase() {
 		timeUUID, _ := uuid.NewV4()
 		user.Uuid = string(timeUUID.String())
 		user.CreateTime = time.Now()
-		user.ModifyTime = time.Now()
+		user.UpdateTime = time.Now()
 		user.LastTime = time.Now()
 		user.Sort = time.Now().UnixNano() / 1e6
 		user.Role = USER_ROLE_ADMINISTRATOR

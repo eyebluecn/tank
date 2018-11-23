@@ -38,7 +38,7 @@ func (this *PreferenceDao) Create(preference *Preference) *Preference {
 	timeUUID, _ := uuid.NewV4()
 	preference.Uuid = string(timeUUID.String())
 	preference.CreateTime = time.Now()
-	preference.ModifyTime = time.Now()
+	preference.UpdateTime = time.Now()
 	db := this.context.DB.Create(preference)
 	this.PanicError(db.Error)
 
@@ -48,7 +48,7 @@ func (this *PreferenceDao) Create(preference *Preference) *Preference {
 //修改一个偏好设置
 func (this *PreferenceDao) Save(preference *Preference) *Preference {
 
-	preference.ModifyTime = time.Now()
+	preference.UpdateTime = time.Now()
 	db := this.context.DB.Save(preference)
 	this.PanicError(db.Error)
 
