@@ -8,7 +8,6 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/textproto"
-	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -439,13 +438,13 @@ func (this *MatterService) DownloadFile(writer http.ResponseWriter, request *htt
 	defer diskFile.Close()
 
 	//如果是图片或者文本或者视频就直接打开。其余的一律以下载形式返回。
-	fileName := url.QueryEscape(filename)
-	mimeType := GetMimeType(fileName)
-	if strings.Index(mimeType, "image") != 0 &&
-		strings.Index(mimeType, "text") != 0 &&
-		strings.Index(mimeType, "video") != 0 {
-		writer.Header().Set("content-disposition", "attachment; filename=\""+fileName+"\"")
-	}
+	//fileName := url.QueryEscape(filename)
+	//mimeType := GetMimeType(fileName)
+	//if strings.Index(mimeType, "image") != 0 &&
+	//	strings.Index(mimeType, "text") != 0 &&
+	//	strings.Index(mimeType, "video") != 0 {
+	//	writer.Header().Set("content-disposition", "attachment; filename=\""+fileName+"\"")
+	//}
 
 	//显示文件大小。
 	fileInfo, err := diskFile.Stat()

@@ -140,7 +140,7 @@ func (this *ImageCacheDao) Delete(imageCache *ImageCache) {
 	err := os.Remove(CONFIG.MatterPath + imageCache.Path)
 
 	if err != nil {
-		LogError(fmt.Sprintf("删除磁盘上的文件出错，不做任何处理"))
+		LogError(fmt.Sprintf("删除磁盘上的文件出错，不做任何处理 %s", err.Error()))
 	}
 }
 

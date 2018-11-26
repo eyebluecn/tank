@@ -43,12 +43,12 @@ func (this *ImageCacheController) RegisterRoutes() map[string]func(writer http.R
 	return routeMap
 }
 
-//查看某个文件的详情。
+//查看某个图片缓存的详情。
 func (this *ImageCacheController) Detail(writer http.ResponseWriter, request *http.Request) *WebResult {
 
 	uuid := request.FormValue("uuid")
 	if uuid == "" {
-		return this.Error("文件的uuid必填")
+		return this.Error("图片缓存的uuid必填")
 	}
 
 	imageCache := this.imageCacheService.Detail(uuid)
@@ -57,7 +57,7 @@ func (this *ImageCacheController) Detail(writer http.ResponseWriter, request *ht
 	user := this.checkUser(writer, request)
 	if user.Role != USER_ROLE_ADMINISTRATOR {
 		if imageCache.UserUuid != user.Uuid {
-			panic("没有权限查看该文件")
+			panic("没有权限查看该图片缓存")
 		}
 	}
 
@@ -65,7 +65,7 @@ func (this *ImageCacheController) Detail(writer http.ResponseWriter, request *ht
 
 }
 
-//按照分页的方式获取某个文件夹下文件和子文件夹的列表，通常情况下只有一页。
+//按照分页的方式获取某个图片缓存夹下图片缓存和子图片缓存夹的列表，通常情况下只有一页。
 func (this *ImageCacheController) Page(writer http.ResponseWriter, request *http.Request) *WebResult {
 
 	//如果是根目录，那么就传入root.
@@ -110,17 +110,17 @@ func (this *ImageCacheController) Page(writer http.ResponseWriter, request *http
 	return this.Success(pager)
 }
 
-//删除一个文件
+//删除一个图片缓存
 func (this *ImageCacheController) Delete(writer http.ResponseWriter, request *http.Request) *WebResult {
 
 	uuid := request.FormValue("uuid")
 	if uuid == "" {
-		return this.Error("文件的uuid必填")
+		return this.Error("图片缓存的uuid必填")
 	}
 
 	imageCache := this.imageCacheDao.FindByUuid(uuid)
 
-	//判断文件的所属人是否正确
+	//判断图片缓存的所属人是否正确
 	user := this.checkUser(writer, request)
 	if user.Role != USER_ROLE_ADMINISTRATOR && imageCache.UserUuid != user.Uuid {
 		return this.Error(CODE_WRAPPER_UNAUTHORIZED)
@@ -131,12 +131,12 @@ func (this *ImageCacheController) Delete(writer http.ResponseWriter, request *ht
 	return this.Success("删除成功！")
 }
 
-//删除一系列文件。
+//删除一系列图片缓存。
 func (this *ImageCacheController) DeleteBatch(writer http.ResponseWriter, request *http.Request) *WebResult {
 
 	uuids := request.FormValue("uuids")
 	if uuids == "" {
-		return this.Error("文件的uuids必填")
+		return this.Error("图片缓存的uuids必填")
 	}
 
 	uuidArray := strings.Split(uuids, ",")
@@ -145,7 +145,7 @@ func (this *ImageCacheController) DeleteBatch(writer http.ResponseWriter, reques
 
 		imageCache := this.imageCacheDao.FindByUuid(uuid)
 
-		//判断文件的所属人是否正确
+		//判断图片缓存的所属人是否正确
 		user := this.checkUser(writer, request)
 		if user.Role != USER_ROLE_ADMINISTRATOR && imageCache.UserUuid != user.Uuid {
 			return this.Error(CODE_WRAPPER_UNAUTHORIZED)
