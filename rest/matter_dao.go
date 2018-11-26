@@ -11,6 +11,18 @@ import (
 
 type MatterDao struct {
 	BaseDao
+	imageCacheDao *ImageCacheDao
+}
+
+//初始化方法
+func (this *MatterDao) Init(context *Context) {
+	this.BaseDao.Init(context)
+
+	//手动装填本实例的Bean. 这里必须要用中间变量方可。
+	b := context.GetBean(this.imageCacheDao)
+	if b, ok := b.(*ImageCacheDao); ok {
+		this.imageCacheDao = b
+	}
 }
 
 //按照Id查询文件
@@ -22,9 +34,7 @@ func (this *MatterDao) FindByUuid(uuid string) *Matter {
 	if db.Error != nil {
 		return nil
 	}
-
 	return &matter
-
 }
 
 //按照Id查询文件
@@ -214,7 +224,6 @@ func (this *MatterDao) Delete(matter *Matter) {
 
 		for _, f := range matters {
 			this.Delete(f)
-
 		}
 
 		//删除文件夹本身
@@ -222,15 +231,18 @@ func (this *MatterDao) Delete(matter *Matter) {
 		this.PanicError(db.Error)
 
 	} else {
+		//删除数据库中文件记录
 		db := this.context.DB.Delete(&matter)
 		this.PanicError(db.Error)
+
+		//删除对应的缓存图片。
+		this.imageCacheDao.DeleteByMatterUuid(matter.Uuid)
 
 		//删除文件
 		err := os.Remove(CONFIG.MatterPath + matter.Path)
 
 		if err != nil {
 			LogError(fmt.Sprintf("删除磁盘上的文件出错，不做任何处理"))
-			//this.PanicError(err)
 		}
 
 	}

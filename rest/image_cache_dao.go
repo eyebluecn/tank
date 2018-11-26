@@ -141,6 +141,31 @@ func (this *ImageCacheDao) Delete(imageCache *ImageCache) {
 
 	if err != nil {
 		LogError(fmt.Sprintf("删除磁盘上的文件出错，不做任何处理"))
-		//this.PanicError(err)
 	}
+}
+
+//删除一个matter对应的所有缓存
+func (this *ImageCacheDao) DeleteByMatterUuid(matterUuid string) {
+
+	var wp = &WherePair{}
+
+	wp = wp.And(&WherePair{Query: "matter_uuid = ?", Args: []interface{}{matterUuid}})
+
+	//查询出即将删除的图片缓存
+	var imageCaches []*ImageCache
+	db := this.context.DB.Where(wp.Query, wp.Args).Find(&imageCaches)
+	this.PanicError(db.Error)
+
+	//删除文件记录
+	db = this.context.DB.Where(wp.Query, wp.Args).Delete(ImageCache{})
+	this.PanicError(db.Error)
+
+	//删除文件实体
+	for _, imageCache := range imageCaches {
+		err := os.Remove(CONFIG.MatterPath + imageCache.Path)
+		if err != nil {
+			LogError(fmt.Sprintf("删除磁盘上的文件出错，不做任何处理"))
+		}
+	}
+
 }
