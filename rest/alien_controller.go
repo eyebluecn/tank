@@ -17,6 +17,7 @@ type AlienController struct {
 	matterService     *MatterService
 	imageCacheDao     *ImageCacheDao
 	imageCacheService *ImageCacheService
+	alienService      *AlienService
 }
 
 //初始化方法
@@ -54,6 +55,11 @@ func (this *AlienController) Init(context *Context) {
 		this.imageCacheService = c
 	}
 
+	b = context.GetBean(this.alienService)
+	if c, ok := b.(*AlienService); ok {
+		this.alienService = c
+	}
+
 }
 
 //注册自己的路由。
@@ -77,17 +83,27 @@ func (this *AlienController) HandleRoutes(writer http.ResponseWriter, request *h
 
 	path := request.URL.Path
 
-	//匹配 /api/alien/download/{uuid}/{filename}
-	reg := regexp.MustCompile(`^/api/alien/download/([^/]+)/([^/]+)$`)
+	//匹配 /api/alien/preview/{uuid}/{filename} (响应头不包含 content-disposition)
+	reg := regexp.MustCompile(`^/api/alien/preview/([^/]+)/([^/]+)$`)
 	strs := reg.FindStringSubmatch(path)
-	if len(strs) != 3 {
-		return nil, false
-	} else {
+	if len(strs) == 3 {
+		var f = func(writer http.ResponseWriter, request *http.Request) {
+			this.Preview(writer, request, strs[1], strs[2])
+		}
+		return f, true
+	}
+
+	//匹配 /api/alien/download/{uuid}/{filename} (响应头包含 content-disposition)
+	reg = regexp.MustCompile(`^/api/alien/download/([^/]+)/([^/]+)$`)
+	strs = reg.FindStringSubmatch(path)
+	if len(strs) == 3 {
 		var f = func(writer http.ResponseWriter, request *http.Request) {
 			this.Download(writer, request, strs[1], strs[2])
 		}
 		return f, true
 	}
+
+	return nil, false
 }
 
 //直接使用邮箱和密码获取用户
@@ -385,71 +401,17 @@ func (this *AlienController) FetchDownloadToken(writer http.ResponseWriter, requ
 
 }
 
-//下载一个文件。既可以使用登录的方式下载，也可以使用授权的方式下载。
+
+//预览一个文件。既可以使用登录的方式，也可以使用授权的方式
+func (this *AlienController) Preview(writer http.ResponseWriter, request *http.Request, uuid string, filename string) {
+
+	operator := this.findUser(writer, request)
+	this.alienService.PreviewOrDownload(writer, request, uuid, filename, operator, false)
+}
+
+
+//下载一个文件。既可以使用登录的方式，也可以使用授权的方式
 func (this *AlienController) Download(writer http.ResponseWriter, request *http.Request, uuid string, filename string) {
-
-	matter := this.matterDao.CheckByUuid(uuid)
-
-	//判断是否是文件夹
-	if matter.Dir {
-		panic("暂不支持下载文件夹")
-	}
-
-	if matter.Name != filename {
-		panic("文件信息错误")
-	}
-
-	//验证用户的权限问题。
-	//文件如果是私有的才需要权限
-	if matter.Privacy {
-
-		//1.如果带有downloadTokenUuid那么就按照token的信息去获取。
-		downloadTokenUuid := request.FormValue("downloadTokenUuid")
-		if downloadTokenUuid != "" {
-			downloadToken := this.downloadTokenDao.CheckByUuid(downloadTokenUuid)
-			if downloadToken.ExpireTime.Before(time.Now()) {
-				panic("downloadToken已失效")
-			}
-
-			if downloadToken.MatterUuid != uuid {
-				panic("token和文件信息不一致")
-			}
-
-			tokenUser := this.userDao.CheckByUuid(downloadToken.UserUuid)
-			if matter.UserUuid != tokenUser.Uuid {
-				panic(CODE_WRAPPER_UNAUTHORIZED)
-			}
-
-			//下载之后立即过期掉。
-			downloadToken.ExpireTime = time.Now().AddDate(0, 0, 1);
-			this.downloadTokenDao.Save(downloadToken)
-
-		} else {
-
-			//判断文件的所属人是否正确
-			user := this.checkUser(writer, request)
-			if user.Role != USER_ROLE_ADMINISTRATOR && matter.UserUuid != user.Uuid {
-				panic(CODE_WRAPPER_UNAUTHORIZED)
-			}
-
-		}
-	}
-
-	//对图片处理。
-	needProcess, _, _, _ := this.imageCacheService.ResizeParams(request)
-	if needProcess {
-
-		//如果是图片，那么能用缓存就用缓存
-		imageCache := this.imageCacheDao.FindByUri(request.RequestURI)
-		if imageCache == nil {
-			imageCache = this.imageCacheService.cacheImage(writer, request, matter)
-		}
-
-		//直接使用缓存中的信息
-		this.matterService.DownloadFile(writer, request, CONFIG.MatterPath+imageCache.Path, matter.Name)
-
-	} else {
-		this.matterService.DownloadFile(writer, request, CONFIG.MatterPath+matter.Path, matter.Name)
-	}
-
+	operator := this.findUser(writer, request)
+	this.alienService.PreviewOrDownload(writer, request, uuid, filename, operator, true)
 }

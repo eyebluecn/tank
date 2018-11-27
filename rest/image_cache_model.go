@@ -7,7 +7,7 @@ type ImageCache struct {
 	Base
 	UserUuid   string  `json:"userUuid"`
 	MatterUuid string  `json:"matterUuid"`
-	Uri        string  `json:"uri"`
+	Mode       string  `json:"mode"`
 	Md5        string  `json:"md5"`
 	Size       int64   `json:"size"`
 	Path       string  `json:"path"`

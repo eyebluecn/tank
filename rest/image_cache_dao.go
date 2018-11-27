@@ -7,6 +7,7 @@ import (
 	"github.com/nu7hatch/gouuid"
 	"os"
 	"time"
+	"strings"
 )
 
 type ImageCacheDao struct {
@@ -38,11 +39,17 @@ func (this *ImageCacheDao) CheckByUuid(uuid string) *ImageCache {
 }
 
 //按照名字查询文件夹
-func (this *ImageCacheDao) FindByUri(uri string) *ImageCache {
+func (this *ImageCacheDao) FindByMatterUuidAndMode(matterUuid string, mode string) *ImageCache {
 
 	var wp = &WherePair{}
 
-	wp = wp.And(&WherePair{Query: "uri = ?", Args: []interface{}{uri}})
+	if matterUuid != "" {
+		wp = wp.And(&WherePair{Query: "matter_uuid = ?", Args: []interface{}{matterUuid}})
+	}
+
+	if mode != "" {
+		wp = wp.And(&WherePair{Query: "mode = ?", Args: []interface{}{mode}})
+	}
 
 	var imageCache = &ImageCache{}
 	db := this.context.DB.Model(&ImageCache{}).Where(wp.Query, wp.Args...).First(imageCache)
@@ -107,6 +114,7 @@ func (this *ImageCacheDao) Page(page int, pageSize int, userUuid string, matterU
 	return pager
 }
 
+
 //创建
 func (this *ImageCacheDao) Create(imageCache *ImageCache) *ImageCache {
 
@@ -130,18 +138,36 @@ func (this *ImageCacheDao) Save(imageCache *ImageCache) *ImageCache {
 	return imageCache
 }
 
+//删除一个文件包括文件夹
+func (this *ImageCacheDao) deleteFileAndDir(imageCache *ImageCache) {
+
+	filePath := CONFIG.MatterPath + imageCache.Path
+	//递归找寻文件的上级目录uuid. 因为是/开头的缘故
+	parts := strings.Split(imageCache.Path, "/")
+	dirPath := CONFIG.MatterPath + "/" + parts[1] + "/" + parts[2] + "/" + parts[3] + "/" + parts[4]
+
+	//删除文件
+	err := os.Remove(filePath)
+	if err != nil {
+		LogError(fmt.Sprintf("删除磁盘上的文件%s出错，不做任何处理 %s", filePath, err.Error()))
+	}
+
+	//删除这一层文件夹
+	err = os.Remove(dirPath)
+	if err != nil {
+		LogError(fmt.Sprintf("删除磁盘上的文件夹%s出错，不做任何处理 %s", dirPath, err.Error()))
+	}
+}
+
+
 //删除一个文件，数据库中删除，物理磁盘上删除。
 func (this *ImageCacheDao) Delete(imageCache *ImageCache) {
 
 	db := this.context.DB.Delete(&imageCache)
 	this.PanicError(db.Error)
 
-	//删除文件
-	err := os.Remove(CONFIG.MatterPath + imageCache.Path)
+	this.deleteFileAndDir(imageCache)
 
-	if err != nil {
-		LogError(fmt.Sprintf("删除磁盘上的文件出错，不做任何处理 %s", err.Error()))
-	}
 }
 
 //删除一个matter对应的所有缓存
@@ -162,10 +188,7 @@ func (this *ImageCacheDao) DeleteByMatterUuid(matterUuid string) {
 
 	//删除文件实体
 	for _, imageCache := range imageCaches {
-		err := os.Remove(CONFIG.MatterPath + imageCache.Path)
-		if err != nil {
-			LogError(fmt.Sprintf("删除磁盘上的文件出错，不做任何处理"))
-		}
+		this.deleteFileAndDir(imageCache)
 	}
 
 }

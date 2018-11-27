@@ -95,6 +95,7 @@ func (this *Context) registerBeans() {
 
 	//alien
 	this.registerBean(new(AlienController))
+	this.registerBean(new(AlienService))
 
 	//downloadToken
 	this.registerBean(new(DownloadTokenDao))

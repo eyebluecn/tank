@@ -6,8 +6,8 @@ import (
 	"os"
 	"strconv"
 	"github.com/disintegration/imaging"
-	"net/url"
 	"strings"
+	"fmt"
 )
 
 //@Service
@@ -108,7 +108,6 @@ func (this *ImageCacheService) ResizeParams(request *http.Request) (needProcess 
 		}
 		return true, imageResizeM, imageResizeW, imageResizeH
 	} else {
-		LogInfo("没有有效的处理参数，不进行图片处理")
 		return false, "", 0, 0
 	}
 
@@ -168,11 +167,8 @@ func (this *ImageCacheService) ResizeImage(request *http.Request, filePath strin
 //缓存一张处理完毕了的图片
 func (this *ImageCacheService) cacheImage(writer http.ResponseWriter, request *http.Request, matter *Matter) *ImageCache {
 
-	// 防止中文乱码
-	fileName := url.QueryEscape(matter.Name)
-
 	//当前的文件是否是图片，只有图片才能处理。
-	extension := GetExtension(fileName)
+	extension := GetExtension(matter.Name)
 	formats := map[string]imaging.Format{
 		".jpg":  imaging.JPEG,
 		".jpeg": imaging.JPEG,
@@ -194,8 +190,8 @@ func (this *ImageCacheService) cacheImage(writer http.ResponseWriter, request *h
 	user := this.userDao.FindByUuid(matter.UserUuid)
 	//获取文件应该存放在的物理路径的绝对路径和相对路径。
 	absolutePath, relativePath := GetUserFilePath(user.Username, true)
-	absolutePath = absolutePath + "/" + fileName
-	relativePath = relativePath + "/" + fileName
+	absolutePath = absolutePath + "/" + matter.Name
+	relativePath = relativePath + "/" + matter.Name
 
 	fileWriter, err := os.Create(absolutePath)
 	this.PanicError(err)
@@ -209,11 +205,13 @@ func (this *ImageCacheService) cacheImage(writer http.ResponseWriter, request *h
 	fileInfo, err := fileWriter.Stat()
 	this.PanicError(err)
 
+	_, imageResizeM, imageResizeW, imageResizeH := this.ResizeParams(request)
+
 	//相关信息写到缓存中去
 	imageCache := &ImageCache{
 		UserUuid:   matter.UserUuid,
 		MatterUuid: matter.Uuid,
-		Uri:        request.RequestURI,
+		Mode:       fmt.Sprintf("%s_%d_%d", imageResizeM, imageResizeW, imageResizeH),
 		Size:       fileInfo.Size(),
 		Path:       relativePath,
 	}

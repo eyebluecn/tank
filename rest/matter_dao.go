@@ -7,6 +7,7 @@ import (
 	"github.com/nu7hatch/gouuid"
 	"os"
 	"time"
+	"strings"
 )
 
 type MatterDao struct {
@@ -238,11 +239,21 @@ func (this *MatterDao) Delete(matter *Matter) {
 		//删除对应的缓存图片。
 		this.imageCacheDao.DeleteByMatterUuid(matter.Uuid)
 
-		//删除文件
-		err := os.Remove(CONFIG.MatterPath + matter.Path)
+		filePath := CONFIG.MatterPath + matter.Path
+		//递归找寻文件的上级目录uuid. 因为是/开头的缘故
+		parts := strings.Split(matter.Path, "/")
+		dirPath := CONFIG.MatterPath + "/" + parts[1] + "/" + parts[2] + "/" + parts[3]
 
+		//删除文件
+		err := os.Remove(filePath)
 		if err != nil {
-			LogError(fmt.Sprintf("删除磁盘上的文件出错，不做任何处理"))
+			LogError(fmt.Sprintf("删除磁盘上的文件出错，不做任何处理 %s", err.Error()))
+		}
+
+		//删除这一层文件夹
+		err = os.Remove(dirPath)
+		if err != nil {
+			LogError(fmt.Sprintf("删除磁盘上的文件夹出错，不做任何处理 %s", err.Error()))
 		}
 
 	}

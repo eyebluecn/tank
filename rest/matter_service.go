@@ -4,16 +4,15 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"mime"
 	"mime/multipart"
 	"net/http"
 	"net/textproto"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+	"net/url"
 )
 
 //@Service
@@ -431,20 +430,22 @@ func (this *MatterService) sumRangesSize(ranges []httpRange) (size int64) {
 
 //文件下载。具有进度功能。
 //下载功能参考：https://github.com/Masterminds/go-fileserver
-func (this *MatterService) DownloadFile(writer http.ResponseWriter, request *http.Request, filePath string, filename string) {
+func (this *MatterService) DownloadFile(
+	writer http.ResponseWriter,
+	request *http.Request,
+	filePath string,
+	filename string,
+	withContentDisposition bool) {
 
 	diskFile, err := os.Open(filePath)
 	this.PanicError(err)
 	defer diskFile.Close()
 
 	//如果是图片或者文本或者视频就直接打开。其余的一律以下载形式返回。
-	//fileName := url.QueryEscape(filename)
-	//mimeType := GetMimeType(fileName)
-	//if strings.Index(mimeType, "image") != 0 &&
-	//	strings.Index(mimeType, "text") != 0 &&
-	//	strings.Index(mimeType, "video") != 0 {
-	//	writer.Header().Set("content-disposition", "attachment; filename=\""+fileName+"\"")
-	//}
+	if withContentDisposition {
+		fileName := url.QueryEscape(filename)
+		writer.Header().Set("content-disposition", "attachment; filename=\""+fileName+"\"")
+	}
 
 	//显示文件大小。
 	fileInfo, err := diskFile.Stat()
@@ -473,7 +474,10 @@ func (this *MatterService) DownloadFile(writer http.ResponseWriter, request *htt
 	ctypes, haveType := writer.Header()["Content-Type"]
 	var ctype string
 	if !haveType {
-		ctype = mime.TypeByExtension(filepath.Ext(fileInfo.Name()))
+		//放弃原有的判断mime的方法
+		//ctype = mime.TypeByExtension(filepath.Ext(fileInfo.Name()))
+		//使用mimeUtil来获取mime
+		ctype = GetFallbackMimeType(filename, "")
 		if ctype == "" {
 			// read a chunk to decide between utf-8 text and binary
 			var buf [sniffLen]byte

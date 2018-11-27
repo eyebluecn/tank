@@ -131,6 +131,7 @@ func (this *BaseController) Error(err interface{}) *WebResult {
 	return webResult
 }
 
+//能找到一个user就找到一个，遇到问题直接抛出错误
 func (this *BaseController) checkLogin(writer http.ResponseWriter, request *http.Request) (*Session, *User) {
 
 	//验证用户是否已经登录。
@@ -159,11 +160,35 @@ func (this *BaseController) checkLogin(writer http.ResponseWriter, request *http
 
 }
 
-func (this *BaseController) checkUser(writer http.ResponseWriter, request *http.Request) *User {
+//能找到一个user就找到一个
+func (this *BaseController) findUser(writer http.ResponseWriter, request *http.Request) *User {
 
+	//验证用户是否已经登录。
+	sessionCookie, err := request.Cookie(COOKIE_AUTH_KEY)
+	if err != nil {
+		LogError("找不到任何登录信息")
+		return nil
+	}
+
+	session := this.sessionDao.FindByUuid(sessionCookie.Value)
+	if session != nil {
+		if session.ExpireTime.Before(time.Now()) {
+			LogError("登录信息已过期")
+			return nil
+		} else {
+			user := this.userDao.FindByUuid(session.UserUuid)
+			if user != nil {
+				return user
+			}
+		}
+	}
+
+	return nil
+}
+
+func (this *BaseController) checkUser(writer http.ResponseWriter, request *http.Request) *User {
 	_, user := this.checkLogin(writer, request)
 	return user
-
 }
 
 //允许跨域请求

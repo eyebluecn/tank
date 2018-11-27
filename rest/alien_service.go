@@ -1,0 +1,135 @@
+package rest
+
+import (
+	"net/http"
+	"time"
+	"fmt"
+)
+
+//@Service
+type AlienService struct {
+	Bean
+	matterDao         *MatterDao
+	matterService     *MatterService
+	userDao           *UserDao
+	uploadTokenDao    *UploadTokenDao
+	downloadTokenDao  *DownloadTokenDao
+	imageCacheDao     *ImageCacheDao
+	imageCacheService *ImageCacheService
+}
+
+//初始化方法
+func (this *AlienService) Init(context *Context) {
+
+	//手动装填本实例的Bean. 这里必须要用中间变量方可。
+	b := context.GetBean(this.matterDao)
+	if b, ok := b.(*MatterDao); ok {
+		this.matterDao = b
+	}
+
+	b = context.GetBean(this.matterService)
+	if b, ok := b.(*MatterService); ok {
+		this.matterService = b
+	}
+
+	b = context.GetBean(this.userDao)
+	if b, ok := b.(*UserDao); ok {
+		this.userDao = b
+	}
+
+	b = context.GetBean(this.uploadTokenDao)
+	if c, ok := b.(*UploadTokenDao); ok {
+		this.uploadTokenDao = c
+	}
+
+	b = context.GetBean(this.downloadTokenDao)
+	if c, ok := b.(*DownloadTokenDao); ok {
+		this.downloadTokenDao = c
+	}
+
+	b = context.GetBean(this.imageCacheDao)
+	if c, ok := b.(*ImageCacheDao); ok {
+		this.imageCacheDao = c
+	}
+
+	b = context.GetBean(this.imageCacheService)
+	if c, ok := b.(*ImageCacheService); ok {
+		this.imageCacheService = c
+	}
+}
+
+//预览或者下载的统一处理.
+func (this *AlienService) PreviewOrDownload(
+	writer http.ResponseWriter,
+	request *http.Request,
+	uuid string,
+	filename string,
+	operator *User,
+	withContentDisposition bool) {
+
+	LogInfo("预览或下载文件 " + uuid + " " + filename)
+
+	matter := this.matterDao.CheckByUuid(uuid)
+
+	//判断是否是文件夹
+	if matter.Dir {
+		panic("不支持下载文件夹")
+	}
+
+	if matter.Name != filename {
+		panic("文件信息错误")
+	}
+
+	//验证用户的权限问题。
+	//文件如果是私有的才需要权限
+	if matter.Privacy {
+
+		//1.如果带有downloadTokenUuid那么就按照token的信息去获取。
+		downloadTokenUuid := request.FormValue("downloadTokenUuid")
+		if downloadTokenUuid != "" {
+			downloadToken := this.downloadTokenDao.CheckByUuid(downloadTokenUuid)
+			if downloadToken.ExpireTime.Before(time.Now()) {
+				panic("downloadToken已失效")
+			}
+
+			if downloadToken.MatterUuid != uuid {
+				panic("token和文件信息不一致")
+			}
+
+			tokenUser := this.userDao.CheckByUuid(downloadToken.UserUuid)
+			if matter.UserUuid != tokenUser.Uuid {
+				panic(CODE_WRAPPER_UNAUTHORIZED)
+			}
+
+			//下载之后立即过期掉。
+			downloadToken.ExpireTime = time.Now().AddDate(0, 0, 1);
+			this.downloadTokenDao.Save(downloadToken)
+
+		} else {
+
+			//判断文件的所属人是否正确
+			if operator == nil || (operator.Role != USER_ROLE_ADMINISTRATOR && matter.UserUuid != operator.Uuid) {
+				panic(CODE_WRAPPER_UNAUTHORIZED)
+			}
+
+		}
+	}
+
+	//对图片处理。
+	needProcess, imageResizeM, imageResizeW, imageResizeH := this.imageCacheService.ResizeParams(request)
+	if needProcess {
+
+		//如果是图片，那么能用缓存就用缓存
+		imageCache := this.imageCacheDao.FindByMatterUuidAndMode(matter.Uuid, fmt.Sprintf("%s_%d_%d", imageResizeM, imageResizeW, imageResizeH))
+		if imageCache == nil {
+			imageCache = this.imageCacheService.cacheImage(writer, request, matter)
+		}
+
+		//直接使用缓存中的信息
+		this.matterService.DownloadFile(writer, request, CONFIG.MatterPath+imageCache.Path, matter.Name, withContentDisposition)
+
+	} else {
+		this.matterService.DownloadFile(writer, request, CONFIG.MatterPath+matter.Path, matter.Name, withContentDisposition)
+	}
+
+}
