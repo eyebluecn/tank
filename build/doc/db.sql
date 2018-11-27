@@ -5,7 +5,7 @@ CREATE TABLE `tank20_download_token` (
   `expire_time` timestamp NULL DEFAULT NULL COMMENT '授权访问的次数',
   `ip` varchar(45) DEFAULT NULL COMMENT '消费者的ip',
   `sort` bigint(20) DEFAULT NULL,
-  `modify_time` timestamp NULL DEFAULT NULL,
+  `update_time` timestamp NULL DEFAULT NULL,
   `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (`uuid`),
   UNIQUE KEY `id_UNIQUE` (`uuid`)
@@ -15,16 +15,15 @@ CREATE TABLE `tank20_image_cache` (
   `uuid` char(36) NOT NULL,
   `user_uuid` char(36) DEFAULT NULL COMMENT '上传的用户id',
   `matter_uuid` char(36) DEFAULT NULL,
-  `uri` varchar(512) DEFAULT NULL COMMENT '请求的uri',
+  `mode` varchar(512) DEFAULT NULL COMMENT '请求的uri',
   `md5` varchar(45) DEFAULT NULL COMMENT '文件的md5值',
   `size` bigint(20) DEFAULT '0' COMMENT '文件大小',
   `path` varchar(255) DEFAULT NULL,
   `sort` bigint(20) DEFAULT NULL,
-  `modify_time` timestamp NULL DEFAULT NULL,
+  `update_time` timestamp NULL DEFAULT NULL,
   `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (`uuid`),
-  UNIQUE KEY `id_UNIQUE` (`uuid`),
-  UNIQUE KEY `uri_UNIQUE` (`uri`)
+  UNIQUE KEY `id_UNIQUE` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='图片缓存表';
 
 CREATE TABLE `tank20_matter` (
@@ -39,7 +38,7 @@ CREATE TABLE `tank20_matter` (
   `privacy` tinyint(1) DEFAULT '0' COMMENT '文件是否是公有的',
   `path` varchar(255) DEFAULT NULL,
   `sort` bigint(20) DEFAULT NULL,
-  `modify_time` timestamp NULL DEFAULT NULL,
+  `update_time` timestamp NULL DEFAULT NULL,
   `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (`uuid`),
   UNIQUE KEY `id_UNIQUE` (`uuid`)
@@ -54,7 +53,7 @@ CREATE TABLE `tank20_preference` (
   `footer_line2` varchar(1024) DEFAULT NULL,
   `version` varchar(45) DEFAULT NULL,
   `sort` bigint(20) DEFAULT NULL,
-  `modify_time` timestamp NULL DEFAULT NULL,
+  `update_time` timestamp NULL DEFAULT NULL,
   `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (`uuid`),
   UNIQUE KEY `id_UNIQUE` (`uuid`)
@@ -67,7 +66,7 @@ CREATE TABLE `tank20_session` (
   `ip` varchar(45) DEFAULT NULL COMMENT '用户的ip地址',
   `expire_time` timestamp NULL DEFAULT NULL,
   `sort` bigint(20) DEFAULT NULL,
-  `modify_time` timestamp NULL DEFAULT NULL,
+  `update_time` timestamp NULL DEFAULT NULL,
   `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (`uuid`),
   UNIQUE KEY `id_UNIQUE` (`uuid`)
@@ -84,7 +83,7 @@ CREATE TABLE `tank20_upload_token` (
   `expire_time` timestamp NULL DEFAULT NULL,
   `ip` varchar(45) DEFAULT NULL COMMENT '消费者的ip',
   `sort` bigint(20) DEFAULT NULL,
-  `modify_time` timestamp NULL DEFAULT NULL,
+  `update_time` timestamp NULL DEFAULT NULL,
   `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (`uuid`),
   UNIQUE KEY `id_UNIQUE` (`uuid`)
@@ -105,7 +104,7 @@ CREATE TABLE `tank20_user` (
   `size_limit` int(11) DEFAULT '-1' COMMENT '该账号上传文件的大小限制，单位byte。<0 表示不设限制',
   `status` varchar(45) DEFAULT 'OK',
   `sort` bigint(20) DEFAULT NULL,
-  `modify_time` timestamp NULL DEFAULT NULL,
+  `update_time` timestamp NULL DEFAULT NULL,
   `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (`uuid`),
   UNIQUE KEY `id_UNIQUE` (`uuid`)
