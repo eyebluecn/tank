@@ -115,6 +115,11 @@ func (this *Context) registerBeans() {
 	this.registerBean(new(PreferenceDao))
 	this.registerBean(new(PreferenceService))
 
+	//securityVisit
+	this.registerBean(new(SecurityVisitController))
+	this.registerBean(new(SecurityVisitDao))
+	this.registerBean(new(SecurityVisitService))
+
 	//session
 	this.registerBean(new(SessionDao))
 

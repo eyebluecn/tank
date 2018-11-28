@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/json-iterator/go"
 	"io"
@@ -76,6 +77,58 @@ func (this *Router) GlobalPanicHandler(writer http.ResponseWriter, request *http
 	}
 }
 
+//记录访问记录
+func (this *Router) logSecurityVisit(writer http.ResponseWriter, request *http.Request) {
+	//手动装填本实例的Bean. 这里必须要用中间变量方可。
+	var securityVisitDao *SecurityVisitDao
+	b := this.context.GetBean(securityVisitDao)
+	if b, ok := b.(*SecurityVisitDao); ok {
+		securityVisitDao = b
+	}
+
+	fmt.Printf("Host = %s Uri = %s  Path = %s  RawPath = %s  RawQuery = %s \n",
+		request.Host,
+		request.RequestURI,
+		request.URL.Path,
+		request.URL.RawPath,
+		request.URL.RawQuery)
+
+	params := make(map[string][]string)
+
+	//POST请求参数
+	values := request.PostForm
+	for key, val := range values {
+		params[key] = val
+	}
+	//GET请求参数
+	values1 := request.URL.Query()
+	for key, val := range values1 {
+		params[key] = val
+	}
+
+	//用json的方式输出返回值。
+	paramsString := "{}"
+	paramsData, err := json.Marshal(params)
+	if err == nil {
+		paramsString = string(paramsData)
+	}
+
+	//将文件信息存入数据库中。
+	securityVisit := &SecurityVisit{
+		SessionId: "",
+		UserUuid:  "testUserUUid",
+		Ip:        GetIpAddress(request),
+		Host:      request.Host,
+		Uri:       request.URL.Path,
+		Params:    paramsString,
+		Cost:      0,
+		Success:   true,
+	}
+
+	securityVisit = securityVisitDao.Create(securityVisit)
+
+}
+
 //让Router具有处理请求的功能。
 func (this *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 
@@ -85,6 +138,7 @@ func (this *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 
 	path := request.URL.Path
 	if strings.HasPrefix(path, "/api") {
+
 
 		if handler, ok := this.routeMap[path]; ok {
 
@@ -107,6 +161,9 @@ func (this *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 			}
 
 		}
+
+		//正常的访问记录会落到这里。
+		go this.logSecurityVisit(writer, request)
 
 	} else {
 		//当作静态资源处理。默认从当前文件下面的static文件夹中取东西。
@@ -140,5 +197,6 @@ func (this *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 		}
 
 	}
+
 
 }

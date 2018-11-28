@@ -1,0 +1,21 @@
+package rest
+
+/**
+ * 系统的所有访问记录均记录在此
+ */
+type SecurityVisit struct {
+	Base
+	SessionId string `json:"sessionId"`
+	UserUuid  string `json:"userUuid"`
+	Ip        string `json:"ip"`
+	Host      string `json:"host"`
+	Uri       string `json:"uri"`
+	Params    string `json:"params"`
+	Cost      int64  `json:"cost"`
+	Success   bool   `json:"success"`
+}
+
+// set File's table name to be `profiles`
+func (SecurityVisit) TableName() string {
+	return TABLE_PREFIX + "security_visit"
+}

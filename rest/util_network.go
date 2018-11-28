@@ -24,3 +24,10 @@ func GetIpAddress(r *http.Request) string {
 	}
 	return ipAddress
 }
+
+//根据一个请求，获取host
+func GetHostFromRequest(r *http.Request) string {
+
+	return r.Host
+
+}
