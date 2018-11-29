@@ -67,7 +67,6 @@ func (this *UserController) Login(writer http.ResponseWriter, request *http.Requ
 	expiration = expiration.AddDate(0, 0, 7)
 
 	//持久化用户的session.
-
 	session := &Session{
 		UserUuid:   user.Uuid,
 		Ip:         GetIpAddress(request),

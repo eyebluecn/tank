@@ -96,8 +96,6 @@ func (item *CacheItem) SetDeleteCallback(f func(interface{})) {
 type CacheTable struct {
 	sync.RWMutex
 
-	//缓存表名
-	name string
 	//所有缓存项
 	items map[interface{}]*CacheItem
 	// 触发缓存清理的定时器
@@ -166,9 +164,9 @@ func (table *CacheTable) checkExpire() {
 		table.cleanupTimer.Stop()
 	}
 	if table.cleanupInterval > 0 {
-		table.log("Expiration check triggered after", table.cleanupInterval, "for table", table.name)
+		table.log("Expiration check triggered after", table.cleanupInterval, "for table")
 	} else {
-		table.log("Expiration check installed for table", table.name)
+		table.log("Expiration check installed for table")
 	}
 
 	// 为了不抢占锁，采用临时的items.
@@ -220,7 +218,7 @@ func (table *CacheTable) Add(key interface{}, duration time.Duration, data inter
 
 	// 将缓存项放入表中
 	table.Lock()
-	table.log("Adding item with key", key, "and lifespan of", duration, "to table", table.name)
+	table.log("Adding item with key", key, "and lifespan of", duration, "to table")
 	table.items[key] = item
 
 	// 取出需要的东西，释放锁
@@ -267,7 +265,7 @@ func (table *CacheTable) Delete(key interface{}) (*CacheItem, error) {
 
 	table.Lock()
 	defer table.Unlock()
-	table.log("Deleting item with key", key, "created on", r.createTime, "and hit", r.count, "times from table", table.name)
+	table.log("Deleting item with key", key, "created on", r.createTime, "and hit", r.count, "times from table")
 	delete(table.items, key)
 
 	return r, nil
@@ -292,7 +290,7 @@ func (table *CacheTable) NotFoundAdd(key interface{}, lifeSpan time.Duration, da
 	}
 
 	item := NewCacheItem(key, lifeSpan, data)
-	table.log("Adding item with key", key, "and lifespan of", lifeSpan, "to table", table.name)
+	table.log("Adding item with key", key, "and lifespan of", lifeSpan, "to table")
 	table.items[key] = item
 
 	// 取出需要的内容，释放锁
@@ -344,7 +342,7 @@ func (table *CacheTable) Flush() {
 	table.Lock()
 	defer table.Unlock()
 
-	table.log("Flushing table", table.name)
+	table.log("Flushing table")
 
 	table.items = make(map[interface{}]*CacheItem)
 	table.cleanupInterval = 0
@@ -405,27 +403,9 @@ func (table *CacheTable) log(v ...interface{}) {
 	table.logger.Println(v...)
 }
 
-var (
-	cacheTableMap   = make(map[string]*CacheTable)
-	cacheTableMutex sync.RWMutex
-)
-
-//统一管理所有的缓存表，如果没有就返回一个新的。
-func Cache(table string) *CacheTable {
-	cacheTableMutex.RLock()
-	t, ok := cacheTableMap[table]
-	cacheTableMutex.RUnlock()
-
-	if !ok {
-		t = &CacheTable{
-			name:  table,
-			items: make(map[interface{}]*CacheItem),
-		}
-
-		cacheTableMutex.Lock()
-		cacheTableMap[table] = t
-		cacheTableMutex.Unlock()
+//新建一个缓存Table
+func NewCacheTable() *CacheTable {
+	return &CacheTable{
+		items: make(map[interface{}]*CacheItem),
 	}
-
-	return t
 }

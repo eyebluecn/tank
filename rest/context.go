@@ -6,16 +6,23 @@ import (
 	"reflect"
 )
 
+//全局唯一的上下文(在main函数中初始化)
+var CONTEXT = &Context{}
+
 //上下文，管理数据库连接，管理所有路由请求，管理所有的单例component.
 type Context struct {
 	//数据库连接
 	DB *gorm.DB
-	//处理所有路由请求
-	Router *Router
+	//session缓存
+	SessionCache *CacheTable
+	//TODO:日志相关内容
+
 	//各类的Bean Map。这里面是包含ControllerMap中所有元素
 	BeanMap map[string]IBean
 	//只包含了Controller的map
 	ControllerMap map[string]IController
+	//处理所有路由请求
+	Router *Router
 }
 
 func (this *Context) OpenDb() {
@@ -33,33 +40,34 @@ func (this *Context) OpenDb() {
 func (this *Context) CloseDb() {
 
 	if this.DB != nil {
-		this.DB.Close()
+		err := this.DB.Close()
+		if err != nil {
+			fmt.Println("关闭数据库连接出错", err)
+		}
 	}
 }
 
 //构造方法
-func NewContext() *Context {
-
-	context := &Context{}
+func (this *Context) Init()  {
 
 	//处理数据库连接的开关。
-	context.OpenDb()
+	this.OpenDb()
+
+	//创建一个用于存储session的缓存。
+	this.SessionCache = NewCacheTable()
 
 	//初始化Map
-	context.BeanMap = make(map[string]IBean)
-	context.ControllerMap = make(map[string]IController)
+	this.BeanMap = make(map[string]IBean)
+	this.ControllerMap = make(map[string]IController)
 
 	//注册各类Beans.在这个方法里面顺便把Controller装入ControllerMap中去。
-	context.registerBeans()
+	this.registerBeans()
 
 	//初始化每个bean.
-	context.initBeans()
+	this.initBeans()
 
 	//初始化Router. 这个方法要在Bean注册好了之后才能。
-	context.Router = NewRouter(context)
-
-	return context
-
+	this.Router = NewRouter(this)
 }
 
 //注册一个Bean
@@ -129,6 +137,7 @@ func (this *Context) registerBeans() {
 	//user
 	this.registerBean(new(UserController))
 	this.registerBean(new(UserDao))
+	this.registerBean(new(UserService))
 
 }
 

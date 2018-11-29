@@ -12,10 +12,11 @@ func main() {
 
 	//将运行时参数装填到config中去。
 	rest.PrepareConfigs()
-	context := rest.NewContext()
-	defer context.Destroy()
 
-	http.Handle("/", context.Router)
+	rest.CONTEXT.Init()
+	defer rest.CONTEXT.Destroy()
+
+	http.Handle("/", rest.CONTEXT.Router)
 
 	dotPort := fmt.Sprintf(":%v", rest.CONFIG.ServerPort)
 

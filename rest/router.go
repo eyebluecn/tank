@@ -12,8 +12,9 @@ import (
 
 //用于处理所有前来的请求
 type Router struct {
-	context  *Context
-	routeMap map[string]func(writer http.ResponseWriter, request *http.Request)
+	context     *Context
+	userService *UserService
+	routeMap    map[string]func(writer http.ResponseWriter, request *http.Request)
 }
 
 //构造方法
@@ -23,6 +24,14 @@ func NewRouter(context *Context) *Router {
 		routeMap: make(map[string]func(writer http.ResponseWriter, request *http.Request)),
 	}
 
+
+	//装载userService.
+	b := context.GetBean(router.userService)
+	if b, ok := b.(*UserService); ok {
+		router.userService = b
+	}
+
+	//将Controller中的路由规则装载机进来
 	for _, controller := range context.ControllerMap {
 		routes := controller.RegisterRoutes()
 		for k, v := range routes {
@@ -139,6 +148,8 @@ func (this *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 	path := request.URL.Path
 	if strings.HasPrefix(path, "/api") {
 
+		//统一处理用户的身份信息。
+		this.userService.enter(writer, request)
 
 		if handler, ok := this.routeMap[path]; ok {
 
@@ -197,6 +208,5 @@ func (this *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 		}
 
 	}
-
 
 }
