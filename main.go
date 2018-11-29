@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/muesli/cache2go"
 	"log"
 	"net/http"
 	"tank/rest"
@@ -22,8 +23,8 @@ func main() {
 	info := fmt.Sprintf("App started at http://localhost%v", dotPort)
 	rest.LogInfo(info)
 
-	err := http.ListenAndServe(dotPort, nil)
-	if err != nil {
-		log.Fatal("ListenAndServe: ", err)
+	err1 := http.ListenAndServe(dotPort, nil)
+	if err1 != nil {
+		log.Fatal("ListenAndServe: ", err1)
 	}
 }
