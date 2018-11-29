@@ -15,7 +15,7 @@ func (this *DownloadTokenDao) FindByUuid(uuid string) *DownloadToken {
 
 	// Read
 	var downloadToken = &DownloadToken{}
-	db := this.context.DB.Where(&DownloadToken{Base: Base{Uuid: uuid}}).First(downloadToken)
+	db := CONTEXT.DB.Where(&DownloadToken{Base: Base{Uuid: uuid}}).First(downloadToken)
 	if db.Error != nil {
 		return nil
 	}
@@ -28,7 +28,7 @@ func (this *DownloadTokenDao) CheckByUuid(uuid string) *DownloadToken {
 
 	// Read
 	var downloadToken = &DownloadToken{}
-	db := this.context.DB.Where(&DownloadToken{Base: Base{Uuid: uuid}}).First(downloadToken)
+	db := CONTEXT.DB.Where(&DownloadToken{Base: Base{Uuid: uuid}}).First(downloadToken)
 	this.PanicError(db.Error)
 	return downloadToken
 
@@ -43,7 +43,7 @@ func (this *DownloadTokenDao) Create(downloadToken *DownloadToken) *DownloadToke
 	downloadToken.CreateTime = time.Now()
 	downloadToken.UpdateTime = time.Now()
 
-	db := this.context.DB.Create(downloadToken)
+	db := CONTEXT.DB.Create(downloadToken)
 	this.PanicError(db.Error)
 
 	return downloadToken
@@ -53,7 +53,7 @@ func (this *DownloadTokenDao) Create(downloadToken *DownloadToken) *DownloadToke
 func (this *DownloadTokenDao) Save(downloadToken *DownloadToken) *DownloadToken {
 
 	downloadToken.UpdateTime = time.Now()
-	db := this.context.DB.Save(downloadToken)
+	db := CONTEXT.DB.Save(downloadToken)
 	this.PanicError(db.Error)
 
 	return downloadToken

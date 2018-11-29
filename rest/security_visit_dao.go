@@ -16,7 +16,7 @@ func (this *SecurityVisitDao) FindByUuid(uuid string) *SecurityVisit {
 
 	// Read
 	var securityVisit SecurityVisit
-	db := this.context.DB.Where(&SecurityVisit{Base: Base{Uuid: uuid}}).First(&securityVisit)
+	db := CONTEXT.DB.Where(&SecurityVisit{Base: Base{Uuid: uuid}}).First(&securityVisit)
 	if db.Error != nil {
 		return nil
 	}
@@ -28,7 +28,7 @@ func (this *SecurityVisitDao) CheckByUuid(uuid string) *SecurityVisit {
 
 	// Read
 	var securityVisit SecurityVisit
-	db := this.context.DB.Where(&SecurityVisit{Base: Base{Uuid: uuid}}).First(&securityVisit)
+	db := CONTEXT.DB.Where(&SecurityVisit{Base: Base{Uuid: uuid}}).First(&securityVisit)
 	this.PanicError(db.Error)
 
 	return &securityVisit
@@ -45,7 +45,7 @@ func (this *SecurityVisitDao) Page(page int, pageSize int, userUuid string, sort
 	}
 
 	var conditionDB *gorm.DB
-	conditionDB = this.context.DB.Model(&SecurityVisit{}).Where(wp.Query, wp.Args...)
+	conditionDB = CONTEXT.DB.Model(&SecurityVisit{}).Where(wp.Query, wp.Args...)
 
 	count := 0
 	db := conditionDB.Count(&count)
@@ -66,7 +66,7 @@ func (this *SecurityVisitDao) Create(securityVisit *SecurityVisit) *SecurityVisi
 	securityVisit.Uuid = string(timeUUID.String())
 	securityVisit.CreateTime = time.Now()
 	securityVisit.UpdateTime = time.Now()
-	db := this.context.DB.Create(securityVisit)
+	db := CONTEXT.DB.Create(securityVisit)
 	this.PanicError(db.Error)
 
 	return securityVisit
@@ -76,7 +76,7 @@ func (this *SecurityVisitDao) Create(securityVisit *SecurityVisit) *SecurityVisi
 func (this *SecurityVisitDao) Save(securityVisit *SecurityVisit) *SecurityVisit {
 
 	securityVisit.UpdateTime = time.Now()
-	db := this.context.DB.Save(securityVisit)
+	db := CONTEXT.DB.Save(securityVisit)
 	this.PanicError(db.Error)
 
 	return securityVisit
@@ -85,6 +85,6 @@ func (this *SecurityVisitDao) Save(securityVisit *SecurityVisit) *SecurityVisit 
 //删除一条记录
 func (this *SecurityVisitDao) Delete(securityVisit *SecurityVisit) {
 
-	db := this.context.DB.Delete(&securityVisit)
+	db := CONTEXT.DB.Delete(&securityVisit)
 	this.PanicError(db.Error)
 }

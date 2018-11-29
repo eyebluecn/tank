@@ -67,7 +67,7 @@ func (this *Context) Init()  {
 	this.initBeans()
 
 	//初始化Router. 这个方法要在Bean注册好了之后才能。
-	this.Router = NewRouter(this)
+	this.Router = NewRouter()
 }
 
 //注册一个Bean
@@ -159,7 +159,7 @@ func (this *Context) GetBean(bean IBean) IBean {
 func (this *Context) initBeans() {
 
 	for _, bean := range this.BeanMap {
-		bean.Init(this)
+		bean.Init()
 	}
 
 }

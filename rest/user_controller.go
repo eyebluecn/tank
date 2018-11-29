@@ -13,8 +13,8 @@ type UserController struct {
 }
 
 //初始化方法
-func (this *UserController) Init(context *Context) {
-	this.BaseController.Init(context)
+func (this *UserController) Init() {
+	this.BaseController.Init()
 }
 
 //注册自己的路由。

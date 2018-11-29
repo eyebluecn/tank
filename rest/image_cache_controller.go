@@ -13,16 +13,16 @@ type ImageCacheController struct {
 }
 
 //初始化方法
-func (this *ImageCacheController) Init(context *Context) {
-	this.BaseController.Init(context)
+func (this *ImageCacheController) Init() {
+	this.BaseController.Init()
 
 	//手动装填本实例的Bean. 这里必须要用中间变量方可。
-	b := context.GetBean(this.imageCacheDao)
+	b := CONTEXT.GetBean(this.imageCacheDao)
 	if b, ok := b.(*ImageCacheDao); ok {
 		this.imageCacheDao = b
 	}
 
-	b = context.GetBean(this.imageCacheService)
+	b = CONTEXT.GetBean(this.imageCacheService)
 	if b, ok := b.(*ImageCacheService); ok {
 		this.imageCacheService = b
 	}

@@ -21,41 +21,41 @@ type AlienController struct {
 }
 
 //初始化方法
-func (this *AlienController) Init(context *Context) {
-	this.BaseController.Init(context)
+func (this *AlienController) Init() {
+	this.BaseController.Init()
 
 	//手动装填本实例的Bean.
-	b := context.GetBean(this.uploadTokenDao)
+	b := CONTEXT.GetBean(this.uploadTokenDao)
 	if c, ok := b.(*UploadTokenDao); ok {
 		this.uploadTokenDao = c
 	}
 
-	b = context.GetBean(this.downloadTokenDao)
+	b = CONTEXT.GetBean(this.downloadTokenDao)
 	if c, ok := b.(*DownloadTokenDao); ok {
 		this.downloadTokenDao = c
 	}
 
-	b = context.GetBean(this.matterDao)
+	b = CONTEXT.GetBean(this.matterDao)
 	if c, ok := b.(*MatterDao); ok {
 		this.matterDao = c
 	}
 
-	b = context.GetBean(this.matterService)
+	b = CONTEXT.GetBean(this.matterService)
 	if c, ok := b.(*MatterService); ok {
 		this.matterService = c
 	}
 
-	b = context.GetBean(this.imageCacheDao)
+	b = CONTEXT.GetBean(this.imageCacheDao)
 	if c, ok := b.(*ImageCacheDao); ok {
 		this.imageCacheDao = c
 	}
 
-	b = context.GetBean(this.imageCacheService)
+	b = CONTEXT.GetBean(this.imageCacheService)
 	if c, ok := b.(*ImageCacheService); ok {
 		this.imageCacheService = c
 	}
 
-	b = context.GetBean(this.alienService)
+	b = CONTEXT.GetBean(this.alienService)
 	if c, ok := b.(*AlienService); ok {
 		this.alienService = c
 	}

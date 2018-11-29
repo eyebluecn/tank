@@ -15,7 +15,7 @@ func (this *PreferenceDao) Fetch() *Preference {
 
 	// Read
 	var preference = &Preference{}
-	db := this.context.DB.First(preference)
+	db := CONTEXT.DB.First(preference)
 	if db.Error != nil {
 
 		if db.Error.Error() == "record not found" {
@@ -39,7 +39,7 @@ func (this *PreferenceDao) Create(preference *Preference) *Preference {
 	preference.Uuid = string(timeUUID.String())
 	preference.CreateTime = time.Now()
 	preference.UpdateTime = time.Now()
-	db := this.context.DB.Create(preference)
+	db := CONTEXT.DB.Create(preference)
 	this.PanicError(db.Error)
 
 	return preference
@@ -49,7 +49,7 @@ func (this *PreferenceDao) Create(preference *Preference) *Preference {
 func (this *PreferenceDao) Save(preference *Preference) *Preference {
 
 	preference.UpdateTime = time.Now()
-	db := this.context.DB.Save(preference)
+	db := CONTEXT.DB.Save(preference)
 	this.PanicError(db.Error)
 
 	return preference

@@ -19,40 +19,40 @@ type AlienService struct {
 }
 
 //初始化方法
-func (this *AlienService) Init(context *Context) {
+func (this *AlienService) Init() {
 
 	//手动装填本实例的Bean. 这里必须要用中间变量方可。
-	b := context.GetBean(this.matterDao)
+	b := CONTEXT.GetBean(this.matterDao)
 	if b, ok := b.(*MatterDao); ok {
 		this.matterDao = b
 	}
 
-	b = context.GetBean(this.matterService)
+	b = CONTEXT.GetBean(this.matterService)
 	if b, ok := b.(*MatterService); ok {
 		this.matterService = b
 	}
 
-	b = context.GetBean(this.userDao)
+	b = CONTEXT.GetBean(this.userDao)
 	if b, ok := b.(*UserDao); ok {
 		this.userDao = b
 	}
 
-	b = context.GetBean(this.uploadTokenDao)
+	b = CONTEXT.GetBean(this.uploadTokenDao)
 	if c, ok := b.(*UploadTokenDao); ok {
 		this.uploadTokenDao = c
 	}
 
-	b = context.GetBean(this.downloadTokenDao)
+	b = CONTEXT.GetBean(this.downloadTokenDao)
 	if c, ok := b.(*DownloadTokenDao); ok {
 		this.downloadTokenDao = c
 	}
 
-	b = context.GetBean(this.imageCacheDao)
+	b = CONTEXT.GetBean(this.imageCacheDao)
 	if c, ok := b.(*ImageCacheDao); ok {
 		this.imageCacheDao = c
 	}
 
-	b = context.GetBean(this.imageCacheService)
+	b = CONTEXT.GetBean(this.imageCacheService)
 	if c, ok := b.(*ImageCacheService); ok {
 		this.imageCacheService = c
 	}

@@ -8,15 +8,15 @@ type SecurityVisitService struct {
 }
 
 //初始化方法
-func (this *SecurityVisitService) Init(context *Context) {
+func (this *SecurityVisitService) Init() {
 
 	//手动装填本实例的Bean. 这里必须要用中间变量方可。
-	b := context.GetBean(this.securityVisitDao)
+	b := CONTEXT.GetBean(this.securityVisitDao)
 	if b, ok := b.(*SecurityVisitDao); ok {
 		this.securityVisitDao = b
 	}
 
-	b = context.GetBean(this.userDao)
+	b = CONTEXT.GetBean(this.userDao)
 	if b, ok := b.(*UserDao); ok {
 		this.userDao = b
 	}

@@ -16,11 +16,11 @@ type MatterDao struct {
 }
 
 //初始化方法
-func (this *MatterDao) Init(context *Context) {
-	this.BaseDao.Init(context)
+func (this *MatterDao) Init() {
+	this.BaseDao.Init()
 
 	//手动装填本实例的Bean. 这里必须要用中间变量方可。
-	b := context.GetBean(this.imageCacheDao)
+	b := CONTEXT.GetBean(this.imageCacheDao)
 	if b, ok := b.(*ImageCacheDao); ok {
 		this.imageCacheDao = b
 	}
@@ -31,7 +31,7 @@ func (this *MatterDao) FindByUuid(uuid string) *Matter {
 
 	// Read
 	var matter Matter
-	db := this.context.DB.Where(&Matter{Base: Base{Uuid: uuid}}).First(&matter)
+	db := CONTEXT.DB.Where(&Matter{Base: Base{Uuid: uuid}}).First(&matter)
 	if db.Error != nil {
 		return nil
 	}
@@ -43,7 +43,7 @@ func (this *MatterDao) CheckByUuid(uuid string) *Matter {
 
 	// Read
 	var matter Matter
-	db := this.context.DB.Where(&Matter{Base: Base{Uuid: uuid}}).First(&matter)
+	db := CONTEXT.DB.Where(&Matter{Base: Base{Uuid: uuid}}).First(&matter)
 	this.PanicError(db.Error)
 
 	return &matter
@@ -70,7 +70,7 @@ func (this *MatterDao) FindByUserUuidAndPuuidAndNameAndDirTrue(userUuid string, 
 	wp = wp.And(&WherePair{Query: "dir = ?", Args: []interface{}{1}})
 
 	var matter = &Matter{}
-	db := this.context.DB.Model(&Matter{}).Where(wp.Query, wp.Args...).First(matter)
+	db := CONTEXT.DB.Model(&Matter{}).Where(wp.Query, wp.Args...).First(matter)
 
 	if db.Error != nil {
 		return nil
@@ -84,7 +84,7 @@ func (this *MatterDao) CheckByUuidAndUserUuid(uuid string, userUuid string) *Mat
 
 	// Read
 	var matter = &Matter{}
-	db := this.context.DB.Where(&Matter{Base: Base{Uuid: uuid}, UserUuid: userUuid}).First(matter)
+	db := CONTEXT.DB.Where(&Matter{Base: Base{Uuid: uuid}, UserUuid: userUuid}).First(matter)
 	this.PanicError(db.Error)
 
 	return matter
@@ -113,7 +113,7 @@ func (this *MatterDao) CountByUserUuidAndPuuidAndDirAndName(userUuid string, puu
 
 	wp = wp.And(&WherePair{Query: "dir = ?", Args: []interface{}{dir}})
 
-	db := this.context.DB.
+	db := CONTEXT.DB.
 		Model(&matter).
 		Where(wp.Query, wp.Args...).
 		Count(&count)
@@ -127,7 +127,7 @@ func (this *MatterDao) ListByUserUuidAndPuuidAndDirAndName(userUuid string, puui
 
 	var matters []*Matter
 
-	db := this.context.DB.
+	db := CONTEXT.DB.
 		Where(Matter{UserUuid: userUuid, Puuid: puuid, Dir: dir, Name: name}).
 		Find(&matters)
 	this.PanicError(db.Error)
@@ -139,7 +139,7 @@ func (this *MatterDao) ListByUserUuidAndPuuidAndDirAndName(userUuid string, puui
 func (this *MatterDao) List(puuid string, userUuid string, sortArray []OrderPair) []*Matter {
 	var matters []*Matter
 
-	db := this.context.DB.Where(Matter{UserUuid: userUuid, Puuid: puuid}).Order(this.GetSortString(sortArray)).Find(&matters)
+	db := CONTEXT.DB.Where(Matter{UserUuid: userUuid, Puuid: puuid}).Order(this.GetSortString(sortArray)).Find(&matters)
 	this.PanicError(db.Error)
 
 	return matters
@@ -176,9 +176,9 @@ func (this *MatterDao) Page(page int, pageSize int, puuid string, userUuid strin
 			orWp = orWp.Or(&WherePair{Query: "name LIKE ?", Args: []interface{}{"%." + v}})
 		}
 
-		conditionDB = this.context.DB.Model(&Matter{}).Where(wp.Query, wp.Args...).Where(orWp.Query, orWp.Args...)
+		conditionDB = CONTEXT.DB.Model(&Matter{}).Where(wp.Query, wp.Args...).Where(orWp.Query, orWp.Args...)
 	} else {
-		conditionDB = this.context.DB.Model(&Matter{}).Where(wp.Query, wp.Args...)
+		conditionDB = CONTEXT.DB.Model(&Matter{}).Where(wp.Query, wp.Args...)
 	}
 
 	count := 0
@@ -200,7 +200,7 @@ func (this *MatterDao) Create(matter *Matter) *Matter {
 	matter.Uuid = string(timeUUID.String())
 	matter.CreateTime = time.Now()
 	matter.UpdateTime = time.Now()
-	db := this.context.DB.Create(matter)
+	db := CONTEXT.DB.Create(matter)
 	this.PanicError(db.Error)
 
 	return matter
@@ -210,7 +210,7 @@ func (this *MatterDao) Create(matter *Matter) *Matter {
 func (this *MatterDao) Save(matter *Matter) *Matter {
 
 	matter.UpdateTime = time.Now()
-	db := this.context.DB.Save(matter)
+	db := CONTEXT.DB.Save(matter)
 	this.PanicError(db.Error)
 
 	return matter
@@ -228,12 +228,12 @@ func (this *MatterDao) Delete(matter *Matter) {
 		}
 
 		//删除文件夹本身
-		db := this.context.DB.Delete(&matter)
+		db := CONTEXT.DB.Delete(&matter)
 		this.PanicError(db.Error)
 
 	} else {
 		//删除数据库中文件记录
-		db := this.context.DB.Delete(&matter)
+		db := CONTEXT.DB.Delete(&matter)
 		this.PanicError(db.Error)
 
 		//删除对应的缓存图片。

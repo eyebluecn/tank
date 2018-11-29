@@ -23,15 +23,15 @@ type MatterService struct {
 }
 
 //初始化方法
-func (this *MatterService) Init(context *Context) {
+func (this *MatterService) Init() {
 
 	//手动装填本实例的Bean. 这里必须要用中间变量方可。
-	b := context.GetBean(this.matterDao)
+	b := CONTEXT.GetBean(this.matterDao)
 	if b, ok := b.(*MatterDao); ok {
 		this.matterDao = b
 	}
 
-	b = context.GetBean(this.userDao)
+	b = CONTEXT.GetBean(this.userDao)
 	if b, ok := b.(*UserDao); ok {
 		this.userDao = b
 	}

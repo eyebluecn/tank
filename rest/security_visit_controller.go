@@ -12,16 +12,16 @@ type SecurityVisitController struct {
 }
 
 //初始化方法
-func (this *SecurityVisitController) Init(context *Context) {
-	this.BaseController.Init(context)
+func (this *SecurityVisitController) Init() {
+	this.BaseController.Init()
 
 	//手动装填本实例的Bean. 这里必须要用中间变量方可。
-	b := context.GetBean(this.securityVisitDao)
+	b := CONTEXT.GetBean(this.securityVisitDao)
 	if b, ok := b.(*SecurityVisitDao); ok {
 		this.securityVisitDao = b
 	}
 
-	b = context.GetBean(this.securityVisitService)
+	b = CONTEXT.GetBean(this.securityVisitService)
 	if b, ok := b.(*SecurityVisitService); ok {
 		this.securityVisitService = b
 	}

@@ -17,21 +17,21 @@ type MatterController struct {
 }
 
 //初始化方法
-func (this *MatterController) Init(context *Context) {
-	this.BaseController.Init(context)
+func (this *MatterController) Init() {
+	this.BaseController.Init()
 
 	//手动装填本实例的Bean. 这里必须要用中间变量方可。
-	b := context.GetBean(this.matterDao)
+	b := CONTEXT.GetBean(this.matterDao)
 	if b, ok := b.(*MatterDao); ok {
 		this.matterDao = b
 	}
 
-	b = context.GetBean(this.matterService)
+	b = CONTEXT.GetBean(this.matterService)
 	if b, ok := b.(*MatterService); ok {
 		this.matterService = b
 	}
 
-	b = context.GetBean(this.downloadTokenDao)
+	b = CONTEXT.GetBean(this.downloadTokenDao)
 	if b, ok := b.(*DownloadTokenDao); ok {
 		this.downloadTokenDao = b
 	}

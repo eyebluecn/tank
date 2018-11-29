@@ -3,17 +3,17 @@ package rest
 import "net/http"
 
 type IBean interface {
-	Init(context *Context)
+	Init()
 	PanicError(err error);
 	PanicWebError(msg string, code int);
 }
 
 type Bean struct {
-	context *Context
+
 }
 
-func (this *Bean) Init(context *Context) {
-	this.context = context
+func (this *Bean) Init() {
+
 }
 
 //处理错误的统一方法

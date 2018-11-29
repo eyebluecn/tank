@@ -18,15 +18,15 @@ type ImageCacheService struct {
 }
 
 //初始化方法
-func (this *ImageCacheService) Init(context *Context) {
+func (this *ImageCacheService) Init() {
 
 	//手动装填本实例的Bean. 这里必须要用中间变量方可。
-	b := context.GetBean(this.imageCacheDao)
+	b := CONTEXT.GetBean(this.imageCacheDao)
 	if b, ok := b.(*ImageCacheDao); ok {
 		this.imageCacheDao = b
 	}
 
-	b = context.GetBean(this.userDao)
+	b = CONTEXT.GetBean(this.userDao)
 	if b, ok := b.(*UserDao); ok {
 		this.userDao = b
 	}

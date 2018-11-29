@@ -21,17 +21,17 @@ type BaseController struct {
 	sessionDao *SessionDao
 }
 
-func (this *BaseController) Init(context *Context) {
+func (this *BaseController) Init() {
 
-	this.Bean.Init(context)
+	this.Bean.Init()
 
 	//手动装填本实例的Bean.
-	b := context.GetBean(this.userDao)
+	b := CONTEXT.GetBean(this.userDao)
 	if b, ok := b.(*UserDao); ok {
 		this.userDao = b
 	}
 
-	b = context.GetBean(this.sessionDao)
+	b = CONTEXT.GetBean(this.sessionDao)
 	if b, ok := b.(*SessionDao); ok {
 		this.sessionDao = b
 	}

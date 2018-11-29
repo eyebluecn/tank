@@ -12,27 +12,25 @@ import (
 
 //用于处理所有前来的请求
 type Router struct {
-	context     *Context
 	userService *UserService
 	routeMap    map[string]func(writer http.ResponseWriter, request *http.Request)
 }
 
 //构造方法
-func NewRouter(context *Context) *Router {
+func NewRouter() *Router {
 	router := &Router{
-		context:  context,
 		routeMap: make(map[string]func(writer http.ResponseWriter, request *http.Request)),
 	}
 
 
 	//装载userService.
-	b := context.GetBean(router.userService)
+	b := CONTEXT.GetBean(router.userService)
 	if b, ok := b.(*UserService); ok {
 		router.userService = b
 	}
 
 	//将Controller中的路由规则装载机进来
-	for _, controller := range context.ControllerMap {
+	for _, controller := range CONTEXT.ControllerMap {
 		routes := controller.RegisterRoutes()
 		for k, v := range routes {
 			router.routeMap[k] = v
@@ -90,7 +88,7 @@ func (this *Router) GlobalPanicHandler(writer http.ResponseWriter, request *http
 func (this *Router) logSecurityVisit(writer http.ResponseWriter, request *http.Request) {
 	//手动装填本实例的Bean. 这里必须要用中间变量方可。
 	var securityVisitDao *SecurityVisitDao
-	b := this.context.GetBean(securityVisitDao)
+	b := CONTEXT.GetBean(securityVisitDao)
 	if b, ok := b.(*SecurityVisitDao); ok {
 		securityVisitDao = b
 	}
@@ -158,7 +156,7 @@ func (this *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 		} else {
 			//直接将请求扔给每个controller，看看他们能不能处理，如果都不能处理，那就算了。
 			canHandle := false
-			for _, controller := range this.context.ControllerMap {
+			for _, controller := range CONTEXT.ControllerMap {
 				if handler, exist := controller.HandleRoutes(writer, request); exist {
 					canHandle = true
 
