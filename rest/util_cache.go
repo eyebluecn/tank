@@ -13,34 +13,33 @@ import (
 //主要借鉴了cache2go https://github.com/muesli/cache2go
 type CacheItem struct {
 	sync.RWMutex //读写锁
-
 	//缓存键
 	key interface{}
 	//缓存值
 	data interface{}
 	// 缓存项的生命期
-	lifeSpan time.Duration
+	duration time.Duration
 	//创建时间
-	createdOn time.Time
+	createTime time.Time
 	//最后访问时间
-	accessedOn time.Time
+	accessTime time.Time
 	//访问次数
-	accessCount int64
+	count int64
 	// 在删除缓存项之前调用的回调函数
-	aboutToExpire func(key interface{})
+	deleteCallback func(key interface{})
 }
 
 //新建一项缓存
-func CreateCacheItem(key interface{}, lifeSpan time.Duration, data interface{}) CacheItem {
+func NewCacheItem(key interface{}, duration time.Duration, data interface{}) *CacheItem {
 	t := time.Now()
-	return CacheItem{
-		key:           key,
-		lifeSpan:      lifeSpan,
-		createdOn:     t,
-		accessedOn:    t,
-		accessCount:   0,
-		aboutToExpire: nil,
-		data:          data,
+	return &CacheItem{
+		key:            key,
+		duration:       duration,
+		createTime:     t,
+		accessTime:     t,
+		count:          0,
+		deleteCallback: nil,
+		data:           data,
 	}
 }
 
@@ -48,32 +47,32 @@ func CreateCacheItem(key interface{}, lifeSpan time.Duration, data interface{}) 
 func (item *CacheItem) KeepAlive() {
 	item.Lock()
 	defer item.Unlock()
-	item.accessedOn = time.Now()
-	item.accessCount++
+	item.accessTime = time.Now()
+	item.count++
 }
 
 //返回生命周期
-func (item *CacheItem) LifeSpan() time.Duration {
-	return item.lifeSpan
+func (item *CacheItem) Duration() time.Duration {
+	return item.duration
 }
 
 //返回访问时间。可能并发，加锁
-func (item *CacheItem) AccessedOn() time.Time {
+func (item *CacheItem) AccessTime() time.Time {
 	item.RLock()
 	defer item.RUnlock()
-	return item.accessedOn
+	return item.accessTime
 }
 
 //返回创建时间
-func (item *CacheItem) CreatedOn() time.Time {
-	return item.createdOn
+func (item *CacheItem) CreateTime() time.Time {
+	return item.createTime
 }
 
 //返回访问时间。可能并发，加锁
-func (item *CacheItem) AccessCount() int64 {
+func (item *CacheItem) Count() int64 {
 	item.RLock()
 	defer item.RUnlock()
-	return item.accessCount
+	return item.count
 }
 
 //返回key值
@@ -87,10 +86,10 @@ func (item *CacheItem) Data() interface{} {
 }
 
 //设置回调函数
-func (item *CacheItem) SetAboutToExpireCallback(f func(interface{})) {
+func (item *CacheItem) SetDeleteCallback(f func(interface{})) {
 	item.Lock()
 	defer item.Unlock()
-	item.aboutToExpire = f
+	item.deleteCallback = f
 }
 
 // 统一管理缓存项的表
@@ -110,12 +109,12 @@ type CacheTable struct {
 	// 获取一个不存在的缓存项时的回调函数
 	loadData func(key interface{}, args ...interface{}) *CacheItem
 	// 向缓存表增加缓存项时的回调函数
-	addedItem func(item *CacheItem)
+	addedCallback func(item *CacheItem)
 	// 从缓存表删除一个缓存项时的回调函数
-	aboutToDeleteItem func(item *CacheItem)
+	deleteCallback func(item *CacheItem)
 }
 
-// 返回当缓存中存储有多少项
+// 返回缓存中存储有多少项
 func (table *CacheTable) Count() int {
 	table.RLock()
 	defer table.RUnlock()
@@ -140,17 +139,17 @@ func (table *CacheTable) SetDataLoader(f func(interface{}, ...interface{}) *Cach
 }
 
 // 添加时的回调函数
-func (table *CacheTable) SetAddedItemCallback(f func(*CacheItem)) {
+func (table *CacheTable) SetAddedCallback(f func(*CacheItem)) {
 	table.Lock()
 	defer table.Unlock()
-	table.addedItem = f
+	table.addedCallback = f
 }
 
 // 删除时的回调函数
-func (table *CacheTable) SetAboutToDeleteItemCallback(f func(*CacheItem)) {
+func (table *CacheTable) SetDeleteCallback(f func(*CacheItem)) {
 	table.Lock()
 	defer table.Unlock()
-	table.aboutToDeleteItem = f
+	table.deleteCallback = f
 }
 
 // 设置缓存表需要使用的log
@@ -161,7 +160,7 @@ func (table *CacheTable) SetLogger(logger *log.Logger) {
 }
 
 //终结检查，被自调整的时间触发
-func (table *CacheTable) expirationCheck() {
+func (table *CacheTable) checkExpire() {
 	table.Lock()
 	if table.cleanupTimer != nil {
 		table.cleanupTimer.Stop()
@@ -182,15 +181,15 @@ func (table *CacheTable) expirationCheck() {
 	for key, item := range items {
 		// 取出我们需要的东西，为了不抢占锁
 		item.RLock()
-		lifeSpan := item.lifeSpan
-		accessedOn := item.accessedOn
+		duration := item.duration
+		accessTime := item.accessTime
 		item.RUnlock()
 
 		// 0永久有效
-		if lifeSpan == 0 {
+		if duration == 0 {
 			continue
 		}
-		if now.Sub(accessedOn) >= lifeSpan {
+		if now.Sub(accessTime) >= duration {
 			//缓存项已经过期
 			_, e := table.Delete(key)
 			if e != nil {
@@ -198,8 +197,8 @@ func (table *CacheTable) expirationCheck() {
 			}
 		} else {
 			//查找最靠近结束生命周期的项目
-			if smallestDuration == 0 || lifeSpan-now.Sub(accessedOn) < smallestDuration {
-				smallestDuration = lifeSpan - now.Sub(accessedOn)
+			if smallestDuration == 0 || duration-now.Sub(accessTime) < smallestDuration {
+				smallestDuration = duration - now.Sub(accessTime)
 			}
 		}
 	}
@@ -209,37 +208,37 @@ func (table *CacheTable) expirationCheck() {
 	table.cleanupInterval = smallestDuration
 	if smallestDuration > 0 {
 		table.cleanupTimer = time.AfterFunc(smallestDuration, func() {
-			go table.expirationCheck()
+			go table.checkExpire()
 		})
 	}
 	table.Unlock()
 }
 
 // 添加缓存项
-func (table *CacheTable) Add(key interface{}, lifeSpan time.Duration, data interface{}) *CacheItem {
-	item := CreateCacheItem(key, lifeSpan, data)
+func (table *CacheTable) Add(key interface{}, duration time.Duration, data interface{}) *CacheItem {
+	item := NewCacheItem(key, duration, data)
 
 	// 将缓存项放入表中
 	table.Lock()
-	table.log("Adding item with key", key, "and lifespan of", lifeSpan, "to table", table.name)
-	table.items[key] = &item
+	table.log("Adding item with key", key, "and lifespan of", duration, "to table", table.name)
+	table.items[key] = item
 
 	// 取出需要的东西，释放锁
 	expDur := table.cleanupInterval
-	addedItem := table.addedItem
+	addedItem := table.addedCallback
 	table.Unlock()
 
 	// 有回调函数便执行回调
 	if addedItem != nil {
-		addedItem(&item)
+		addedItem(item)
 	}
 
 	// 如果我们没有设置任何心跳检查定时器或者找一个即将迫近的项目
-	if lifeSpan > 0 && (expDur == 0 || lifeSpan < expDur) {
-		table.expirationCheck()
+	if duration > 0 && (expDur == 0 || duration < expDur) {
+		table.checkExpire()
 	}
 
-	return &item
+	return item
 }
 
 // 从缓存中删除项
@@ -252,23 +251,23 @@ func (table *CacheTable) Delete(key interface{}) (*CacheItem, error) {
 	}
 
 	// 取出要用到的东西，释放锁
-	aboutToDeleteItem := table.aboutToDeleteItem
+	deleteCallback := table.deleteCallback
 	table.RUnlock()
 
 	// 调用删除回调函数
-	if aboutToDeleteItem != nil {
-		aboutToDeleteItem(r)
+	if deleteCallback != nil {
+		deleteCallback(r)
 	}
 
 	r.RLock()
 	defer r.RUnlock()
-	if r.aboutToExpire != nil {
-		r.aboutToExpire(key)
+	if r.deleteCallback != nil {
+		r.deleteCallback(key)
 	}
 
 	table.Lock()
 	defer table.Unlock()
-	table.log("Deleting item with key", key, "created on", r.createdOn, "and hit", r.accessCount, "times from table", table.name)
+	table.log("Deleting item with key", key, "created on", r.createTime, "and hit", r.count, "times from table", table.name)
 	delete(table.items, key)
 
 	return r, nil
@@ -292,29 +291,27 @@ func (table *CacheTable) NotFoundAdd(key interface{}, lifeSpan time.Duration, da
 		return false
 	}
 
-	item := CreateCacheItem(key, lifeSpan, data)
+	item := NewCacheItem(key, lifeSpan, data)
 	table.log("Adding item with key", key, "and lifespan of", lifeSpan, "to table", table.name)
-	table.items[key] = &item
+	table.items[key] = item
 
 	// 取出需要的内容，释放锁
 	expDur := table.cleanupInterval
-	addedItem := table.addedItem
+	addedItem := table.addedCallback
 	table.Unlock()
 
 	// 添加回调函数
 	if addedItem != nil {
-		addedItem(&item)
+		addedItem(item)
 	}
 
 	// 触发过期检查
 	if lifeSpan > 0 && (expDur == 0 || lifeSpan < expDur) {
-		table.expirationCheck()
+		table.checkExpire()
 	}
 	return true
 }
 
-// Get an item from the cache and mark it to be kept alive. You can pass
-// additional arguments to your DataLoader callback function.
 //从缓存中返回一个被标记的并保持活性的值。你可以传附件的参数到DataLoader回调函数
 func (table *CacheTable) Value(key interface{}, args ...interface{}) (*CacheItem, error) {
 	table.RLock()
@@ -332,7 +329,7 @@ func (table *CacheTable) Value(key interface{}, args ...interface{}) (*CacheItem
 	if loadData != nil {
 		item := loadData(key, args...)
 		if item != nil {
-			table.Add(key, item.lifeSpan, item.data)
+			table.Add(key, item.duration, item.data)
 			return item, nil
 		}
 
@@ -376,7 +373,7 @@ func (table *CacheTable) MostAccessed(count int64) []*CacheItem {
 	p := make(CacheItemPairList, len(table.items))
 	i := 0
 	for k, v := range table.items {
-		p[i] = CacheItemPair{k, v.accessCount}
+		p[i] = CacheItemPair{k, v.count}
 		i++
 	}
 	sort.Sort(p)
@@ -397,7 +394,6 @@ func (table *CacheTable) MostAccessed(count int64) []*CacheItem {
 
 	return r
 }
-
 
 // 打印日志
 func (table *CacheTable) log(v ...interface{}) {

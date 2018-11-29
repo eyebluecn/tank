@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
-	_ "github.com/muesli/cache2go"
 	"log"
 	"net/http"
 	"tank/rest"
