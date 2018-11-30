@@ -67,6 +67,7 @@ func (this *Logger) Init() {
 	//日志需要自我备份，自我维护。明天第一秒触发
 	nextTime := FirstSecondOfDay(Tomorrow())
 	duration := nextTime.Sub(time.Now())
+	go this.Info("%vs后将进行下一次日志维护 下次时间%v ", int64(duration/time.Second), nextTime)
 	this.maintainTimer = time.AfterFunc(duration, func() {
 		go this.maintain()
 	})
@@ -100,11 +101,11 @@ func (this *Logger) maintain() {
 	now := time.Now()
 	nextTime := FirstSecondOfDay(Tomorrow())
 	duration := nextTime.Sub(now)
+	go this.Info("%vs后将进行下一次日志维护 下次时间维护时间：%v ", int64(duration/time.Second), nextTime)
 	this.maintainTimer = time.AfterFunc(duration, func() {
 		go this.maintain()
 	})
 }
-
 
 //日志名称
 func (this *Logger) fileName() string {

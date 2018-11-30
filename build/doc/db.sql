@@ -12,6 +12,22 @@ CREATE TABLE `tank20_download_token`
   UNIQUE KEY `id_UNIQUE` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='下载的token表';
 
+CREATE TABLE `tank20_footprint`
+(
+  `uuid`        char(36)  NOT NULL,
+  `user_uuid`   char(36)           DEFAULT NULL,
+  `ip`          varchar(45)        DEFAULT NULL,
+  `host`        varchar(45)        DEFAULT NULL,
+  `uri`         varchar(255)       DEFAULT NULL,
+  `params`      text,
+  `cost`        int(11) DEFAULT '0' COMMENT '耗时 ms',
+  `success`     tinyint(1) DEFAULT '1',
+  `sort`        bigint(20) NOT NULL DEFAULT '0',
+  `update_time` timestamp NULL DEFAULT NULL,
+  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='访问记录表';
+
 CREATE TABLE `tank20_image_cache`
 (
   `uuid`        char(36) NOT NULL,
@@ -40,6 +56,7 @@ CREATE TABLE `tank20_matter`
   `size`        bigint(20) DEFAULT '0' COMMENT '文件大小',
   `privacy`     tinyint(1) DEFAULT '0' COMMENT '文件是否是公有的',
   `path`        varchar(255) DEFAULT NULL,
+  `times`       bigint(20) DEFAULT '0' COMMENT '下载次数',
   `sort`        bigint(20) DEFAULT NULL,
   `update_time` timestamp NULL DEFAULT NULL,
   `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -63,33 +80,15 @@ CREATE TABLE `tank20_preference`
   UNIQUE KEY `id_UNIQUE` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='网站偏好设置表';
 
-CREATE TABLE `tank20_security_visit`
-(
-  `uuid`        char(36)  NOT NULL,
-  `session_id`  varchar(45)        DEFAULT NULL,
-  `user_uuid`   char(36)           DEFAULT NULL,
-  `ip`          varchar(45)        DEFAULT NULL,
-  `host`        varchar(45)        DEFAULT NULL,
-  `uri`         varchar(255)       DEFAULT NULL,
-  `params`      text,
-  `cost`        int(11) DEFAULT '0' COMMENT '耗时 ms',
-  `success`     tinyint(1) DEFAULT '1',
-  `sort`        bigint(20) NOT NULL DEFAULT '0',
-  `update_time` timestamp NULL DEFAULT NULL,
-  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`uuid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='访问记录表';
-
 CREATE TABLE `tank20_session`
 (
-  `uuid`           char(36) NOT NULL,
-  `authentication` char(36)    DEFAULT NULL COMMENT '认证身份，存放在cookie中',
-  `user_uuid`      char(36)    DEFAULT NULL COMMENT '用户uuid',
-  `ip`             varchar(45) DEFAULT NULL COMMENT '用户的ip地址',
-  `expire_time`    timestamp NULL DEFAULT NULL,
-  `sort`           bigint(20) DEFAULT NULL,
-  `update_time`    timestamp NULL DEFAULT NULL,
-  `create_time`    timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `uuid`        char(36) NOT NULL,
+  `user_uuid`   char(36)    DEFAULT NULL COMMENT '用户uuid',
+  `ip`          varchar(45) DEFAULT NULL COMMENT '用户的ip地址',
+  `expire_time` timestamp NULL DEFAULT NULL,
+  `sort`        bigint(20) DEFAULT NULL,
+  `update_time` timestamp NULL DEFAULT NULL,
+  `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (`uuid`),
   UNIQUE KEY `id_UNIQUE` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='session表';
@@ -131,5 +130,7 @@ CREATE TABLE `tank20_user`
   `update_time` timestamp NULL DEFAULT NULL,
   `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (`uuid`),
-  UNIQUE KEY `id_UNIQUE` (`uuid`)
+  UNIQUE KEY `id_UNIQUE` (`uuid`),
+  UNIQUE KEY `email_UNIQUE` (`email`),
+  UNIQUE KEY `username_UNIQUE` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='用户表描述';

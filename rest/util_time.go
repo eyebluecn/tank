@@ -30,13 +30,13 @@ func FirstSecondOfDay(day time.Time) time.Time {
 //明天此刻的时间
 func Tomorrow() time.Time {
 	tomorrow := time.Now()
-	tomorrow.AddDate(0, 0, 1)
+	tomorrow = tomorrow.AddDate(0, 0, 1)
 	return tomorrow
 }
 
 //昨天此刻的时间
 func Yesterday() time.Time {
 	tomorrow := time.Now()
-	tomorrow.AddDate(0, 0, -1)
+	tomorrow = tomorrow.AddDate(0, 0, -1)
 	return tomorrow
 }
