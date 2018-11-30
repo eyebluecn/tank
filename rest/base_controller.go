@@ -136,30 +136,30 @@ func (this *BaseController) findUser(writer http.ResponseWriter, request *http.R
 	//验证用户是否已经登录。
 	sessionCookie, err := request.Cookie(COOKIE_AUTH_KEY)
 	if err != nil {
-		LogInfo("获取用户cookie时出错啦")
+		this.logger.Warn("获取用户cookie信息失败啦~")
 		return nil
 	}
 
 	sessionId := sessionCookie.Value
 
-	LogInfo("findUser sessionId = " + sessionId)
+	this.logger.Info("findUser sessionId = %s", sessionId)
 
 	//去缓存中捞取看看
 	cacheItem, err := CONTEXT.SessionCache.Value(sessionId)
 	if err != nil {
-		LogError("获取缓存时出错了" + err.Error())
+		this.logger.Warn("获取缓存时出错了" + err.Error())
 		return nil
 	}
 
 	if cacheItem.Data() == nil {
-		LogError("cache item中已经不存在了 " + err.Error())
+		this.logger.Warn("cache item中已经不存在了 " + err.Error())
 		return nil
 	}
 
 	if value, ok := cacheItem.Data().(*User); ok {
 		return value
 	} else {
-		LogError("cache item中的类型不是*User ")
+		this.logger.Error("cache item中的类型不是*User ")
 	}
 
 	return nil

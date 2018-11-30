@@ -1,9 +1,9 @@
 package rest
 
 import (
+	"fmt"
 	"net/http"
 	"time"
-	"fmt"
 )
 
 //@Service
@@ -20,6 +20,7 @@ type AlienService struct {
 
 //初始化方法
 func (this *AlienService) Init() {
+	this.Bean.Init()
 
 	//手动装填本实例的Bean. 这里必须要用中间变量方可。
 	b := CONTEXT.GetBean(this.matterDao)
@@ -67,7 +68,7 @@ func (this *AlienService) PreviewOrDownload(
 	operator *User,
 	withContentDisposition bool) {
 
-	LogInfo("预览或下载文件 " + uuid + " " + filename)
+	this.logger.Info("预览或下载文件 " + uuid + " " + filename)
 
 	matter := this.matterDao.CheckByUuid(uuid)
 

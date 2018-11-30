@@ -15,8 +15,6 @@ type Context struct {
 	DB *gorm.DB
 	//session缓存
 	SessionCache *CacheTable
-	//TODO:日志相关内容
-
 	//各类的Bean Map。这里面是包含ControllerMap中所有元素
 	BeanMap map[string]IBean
 	//只包含了Controller的map
@@ -25,9 +23,8 @@ type Context struct {
 	Router *Router
 }
 
-
 //初始化上下文
-func (this *Context) Init()  {
+func (this *Context) Init() {
 
 	//处理数据库连接的开关。
 	this.OpenDb()
@@ -72,7 +69,6 @@ func (this *Context) CloseDb() {
 	}
 }
 
-
 //注册一个Bean
 func (this *Context) registerBean(bean IBean) {
 
@@ -83,7 +79,7 @@ func (this *Context) registerBean(bean IBean) {
 
 		err := fmt.Sprintf("【%s】已经被注册了，跳过。", typeName)
 		if _, ok := this.BeanMap[typeName]; ok {
-			LogError(fmt.Sprintf(err))
+			LOGGER.Error(fmt.Sprintf(err))
 		} else {
 			this.BeanMap[typeName] = element
 
@@ -170,5 +166,4 @@ func (this *Context) initBeans() {
 //销毁的方法
 func (this *Context) Destroy() {
 	this.CloseDb()
-
 }

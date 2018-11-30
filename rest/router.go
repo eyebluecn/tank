@@ -12,8 +12,8 @@ import (
 //用于处理所有前来的请求
 type Router struct {
 	footprintService *FootprintService
-	userService          *UserService
-	routeMap             map[string]func(writer http.ResponseWriter, request *http.Request)
+	userService      *UserService
+	routeMap         map[string]func(writer http.ResponseWriter, request *http.Request)
 }
 
 //构造方法
@@ -49,7 +49,7 @@ func NewRouter() *Router {
 func (this *Router) GlobalPanicHandler(writer http.ResponseWriter, request *http.Request) {
 	if err := recover(); err != nil {
 
-		LogError(fmt.Sprintf("全局异常: %v", err))
+		LOGGER.Error(fmt.Sprintf("全局异常: %v", err))
 
 		var webResult *WebResult = nil
 		if value, ok := err.(string); ok {

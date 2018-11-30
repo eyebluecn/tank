@@ -149,13 +149,13 @@ func (this *ImageCacheDao) deleteFileAndDir(imageCache *ImageCache) {
 	//删除文件
 	err := os.Remove(filePath)
 	if err != nil {
-		LogError(fmt.Sprintf("删除磁盘上的文件%s出错，不做任何处理 %s", filePath, err.Error()))
+		this.logger.Error(fmt.Sprintf("删除磁盘上的文件%s出错，不做任何处理 %s", filePath, err.Error()))
 	}
 
 	//删除这一层文件夹
 	err = os.Remove(dirPath)
 	if err != nil {
-		LogError(fmt.Sprintf("删除磁盘上的文件夹%s出错，不做任何处理 %s", dirPath, err.Error()))
+		this.logger.Error(fmt.Sprintf("删除磁盘上的文件夹%s出错，不做任何处理 %s", dirPath, err.Error()))
 	}
 }
 

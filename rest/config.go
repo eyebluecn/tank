@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"github.com/json-iterator/go"
 	"io/ioutil"
-	"time"
-	"unsafe"
 	"os"
 	"strconv"
+	"time"
+	"unsafe"
 )
 
 const (
@@ -39,10 +39,6 @@ var (
 
 		//默认监听端口号
 		ServerPort: 6010,
-		//将日志输出到控制台。
-		LogToConsole: true,
-		//日志的保存路径，如果没有指定，默认在根目录下的log文件夹中
-		LogPath: "",
 		//上传的文件路径，如果没有指定，默认在根目录下的matter文件夹中
 		MatterPath: "",
 		//mysql相关配置。
@@ -71,12 +67,6 @@ var (
 type Config struct {
 	//默认监听端口号
 	ServerPort int
-
-	//将日志输出到控制台。
-	LogToConsole bool
-
-	//日志的保存路径，要求不以/结尾。如果没有指定，默认在根目录下的log文件夹中。eg: /var/log/tank
-	LogPath string
 	//上传的文件路径，要求不以/结尾。如果没有指定，默认在根目录下的matter文件夹中。eg: /var/www/matter
 	MatterPath string
 
@@ -106,27 +96,27 @@ type Config struct {
 func (this *Config) validate() {
 
 	if this.ServerPort == 0 {
-		LogPanic("ServerPort 未配置")
+		LOGGER.Error("ServerPort 未配置")
 	}
 
 	if this.MysqlUsername == "" {
-		LogPanic("MysqlUsername 未配置")
+		LOGGER.Error("MysqlUsername 未配置")
 	}
 
 	if this.MysqlPassword == "" {
-		LogPanic("MysqlPassword 未配置")
+		LOGGER.Error("MysqlPassword 未配置")
 	}
 
 	if this.MysqlHost == "" {
-		LogPanic("MysqlHost 未配置")
+		LOGGER.Error("MysqlHost 未配置")
 	}
 
 	if this.MysqlPort == 0 {
-		LogPanic("MysqlPort 未配置")
+		LOGGER.Error("MysqlPort 未配置")
 	}
 
 	if this.MysqlSchema == "" {
-		LogPanic("MysqlSchema 未配置")
+		LOGGER.Error("MysqlSchema 未配置")
 	}
 
 	this.MysqlUrl = fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8&parseTime=True&loc=Local", this.MysqlUsername, this.MysqlPassword, this.MysqlHost, this.MysqlPort, this.MysqlSchema)
@@ -160,12 +150,12 @@ func LoadConfigFromFile() {
 	filePath := GetConfPath() + "/tank.json"
 	content, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		LogWarning(fmt.Sprintf("无法找到配置文件：%s,错误：%v\n将使用config.go中的默认配置项。", filePath, err))
+		LOGGER.Warn(fmt.Sprintf("无法找到配置文件：%s,错误：%v\n将使用config.go中的默认配置项。", filePath, err))
 	} else {
 		// 用 json.Unmarshal
 		err := json.Unmarshal(content, CONFIG)
 		if err != nil {
-			LogPanic("配置文件格式错误！")
+			LOGGER.Panic("配置文件格式错误！")
 		}
 	}
 
@@ -180,13 +170,8 @@ func LoadConfigFromEnvironment() {
 		if e == nil {
 			CONFIG.ServerPort = i
 		} else {
-			LogPanic(fmt.Sprintf("环境变量TANK_SERVER_PORT必须为整数！%v", tmpServerPort))
+			LOGGER.Panic(fmt.Sprintf("环境变量TANK_SERVER_PORT必须为整数！%v", tmpServerPort))
 		}
-	}
-
-	tmpLogPath := os.Getenv("TANK_LOG_PATH")
-	if tmpLogPath != "" {
-		CONFIG.LogPath = tmpLogPath
 	}
 
 	tmpMatterPath := os.Getenv("TANK_MATTER_PATH")
@@ -200,7 +185,7 @@ func LoadConfigFromEnvironment() {
 		if e == nil {
 			CONFIG.MysqlPort = i
 		} else {
-			LogPanic(fmt.Sprintf("环境变量TANK_MYSQL_PORT必须为整数！%v", tmpMysqlPort))
+			LOGGER.Panic(fmt.Sprintf("环境变量TANK_MYSQL_PORT必须为整数！%v", tmpMysqlPort))
 		}
 	}
 
@@ -242,11 +227,7 @@ func LoadConfigFromArguments() {
 	//系统端口号
 	ServerPortPtr := flag.Int("ServerPort", CONFIG.ServerPort, "server port")
 
-	//系统端口号
-	LogToConsolePtr := flag.Bool("LogToConsole", CONFIG.LogToConsole, "write log to console. for debug.")
-
 	//日志和上传文件的路径
-	LogPathPtr := flag.String("LogPath", CONFIG.LogPath, "log path")
 	MatterPathPtr := flag.String("MatterPath", CONFIG.MatterPath, "matter path")
 
 	//mysql相关配置。
@@ -266,14 +247,6 @@ func LoadConfigFromArguments() {
 
 	if *ServerPortPtr != CONFIG.ServerPort {
 		CONFIG.ServerPort = *ServerPortPtr
-	}
-
-	if *LogToConsolePtr != CONFIG.LogToConsole {
-		CONFIG.LogToConsole = *LogToConsolePtr
-	}
-
-	if *LogPathPtr != CONFIG.LogPath {
-		CONFIG.LogPath = *LogPathPtr
 	}
 
 	if *MatterPathPtr != CONFIG.MatterPath {
@@ -326,11 +299,6 @@ func PrepareConfigs() {
 	//第三级. 从程序参数中读取配置项
 	LoadConfigFromArguments()
 
-	//对于日志路径和文件路径还需要进行特殊处理
-	if CONFIG.LogPath == "" {
-		CONFIG.LogPath = GetHomePath() + "/log"
-	}
-	MakeDirAll(CONFIG.LogPath)
 	if CONFIG.MatterPath == "" {
 		CONFIG.MatterPath = GetHomePath() + "/matter"
 	}

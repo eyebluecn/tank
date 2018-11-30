@@ -1,6 +1,8 @@
 package rest
 
-import "net/http"
+import (
+	"net/http"
+)
 
 type IBean interface {
 	Init()
@@ -9,11 +11,11 @@ type IBean interface {
 }
 
 type Bean struct {
-
+	logger *Logger
 }
 
 func (this *Bean) Init() {
-
+	this.logger = LOGGER
 }
 
 //处理错误的统一方法
@@ -27,5 +29,3 @@ func (this *Bean) PanicError(err error) {
 func (this *Bean) PanicWebError(msg string, httpStatusCode int) {
 	panic(&WebError{Msg: msg, Code: httpStatusCode})
 }
-
-//处理日志的统一方法。

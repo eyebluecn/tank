@@ -215,7 +215,7 @@ func (this *UserController) Logout(writer http.ResponseWriter, request *http.Req
 	//session置为过期
 	sessionCookie, err := request.Cookie(COOKIE_AUTH_KEY)
 	if err != nil {
-		LogError("找不到任何登录信息")
+		this.logger.Error("找不到任何登录信息")
 		return this.Success("已经退出登录了！")
 	}
 	sessionId := sessionCookie.Value
@@ -230,7 +230,7 @@ func (this *UserController) Logout(writer http.ResponseWriter, request *http.Req
 	//删掉session缓存
 	_, err = CONTEXT.SessionCache.Delete(sessionId)
 	if err != nil {
-		LogError("删除用户session缓存时出错")
+		this.logger.Error("删除用户session缓存时出错")
 	}
 
 	//清空客户端的cookie.

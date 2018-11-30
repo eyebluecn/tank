@@ -14,6 +14,7 @@ type UserService struct {
 
 //初始化方法
 func (this *UserService) Init() {
+	this.Bean.Init()
 
 	//手动装填本实例的Bean. 这里必须要用中间变量方可。
 	b := CONTEXT.GetBean(this.userDao)
@@ -37,18 +38,18 @@ func (this *UserService) bootstrap(writer http.ResponseWriter, request *http.Req
 	//验证用户是否已经登录。
 	sessionCookie, err := request.Cookie(COOKIE_AUTH_KEY)
 	if err != nil {
-		LogError("找不到任何登录信息")
+		this.logger.Error("找不到任何登录信息")
 		return
 	}
 
 	sessionId := sessionCookie.Value
 
-	LogInfo("请求的sessionId = " + sessionId)
+	this.logger.Info("请求的sessionId = " + sessionId)
 
 	//去缓存中捞取
 	cacheItem, err := CONTEXT.SessionCache.Value(sessionId)
 	if err != nil {
-		LogError("获取缓存时出错了" + err.Error())
+		this.logger.Error("获取缓存时出错了" + err.Error())
 	}
 
 	//缓存中没有，尝试去数据库捞取
@@ -57,7 +58,7 @@ func (this *UserService) bootstrap(writer http.ResponseWriter, request *http.Req
 		if session != nil {
 			duration := session.ExpireTime.Sub(time.Now())
 			if duration <= 0 {
-				LogError("登录信息已过期")
+				this.logger.Error("登录信息已过期")
 			} else {
 				user := this.userDao.FindByUuid(session.UserUuid)
 				if user != nil {
@@ -65,7 +66,7 @@ func (this *UserService) bootstrap(writer http.ResponseWriter, request *http.Req
 					CONTEXT.SessionCache.Add(sessionCookie.Value, duration, user)
 
 				} else {
-					LogError("没有找到对应的user " + session.UserUuid)
+					this.logger.Error("没有找到对应的user " + session.UserUuid)
 				}
 			}
 		}

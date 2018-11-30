@@ -87,6 +87,26 @@ func GetConfPath() string {
 	return filePath
 }
 
+//获取日志的路径
+//例如：默认存放于 home/log
+func GetLogPath() string {
+
+	homePath := GetHomePath()
+	filePath := homePath + "/log"
+	exists, err := PathExists(filePath)
+	if err != nil {
+		panic("判断日志文件夹是否存在时出错！")
+	}
+	if !exists {
+		err = os.MkdirAll(filePath, 0777)
+		if err != nil {
+			panic("创建日志文件夹时出错！")
+		}
+	}
+
+	return filePath
+}
+
 //获取某个用户文件应该存放的位置。这个是相对GetFilePath的路径
 //例如：/zicla/2006-01-02/1510122428000
 func GetUserFilePath(username string, cache bool) (string, string) {
