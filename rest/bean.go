@@ -27,3 +27,5 @@ func (this *Bean) PanicError(err error) {
 func (this *Bean) PanicWebError(msg string, httpStatusCode int) {
 	panic(&WebError{Msg: msg, Code: httpStatusCode})
 }
+
+//处理日志的统一方法。

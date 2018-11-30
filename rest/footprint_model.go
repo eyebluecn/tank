@@ -3,7 +3,7 @@ package rest
 /**
  * 系统的所有访问记录均记录在此
  */
-type SecurityVisit struct {
+type Footprint struct {
 	Base
 	SessionId string `json:"sessionId"`
 	UserUuid  string `json:"userUuid"`
@@ -16,6 +16,6 @@ type SecurityVisit struct {
 }
 
 // set File's table name to be `profiles`
-func (SecurityVisit) TableName() string {
-	return TABLE_PREFIX + "security_visit"
+func (Footprint) TableName() string {
+	return TABLE_PREFIX + "footprint"
 }

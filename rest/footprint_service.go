@@ -7,19 +7,19 @@ import (
 )
 
 //@Service
-type SecurityVisitService struct {
+type FootprintService struct {
 	Bean
-	securityVisitDao *SecurityVisitDao
+	footprintDao *FootprintDao
 	userDao          *UserDao
 }
 
 //初始化方法
-func (this *SecurityVisitService) Init() {
+func (this *FootprintService) Init() {
 
 	//手动装填本实例的Bean. 这里必须要用中间变量方可。
-	b := CONTEXT.GetBean(this.securityVisitDao)
-	if b, ok := b.(*SecurityVisitDao); ok {
-		this.securityVisitDao = b
+	b := CONTEXT.GetBean(this.footprintDao)
+	if b, ok := b.(*FootprintDao); ok {
+		this.footprintDao = b
 	}
 
 	b = CONTEXT.GetBean(this.userDao)
@@ -30,22 +30,22 @@ func (this *SecurityVisitService) Init() {
 }
 
 //获取某个文件的详情，会把父级依次倒着装进去。如果中途出错，直接抛出异常。
-func (this *SecurityVisitService) Detail(uuid string) *SecurityVisit {
+func (this *FootprintService) Detail(uuid string) *Footprint {
 
-	securityVisit := this.securityVisitDao.CheckByUuid(uuid)
+	footprint := this.footprintDao.CheckByUuid(uuid)
 
-	return securityVisit
+	return footprint
 }
 
 
 
 //记录访问记录
-func (this *SecurityVisitService) Log(writer http.ResponseWriter, request *http.Request) {
+func (this *FootprintService) Trace(writer http.ResponseWriter, request *http.Request) {
 	//手动装填本实例的Bean. 这里必须要用中间变量方可。
-	var securityVisitDao *SecurityVisitDao
-	b := CONTEXT.GetBean(securityVisitDao)
-	if b, ok := b.(*SecurityVisitDao); ok {
-		securityVisitDao = b
+	var footprintDao *FootprintDao
+	b := CONTEXT.GetBean(footprintDao)
+	if b, ok := b.(*FootprintDao); ok {
+		footprintDao = b
 	}
 
 	fmt.Printf("Host = %s Uri = %s  Path = %s  RawPath = %s  RawQuery = %s \n",
@@ -76,7 +76,7 @@ func (this *SecurityVisitService) Log(writer http.ResponseWriter, request *http.
 	}
 
 	//将文件信息存入数据库中。
-	securityVisit := &SecurityVisit{
+	footprint := &Footprint{
 		SessionId: "",
 		UserUuid:  "testUserUUid",
 		Ip:        GetIpAddress(request),
@@ -87,6 +87,6 @@ func (this *SecurityVisitService) Log(writer http.ResponseWriter, request *http.
 		Success:   true,
 	}
 
-	securityVisit = securityVisitDao.Create(securityVisit)
+	footprint = footprintDao.Create(footprint)
 
 }

@@ -11,7 +11,7 @@ import (
 
 //用于处理所有前来的请求
 type Router struct {
-	securityVisitService *SecurityVisitService
+	footprintService *FootprintService
 	userService          *UserService
 	routeMap             map[string]func(writer http.ResponseWriter, request *http.Request)
 }
@@ -28,10 +28,10 @@ func NewRouter() *Router {
 		router.userService = b
 	}
 
-	//装载securityVisitService
-	b = CONTEXT.GetBean(router.securityVisitService)
-	if b, ok := b.(*SecurityVisitService); ok {
-		router.securityVisitService = b
+	//装载footprintService
+	b = CONTEXT.GetBean(router.footprintService)
+	if b, ok := b.(*FootprintService); ok {
+		router.footprintService = b
 	}
 
 	//将Controller中的路由规则装载机进来
@@ -128,7 +128,7 @@ func (this *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 		}
 
 		//正常的访问记录会落到这里。
-		go this.securityVisitService.Log(writer, request)
+		go this.footprintService.Trace(writer, request)
 
 	} else {
 		//当作静态资源处理。默认从当前文件下面的static文件夹中取东西。

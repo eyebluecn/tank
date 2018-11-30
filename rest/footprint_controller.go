@@ -5,66 +5,66 @@ import (
 	"strconv"
 )
 
-type SecurityVisitController struct {
+type FootprintController struct {
 	BaseController
-	securityVisitDao     *SecurityVisitDao
-	securityVisitService *SecurityVisitService
+	footprintDao     *FootprintDao
+	footprintService *FootprintService
 }
 
 //初始化方法
-func (this *SecurityVisitController) Init() {
+func (this *FootprintController) Init() {
 	this.BaseController.Init()
 
 	//手动装填本实例的Bean. 这里必须要用中间变量方可。
-	b := CONTEXT.GetBean(this.securityVisitDao)
-	if b, ok := b.(*SecurityVisitDao); ok {
-		this.securityVisitDao = b
+	b := CONTEXT.GetBean(this.footprintDao)
+	if b, ok := b.(*FootprintDao); ok {
+		this.footprintDao = b
 	}
 
-	b = CONTEXT.GetBean(this.securityVisitService)
-	if b, ok := b.(*SecurityVisitService); ok {
-		this.securityVisitService = b
+	b = CONTEXT.GetBean(this.footprintService)
+	if b, ok := b.(*FootprintService); ok {
+		this.footprintService = b
 	}
 
 }
 
 //注册自己的路由。
-func (this *SecurityVisitController) RegisterRoutes() map[string]func(writer http.ResponseWriter, request *http.Request) {
+func (this *FootprintController) RegisterRoutes() map[string]func(writer http.ResponseWriter, request *http.Request) {
 
 	routeMap := make(map[string]func(writer http.ResponseWriter, request *http.Request))
 
 	//每个Controller需要主动注册自己的路由。
-	routeMap["/api/security/visit/delete"] = this.Wrap(this.Delete, USER_ROLE_USER)
-	routeMap["/api/security/visit/detail"] = this.Wrap(this.Detail, USER_ROLE_USER)
-	routeMap["/api/security/visit/page"] = this.Wrap(this.Page, USER_ROLE_USER)
+	routeMap["/api/footprint/delete"] = this.Wrap(this.Delete, USER_ROLE_USER)
+	routeMap["/api/footprint/detail"] = this.Wrap(this.Detail, USER_ROLE_USER)
+	routeMap["/api/footprint/page"] = this.Wrap(this.Page, USER_ROLE_USER)
 
 	return routeMap
 }
 
 //查看详情。
-func (this *SecurityVisitController) Detail(writer http.ResponseWriter, request *http.Request) *WebResult {
+func (this *FootprintController) Detail(writer http.ResponseWriter, request *http.Request) *WebResult {
 
 	uuid := request.FormValue("uuid")
 	if uuid == "" {
 		return this.Error("图片缓存的uuid必填")
 	}
 
-	securityVisit := this.securityVisitService.Detail(uuid)
+	footprint := this.footprintService.Detail(uuid)
 
 	//验证当前之人是否有权限查看这么详细。
 	user := this.checkUser(writer, request)
 	if user.Role != USER_ROLE_ADMINISTRATOR {
-		if securityVisit.UserUuid != user.Uuid {
+		if footprint.UserUuid != user.Uuid {
 			panic("没有权限查看该图片缓存")
 		}
 	}
 
-	return this.Success(securityVisit)
+	return this.Success(footprint)
 
 }
 
 //按照分页的方式查询
-func (this *SecurityVisitController) Page(writer http.ResponseWriter, request *http.Request) *WebResult {
+func (this *FootprintController) Page(writer http.ResponseWriter, request *http.Request) *WebResult {
 
 	//如果是根目录，那么就传入root.
 	pageStr := request.FormValue("page")
@@ -102,28 +102,28 @@ func (this *SecurityVisitController) Page(writer http.ResponseWriter, request *h
 		},
 	}
 
-	pager := this.securityVisitDao.Page(page, pageSize, userUuid, sortArray)
+	pager := this.footprintDao.Page(page, pageSize, userUuid, sortArray)
 
 	return this.Success(pager)
 }
 
 //删除一条记录
-func (this *SecurityVisitController) Delete(writer http.ResponseWriter, request *http.Request) *WebResult {
+func (this *FootprintController) Delete(writer http.ResponseWriter, request *http.Request) *WebResult {
 
 	uuid := request.FormValue("uuid")
 	if uuid == "" {
 		return this.Error("图片缓存的uuid必填")
 	}
 
-	securityVisit := this.securityVisitDao.FindByUuid(uuid)
+	footprint := this.footprintDao.FindByUuid(uuid)
 
 	//判断图片缓存的所属人是否正确
 	user := this.checkUser(writer, request)
-	if user.Role != USER_ROLE_ADMINISTRATOR && securityVisit.UserUuid != user.Uuid {
+	if user.Role != USER_ROLE_ADMINISTRATOR && footprint.UserUuid != user.Uuid {
 		return this.Error(CODE_WRAPPER_UNAUTHORIZED)
 	}
 
-	this.securityVisitDao.Delete(securityVisit)
+	this.footprintDao.Delete(footprint)
 
 	return this.Success("删除成功！")
 }
