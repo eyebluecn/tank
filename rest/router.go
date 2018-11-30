@@ -59,6 +59,9 @@ func (this *Router) GlobalPanicHandler(writer http.ResponseWriter, request *http
 		} else if value, ok := err.(*WebResult); ok {
 			//一个WebResult对象
 			webResult = value
+		} else if value, ok := err.(*CodeWrapper); ok {
+			//一个WebResult对象
+			webResult = ConstWebResult(value)
 		} else if value, ok := err.(error); ok {
 			//一个普通的错误对象
 			webResult = CustomWebResult(CODE_WRAPPER_UNKNOWN, value.Error())

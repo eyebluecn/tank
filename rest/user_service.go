@@ -38,7 +38,6 @@ func (this *UserService) bootstrap(writer http.ResponseWriter, request *http.Req
 	//验证用户是否已经登录。
 	sessionCookie, err := request.Cookie(COOKIE_AUTH_KEY)
 	if err != nil {
-		this.logger.Error("找不到任何登录信息")
 		return
 	}
 

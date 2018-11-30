@@ -68,8 +68,6 @@ func (this *AlienService) PreviewOrDownload(
 	operator *User,
 	withContentDisposition bool) {
 
-	this.logger.Info("预览或下载文件 " + uuid + " " + filename)
-
 	matter := this.matterDao.CheckByUuid(uuid)
 
 	//判断是否是文件夹
@@ -132,5 +130,8 @@ func (this *AlienService) PreviewOrDownload(
 	} else {
 		this.matterService.DownloadFile(writer, request, CONFIG.MatterPath+matter.Path, matter.Name, withContentDisposition)
 	}
+
+	//文件下载次数加一，为了加快访问速度，异步进行
+	go this.matterDao.TimesIncrement(uuid)
 
 }

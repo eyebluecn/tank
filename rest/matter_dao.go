@@ -6,8 +6,8 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"github.com/nu7hatch/gouuid"
 	"os"
-	"time"
 	"strings"
+	"time"
 )
 
 type MatterDao struct {
@@ -214,6 +214,12 @@ func (this *MatterDao) Save(matter *Matter) *Matter {
 	this.PanicError(db.Error)
 
 	return matter
+}
+
+//计数器加一
+func (this *MatterDao) TimesIncrement(matterUuid string) {
+	db := CONTEXT.DB.Model(&Matter{}).Where("uuid = ?", matterUuid).Update("times", gorm.Expr("times + 1"))
+	this.PanicError(db.Error)
 }
 
 //删除一个文件，数据库中删除，物理磁盘上删除。

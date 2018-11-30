@@ -215,7 +215,6 @@ func (this *UserController) Logout(writer http.ResponseWriter, request *http.Req
 	//session置为过期
 	sessionCookie, err := request.Cookie(COOKIE_AUTH_KEY)
 	if err != nil {
-		this.logger.Error("找不到任何登录信息")
 		return this.Success("已经退出登录了！")
 	}
 	sessionId := sessionCookie.Value
