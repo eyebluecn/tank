@@ -76,6 +76,7 @@ func (this *FootprintService) Trace(writer http.ResponseWriter, request *http.Re
 		Params:   paramsString,
 		Cost:     int64(duration / time.Millisecond),
 		Success:  success,
+		Dt:       ConvertTimeToDateString(time.Now()),
 	}
 
 	footprint = this.footprintDao.Create(footprint)

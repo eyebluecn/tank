@@ -6,13 +6,23 @@ import (
 )
 
 //将一个时间字符串转换成时间对象(yyyy-MM-dd HH:mm:ss)
-func ConvertToTime(timeString string) time.Time {
+func ConvertDateTimeStringToTime(timeString string) time.Time {
 	local, _ := time.LoadLocation("Local")
 	t, err := time.ParseInLocation("2006-01-02 15:04:05", timeString, local)
 	if err != nil {
 		panic(fmt.Sprintf("不能将%s转为时间类型", timeString))
 	}
 	return t
+}
+
+//将一个时间字符串转换成日期时间对象(yyyy-MM-dd HH:mm:ss)
+func ConvertTimeToDateTimeString(time time.Time) string {
+	return time.Local().Format("2006-01-02 15:04:05")
+}
+
+//将一个时间字符串转换成日期对象(yyyy-MM-dd)
+func ConvertTimeToDateString(time time.Time) string {
+	return time.Local().Format("2006-01-02")
 }
 
 //一天中的最后一秒钟

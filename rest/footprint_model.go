@@ -5,13 +5,14 @@ package rest
  */
 type Footprint struct {
 	Base
-	UserUuid  string `json:"userUuid"`
-	Ip        string `json:"ip"`
-	Host      string `json:"host"`
-	Uri       string `json:"uri"`
-	Params    string `json:"params"`
-	Cost      int64  `json:"cost"`
-	Success   bool   `json:"success"`
+	UserUuid string `json:"userUuid"`
+	Ip       string `json:"ip"`
+	Host     string `json:"host"`
+	Uri      string `json:"uri"`
+	Params   string `json:"params"`
+	Cost     int64  `json:"cost"`
+	Success  bool   `json:"success"`
+	Dt       string `json:"dt"`
 }
 
 // set File's table name to be `profiles`

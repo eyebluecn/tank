@@ -3,7 +3,6 @@ package rest
 import (
 	"errors"
 	"fmt"
-	"log"
 	"sort"
 	"sync"
 	"time"
@@ -102,8 +101,6 @@ type CacheTable struct {
 	cleanupTimer *time.Timer
 	// 缓存清理周期
 	cleanupInterval time.Duration
-	// 该缓存表的日志
-	logger *log.Logger
 	// 获取一个不存在的缓存项时的回调函数
 	loadData func(key interface{}, args ...interface{}) *CacheItem
 	// 向缓存表增加缓存项时的回调函数
@@ -150,13 +147,6 @@ func (table *CacheTable) SetDeleteCallback(f func(*CacheItem)) {
 	table.deleteCallback = f
 }
 
-// 设置缓存表需要使用的log
-func (table *CacheTable) SetLogger(logger *log.Logger) {
-	table.Lock()
-	defer table.Unlock()
-	table.logger = logger
-}
-
 //终结检查，被自调整的时间触发
 func (table *CacheTable) checkExpire() {
 	table.Lock()
@@ -164,7 +154,7 @@ func (table *CacheTable) checkExpire() {
 		table.cleanupTimer.Stop()
 	}
 	if table.cleanupInterval > 0 {
-		table.log("Expiration check triggered after", table.cleanupInterval, "for table")
+		table.log("Expiration check triggered after %v for table", table.cleanupInterval)
 	} else {
 		table.log("Expiration check installed for table")
 	}
@@ -191,7 +181,7 @@ func (table *CacheTable) checkExpire() {
 			//缓存项已经过期
 			_, e := table.Delete(key)
 			if e != nil {
-				table.log("删除缓存项时出错 ", e.Error())
+				table.log("删除缓存项时出错 %v", e.Error())
 			}
 		} else {
 			//查找最靠近结束生命周期的项目
@@ -218,7 +208,7 @@ func (table *CacheTable) Add(key interface{}, duration time.Duration, data inter
 
 	// 将缓存项放入表中
 	table.Lock()
-	table.log("Adding item with key", key, "and lifespan of", duration, "to table")
+	table.log("Adding item with key %v and lifespan of %v to table", key, duration)
 	table.items[key] = item
 
 	// 取出需要的东西，释放锁
@@ -265,7 +255,7 @@ func (table *CacheTable) Delete(key interface{}) (*CacheItem, error) {
 
 	table.Lock()
 	defer table.Unlock()
-	table.log("Deleting item with key", key, "created on", r.createTime, "and hit", r.count, "times from table")
+	table.log("Deleting item with key %v created on %v and hit %v times from table", key, r.createTime, r.count)
 	delete(table.items, key)
 
 	return r, nil
@@ -290,7 +280,7 @@ func (table *CacheTable) NotFoundAdd(key interface{}, lifeSpan time.Duration, da
 	}
 
 	item := NewCacheItem(key, lifeSpan, data)
-	table.log("Adding item with key", key, "and lifespan of", lifeSpan, "to table")
+	table.log("Adding item with key %v and lifespan of %v to table", key, lifeSpan)
 	table.items[key] = item
 
 	// 取出需要的内容，释放锁
@@ -339,11 +329,11 @@ func (table *CacheTable) Value(key interface{}, args ...interface{}) (*CacheItem
 }
 
 // 删除缓存表中的所有项目
-func (table *CacheTable) Flush() {
+func (table *CacheTable) Truncate() {
 	table.Lock()
 	defer table.Unlock()
 
-	table.log("Flushing table")
+	table.log("Truncate table")
 
 	table.items = make(map[interface{}]*CacheItem)
 	table.cleanupInterval = 0
@@ -395,13 +385,8 @@ func (table *CacheTable) MostAccessed(count int64) []*CacheItem {
 }
 
 // 打印日志
-func (table *CacheTable) log(v ...interface{}) {
-	if table.logger == nil {
-		fmt.Println(v...)
-		return
-	}
-
-	table.logger.Println(v...)
+func (table *CacheTable) log(format string, v ...interface{}) {
+	LOGGER.Info(format, v...)
 }
 
 //新建一个缓存Table

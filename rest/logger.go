@@ -10,7 +10,7 @@ import (
 
 //日志系统必须高保
 //全局唯一的日志对象(在main函数中初始化)
-var LOGGER *Logger = &Logger{}
+var LOGGER = &Logger{}
 
 //在Logger的基础上包装一个全新的Logger.
 type Logger struct {

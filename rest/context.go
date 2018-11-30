@@ -104,6 +104,11 @@ func (this *Context) registerBeans() {
 	this.registerBean(new(AlienController))
 	this.registerBean(new(AlienService))
 
+	//dashboard
+	this.registerBean(new(DashboardController))
+	this.registerBean(new(DashboardDao))
+	this.registerBean(new(DashboardService))
+
 	//downloadToken
 	this.registerBean(new(DownloadTokenDao))
 
