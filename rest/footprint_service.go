@@ -2,15 +2,15 @@ package rest
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
+	"time"
 )
 
 //@Service
 type FootprintService struct {
 	Bean
 	footprintDao *FootprintDao
-	userDao          *UserDao
+	userDao      *UserDao
 }
 
 //初始化方法
@@ -38,23 +38,8 @@ func (this *FootprintService) Detail(uuid string) *Footprint {
 	return footprint
 }
 
-
-
 //记录访问记录
-func (this *FootprintService) Trace(writer http.ResponseWriter, request *http.Request) {
-	//手动装填本实例的Bean. 这里必须要用中间变量方可。
-	var footprintDao *FootprintDao
-	b := CONTEXT.GetBean(footprintDao)
-	if b, ok := b.(*FootprintDao); ok {
-		footprintDao = b
-	}
-
-	fmt.Printf("Host = %s Uri = %s  Path = %s  RawPath = %s  RawQuery = %s \n",
-		request.Host,
-		request.RequestURI,
-		request.URL.Path,
-		request.URL.RawPath,
-		request.URL.RawQuery)
+func (this *FootprintService) Trace(writer http.ResponseWriter, request *http.Request, duration time.Duration, success bool) {
 
 	params := make(map[string][]string)
 
@@ -76,18 +61,23 @@ func (this *FootprintService) Trace(writer http.ResponseWriter, request *http.Re
 		paramsString = string(paramsData)
 	}
 
-	//将文件信息存入数据库中。
-	footprint := &Footprint{
-		SessionId: "",
-		UserUuid:  "testUserUUid",
-		Ip:        GetIpAddress(request),
-		Host:      request.Host,
-		Uri:       request.URL.Path,
-		Params:    paramsString,
-		Cost:      0,
-		Success:   true,
+	user := this.findUser(writer, request)
+	userUuid := ""
+	if user != nil {
+		userUuid = user.Uuid
 	}
 
-	footprint = footprintDao.Create(footprint)
+	//将文件信息存入数据库中。
+	footprint := &Footprint{
+		UserUuid: userUuid,
+		Ip:       GetIpAddress(request),
+		Host:     request.Host,
+		Uri:      request.URL.Path,
+		Params:   paramsString,
+		Cost:     int64(duration / time.Millisecond),
+		Success:  success,
+	}
+
+	footprint = this.footprintDao.Create(footprint)
 
 }

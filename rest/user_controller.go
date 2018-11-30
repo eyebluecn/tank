@@ -62,9 +62,9 @@ func (this *UserController) Login(writer http.ResponseWriter, request *http.Requ
 		}
 	}
 
-	//登录成功，设置Cookie。有效期7天。
+	//登录成功，设置Cookie。有效期30天。
 	expiration := time.Now()
-	expiration = expiration.AddDate(0, 0, 7)
+	expiration = expiration.AddDate(0, 0, 30)
 
 	//持久化用户的session.
 	session := &Session{

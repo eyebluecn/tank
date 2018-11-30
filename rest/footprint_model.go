@@ -5,7 +5,6 @@ package rest
  */
 type Footprint struct {
 	Base
-	SessionId string `json:"sessionId"`
 	UserUuid  string `json:"userUuid"`
 	Ip        string `json:"ip"`
 	Host      string `json:"host"`

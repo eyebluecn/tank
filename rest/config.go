@@ -150,7 +150,7 @@ func LoadConfigFromFile() {
 	filePath := GetConfPath() + "/tank.json"
 	content, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		LOGGER.Warn(fmt.Sprintf("无法找到配置文件：%s,错误：%v\n将使用config.go中的默认配置项。", filePath, err))
+		LOGGER.Warn("无法找到配置文件：%s 将使用config.go中的默认配置项。", filePath)
 	} else {
 		// 用 json.Unmarshal
 		err := json.Unmarshal(content, CONFIG)
@@ -170,7 +170,7 @@ func LoadConfigFromEnvironment() {
 		if e == nil {
 			CONFIG.ServerPort = i
 		} else {
-			LOGGER.Panic(fmt.Sprintf("环境变量TANK_SERVER_PORT必须为整数！%v", tmpServerPort))
+			LOGGER.Panic("环境变量TANK_SERVER_PORT必须为整数！%v", tmpServerPort)
 		}
 	}
 
@@ -185,7 +185,7 @@ func LoadConfigFromEnvironment() {
 		if e == nil {
 			CONFIG.MysqlPort = i
 		} else {
-			LOGGER.Panic(fmt.Sprintf("环境变量TANK_MYSQL_PORT必须为整数！%v", tmpMysqlPort))
+			LOGGER.Panic("环境变量TANK_MYSQL_PORT必须为整数！%v", tmpMysqlPort)
 		}
 	}
 

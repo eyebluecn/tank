@@ -32,11 +32,11 @@ func (this *Logger) Debug(format string, v ...interface{}) {
 }
 
 func (this *Logger) Info(format string, v ...interface{}) {
-	this.log("[info]", format, v...)
+	this.log("[info ]", format, v...)
 }
 
 func (this *Logger) Warn(format string, v ...interface{}) {
-	this.log("[warn]", format, v...)
+	this.log("[warn ]", format, v...)
 }
 
 func (this *Logger) Error(format string, v ...interface{}) {

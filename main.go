@@ -20,13 +20,12 @@ func main() {
 	//全局运行的上下文
 	rest.CONTEXT.Init()
 	defer rest.CONTEXT.Destroy()
-	
-	http.Handle("/", rest.CONTEXT.Router)
 
-	dotPort := fmt.Sprintf(":%v", rest.CONFIG.ServerPort)
+	http.Handle("/", rest.CONTEXT.Router)
 
 	rest.LOGGER.Info("App started at http://localhost:%v", rest.CONFIG.ServerPort)
 
+	dotPort := fmt.Sprintf(":%v", rest.CONFIG.ServerPort)
 	err1 := http.ListenAndServe(dotPort, nil)
 	if err1 != nil {
 		log.Fatal("ListenAndServe: ", err1)

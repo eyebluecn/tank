@@ -44,8 +44,6 @@ func (this *UserService) bootstrap(writer http.ResponseWriter, request *http.Req
 
 	sessionId := sessionCookie.Value
 
-	this.logger.Info("请求的sessionId = " + sessionId)
-
 	//去缓存中捞取
 	cacheItem, err := CONTEXT.SessionCache.Value(sessionId)
 	if err != nil {
@@ -64,7 +62,6 @@ func (this *UserService) bootstrap(writer http.ResponseWriter, request *http.Req
 				if user != nil {
 					//将用户装填进缓存中
 					CONTEXT.SessionCache.Add(sessionCookie.Value, duration, user)
-
 				} else {
 					this.logger.Error("没有找到对应的user " + session.UserUuid)
 				}

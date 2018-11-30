@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 )
 
 //用于处理所有前来的请求
@@ -46,7 +47,7 @@ func NewRouter() *Router {
 }
 
 //全局的异常捕获
-func (this *Router) GlobalPanicHandler(writer http.ResponseWriter, request *http.Request) {
+func (this *Router) GlobalPanicHandler(writer http.ResponseWriter, request *http.Request, startTime time.Time) {
 	if err := recover(); err != nil {
 
 		LOGGER.Error(fmt.Sprintf("全局异常: %v", err))
@@ -85,6 +86,9 @@ func (this *Router) GlobalPanicHandler(writer http.ResponseWriter, request *http
 		var json = jsoniter.ConfigCompatibleWithStandardLibrary
 		b, _ := json.Marshal(webResult)
 
+		//错误情况记录。
+		go this.footprintService.Trace(writer, request, time.Now().Sub(startTime), false)
+
 		_, err := fmt.Fprintf(writer, string(b))
 		if err != nil {
 			fmt.Printf("输出结果时出错了\n")
@@ -95,9 +99,11 @@ func (this *Router) GlobalPanicHandler(writer http.ResponseWriter, request *http
 //让Router具有处理请求的功能。
 func (this *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 
+	startTime := time.Now()
+
 	//每个请求的入口在这里
 	//全局异常处理。
-	defer this.GlobalPanicHandler(writer, request)
+	defer this.GlobalPanicHandler(writer, request, startTime)
 
 	path := request.URL.Path
 	if strings.HasPrefix(path, "/api") {
@@ -128,7 +134,7 @@ func (this *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 		}
 
 		//正常的访问记录会落到这里。
-		go this.footprintService.Trace(writer, request)
+		go this.footprintService.Trace(writer, request, time.Now().Sub(startTime), true)
 
 	} else {
 		//当作静态资源处理。默认从当前文件下面的static文件夹中取东西。

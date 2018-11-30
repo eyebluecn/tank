@@ -98,16 +98,20 @@ func (this *BaseController) Wrap(f func(writer http.ResponseWriter, request *htt
 	}
 }
 
-//返回成功的结果。
+//返回成功的结果。支持放置三种类型 1.字符串 2. WebResult对象 3.空指针 4.任意类型
 func (this *BaseController) Success(data interface{}) *WebResult {
 	var webResult *WebResult = nil
 	if value, ok := data.(string); ok {
+		//返回一句普通的消息
 		webResult = &WebResult{Code: CODE_WRAPPER_OK.Code, Msg: value}
 	} else if value, ok := data.(*WebResult); ok {
+		//返回一个webResult对象
 		webResult = value
 	} else if _, ok := data.(types.Nil); ok {
+		//返回一个空指针
 		webResult = ConstWebResult(CODE_WRAPPER_OK)
 	} else {
+		//返回的类型不明确。
 		webResult = &WebResult{Code: CODE_WRAPPER_OK.Code, Data: data}
 	}
 	return webResult
@@ -128,49 +132,6 @@ func (this *BaseController) Error(err interface{}) *WebResult {
 		webResult = &WebResult{Code: CODE_WRAPPER_UNKNOWN.Code, Msg: "服务器未知错误"}
 	}
 	return webResult
-}
-
-//能找到一个user就找到一个
-func (this *BaseController) findUser(writer http.ResponseWriter, request *http.Request) *User {
-
-	//验证用户是否已经登录。
-	sessionCookie, err := request.Cookie(COOKIE_AUTH_KEY)
-	if err != nil {
-		this.logger.Warn("获取用户cookie信息失败啦~")
-		return nil
-	}
-
-	sessionId := sessionCookie.Value
-
-	this.logger.Info("findUser sessionId = %s", sessionId)
-
-	//去缓存中捞取看看
-	cacheItem, err := CONTEXT.SessionCache.Value(sessionId)
-	if err != nil {
-		this.logger.Warn("获取缓存时出错了" + err.Error())
-		return nil
-	}
-
-	if cacheItem.Data() == nil {
-		this.logger.Warn("cache item中已经不存在了 " + err.Error())
-		return nil
-	}
-
-	if value, ok := cacheItem.Data().(*User); ok {
-		return value
-	} else {
-		this.logger.Error("cache item中的类型不是*User ")
-	}
-
-	return nil
-}
-
-func (this *BaseController) checkUser(writer http.ResponseWriter, request *http.Request) *User {
-	if this.findUser(writer, request) == nil {
-		panic(ConstWebResult(CODE_WRAPPER_LOGIN))
-	} else {
-		return this.findUser(writer, request)
-	}
 }
 
 //允许跨域请求
