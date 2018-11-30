@@ -6,7 +6,6 @@ import (
 
 type Session struct {
 	Base
-	Authentication string    `json:"authentication"`
 	UserUuid       string    `json:"userUuid"`
 	Ip             string    `json:"ip"`
 	ExpireTime     time.Time `json:"expireTime"`

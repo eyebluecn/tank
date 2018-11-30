@@ -40,18 +40,6 @@ func (this *SessionDao) CheckByUuid(uuid string) *Session {
 	return session
 }
 
-//按照authentication查询用户。
-func (this *SessionDao) FindByAuthentication(authentication string) *Session {
-
-	var session = &Session{}
-	db := CONTEXT.DB.Where(&Session{Authentication: authentication}).First(session)
-	if db.Error != nil {
-		return nil
-	}
-	return session
-
-}
-
 //创建一个session并且持久化到数据库中。
 func (this *SessionDao) Create(session *Session) *Session {
 
@@ -63,6 +51,18 @@ func (this *SessionDao) Create(session *Session) *Session {
 	return session
 }
 
+
+//修改一个session
+func (this *SessionDao) Save(session *Session) *Session {
+
+	session.UpdateTime = time.Now()
+	db := CONTEXT.DB.Save(session)
+	this.PanicError(db.Error)
+
+	return session
+}
+
+
 func (this *SessionDao) Delete(uuid string) {
 
 	session := this.CheckByUuid(uuid)
@@ -73,3 +73,5 @@ func (this *SessionDao) Delete(uuid string) {
 	this.PanicError(db.Error)
 
 }
+
+

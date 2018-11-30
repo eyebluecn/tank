@@ -28,7 +28,7 @@ func (this *UserController) RegisterRoutes() map[string]func(writer http.Respons
 	routeMap["/api/user/change/password"] = this.Wrap(this.ChangePassword, USER_ROLE_USER)
 	routeMap["/api/user/reset/password"] = this.Wrap(this.ResetPassword, USER_ROLE_ADMINISTRATOR)
 	routeMap["/api/user/login"] = this.Wrap(this.Login, USER_ROLE_GUEST)
-	routeMap["/api/user/logout"] = this.Wrap(this.Logout, USER_ROLE_USER)
+	routeMap["/api/user/logout"] = this.Wrap(this.Logout, USER_ROLE_GUEST)
 	routeMap["/api/user/detail"] = this.Wrap(this.Detail, USER_ROLE_USER)
 	routeMap["/api/user/page"] = this.Wrap(this.Page, USER_ROLE_ADMINISTRATOR)
 	routeMap["/api/user/disable"] = this.Wrap(this.Disable, USER_ROLE_ADMINISTRATOR)
@@ -212,10 +212,26 @@ func (this *UserController) Detail(writer http.ResponseWriter, request *http.Req
 //退出登录
 func (this *UserController) Logout(writer http.ResponseWriter, request *http.Request) *WebResult {
 
-	session, _ := this.checkLogin(writer, request)
+	//session置为过期
+	sessionCookie, err := request.Cookie(COOKIE_AUTH_KEY)
+	if err != nil {
+		LogError("找不到任何登录信息")
+		return this.Success("已经退出登录了！")
+	}
+	sessionId := sessionCookie.Value
 
-	//删除session
-	this.sessionDao.Delete(session.Uuid)
+	user := this.findUser(writer, request)
+	if user != nil {
+		session := this.sessionDao.FindByUuid(sessionId)
+		session.ExpireTime = time.Now()
+		this.sessionDao.Save(session)
+	}
+
+	//删掉session缓存
+	_, err = CONTEXT.SessionCache.Delete(sessionId)
+	if err != nil {
+		LogError("删除用户session缓存时出错")
+	}
 
 	//清空客户端的cookie.
 	expiration := time.Now()
@@ -223,7 +239,7 @@ func (this *UserController) Logout(writer http.ResponseWriter, request *http.Req
 	cookie := http.Cookie{
 		Name:    COOKIE_AUTH_KEY,
 		Path:    "/",
-		Value:   session.Uuid,
+		Value:   sessionId,
 		Expires: expiration}
 	http.SetCookie(writer, &cookie)
 

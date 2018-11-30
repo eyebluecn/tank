@@ -334,7 +334,8 @@ func (table *CacheTable) Value(key interface{}, args ...interface{}) (*CacheItem
 		return nil, errors.New("无法加载到缓存值")
 	}
 
-	return nil, errors.New(fmt.Sprintf("没有找到%s对应的记录", key))
+	//没有找到任何东西，返回nil.
+	return nil, nil
 }
 
 // 删除缓存表中的所有项目

@@ -2,12 +2,14 @@ package rest
 
 import (
 	"net/http"
+	"time"
 )
 
 //@Service
 type UserService struct {
 	Bean
-	userDao *UserDao
+	userDao    *UserDao
+	sessionDao *SessionDao
 }
 
 //初始化方法
@@ -19,11 +21,54 @@ func (this *UserService) Init() {
 		this.userDao = b
 	}
 
+	b = CONTEXT.GetBean(this.sessionDao)
+	if b, ok := b.(*SessionDao); ok {
+		this.sessionDao = b
+	}
+
 }
 
 //装载session信息，如果session没有了根据cookie去装填用户信息。
 //在所有的路由最初会调用这个方法
-func (this *UserService) enter(writer http.ResponseWriter, request *http.Request) {
+func (this *UserService) bootstrap(writer http.ResponseWriter, request *http.Request) {
 
+	//登录身份有效期以数据库中记录的为准
+
+	//验证用户是否已经登录。
+	sessionCookie, err := request.Cookie(COOKIE_AUTH_KEY)
+	if err != nil {
+		LogError("找不到任何登录信息")
+		return
+	}
+
+	sessionId := sessionCookie.Value
+
+	LogInfo("请求的sessionId = " + sessionId)
+
+	//去缓存中捞取
+	cacheItem, err := CONTEXT.SessionCache.Value(sessionId)
+	if err != nil {
+		LogError("获取缓存时出错了" + err.Error())
+	}
+
+	//缓存中没有，尝试去数据库捞取
+	if cacheItem == nil || cacheItem.Data() == nil {
+		session := this.sessionDao.FindByUuid(sessionCookie.Value)
+		if session != nil {
+			duration := session.ExpireTime.Sub(time.Now())
+			if duration <= 0 {
+				LogError("登录信息已过期")
+			} else {
+				user := this.userDao.FindByUuid(session.UserUuid)
+				if user != nil {
+					//将用户装填进缓存中
+					CONTEXT.SessionCache.Add(sessionCookie.Value, duration, user)
+
+				} else {
+					LogError("没有找到对应的user " + session.UserUuid)
+				}
+			}
+		}
+	}
 
 }

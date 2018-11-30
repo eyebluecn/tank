@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/json-iterator/go"
 	"io"
@@ -12,8 +11,9 @@ import (
 
 //用于处理所有前来的请求
 type Router struct {
-	userService *UserService
-	routeMap    map[string]func(writer http.ResponseWriter, request *http.Request)
+	securityVisitService *SecurityVisitService
+	userService          *UserService
+	routeMap             map[string]func(writer http.ResponseWriter, request *http.Request)
 }
 
 //构造方法
@@ -22,11 +22,16 @@ func NewRouter() *Router {
 		routeMap: make(map[string]func(writer http.ResponseWriter, request *http.Request)),
 	}
 
-
 	//装载userService.
 	b := CONTEXT.GetBean(router.userService)
 	if b, ok := b.(*UserService); ok {
 		router.userService = b
+	}
+
+	//装载securityVisitService
+	b = CONTEXT.GetBean(router.securityVisitService)
+	if b, ok := b.(*SecurityVisitService); ok {
+		router.securityVisitService = b
 	}
 
 	//将Controller中的路由规则装载机进来
@@ -80,60 +85,11 @@ func (this *Router) GlobalPanicHandler(writer http.ResponseWriter, request *http
 		var json = jsoniter.ConfigCompatibleWithStandardLibrary
 		b, _ := json.Marshal(webResult)
 
-		fmt.Fprintf(writer, string(b))
+		_, err := fmt.Fprintf(writer, string(b))
+		if err != nil {
+			fmt.Printf("输出结果时出错了\n")
+		}
 	}
-}
-
-//记录访问记录
-func (this *Router) logSecurityVisit(writer http.ResponseWriter, request *http.Request) {
-	//手动装填本实例的Bean. 这里必须要用中间变量方可。
-	var securityVisitDao *SecurityVisitDao
-	b := CONTEXT.GetBean(securityVisitDao)
-	if b, ok := b.(*SecurityVisitDao); ok {
-		securityVisitDao = b
-	}
-
-	fmt.Printf("Host = %s Uri = %s  Path = %s  RawPath = %s  RawQuery = %s \n",
-		request.Host,
-		request.RequestURI,
-		request.URL.Path,
-		request.URL.RawPath,
-		request.URL.RawQuery)
-
-	params := make(map[string][]string)
-
-	//POST请求参数
-	values := request.PostForm
-	for key, val := range values {
-		params[key] = val
-	}
-	//GET请求参数
-	values1 := request.URL.Query()
-	for key, val := range values1 {
-		params[key] = val
-	}
-
-	//用json的方式输出返回值。
-	paramsString := "{}"
-	paramsData, err := json.Marshal(params)
-	if err == nil {
-		paramsString = string(paramsData)
-	}
-
-	//将文件信息存入数据库中。
-	securityVisit := &SecurityVisit{
-		SessionId: "",
-		UserUuid:  "testUserUUid",
-		Ip:        GetIpAddress(request),
-		Host:      request.Host,
-		Uri:       request.URL.Path,
-		Params:    paramsString,
-		Cost:      0,
-		Success:   true,
-	}
-
-	securityVisit = securityVisitDao.Create(securityVisit)
-
 }
 
 //让Router具有处理请求的功能。
@@ -147,14 +103,14 @@ func (this *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 	if strings.HasPrefix(path, "/api") {
 
 		//统一处理用户的身份信息。
-		this.userService.enter(writer, request)
+		this.userService.bootstrap(writer, request)
 
 		if handler, ok := this.routeMap[path]; ok {
 
 			handler(writer, request)
 
 		} else {
-			//直接将请求扔给每个controller，看看他们能不能处理，如果都不能处理，那就算了。
+			//直接将请求扔给每个controller，看看他们能不能处理，如果都不能处理，那就抛出找不到的错误
 			canHandle := false
 			for _, controller := range CONTEXT.ControllerMap {
 				if handler, exist := controller.HandleRoutes(writer, request); exist {
@@ -172,7 +128,7 @@ func (this *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 		}
 
 		//正常的访问记录会落到这里。
-		go this.logSecurityVisit(writer, request)
+		go this.securityVisitService.Log(writer, request)
 
 	} else {
 		//当作静态资源处理。默认从当前文件下面的static文件夹中取东西。

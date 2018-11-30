@@ -25,6 +25,31 @@ type Context struct {
 	Router *Router
 }
 
+
+//初始化上下文
+func (this *Context) Init()  {
+
+	//处理数据库连接的开关。
+	this.OpenDb()
+
+	//创建一个用于存储session的缓存。
+	this.SessionCache = NewCacheTable()
+
+	//初始化Map
+	this.BeanMap = make(map[string]IBean)
+	this.ControllerMap = make(map[string]IController)
+
+	//注册各类Beans.在这个方法里面顺便把Controller装入ControllerMap中去。
+	this.registerBeans()
+
+	//初始化每个bean.
+	this.initBeans()
+
+	//初始化Router. 这个方法要在Bean注册好了之后才能。
+	this.Router = NewRouter()
+}
+
+
 func (this *Context) OpenDb() {
 
 	var err error = nil
@@ -47,28 +72,6 @@ func (this *Context) CloseDb() {
 	}
 }
 
-//构造方法
-func (this *Context) Init()  {
-
-	//处理数据库连接的开关。
-	this.OpenDb()
-
-	//创建一个用于存储session的缓存。
-	this.SessionCache = NewCacheTable()
-
-	//初始化Map
-	this.BeanMap = make(map[string]IBean)
-	this.ControllerMap = make(map[string]IController)
-
-	//注册各类Beans.在这个方法里面顺便把Controller装入ControllerMap中去。
-	this.registerBeans()
-
-	//初始化每个bean.
-	this.initBeans()
-
-	//初始化Router. 这个方法要在Bean注册好了之后才能。
-	this.Router = NewRouter()
-}
 
 //注册一个Bean
 func (this *Context) registerBean(bean IBean) {
