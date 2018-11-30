@@ -63,7 +63,7 @@ func (this *MatterController) Detail(writer http.ResponseWriter, request *http.R
 
 	uuid := request.FormValue("uuid")
 	if uuid == "" {
-		return this.Error("文件的uuid必填")
+		this.PanicBadRequest("文件的uuid必填")
 	}
 
 	matter := this.matterService.Detail(uuid)
@@ -89,14 +89,14 @@ func (this *MatterController) CreateDirectory(writer http.ResponseWriter, reques
 	name = strings.TrimSpace(name)
 	//验证参数。
 	if name == "" {
-		return this.Error("name参数必填，并且不能全是空格")
+		this.PanicBadRequest("name参数必填，并且不能全是空格")
 	}
 	if len(name) > 200 {
 		panic("name长度不能超过200")
 	}
 
 	if m, _ := regexp.MatchString(`[<>|*?/\\]`, name); m {
-		return this.Error(`名称中不能包含以下特殊符号：< > | * ? / \`)
+		this.PanicBadRequest(`名称中不能包含以下特殊符号：< > | * ? / \`)
 	}
 
 	userUuid := request.FormValue("userUuid")
@@ -133,7 +133,7 @@ func (this *MatterController) CreateDirectory(writer http.ResponseWriter, reques
 	count := this.matterDao.CountByUserUuidAndPuuidAndDirAndName(user.Uuid, puuid, true, name)
 
 	if count > 0 {
-		return this.Error("【" + name + "】已经存在了，请使用其他名称。")
+		this.PanicBadRequest("【" + name + "】已经存在了，请使用其他名称。")
 	}
 
 	matter := &Matter{
@@ -240,7 +240,7 @@ func (this *MatterController) Upload(writer http.ResponseWriter, request *http.R
 	} else {
 		puuid = request.FormValue("puuid")
 		if puuid == "" {
-			return this.Error("puuid必填")
+			this.PanicBadRequest("puuid必填")
 		} else {
 			if puuid != "root" {
 				//找出上一级的文件夹。
@@ -283,7 +283,7 @@ func (this *MatterController) Crawl(writer http.ResponseWriter, request *http.Re
 
 	puuid := request.FormValue("puuid")
 	if puuid == "" {
-		return this.Error("puuid必填")
+		this.PanicBadRequest("puuid必填")
 	} else {
 		if puuid != "root" {
 			//找出上一级的文件夹。
@@ -317,7 +317,7 @@ func (this *MatterController) Delete(writer http.ResponseWriter, request *http.R
 
 	uuid := request.FormValue("uuid")
 	if uuid == "" {
-		return this.Error("文件的uuid必填")
+		this.PanicBadRequest("文件的uuid必填")
 	}
 
 	matter := this.matterDao.FindByUuid(uuid)
@@ -325,7 +325,7 @@ func (this *MatterController) Delete(writer http.ResponseWriter, request *http.R
 	//判断文件的所属人是否正确
 	user := this.checkUser(writer, request)
 	if user.Role != USER_ROLE_ADMINISTRATOR && matter.UserUuid != user.Uuid {
-		return this.Error(CODE_WRAPPER_UNAUTHORIZED)
+		this.PanicUnauthorized("没有权限")
 	}
 
 	this.matterDao.Delete(matter)
@@ -338,7 +338,7 @@ func (this *MatterController) DeleteBatch(writer http.ResponseWriter, request *h
 
 	uuids := request.FormValue("uuids")
 	if uuids == "" {
-		return this.Error("文件的uuids必填")
+		this.PanicBadRequest("文件的uuids必填")
 	}
 
 	uuidArray := strings.Split(uuids, ",")
@@ -350,7 +350,7 @@ func (this *MatterController) DeleteBatch(writer http.ResponseWriter, request *h
 		//判断文件的所属人是否正确
 		user := this.checkUser(writer, request)
 		if user.Role != USER_ROLE_ADMINISTRATOR && matter.UserUuid != user.Uuid {
-			return this.Error(CODE_WRAPPER_UNAUTHORIZED)
+			this.PanicUnauthorized("没有权限")
 		}
 
 		this.matterDao.Delete(matter)
@@ -368,10 +368,10 @@ func (this *MatterController) Rename(writer http.ResponseWriter, request *http.R
 
 	//验证参数。
 	if name == "" {
-		return this.Error("name参数必填")
+		this.PanicBadRequest("name参数必填")
 	}
 	if m, _ := regexp.MatchString(`[<>|*?/\\]`, name); m {
-		return this.Error(`名称中不能包含以下特殊符号：< > | * ? / \`)
+		this.PanicBadRequest(`名称中不能包含以下特殊符号：< > | * ? / \`)
 	}
 
 	if len(name) > 200 {
@@ -383,18 +383,18 @@ func (this *MatterController) Rename(writer http.ResponseWriter, request *http.R
 
 	user := this.checkUser(writer, request)
 	if user.Role != USER_ROLE_ADMINISTRATOR && matter.UserUuid != user.Uuid {
-		return this.Error(CODE_WRAPPER_UNAUTHORIZED)
+		this.PanicUnauthorized("没有权限")
 	}
 
 	if name == matter.Name {
-		return this.Error("新名称和旧名称一样，操作失败！")
+		this.PanicBadRequest("新名称和旧名称一样，操作失败！")
 	}
 
 	//判断同级文件夹中是否有同名的文件
 	count := this.matterDao.CountByUserUuidAndPuuidAndDirAndName(user.Uuid, matter.Puuid, matter.Dir, name)
 
 	if count > 0 {
-		return this.Error("【" + name + "】已经存在了，请使用其他名称。")
+		this.PanicBadRequest("【" + name + "】已经存在了，请使用其他名称。")
 	}
 
 	matter.Name = name
@@ -421,7 +421,7 @@ func (this *MatterController) ChangePrivacy(writer http.ResponseWriter, request 
 	//权限验证
 	user := this.checkUser(writer, request)
 	if user.Role != USER_ROLE_ADMINISTRATOR && matter.UserUuid != user.Uuid {
-		return this.Error(CODE_WRAPPER_UNAUTHORIZED)
+		this.PanicUnauthorized("没有权限")
 	}
 
 	matter.Privacy = privacy
@@ -439,7 +439,7 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 	var srcUuids []string
 	//验证参数。
 	if srcUuidsStr == "" {
-		return this.Error("srcUuids参数必填")
+		this.PanicBadRequest("srcUuids参数必填")
 	} else {
 		srcUuids = strings.Split(srcUuidsStr, ",")
 	}
@@ -458,13 +458,13 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 	//验证dest是否有问题
 	var destMatter *Matter
 	if destUuid == "" {
-		return this.Error("destUuid参数必填")
+		this.PanicBadRequest("destUuid参数必填")
 	} else {
 		if destUuid != "root" {
 			destMatter = this.matterService.Detail(destUuid)
 
 			if user.Role != USER_ROLE_ADMINISTRATOR && destMatter.UserUuid != user.Uuid {
-				return this.Error(CODE_WRAPPER_UNAUTHORIZED)
+				this.PanicUnauthorized("没有权限")
 			}
 		}
 	}
@@ -476,18 +476,18 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 		srcMatter := this.matterDao.CheckByUuid(uuid)
 
 		if user.Role != USER_ROLE_ADMINISTRATOR && srcMatter.UserUuid != user.Uuid {
-			return this.Error(CODE_WRAPPER_UNAUTHORIZED)
+			this.PanicUnauthorized("没有权限")
 		}
 
 		if srcMatter.Puuid == destUuid {
-			return this.Error("没有进行移动，操作无效！")
+			this.PanicBadRequest("没有进行移动，操作无效！")
 		}
 
 		//判断同级文件夹中是否有同名的文件
 		count := this.matterDao.CountByUserUuidAndPuuidAndDirAndName(user.Uuid, destUuid, srcMatter.Dir, srcMatter.Name)
 
 		if count > 0 {
-			return this.Error("【" + srcMatter.Name + "】在目标文件夹已经存在了，操作失败。")
+			this.PanicBadRequest("【" + srcMatter.Name + "】在目标文件夹已经存在了，操作失败。")
 		}
 
 		//判断和目标文件夹是否是同一个主人。

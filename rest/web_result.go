@@ -30,6 +30,7 @@ var (
 	CODE_WRAPPER_USER_DISABLED           = &CodeWrapper{Code: "USER_DISABLED", HttpStatus: http.StatusForbidden, Description: "账户被禁用，禁止访问"}
 	CODE_WRAPPER_UNAUTHORIZED            = &CodeWrapper{Code: "LOGIN", HttpStatus: http.StatusUnauthorized, Description: "没有权限，禁止访问"}
 	CODE_WRAPPER_NOT_FOUND               = &CodeWrapper{Code: "NOT_FOUND", HttpStatus: http.StatusNotFound, Description: "内容不存在"}
+	CODE_WRAPPER_RANGE_NOT_SATISFIABLE   = &CodeWrapper{Code: "RANGE_NOT_SATISFIABLE", HttpStatus: http.StatusRequestedRangeNotSatisfiable, Description: "文件范围读取错误"}
 	CODE_WRAPPER_UNKNOWN                 = &CodeWrapper{Code: "UNKNOWN", HttpStatus: http.StatusInternalServerError, Description: "服务器未知错误"}
 )
 
@@ -57,6 +58,8 @@ func FetchHttpStatus(code string) int {
 		return CODE_WRAPPER_UNAUTHORIZED.HttpStatus
 	} else if code == CODE_WRAPPER_NOT_FOUND.Code {
 		return CODE_WRAPPER_NOT_FOUND.HttpStatus
+	} else if code == CODE_WRAPPER_RANGE_NOT_SATISFIABLE.Code {
+		return CODE_WRAPPER_RANGE_NOT_SATISFIABLE.HttpStatus
 	} else {
 		return CODE_WRAPPER_UNKNOWN.HttpStatus
 	}

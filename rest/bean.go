@@ -6,8 +6,7 @@ import (
 
 type IBean interface {
 	Init()
-	PanicError(err error);
-	PanicWebError(msg string, code int);
+	PanicError(err error)
 }
 
 type Bean struct {
@@ -18,16 +17,31 @@ func (this *Bean) Init() {
 	this.logger = LOGGER
 }
 
-//处理错误的统一方法
+//处理错误的统一方法 可以省去if err!=nil 这段代码
 func (this *Bean) PanicError(err error) {
 	if err != nil {
-		panic(&WebError{Msg: err.Error(), Code: http.StatusInternalServerError})
+		panic(err)
 	}
 }
 
-//处理错误的统一方法
-func (this *Bean) PanicWebError(msg string, httpStatusCode int) {
-	panic(&WebError{Msg: msg, Code: httpStatusCode})
+//请求参数有问题
+func (this *Bean) PanicBadRequest(msg string) {
+	panic(CustomWebResult(CODE_WRAPPER_BAD_REQUEST, msg))
+}
+
+//没有权限
+func (this *Bean) PanicUnauthorized(msg string) {
+	panic(CustomWebResult(CODE_WRAPPER_UNAUTHORIZED, msg))
+}
+
+//没有找到
+func (this *Bean) PanicNotFound(msg string) {
+	panic(CustomWebResult(CODE_WRAPPER_NOT_FOUND, msg))
+}
+
+//服务器内部出问题
+func (this *Bean) PanicServer(msg string) {
+	panic(CustomWebResult(CODE_WRAPPER_UNKNOWN, msg))
 }
 
 //能找到一个user就找到一个

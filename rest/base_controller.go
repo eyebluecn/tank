@@ -117,22 +117,6 @@ func (this *BaseController) Success(data interface{}) *WebResult {
 	return webResult
 }
 
-//返回错误的结果。
-func (this *BaseController) Error(err interface{}) *WebResult {
-	var webResult *WebResult = nil
-	if value, ok := err.(string); ok {
-		webResult = &WebResult{Code: CODE_WRAPPER_UNKNOWN.Code, Msg: value}
-	} else if _, ok := err.(int); ok {
-		webResult = ConstWebResult(CODE_WRAPPER_UNKNOWN)
-	} else if value, ok := err.(*WebResult); ok {
-		webResult = value
-	} else if value, ok := err.(error); ok {
-		webResult = &WebResult{Code: CODE_WRAPPER_UNKNOWN.Code, Msg: value.Error()}
-	} else {
-		webResult = &WebResult{Code: CODE_WRAPPER_UNKNOWN.Code, Msg: "服务器未知错误"}
-	}
-	return webResult
-}
 
 //允许跨域请求
 func (this *BaseController) allowCORS(writer http.ResponseWriter) {

@@ -48,17 +48,17 @@ func (this *UserController) Login(writer http.ResponseWriter, request *http.Requ
 
 	if "" == email || "" == password {
 
-		return this.Error("请输入邮箱和密码")
+		this.PanicBadRequest("请输入邮箱和密码")
 	}
 
 	user := this.userDao.FindByEmail(email)
 	if user == nil {
 
-		return this.Error("邮箱或密码错误")
+		this.PanicBadRequest("邮箱或密码错误")
 	} else {
 		if !MatchBcrypt(password, user.Password) {
 
-			return this.Error("邮箱或密码错误")
+			this.PanicBadRequest("邮箱或密码错误")
 		}
 	}
 
@@ -184,7 +184,7 @@ func (this *UserController) Edit(writer http.ResponseWriter, request *http.Reque
 		user.SizeLimit = sizeLimit
 	} else {
 		if currentUser.Uuid != uuid {
-			return this.Error(CODE_WRAPPER_UNAUTHORIZED)
+			this.PanicUnauthorized("没有权限")
 		}
 	}
 
@@ -297,11 +297,11 @@ func (this *UserController) Disable(writer http.ResponseWriter, request *http.Re
 
 	loginUser := this.checkUser(writer, request)
 	if uuid == loginUser.Uuid {
-		return this.Error("你不能操作自己的状态。")
+		this.PanicBadRequest("你不能操作自己的状态。")
 	}
 
 	if user.Status == USER_STATUS_DISABLED {
-		return this.Error("用户已经被禁用，操作无效。")
+		this.PanicBadRequest("用户已经被禁用，操作无效。")
 	}
 
 	user.Status = USER_STATUS_DISABLED
@@ -320,11 +320,11 @@ func (this *UserController) Enable(writer http.ResponseWriter, request *http.Req
 	user := this.userDao.CheckByUuid(uuid)
 	loginUser := this.checkUser(writer, request)
 	if uuid == loginUser.Uuid {
-		return this.Error("你不能操作自己的状态。")
+		this.PanicBadRequest("你不能操作自己的状态。")
 	}
 
 	if user.Status == USER_STATUS_OK {
-		return this.Error("用户已经是正常状态，操作无效。")
+		this.PanicBadRequest("用户已经是正常状态，操作无效。")
 	}
 
 	user.Status = USER_STATUS_OK
@@ -341,7 +341,7 @@ func (this *UserController) ChangePassword(writer http.ResponseWriter, request *
 	oldPassword := request.FormValue("oldPassword")
 	newPassword := request.FormValue("newPassword")
 	if oldPassword == "" || newPassword == "" {
-		return this.Error("旧密码和新密码都不能为空")
+		this.PanicBadRequest("旧密码和新密码都不能为空")
 	}
 
 	user := this.checkUser(writer, request)
@@ -352,7 +352,7 @@ func (this *UserController) ChangePassword(writer http.ResponseWriter, request *
 	}
 
 	if !MatchBcrypt(oldPassword, user.Password) {
-		return this.Error("旧密码不正确！")
+		this.PanicBadRequest("旧密码不正确！")
 	}
 
 	user.Password = GetBcrypt(newPassword)
@@ -368,16 +368,16 @@ func (this *UserController) ResetPassword(writer http.ResponseWriter, request *h
 	userUuid := request.FormValue("userUuid")
 	password := request.FormValue("password")
 	if userUuid == "" {
-		return this.Error("用户不能为空")
+		this.PanicBadRequest("用户不能为空")
 	}
 	if password == "" {
-		return this.Error("密码不能为空")
+		this.PanicBadRequest("密码不能为空")
 	}
 
 	currentUser := this.checkUser(writer, request)
 
 	if currentUser.Role != USER_ROLE_ADMINISTRATOR {
-		return this.Error(CODE_WRAPPER_UNAUTHORIZED)
+		this.PanicUnauthorized("没有权限")
 	}
 
 	user := this.userDao.CheckByUuid(userUuid)

@@ -50,34 +50,25 @@ func NewRouter() *Router {
 func (this *Router) GlobalPanicHandler(writer http.ResponseWriter, request *http.Request, startTime time.Time) {
 	if err := recover(); err != nil {
 
-		LOGGER.Error(fmt.Sprintf("全局异常: %v", err))
+		LOGGER.Error("错误: %v", err)
 
 		var webResult *WebResult = nil
 		if value, ok := err.(string); ok {
-			writer.WriteHeader(http.StatusBadRequest)
-			webResult = &WebResult{Code: CODE_WRAPPER_UNKNOWN.Code, Msg: value}
-		} else if _, ok := err.(int); ok {
-			writer.WriteHeader(http.StatusBadRequest)
-			webResult = ConstWebResult(CODE_WRAPPER_UNKNOWN)
+			//一个字符串，默认是请求错误。
+			webResult = CustomWebResult(CODE_WRAPPER_BAD_REQUEST, value)
 		} else if value, ok := err.(*WebResult); ok {
-			writer.WriteHeader(http.StatusBadRequest)
+			//一个WebResult对象
 			webResult = value
-		} else if value, ok := err.(WebResult); ok {
-			writer.WriteHeader(http.StatusBadRequest)
-			webResult = &value
-		} else if value, ok := err.(*WebError); ok {
-			writer.WriteHeader(value.Code)
-			webResult = &WebResult{Code: CODE_WRAPPER_UNKNOWN.Code, Msg: value.Msg}
-		} else if value, ok := err.(WebError); ok {
-			writer.WriteHeader((&value).Code)
-			webResult = &WebResult{Code: CODE_WRAPPER_UNKNOWN.Code, Msg: (&value).Msg}
 		} else if value, ok := err.(error); ok {
-			writer.WriteHeader(http.StatusBadRequest)
-			webResult = &WebResult{Code: CODE_WRAPPER_UNKNOWN.Code, Msg: value.Error()}
+			//一个普通的错误对象
+			webResult = CustomWebResult(CODE_WRAPPER_UNKNOWN, value.Error())
 		} else {
-			writer.WriteHeader(http.StatusInternalServerError)
-			webResult = &WebResult{Code: CODE_WRAPPER_UNKNOWN.Code, Msg: "服务器未知错误"}
+			//其他不能识别的内容
+			webResult = ConstWebResult(CODE_WRAPPER_UNKNOWN)
 		}
+
+		//修改http code码
+		writer.WriteHeader(FetchHttpStatus(webResult.Code))
 
 		//输出的是json格式 返回的内容申明是json，utf-8
 		writer.Header().Set("Content-Type", "application/json;charset=UTF-8")
@@ -86,13 +77,14 @@ func (this *Router) GlobalPanicHandler(writer http.ResponseWriter, request *http
 		var json = jsoniter.ConfigCompatibleWithStandardLibrary
 		b, _ := json.Marshal(webResult)
 
-		//错误情况记录。
-		go this.footprintService.Trace(writer, request, time.Now().Sub(startTime), false)
-
+		//写到输出流中
 		_, err := fmt.Fprintf(writer, string(b))
 		if err != nil {
 			fmt.Printf("输出结果时出错了\n")
 		}
+
+		//错误情况记录。
+		go this.footprintService.Trace(writer, request, time.Now().Sub(startTime), false)
 	}
 }
 

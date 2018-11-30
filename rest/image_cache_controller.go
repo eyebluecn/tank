@@ -48,7 +48,7 @@ func (this *ImageCacheController) Detail(writer http.ResponseWriter, request *ht
 
 	uuid := request.FormValue("uuid")
 	if uuid == "" {
-		return this.Error("图片缓存的uuid必填")
+		this.PanicBadRequest("图片缓存的uuid必填")
 	}
 
 	imageCache := this.imageCacheService.Detail(uuid)
@@ -115,7 +115,7 @@ func (this *ImageCacheController) Delete(writer http.ResponseWriter, request *ht
 
 	uuid := request.FormValue("uuid")
 	if uuid == "" {
-		return this.Error("图片缓存的uuid必填")
+		this.PanicBadRequest("图片缓存的uuid必填")
 	}
 
 	imageCache := this.imageCacheDao.FindByUuid(uuid)
@@ -123,7 +123,7 @@ func (this *ImageCacheController) Delete(writer http.ResponseWriter, request *ht
 	//判断图片缓存的所属人是否正确
 	user := this.checkUser(writer, request)
 	if user.Role != USER_ROLE_ADMINISTRATOR && imageCache.UserUuid != user.Uuid {
-		return this.Error(CODE_WRAPPER_UNAUTHORIZED)
+		this.PanicUnauthorized("没有权限")
 	}
 
 	this.imageCacheDao.Delete(imageCache)
@@ -136,7 +136,7 @@ func (this *ImageCacheController) DeleteBatch(writer http.ResponseWriter, reques
 
 	uuids := request.FormValue("uuids")
 	if uuids == "" {
-		return this.Error("图片缓存的uuids必填")
+		this.PanicBadRequest("图片缓存的uuids必填")
 	}
 
 	uuidArray := strings.Split(uuids, ",")
@@ -148,7 +148,7 @@ func (this *ImageCacheController) DeleteBatch(writer http.ResponseWriter, reques
 		//判断图片缓存的所属人是否正确
 		user := this.checkUser(writer, request)
 		if user.Role != USER_ROLE_ADMINISTRATOR && imageCache.UserUuid != user.Uuid {
-			return this.Error(CODE_WRAPPER_UNAUTHORIZED)
+			this.PanicUnauthorized("没有权限")
 		}
 
 		this.imageCacheDao.Delete(imageCache)

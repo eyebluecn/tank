@@ -46,7 +46,7 @@ func (this *FootprintController) Detail(writer http.ResponseWriter, request *htt
 
 	uuid := request.FormValue("uuid")
 	if uuid == "" {
-		return this.Error("图片缓存的uuid必填")
+		this.PanicBadRequest("图片缓存的uuid必填")
 	}
 
 	footprint := this.footprintService.Detail(uuid)
@@ -112,18 +112,14 @@ func (this *FootprintController) Delete(writer http.ResponseWriter, request *htt
 
 	uuid := request.FormValue("uuid")
 	if uuid == "" {
-		return this.Error("图片缓存的uuid必填")
+		this.PanicBadRequest("uuid必填")
 	}
 
 	footprint := this.footprintDao.FindByUuid(uuid)
 
-	//判断图片缓存的所属人是否正确
-	user := this.checkUser(writer, request)
-	if user.Role != USER_ROLE_ADMINISTRATOR && footprint.UserUuid != user.Uuid {
-		return this.Error(CODE_WRAPPER_UNAUTHORIZED)
+	if footprint != nil {
+		this.footprintDao.Delete(footprint)
 	}
-
-	this.footprintDao.Delete(footprint)
 
 	return this.Success("删除成功！")
 }

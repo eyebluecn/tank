@@ -7,12 +7,12 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/textproto"
+	"net/url"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
-	"net/url"
 )
 
 //@Service
@@ -451,7 +451,7 @@ func (this *MatterService) DownloadFile(
 	//显示文件大小。
 	fileInfo, err := diskFile.Stat()
 	if err != nil {
-		this.PanicWebError(err.Error(), http.StatusInternalServerError)
+		this.PanicServer("无法从磁盘中获取文件信息")
 	}
 
 	modifyTime := fileInfo.ModTime()
@@ -486,8 +486,7 @@ func (this *MatterService) DownloadFile(
 			ctype = http.DetectContentType(buf[:n])
 			_, err := diskFile.Seek(0, os.SEEK_SET) // rewind to output whole file
 			if err != nil {
-				this.PanicWebError("无法准确定位文件", http.StatusInternalServerError)
-				return
+				this.PanicServer("无法准确定位文件")
 			}
 		}
 		writer.Header().Set("Content-Type", ctype)
@@ -503,9 +502,7 @@ func (this *MatterService) DownloadFile(
 	if size >= 0 {
 		ranges, err := this.parseRange(rangeReq, size)
 		if err != nil {
-			panic("range header出错")
-			this.PanicWebError("range header error", http.StatusRequestedRangeNotSatisfiable)
-			return
+			panic(CustomWebResult(CODE_WRAPPER_RANGE_NOT_SATISFIABLE, "range header出错"))
 		}
 		if this.sumRangesSize(ranges) > size {
 			// The total number of bytes in all the ranges
@@ -529,8 +526,7 @@ func (this *MatterService) DownloadFile(
 			// be sent using the multipart/byteranges media type."
 			ra := ranges[0]
 			if _, err := diskFile.Seek(ra.start, io.SeekStart); err != nil {
-				this.PanicWebError(err.Error(), http.StatusRequestedRangeNotSatisfiable)
-				return
+				panic(CustomWebResult(CODE_WRAPPER_RANGE_NOT_SATISFIABLE, "range header出错"))
 			}
 			sendSize = ra.length
 			code = http.StatusPartialContent
