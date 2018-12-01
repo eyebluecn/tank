@@ -32,10 +32,13 @@ func (this *Logger) log(prefix string, format string, v ...interface{}) {
 	defer this.Unlock()
 
 	//控制台中打印日志
-	fmt.Printf(format+"\r\n", v...)
+	var consoleFormat = fmt.Sprintf("%s%s %s\r\n", prefix, ConvertTimeToTimeString(time.Now()), format)
+	fmt.Printf(consoleFormat, v...)
 
 	this.goLogger.SetPrefix(prefix)
-	this.goLogger.Printf(format, v...)
+	//每一行我们加上换行符
+	var fileFormat = fmt.Sprintf("%s\r\n", format)
+	this.goLogger.Printf(fileFormat, v...)
 }
 
 //处理日志的统一方法。
@@ -101,7 +104,7 @@ func (this *Logger) maintain() {
 	now := time.Now()
 	nextTime := FirstSecondOfDay(Tomorrow())
 	duration := nextTime.Sub(now)
-	go this.Info("%vs后将进行下一次日志维护 下次时间维护时间：%v ", int64(duration/time.Second), nextTime)
+	go this.Info("%vs 后将进行下一次日志维护 下次时间维护时间：%v ", int64(duration/time.Second), nextTime)
 	this.maintainTimer = time.AfterFunc(duration, func() {
 		go this.maintain()
 	})
@@ -133,7 +136,6 @@ func (this *Logger) closeFile() {
 			panic("尝试关闭日志时出错: " + err.Error())
 		}
 	}
-
 }
 
 func (this *Logger) Destroy() {

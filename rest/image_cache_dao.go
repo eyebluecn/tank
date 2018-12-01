@@ -192,3 +192,13 @@ func (this *ImageCacheDao) DeleteByMatterUuid(matterUuid string) {
 	}
 
 }
+
+//获取一段时间中文件总大小
+func (this *ImageCacheDao) SizeBetweenTime(startTime time.Time, endTime time.Time) int64 {
+	var size int64
+	db := CONTEXT.DB.Model(&ImageCache{}).Where("create_time >= ? AND create_time <= ?", startTime, endTime).Select("SUM(size)")
+	this.PanicError(db.Error)
+	row := db.Row()
+	row.Scan(&size)
+	return size
+}

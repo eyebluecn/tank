@@ -88,3 +88,31 @@ func (this *FootprintDao) Delete(footprint *Footprint) {
 	db := CONTEXT.DB.Delete(&footprint)
 	this.PanicError(db.Error)
 }
+
+//获取一段时间中，总的数量
+func (this *FootprintDao) CountBetweenTime(startTime time.Time, endTime time.Time) int64 {
+	var count int64
+	db := CONTEXT.DB.Model(&Footprint{}).Where("create_time >= ? AND create_time <= ?", startTime, endTime).Count(&count)
+	this.PanicError(db.Error)
+	return count
+}
+
+//获取一段时间中UV的数量
+func (this *FootprintDao) UvBetweenTime(startTime time.Time, endTime time.Time) int64 {
+	var count int64
+	db := CONTEXT.DB.Model(&Footprint{}).Where("create_time >= ? AND create_time <= ?", startTime, endTime).Select("COUNT(DISTINCT(ip))")
+	this.PanicError(db.Error)
+	row := db.Row()
+	row.Scan(&count)
+	return count
+}
+
+//获取一段时间中平均耗时
+func (this *FootprintDao) AvgCostBetweenTime(startTime time.Time, endTime time.Time) int64 {
+	var cost float64
+	db := CONTEXT.DB.Model(&Footprint{}).Where("create_time >= ? AND create_time <= ?", startTime, endTime).Select("AVG(cost)")
+	this.PanicError(db.Error)
+	row := db.Row()
+	row.Scan(&cost)
+	return int64(cost)
+}

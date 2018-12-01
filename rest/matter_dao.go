@@ -264,3 +264,21 @@ func (this *MatterDao) Delete(matter *Matter) {
 
 	}
 }
+
+//获取一段时间中，总的数量
+func (this *MatterDao) CountBetweenTime(startTime time.Time, endTime time.Time) int64 {
+	var count int64
+	db := CONTEXT.DB.Model(&Matter{}).Where("create_time >= ? AND create_time <= ?", startTime, endTime).Count(&count)
+	this.PanicError(db.Error)
+	return count
+}
+
+//获取一段时间中文件总大小
+func (this *MatterDao) SizeBetweenTime(startTime time.Time, endTime time.Time) int64 {
+	var size int64
+	db := CONTEXT.DB.Model(&Matter{}).Where("create_time >= ? AND create_time <= ?", startTime, endTime).Select("SUM(size)")
+	this.PanicError(db.Error)
+	row := db.Row()
+	row.Scan(&size)
+	return size
+}

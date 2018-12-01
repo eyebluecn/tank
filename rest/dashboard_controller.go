@@ -41,6 +41,6 @@ func (this *DashboardController) RegisterRoutes() map[string]func(writer http.Re
 //过去七天分时调用量
 func (this *DashboardController) InvokeList(writer http.ResponseWriter, request *http.Request) *WebResult {
 
-	return this.Success(this.dashboardDao.InvokeList())
+	return this.Success("")
 
 }

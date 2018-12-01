@@ -46,17 +46,17 @@ func (this *Context) Init() {
 	this.Router = NewRouter()
 }
 
-
 func (this *Context) OpenDb() {
 
 	var err error = nil
 	this.DB, err = gorm.Open("mysql", CONFIG.MysqlUrl)
 
-	//是否打开sql日志
-	this.DB.LogMode(false)
 	if err != nil {
-		panic("failed to connect mysql database")
+		LOGGER.Panic("failed to connect mysql database")
 	}
+
+	//是否打开sql日志(在调试阶段可以打开，以方便查看执行的SQL)
+	this.DB.LogMode(false)
 }
 
 func (this *Context) CloseDb() {
@@ -91,8 +91,7 @@ func (this *Context) registerBean(bean IBean) {
 		}
 
 	} else {
-		err := fmt.Sprintf("注册的【%s】不是Bean类型。", typeName)
-		panic(err)
+		LOGGER.Panic("注册的【%s】不是Bean类型。", typeName)
 	}
 
 }
@@ -154,8 +153,8 @@ func (this *Context) GetBean(bean IBean) IBean {
 	if val, ok := this.BeanMap[typeName]; ok {
 		return val
 	} else {
-		err := fmt.Sprintf("【%s】没有注册。", typeName)
-		panic(err)
+		LOGGER.Panic("【%s】没有注册。", typeName)
+		return nil
 	}
 }
 

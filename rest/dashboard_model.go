@@ -5,8 +5,8 @@ package rest
  */
 type Dashboard struct {
 	Base
-	VisitNum       int64  `json:"visitNum"`
-	TotalVisitNum  int64  `json:"totalVisitNum"`
+	InvokeNum      int64  `json:"invokeNum"`
+	TotalInvokeNum int64  `json:"totalInvokeNum"`
 	Uv             int64  `json:"uv"`
 	TotalUv        int64  `json:"totalUv"`
 	MatterNum      int64  `json:"matterNum"`

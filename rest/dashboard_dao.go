@@ -2,6 +2,7 @@ package rest
 
 import (
 	_ "github.com/jinzhu/gorm/dialects/mysql"
+	"github.com/nu7hatch/gouuid"
 	"time"
 )
 
@@ -9,47 +10,46 @@ type DashboardDao struct {
 	BaseDao
 }
 
-//过去七天调用量
-func (this *DashboardDao) InvokeList() []*DashboardInvoke {
+//创建
+func (this *DashboardDao) Create(dashboard *Dashboard) *Dashboard {
 
-	//过去几天
-	var dayNum = 15;
-	var tableName = Footprint{}.TableName()
-	now := time.Now()
-	startDate := now.AddDate(0, 0, 1-dayNum)
-	rows, err := CONTEXT.DB.Raw("SELECT COUNT(uuid) AS invoke_num,COUNT(DISTINCT(ip)) AS uv,dt FROM "+tableName+" WHERE dt>= ? AND dt <= ? GROUP BY dt",
-		ConvertTimeToDateString(startDate),
-		ConvertTimeToDateString(now)).Rows()
-	this.PanicError(err)
-	defer rows.Close()
+	timeUUID, _ := uuid.NewV4()
+	dashboard.Uuid = string(timeUUID.String())
+	dashboard.CreateTime = time.Now()
+	dashboard.UpdateTime = time.Now()
+	db := CONTEXT.DB.Create(dashboard)
+	this.PanicError(db.Error)
 
-	var invokeMap = make(map[string]*DashboardInvoke)
-	var dashboardInvokes []*DashboardInvoke
-	for rows.Next() {
-		var invokeNum int64 = 0;
-		var uv int64 = 0;
-		var dt string;
-		rows.Scan(&invokeNum, &uv, &dt)
-		invokeMap[dt] = &DashboardInvoke{
-			InvokeNum: invokeNum,
-			Uv:        uv,
-			Dt:        dt,
-		}
+	return dashboard
+}
+
+//修改一条记录
+func (this *DashboardDao) Save(dashboard *Dashboard) *Dashboard {
+
+	dashboard.UpdateTime = time.Now()
+	db := CONTEXT.DB.Save(dashboard)
+	this.PanicError(db.Error)
+
+	return dashboard
+}
+
+
+//删除一条记录
+func (this *DashboardDao) Delete(dashboard *Dashboard) {
+
+	db := CONTEXT.DB.Delete(&dashboard)
+	this.PanicError(db.Error)
+}
+
+
+//按照dt查询
+func (this *DashboardDao) FindByDt(dt string) *Dashboard {
+
+	// Read
+	var dashboard Dashboard
+	db := CONTEXT.DB.Where(&Dashboard{Dt: dt}).First(&dashboard)
+	if db.Error != nil {
+		return nil
 	}
-	for i := 1 - dayNum; i <= 0; i++ {
-		date := now.AddDate(0, 0, i)
-		dt := ConvertTimeToDateString(date)
-		v, ok := invokeMap[dt]
-		if ok {
-			dashboardInvokes = append(dashboardInvokes, v)
-		} else {
-			dashboardInvokes = append(dashboardInvokes, &DashboardInvoke{
-				InvokeNum: 0,
-				Uv:        0,
-				Dt:        dt,
-			})
-		}
-	}
-
-	return dashboardInvokes
+	return &dashboard
 }

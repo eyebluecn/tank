@@ -12,7 +12,6 @@ type Footprint struct {
 	Params   string `json:"params"`
 	Cost     int64  `json:"cost"`
 	Success  bool   `json:"success"`
-	Dt       string `json:"dt"`
 }
 
 // set File's table name to be `profiles`
