@@ -12,36 +12,43 @@ type DashboardDao struct {
 //过去七天调用量
 func (this *DashboardDao) InvokeList() []*DashboardInvoke {
 
+	//过去几天
+	var dayNum = 15;
 	var tableName = Footprint{}.TableName()
 	now := time.Now()
-	startDate := now.AddDate(0, 0, -6)
-	rows, err := CONTEXT.DB.Raw("SELECT count(uuid) as invoke_num,dt FROM "+tableName+" where dt>= ? and dt <= ? group by dt",
+	startDate := now.AddDate(0, 0, 1-dayNum)
+	rows, err := CONTEXT.DB.Raw("SELECT COUNT(uuid) AS invoke_num,COUNT(DISTINCT(ip)) AS uv,dt FROM "+tableName+" WHERE dt>= ? AND dt <= ? GROUP BY dt",
 		ConvertTimeToDateString(startDate),
 		ConvertTimeToDateString(now)).Rows()
 	this.PanicError(err)
 	defer rows.Close()
 
-	var invokeMap = make(map[string]int64)
+	var invokeMap = make(map[string]*DashboardInvoke)
 	var dashboardInvokes []*DashboardInvoke
 	for rows.Next() {
 		var invokeNum int64 = 0;
+		var uv int64 = 0;
 		var dt string;
-		rows.Scan(&invokeNum, &dt)
-		invokeMap[dt] = invokeNum
+		rows.Scan(&invokeNum, &uv, &dt)
+		invokeMap[dt] = &DashboardInvoke{
+			InvokeNum: invokeNum,
+			Uv:        uv,
+			Dt:        dt,
+		}
 	}
-	for i := -6; i <= 0; i++ {
+	for i := 1 - dayNum; i <= 0; i++ {
 		date := now.AddDate(0, 0, i)
 		dt := ConvertTimeToDateString(date)
-		var invokeNum int64 = 0
 		v, ok := invokeMap[dt]
 		if ok {
-			invokeNum = v
+			dashboardInvokes = append(dashboardInvokes, v)
+		} else {
+			dashboardInvokes = append(dashboardInvokes, &DashboardInvoke{
+				InvokeNum: 0,
+				Uv:        0,
+				Dt:        dt,
+			})
 		}
-
-		dashboardInvokes = append(dashboardInvokes, &DashboardInvoke{
-			InvokeNum: invokeNum,
-			Dt:        dt,
-		})
 	}
 
 	return dashboardInvokes
