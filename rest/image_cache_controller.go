@@ -67,13 +67,15 @@ func (this *ImageCacheController) Detail(writer http.ResponseWriter, request *ht
 
 //按照分页的方式获取某个图片缓存夹下图片缓存和子图片缓存夹的列表，通常情况下只有一页。
 func (this *ImageCacheController) Page(writer http.ResponseWriter, request *http.Request) *WebResult {
-
 	//如果是根目录，那么就传入root.
 	pageStr := request.FormValue("page")
 	pageSizeStr := request.FormValue("pageSize")
+	orderCreateTime := request.FormValue("orderCreateTime")
+	orderUpdateTime := request.FormValue("orderUpdateTime")
+	orderSort := request.FormValue("orderSort")
+
 	userUuid := request.FormValue("userUuid")
 	matterUuid := request.FormValue("matterUuid")
-	orderCreateTime := request.FormValue("orderCreateTime")
 	orderSize := request.FormValue("orderSize")
 
 	user := this.checkUser(writer, request)
@@ -99,6 +101,15 @@ func (this *ImageCacheController) Page(writer http.ResponseWriter, request *http
 			key:   "create_time",
 			value: orderCreateTime,
 		},
+		{
+			key:   "update_time",
+			value: orderUpdateTime,
+		},
+		{
+			key:   "sort",
+			value: orderSort,
+		},
+
 		{
 			key:   "size",
 			value: orderSize,

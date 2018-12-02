@@ -66,6 +66,7 @@ func (this *FootprintDao) Create(footprint *Footprint) *Footprint {
 	footprint.Uuid = string(timeUUID.String())
 	footprint.CreateTime = time.Now()
 	footprint.UpdateTime = time.Now()
+	footprint.Sort = time.Now().UnixNano() / 1e6
 	db := CONTEXT.DB.Create(footprint)
 	this.PanicError(db.Error)
 

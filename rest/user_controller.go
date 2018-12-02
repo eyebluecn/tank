@@ -248,15 +248,17 @@ func (this *UserController) Logout(writer http.ResponseWriter, request *http.Req
 //获取用户列表 管理员的权限。
 func (this *UserController) Page(writer http.ResponseWriter, request *http.Request) *WebResult {
 
-	//如果是根目录，那么就传入root.
 	pageStr := request.FormValue("page")
 	pageSizeStr := request.FormValue("pageSize")
+	orderCreateTime := request.FormValue("orderCreateTime")
+	orderUpdateTime := request.FormValue("orderUpdateTime")
+	orderSort := request.FormValue("orderSort")
+
 	username := request.FormValue("username")
 	email := request.FormValue("email")
 	phone := request.FormValue("phone")
 	status := request.FormValue("status")
 	orderLastTime := request.FormValue("orderLastTime")
-	orderCreateTime := request.FormValue("orderCreateTime")
 
 	var page int
 	if pageStr != "" {
@@ -273,12 +275,20 @@ func (this *UserController) Page(writer http.ResponseWriter, request *http.Reque
 
 	sortArray := []OrderPair{
 		{
-			key:   "last_time",
-			value: orderLastTime,
-		},
-		{
 			key:   "create_time",
 			value: orderCreateTime,
+		},
+		{
+			key:   "update_time",
+			value: orderUpdateTime,
+		},
+		{
+			key:   "sort",
+			value: orderSort,
+		},
+		{
+			key:   "last_time",
+			value: orderLastTime,
 		},
 	}
 

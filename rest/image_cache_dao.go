@@ -122,6 +122,7 @@ func (this *ImageCacheDao) Create(imageCache *ImageCache) *ImageCache {
 	imageCache.Uuid = string(timeUUID.String())
 	imageCache.CreateTime = time.Now()
 	imageCache.UpdateTime = time.Now()
+	imageCache.Sort = time.Now().UnixNano() / 1e6
 	db := CONTEXT.DB.Create(imageCache)
 	this.PanicError(db.Error)
 

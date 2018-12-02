@@ -200,6 +200,7 @@ func (this *MatterDao) Create(matter *Matter) *Matter {
 	matter.Uuid = string(timeUUID.String())
 	matter.CreateTime = time.Now()
 	matter.UpdateTime = time.Now()
+	matter.Sort = time.Now().UnixNano() / 1e6
 	db := CONTEXT.DB.Create(matter)
 	this.PanicError(db.Error)
 

@@ -39,6 +39,7 @@ func (this *PreferenceDao) Create(preference *Preference) *Preference {
 	preference.Uuid = string(timeUUID.String())
 	preference.CreateTime = time.Now()
 	preference.UpdateTime = time.Now()
+	preference.Sort = time.Now().UnixNano() / 1e6
 	db := CONTEXT.DB.Create(preference)
 	this.PanicError(db.Error)
 

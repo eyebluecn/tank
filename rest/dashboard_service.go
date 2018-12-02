@@ -47,7 +47,8 @@ func (this *DashboardService) Init() {
 	}
 
 	//立即执行数据清洗任务
-	go this.maintain()
+	go SafeMethod(this.maintain)
+
 }
 
 //每日清洗离线数据表。
@@ -59,7 +60,7 @@ func (this *DashboardService) maintain() {
 	duration := nextTime.Sub(now)
 	this.logger.Info("每日数据汇总，下次时间：%s ", ConvertTimeToDateTimeString(nextTime))
 	this.maintainTimer = time.AfterFunc(duration, func() {
-		go this.maintain()
+		go SafeMethod(this.maintain)
 	})
 
 	//准备日期开始结尾
@@ -125,4 +126,5 @@ func (this *DashboardService) maintain() {
 	}
 
 	this.dashboardDao.Create(dashboard)
+
 }

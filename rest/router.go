@@ -87,7 +87,9 @@ func (this *Router) GlobalPanicHandler(writer http.ResponseWriter, request *http
 		}
 
 		//错误情况记录。
-		go this.footprintService.Trace(writer, request, time.Now().Sub(startTime), false)
+		go SafeMethod(func() {
+			this.footprintService.Trace(writer, request, time.Now().Sub(startTime), false)
+		})
 	}
 }
 
@@ -123,14 +125,15 @@ func (this *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 			}
 
 			if !canHandle {
-				panic(fmt.Sprintf("没有找到能够处理%s的方法\n", path))
+				panic(CustomWebResult(CODE_WRAPPER_NOT_FOUND, fmt.Sprintf("没有找到能够处理%s的方法", path)))
 			}
 
 		}
 
 		//正常的访问记录会落到这里。
-		go this.footprintService.Trace(writer, request, time.Now().Sub(startTime), true)
-
+		go SafeMethod(func() {
+			this.footprintService.Trace(writer, request, time.Now().Sub(startTime), true)
+		})
 	} else {
 		//当作静态资源处理。默认从当前文件下面的static文件夹中取东西。
 		dir := GetHtmlPath()

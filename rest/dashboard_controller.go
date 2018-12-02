@@ -2,6 +2,7 @@ package rest
 
 import (
 	"net/http"
+	"strconv"
 )
 
 type DashboardController struct {
@@ -33,7 +34,7 @@ func (this *DashboardController) RegisterRoutes() map[string]func(writer http.Re
 	routeMap := make(map[string]func(writer http.ResponseWriter, request *http.Request))
 
 	//每个Controller需要主动注册自己的路由。
-	routeMap["/api/dashboard/invoke/list"] = this.Wrap(this.InvokeList, USER_ROLE_ADMINISTRATOR)
+	routeMap["/api/dashboard/page"] = this.Wrap(this.Page, USER_ROLE_ADMINISTRATOR)
 
 	return routeMap
 }
@@ -43,4 +44,52 @@ func (this *DashboardController) InvokeList(writer http.ResponseWriter, request 
 
 	return this.Success("")
 
+}
+
+//按照分页的方式获取某个图片缓存夹下图片缓存和子图片缓存夹的列表，通常情况下只有一页。
+func (this *DashboardController) Page(writer http.ResponseWriter, request *http.Request) *WebResult {
+
+	//如果是根目录，那么就传入root.
+	pageStr := request.FormValue("page")
+	pageSizeStr := request.FormValue("pageSize")
+	orderCreateTime := request.FormValue("orderCreateTime")
+	orderUpdateTime := request.FormValue("orderUpdateTime")
+	orderSort := request.FormValue("orderSort")
+	orderDt := request.FormValue("orderDt")
+
+	var page int
+	if pageStr != "" {
+		page, _ = strconv.Atoi(pageStr)
+	}
+
+	pageSize := 200
+	if pageSizeStr != "" {
+		tmp, err := strconv.Atoi(pageSizeStr)
+		if err == nil {
+			pageSize = tmp
+		}
+	}
+
+	sortArray := []OrderPair{
+		{
+			key:   "create_time",
+			value: orderCreateTime,
+		},
+		{
+			key:   "update_time",
+			value: orderUpdateTime,
+		},
+		{
+			key:   "sort",
+			value: orderSort,
+		},
+		{
+			key:   "dt",
+			value: orderDt,
+		},
+	}
+
+	pager := this.dashboardDao.Page(page, pageSize, "", sortArray)
+
+	return this.Success(pager)
 }

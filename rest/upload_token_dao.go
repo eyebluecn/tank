@@ -32,7 +32,7 @@ func (this *UploadTokenDao) Create(uploadToken *UploadToken) *UploadToken {
 
 	uploadToken.CreateTime = time.Now()
 	uploadToken.UpdateTime = time.Now()
-
+	uploadToken.Sort = time.Now().UnixNano() / 1e6
 	db := CONTEXT.DB.Create(uploadToken)
 	this.PanicError(db.Error)
 

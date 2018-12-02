@@ -132,6 +132,8 @@ func (this *AlienService) PreviewOrDownload(
 	}
 
 	//文件下载次数加一，为了加快访问速度，异步进行
-	go this.matterDao.TimesIncrement(uuid)
+	go SafeMethod(func() {
+		this.matterDao.TimesIncrement(uuid)
+	})
 
 }

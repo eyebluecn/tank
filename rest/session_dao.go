@@ -45,6 +45,9 @@ func (this *SessionDao) Create(session *Session) *Session {
 
 	timeUUID, _ := uuid.NewV4()
 	session.Uuid = string(timeUUID.String())
+	session.CreateTime = time.Now()
+	session.UpdateTime = time.Now()
+	session.Sort = time.Now().UnixNano() / 1e6
 	db := CONTEXT.DB.Create(session)
 	this.PanicError(db.Error)
 

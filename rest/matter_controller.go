@@ -1,12 +1,12 @@
 package rest
 
 import (
+	"fmt"
 	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
-	"fmt"
 )
 
 type MatterController struct {
@@ -152,14 +152,17 @@ func (this *MatterController) CreateDirectory(writer http.ResponseWriter, reques
 func (this *MatterController) Page(writer http.ResponseWriter, request *http.Request) *WebResult {
 
 	//如果是根目录，那么就传入root.
-	puuid := request.FormValue("puuid")
 	pageStr := request.FormValue("page")
 	pageSizeStr := request.FormValue("pageSize")
+	orderCreateTime := request.FormValue("orderCreateTime")
+	orderUpdateTime := request.FormValue("orderUpdateTime")
+	orderSort := request.FormValue("orderSort")
+
+	puuid := request.FormValue("puuid")
 	userUuid := request.FormValue("userUuid")
 	name := request.FormValue("name")
 	dir := request.FormValue("dir")
 	orderDir := request.FormValue("orderDir")
-	orderCreateTime := request.FormValue("orderCreateTime")
 	orderSize := request.FormValue("orderSize")
 	orderName := request.FormValue("orderName")
 	extensionsStr := request.FormValue("extensions")
@@ -195,12 +198,20 @@ func (this *MatterController) Page(writer http.ResponseWriter, request *http.Req
 
 	sortArray := []OrderPair{
 		{
-			key:   "dir",
-			value: orderDir,
-		},
-		{
 			key:   "create_time",
 			value: orderCreateTime,
+		},
+		{
+			key:   "update_time",
+			value: orderUpdateTime,
+		},
+		{
+			key:   "sort",
+			value: orderSort,
+		},
+		{
+			key:   "dir",
+			value: orderDir,
 		},
 		{
 			key:   "size",

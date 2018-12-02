@@ -42,7 +42,7 @@ func (this *DownloadTokenDao) Create(downloadToken *DownloadToken) *DownloadToke
 
 	downloadToken.CreateTime = time.Now()
 	downloadToken.UpdateTime = time.Now()
-
+	downloadToken.Sort = time.Now().UnixNano() / 1e6
 	db := CONTEXT.DB.Create(downloadToken)
 	this.PanicError(db.Error)
 

@@ -70,9 +70,9 @@ func (this *Logger) Init() {
 	//日志需要自我备份，自我维护。明天第一秒触发
 	nextTime := FirstSecondOfDay(Tomorrow())
 	duration := nextTime.Sub(time.Now())
-	go this.Info("%vs后将进行下一次日志维护 下次时间%v ", int64(duration/time.Second), nextTime)
+	this.Info("%vs后将进行下一次日志维护 下次时间%v ", int64(duration/time.Second), nextTime)
 	this.maintainTimer = time.AfterFunc(duration, func() {
-		go this.maintain()
+		go SafeMethod(this.maintain)
 	})
 
 }
@@ -83,7 +83,7 @@ func (this *Logger) maintain() {
 	this.Lock()
 	defer this.Unlock()
 
-	go this.Info("每日维护日志")
+	this.Info("每日维护日志")
 
 	//首先关闭文件。
 	this.closeFile()
@@ -94,7 +94,7 @@ func (this *Logger) maintain() {
 	//直接重命名文件
 	err := os.Rename(this.fileName(), destPath)
 	if err != nil {
-		go this.Error("重命名文件出错", err.Error())
+		this.Error("重命名文件出错", err.Error())
 	}
 
 	//再次打开文件
@@ -104,9 +104,9 @@ func (this *Logger) maintain() {
 	now := time.Now()
 	nextTime := FirstSecondOfDay(Tomorrow())
 	duration := nextTime.Sub(now)
-	go this.Info("%vs 后将进行下一次日志维护 下次时间维护时间：%v ", int64(duration/time.Second), nextTime)
+	this.Info("%vs 后将进行下一次日志维护 下次时间维护时间：%v ", int64(duration/time.Second), nextTime)
 	this.maintainTimer = time.AfterFunc(duration, func() {
-		go this.maintain()
+		go SafeMethod(this.maintain)
 	})
 }
 
