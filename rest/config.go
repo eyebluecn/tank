@@ -20,7 +20,7 @@ const (
 	TABLE_PREFIX = "tank20_"
 
 	//当前版本
-	VERSION = "1.0.5"
+	VERSION = "2.0.0"
 )
 
 /*
@@ -307,7 +307,6 @@ func PrepareConfigs() {
 	//验证配置项的正确性
 	CONFIG.validate()
 
-	//安装程序开始导入初始表和初始数据。
-	InstallDatabase()
-
+	//TODO:安装程序开始导入初始表和初始数据。 做成可视化安装。
+	//InstallDatabase()
 }
