@@ -106,19 +106,27 @@ func (this *AlienController) HandleRoutes(writer http.ResponseWriter, request *h
 	return nil, false
 }
 
-//直接使用邮箱和密码获取用户
-func (this *AlienController) CheckRequestUser(email, password string) *User {
+//直接从cookie中获取用户信息，或者使用邮箱和密码获取用户
+func (this *AlienController) CheckRequestUser(writer http.ResponseWriter, request *http.Request) *User {
 
+	//根据用户登录信息取
+	user := this.findUser(writer, request)
+	if user != nil {
+		return user;
+	}
+
+	email := request.FormValue("email")
 	if email == "" {
 		panic("邮箱必填啦")
 	}
 
+	password := request.FormValue("password")
 	if password == "" {
 		panic("密码必填")
 	}
 
 	//验证用户身份合法性。
-	user := this.userDao.FindByEmail(email)
+	user = this.userDao.FindByEmail(email)
 	if user == nil {
 		panic(`邮箱或密码错误`)
 	} else {
@@ -190,7 +198,7 @@ func (this *AlienController) FetchUploadToken(writer http.ResponseWriter, reques
 	//文件夹路径，以 / 开头。
 	dir := request.FormValue("dir")
 
-	user := this.CheckRequestUser(request.FormValue("email"), request.FormValue("password"))
+	user := this.CheckRequestUser(writer, request)
 	dirUuid := this.matterService.GetDirUuid(user.Uuid, dir)
 
 	mm, _ := time.ParseDuration(fmt.Sprintf("%ds", expire))
@@ -219,7 +227,7 @@ func (this *AlienController) Confirm(writer http.ResponseWriter, request *http.R
 		panic("matterUuid必填")
 	}
 
-	user := this.CheckRequestUser(request.FormValue("email"), request.FormValue("password"))
+	user := this.CheckRequestUser(writer, request)
 
 	matter := this.matterDao.CheckByUuid(matterUuid)
 	if matter.UserUuid != user.Uuid {
@@ -346,7 +354,7 @@ func (this *AlienController) CrawlDirect(writer http.ResponseWriter, request *ht
 
 	//文件夹路径，以 / 开头。
 	dir := request.FormValue("dir")
-	user := this.CheckRequestUser(request.FormValue("email"), request.FormValue("password"))
+	user := this.CheckRequestUser(writer, request)
 	dirUuid := this.matterService.GetDirUuid(user.Uuid, dir)
 
 	matter := this.matterService.Crawl(url, filename, user, dirUuid, privacy)
@@ -362,7 +370,7 @@ func (this *AlienController) FetchDownloadToken(writer http.ResponseWriter, requ
 		panic("matterUuid必填")
 	}
 
-	user := this.CheckRequestUser(request.FormValue("email"), request.FormValue("password"))
+	user := this.CheckRequestUser(writer, request)
 
 	matter := this.matterDao.CheckByUuid(matterUuid)
 	if matter.UserUuid != user.Uuid {
@@ -401,17 +409,14 @@ func (this *AlienController) FetchDownloadToken(writer http.ResponseWriter, requ
 
 }
 
-
 //预览一个文件。既可以使用登录的方式，也可以使用授权的方式
 func (this *AlienController) Preview(writer http.ResponseWriter, request *http.Request, uuid string, filename string) {
 
-	operator := this.findUser(writer, request)
-	this.alienService.PreviewOrDownload(writer, request, uuid, filename, operator, false)
+	this.alienService.PreviewOrDownload(writer, request, uuid, filename,  false)
 }
-
 
 //下载一个文件。既可以使用登录的方式，也可以使用授权的方式
 func (this *AlienController) Download(writer http.ResponseWriter, request *http.Request, uuid string, filename string) {
-	operator := this.findUser(writer, request)
-	this.alienService.PreviewOrDownload(writer, request, uuid, filename, operator, true)
+
+	this.alienService.PreviewOrDownload(writer, request, uuid, filename,  true)
 }

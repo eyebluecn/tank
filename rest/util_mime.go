@@ -458,6 +458,7 @@ var allMimeMap = map[string]string{
 	".spc":                    "application/x-pkcs7-certificates",
 	".spl":                    "application/futuresplash",
 	".spx":                    "audio/ogg",
+	".sql":                    "text/plain",
 	".src":                    "application/x-wais-source",
 	".srf":                    "text/plain",
 	".SSISDeploymentManifest": "text/xml",

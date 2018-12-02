@@ -192,7 +192,6 @@ func (this *MatterController) Page(writer http.ResponseWriter, request *http.Req
 		extensions = strings.Split(extensionsStr, ",")
 	}
 
-
 	sortArray := []OrderPair{
 		{
 			key:   "dir",

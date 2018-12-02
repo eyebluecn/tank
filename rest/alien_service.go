@@ -65,7 +65,6 @@ func (this *AlienService) PreviewOrDownload(
 	request *http.Request,
 	uuid string,
 	filename string,
-	operator *User,
 	withContentDisposition bool) {
 
 	matter := this.matterDao.CheckByUuid(uuid)
@@ -100,13 +99,14 @@ func (this *AlienService) PreviewOrDownload(
 				panic(CODE_WRAPPER_UNAUTHORIZED)
 			}
 
-			//下载之后立即过期掉。
-			downloadToken.ExpireTime = time.Now().AddDate(0, 0, 1);
+			//下载之后立即过期掉。如果是分块下载的，必须以最终获取到完整的数据为准。
+			downloadToken.ExpireTime = time.Now()
 			this.downloadTokenDao.Save(downloadToken)
 
 		} else {
 
 			//判断文件的所属人是否正确
+			operator := this.findUser(writer, request)
 			if operator == nil || (operator.Role != USER_ROLE_ADMINISTRATOR && matter.UserUuid != operator.Uuid) {
 				panic(CODE_WRAPPER_UNAUTHORIZED)
 			}

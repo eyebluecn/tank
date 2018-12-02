@@ -28,7 +28,7 @@ var (
 	CODE_WRAPPER_LOGIN                   = &CodeWrapper{Code: "LOGIN", HttpStatus: http.StatusUnauthorized, Description: "未登录，禁止访问"}
 	CODE_WRAPPER_LOGIN_EXPIRE            = &CodeWrapper{Code: "LOGIN_EXPIRE", HttpStatus: http.StatusUnauthorized, Description: "登录过期，请重新登录"}
 	CODE_WRAPPER_USER_DISABLED           = &CodeWrapper{Code: "USER_DISABLED", HttpStatus: http.StatusForbidden, Description: "账户被禁用，禁止访问"}
-	CODE_WRAPPER_UNAUTHORIZED            = &CodeWrapper{Code: "LOGIN", HttpStatus: http.StatusUnauthorized, Description: "没有权限，禁止访问"}
+	CODE_WRAPPER_UNAUTHORIZED            = &CodeWrapper{Code: "UNAUTHORIZED", HttpStatus: http.StatusUnauthorized, Description: "没有权限，禁止访问"}
 	CODE_WRAPPER_NOT_FOUND               = &CodeWrapper{Code: "NOT_FOUND", HttpStatus: http.StatusNotFound, Description: "内容不存在"}
 	CODE_WRAPPER_RANGE_NOT_SATISFIABLE   = &CodeWrapper{Code: "RANGE_NOT_SATISFIABLE", HttpStatus: http.StatusRequestedRangeNotSatisfiable, Description: "文件范围读取错误"}
 	CODE_WRAPPER_UNKNOWN                 = &CodeWrapper{Code: "UNKNOWN", HttpStatus: http.StatusInternalServerError, Description: "服务器未知错误"}
