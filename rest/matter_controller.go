@@ -157,6 +157,7 @@ func (this *MatterController) Page(writer http.ResponseWriter, request *http.Req
 	orderCreateTime := request.FormValue("orderCreateTime")
 	orderUpdateTime := request.FormValue("orderUpdateTime")
 	orderSort := request.FormValue("orderSort")
+	orderTimes := request.FormValue("orderTimes")
 
 	puuid := request.FormValue("puuid")
 	userUuid := request.FormValue("userUuid")
@@ -191,12 +192,12 @@ func (this *MatterController) Page(writer http.ResponseWriter, request *http.Req
 		extensions = strings.Split(extensionsStr, ",")
 	}
 
-	//文件列表默认文件夹始终在文件的前面。
-	if orderDir == "" {
-		orderDir = "DESC"
-	}
 
 	sortArray := []OrderPair{
+		{
+			key:   "dir",
+			value: orderDir,
+		},
 		{
 			key:   "create_time",
 			value: orderCreateTime,
@@ -210,16 +211,16 @@ func (this *MatterController) Page(writer http.ResponseWriter, request *http.Req
 			value: orderSort,
 		},
 		{
-			key:   "dir",
-			value: orderDir,
-		},
-		{
 			key:   "size",
 			value: orderSize,
 		},
 		{
 			key:   "name",
 			value: orderName,
+		},
+		{
+			key:   "times",
+			value: orderTimes,
 		},
 	}
 

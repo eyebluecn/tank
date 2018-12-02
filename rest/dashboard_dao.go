@@ -77,3 +77,37 @@ func (this *DashboardDao) Page(page int, pageSize int, dt string, sortArray []Or
 
 	return pager
 }
+
+//获取最活跃的前10个ip
+func (this *DashboardDao) ActiveIpTop10() []*DashboardIpTimes {
+
+	var dashboardIpTimes []*DashboardIpTimes
+
+	sortArray := []OrderPair{
+		{
+			key:   "times",
+			value: "DESC",
+		},
+	}
+	rows, err := CONTEXT.DB.Model(&Footprint{}).
+		Select("ip,COUNT(uuid) as times").
+		Group("ip").
+		Order(this.GetSortString(sortArray)).
+		Offset(0).
+		Limit(10).
+		Rows()
+
+	this.PanicError(err)
+	for rows.Next() {
+		var ip string;
+		var times int64 = 0;
+		rows.Scan(&ip, &times)
+		item := &DashboardIpTimes{
+			Ip:    ip,
+			Times: times,
+		}
+		dashboardIpTimes = append(dashboardIpTimes, item)
+	}
+
+	return dashboardIpTimes
+}

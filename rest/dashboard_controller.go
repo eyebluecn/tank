@@ -35,6 +35,7 @@ func (this *DashboardController) RegisterRoutes() map[string]func(writer http.Re
 
 	//每个Controller需要主动注册自己的路由。
 	routeMap["/api/dashboard/page"] = this.Wrap(this.Page, USER_ROLE_ADMINISTRATOR)
+	routeMap["/api/dashboard/active/ip/top10"] = this.Wrap(this.ActiveIpTop10, USER_ROLE_ADMINISTRATOR)
 
 	return routeMap
 }
@@ -92,4 +93,10 @@ func (this *DashboardController) Page(writer http.ResponseWriter, request *http.
 	pager := this.dashboardDao.Page(page, pageSize, "", sortArray)
 
 	return this.Success(pager)
+}
+
+
+func (this *DashboardController) ActiveIpTop10(writer http.ResponseWriter, request *http.Request) *WebResult {
+	list := this.dashboardDao.ActiveIpTop10()
+	return this.Success(list)
 }

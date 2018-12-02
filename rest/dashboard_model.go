@@ -23,10 +23,9 @@ func (Dashboard) TableName() string {
 }
 
 /**
- * 总调用量
+ * 统计IP活跃数的
  */
-type DashboardInvoke struct {
-	InvokeNum int64  `json:"invokeNum"`
-	Uv        int64  `json:"uv"`
-	Dt        string `json:"dt"`
+type DashboardIpTimes struct {
+	Ip    string `json:"ip"`
+	Times int64  `json:"times"`
 }

@@ -117,3 +117,4 @@ func (this *FootprintDao) AvgCostBetweenTime(startTime time.Time, endTime time.T
 	row.Scan(&cost)
 	return int64(cost)
 }
+
