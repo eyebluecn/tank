@@ -12,19 +12,28 @@ import (
 
 //用于处理所有前来的请求
 type Router struct {
-	footprintService *FootprintService
-	userService      *UserService
-	routeMap         map[string]func(writer http.ResponseWriter, request *http.Request)
+	installController *InstallController
+	footprintService  *FootprintService
+	userService       *UserService
+	routeMap          map[string]func(writer http.ResponseWriter, request *http.Request)
+	installRouteMap   map[string]func(writer http.ResponseWriter, request *http.Request)
 }
 
 //构造方法
 func NewRouter() *Router {
 	router := &Router{
-		routeMap: make(map[string]func(writer http.ResponseWriter, request *http.Request)),
+		routeMap:        make(map[string]func(writer http.ResponseWriter, request *http.Request)),
+		installRouteMap: make(map[string]func(writer http.ResponseWriter, request *http.Request)),
+	}
+
+	//installController.
+	b := CONTEXT.GetBean(router.installController)
+	if b, ok := b.(*InstallController); ok {
+		router.installController = b
 	}
 
 	//装载userService.
-	b := CONTEXT.GetBean(router.userService)
+	b = CONTEXT.GetBean(router.userService)
 	if b, ok := b.(*UserService); ok {
 		router.userService = b
 	}
@@ -35,12 +44,21 @@ func NewRouter() *Router {
 		router.footprintService = b
 	}
 
-	//将Controller中的路由规则装载机进来
+	//将Controller中的路由规则装载进来，InstallController中的除外
 	for _, controller := range CONTEXT.ControllerMap {
-		routes := controller.RegisterRoutes()
-		for k, v := range routes {
-			router.routeMap[k] = v
+
+		if controller == router.installController {
+			routes := controller.RegisterRoutes()
+			for k, v := range routes {
+				router.installRouteMap[k] = v
+			}
+		} else {
+			routes := controller.RegisterRoutes()
+			for k, v := range routes {
+				router.routeMap[k] = v
+			}
 		}
+
 	}
 	return router
 
@@ -77,8 +95,7 @@ func (this *Router) GlobalPanicHandler(writer http.ResponseWriter, request *http
 		writer.Header().Set("Content-Type", "application/json;charset=UTF-8")
 
 		//用json的方式输出返回值。
-		var json = jsoniter.ConfigCompatibleWithStandardLibrary
-		b, _ := json.Marshal(webResult)
+		b, _ := jsoniter.ConfigCompatibleWithStandardLibrary.Marshal(webResult)
 
 		//写到输出流中
 		_, err := fmt.Fprintf(writer, string(b))
@@ -105,35 +122,44 @@ func (this *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 	path := request.URL.Path
 	if strings.HasPrefix(path, "/api") {
 
-		//统一处理用户的身份信息。
-		this.userService.bootstrap(writer, request)
+		if CONFIG.DBConfigured {
+			//已安装的模式
 
-		if handler, ok := this.routeMap[path]; ok {
+			//统一处理用户的身份信息。
+			this.userService.bootstrap(writer, request)
 
-			handler(writer, request)
+			if handler, ok := this.routeMap[path]; ok {
+				handler(writer, request)
+			} else {
+				//直接将请求扔给每个controller，看看他们能不能处理，如果都不能处理，那就抛出找不到的错误
+				canHandle := false
+				for _, controller := range CONTEXT.ControllerMap {
+					if handler, exist := controller.HandleRoutes(writer, request); exist {
+						canHandle = true
+						handler(writer, request)
+						break
+					}
+				}
 
-		} else {
-			//直接将请求扔给每个controller，看看他们能不能处理，如果都不能处理，那就抛出找不到的错误
-			canHandle := false
-			for _, controller := range CONTEXT.ControllerMap {
-				if handler, exist := controller.HandleRoutes(writer, request); exist {
-					canHandle = true
-
-					handler(writer, request)
-					break
+				if !canHandle {
+					panic(CustomWebResult(CODE_WRAPPER_NOT_FOUND, fmt.Sprintf("没有找到能够处理%s的方法", path)))
 				}
 			}
 
-			if !canHandle {
-				panic(CustomWebResult(CODE_WRAPPER_NOT_FOUND, fmt.Sprintf("没有找到能够处理%s的方法", path)))
-			}
+			//正常的访问记录会落到这里。
+			go SafeMethod(func() {
+				this.footprintService.Trace(writer, request, time.Now().Sub(startTime), true)
+			})
 
+		} else {
+			//未安装模式
+			if handler, ok := this.installRouteMap[path]; ok {
+				handler(writer, request)
+			} else {
+				panic(ConstWebResult(CODE_WRAPPER_NOT_INSTALLED))
+			}
 		}
 
-		//正常的访问记录会落到这里。
-		go SafeMethod(func() {
-			this.footprintService.Trace(writer, request, time.Now().Sub(startTime), true)
-		})
 	} else {
 		//当作静态资源处理。默认从当前文件下面的static文件夹中取东西。
 		dir := GetHtmlPath()

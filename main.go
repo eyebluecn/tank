@@ -14,12 +14,15 @@ func main() {
 	rest.LOGGER.Init()
 	defer rest.LOGGER.Destroy()
 
-	//将运行时参数装填到config中去。
-	rest.PrepareConfigs()
+
+	//装载配置文件，这个决定了是否需要执行安装过程
+	rest.CONFIG.Init()
+
 
 	//全局运行的上下文
 	rest.CONTEXT.Init()
 	defer rest.CONTEXT.Destroy()
+
 
 	http.Handle("/", rest.CONTEXT.Router)
 

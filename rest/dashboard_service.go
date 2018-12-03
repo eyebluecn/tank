@@ -46,9 +46,13 @@ func (this *DashboardService) Init() {
 		this.userDao = b
 	}
 
+}
+
+//系统启动，数据库配置完毕后会调用该方法
+func (this *DashboardService) ConfigPost() {
+
 	//立即执行数据清洗任务
 	go SafeMethod(this.maintain)
-
 }
 
 //每日清洗离线数据表。

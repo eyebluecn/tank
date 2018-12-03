@@ -2,6 +2,7 @@ package rest
 
 import (
 	"encoding/json"
+	"github.com/json-iterator/go"
 	"net/http"
 	"time"
 )
@@ -61,23 +62,30 @@ func (this *FootprintService) Trace(writer http.ResponseWriter, request *http.Re
 		paramsString = string(paramsData)
 	}
 
-	user := this.findUser(writer, request)
-	userUuid := ""
-	if user != nil {
-		userUuid = user.Uuid
-	}
-
 	//将文件信息存入数据库中。
 	footprint := &Footprint{
-		UserUuid: userUuid,
-		Ip:       GetIpAddress(request),
-		Host:     request.Host,
-		Uri:      request.URL.Path,
-		Params:   paramsString,
-		Cost:     int64(duration / time.Millisecond),
-		Success:  success,
+		Ip:      GetIpAddress(request),
+		Host:    request.Host,
+		Uri:     request.URL.Path,
+		Params:  paramsString,
+		Cost:    int64(duration / time.Millisecond),
+		Success: success,
 	}
 
-	footprint = this.footprintDao.Create(footprint)
+	//有可能DB尚且没有配置 直接打印出内容，并且退出
+	if CONFIG.DBConfigured {
+		user := this.findUser(writer, request)
+		userUuid := ""
+		if user != nil {
+			userUuid = user.Uuid
+		}
+		footprint.UserUuid = userUuid
+		footprint = this.footprintDao.Create(footprint)
+	} else {
+		//用json的方式输出返回值。
+		b, _ := jsoniter.ConfigCompatibleWithStandardLibrary.Marshal(footprint)
+
+		this.logger.Info("%s", string(b))
+	}
 
 }

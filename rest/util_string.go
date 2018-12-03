@@ -30,3 +30,13 @@ func HumanFileSize(bytes int64) string {
 
 	return fmt.Sprintf("%s%s", numStr, units[u])
 }
+
+//获取MySQL的URL
+func GetMysqlUrl(
+	mysqlPort int,
+	mysqlHost string,
+	mysqlSchema string,
+	mysqlUsername string,
+	mysqlPassword string) string {
+	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8&parseTime=True&loc=Local", mysqlUsername, mysqlPassword, mysqlHost, mysqlPort, mysqlSchema)
+}

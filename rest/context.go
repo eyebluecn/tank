@@ -26,9 +26,6 @@ type Context struct {
 //初始化上下文
 func (this *Context) Init() {
 
-	//处理数据库连接的开关。
-	this.OpenDb()
-
 	//创建一个用于存储session的缓存。
 	this.SessionCache = NewCacheTable()
 
@@ -44,6 +41,13 @@ func (this *Context) Init() {
 
 	//初始化Router. 这个方法要在Bean注册好了之后才能。
 	this.Router = NewRouter()
+
+	//如果数据库信息配置好了，就直接打开数据库连接 同时执行Bean的ConfigPost方法
+	if CONFIG.DBConfigured {
+		this.OpenDb()
+		this.configPostBeans()
+	}
+
 }
 
 func (this *Context) OpenDb() {
@@ -116,6 +120,9 @@ func (this *Context) registerBeans() {
 	this.registerBean(new(ImageCacheDao))
 	this.registerBean(new(ImageCacheService))
 
+	//install
+	this.registerBean(new(InstallController))
+
 	//matter
 	this.registerBean(new(MatterController))
 	this.registerBean(new(MatterDao))
@@ -164,7 +171,14 @@ func (this *Context) initBeans() {
 	for _, bean := range this.BeanMap {
 		bean.Init()
 	}
+}
 
+//所有配置项完备后执行的方法
+func (this *Context) configPostBeans() {
+
+	for _, bean := range this.BeanMap {
+		bean.ConfigPost()
+	}
 }
 
 //销毁的方法

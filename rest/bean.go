@@ -5,7 +5,11 @@ import (
 )
 
 type IBean interface {
+	//初始化方法
 	Init()
+	//所有配置都加载完成后调用的方法，包括数据库加载完毕
+	ConfigPost()
+	//快速的Panic方法
 	PanicError(err error)
 }
 
@@ -15,6 +19,10 @@ type Bean struct {
 
 func (this *Bean) Init() {
 	this.logger = LOGGER
+}
+
+func (this *Bean) ConfigPost() {
+
 }
 
 //处理错误的统一方法 可以省去if err!=nil 这段代码

@@ -82,14 +82,14 @@ func (this *BaseController) Wrap(f func(writer http.ResponseWriter, request *htt
 			writer.Header().Set("Content-Type", "application/json;charset=UTF-8")
 
 			//用json的方式输出返回值。
-			var json = jsoniter.ConfigCompatibleWithStandardLibrary
-			b, err := json.Marshal(webResult)
+			b, err := jsoniter.ConfigCompatibleWithStandardLibrary.Marshal(webResult)
 
 			this.PanicError(err)
 
 			writer.WriteHeader(FetchHttpStatus(webResult.Code))
 
-			fmt.Fprintf(writer, string(b))
+			_, err = fmt.Fprintf(writer, string(b))
+			this.PanicError(err)
 		} else {
 			//输出的内容是二进制的。
 
@@ -116,7 +116,6 @@ func (this *BaseController) Success(data interface{}) *WebResult {
 	}
 	return webResult
 }
-
 
 //允许跨域请求
 func (this *BaseController) allowCORS(writer http.ResponseWriter) {

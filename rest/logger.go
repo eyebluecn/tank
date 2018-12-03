@@ -104,7 +104,7 @@ func (this *Logger) maintain() {
 	now := time.Now()
 	nextTime := FirstSecondOfDay(Tomorrow())
 	duration := nextTime.Sub(now)
-	this.Info("%vs 后将进行下一次日志维护 下次时间维护时间：%v ", int64(duration/time.Second), nextTime)
+	this.Info("下次维护时间：%v ", int64(duration/time.Second), nextTime)
 	this.maintainTimer = time.AfterFunc(duration, func() {
 		go SafeMethod(this.maintain)
 	})

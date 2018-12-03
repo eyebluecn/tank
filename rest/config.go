@@ -2,12 +2,8 @@ package rest
 
 import (
 	"encoding/json"
-	"flag"
-	"fmt"
 	"github.com/json-iterator/go"
 	"io/ioutil"
-	"os"
-	"strconv"
 	"time"
 	"unsafe"
 )
@@ -29,47 +25,28 @@ create database tank;
 grant all privileges on tank.* to tank identified by 'tank123';
 flush privileges;
 */
-/*
- 你也可以在运行时的参数中临时修改一些配置项：
--MysqlHost=127.0.0.1 -MysqlPort=3306 -MysqlSchema=tank -MysqlUsername=tank -MysqlPassword=tank123
-*/
-var (
-	CONFIG = &Config{
-		//以下内容是默认配置项。
-
-		//默认监听端口号
-		ServerPort: 6010,
-		//上传的文件路径，如果没有指定，默认在根目录下的matter文件夹中
-		MatterPath: "",
-		//mysql相关配置。
-		//数据库端口
-		MysqlPort: 3306,
-		//数据库Host
-		MysqlHost: "127.0.0.1",
-		//数据库名字
-		MysqlSchema: "tank",
-		//用户名
-		MysqlUsername: "tank",
-		//密码
-		MysqlPassword: "tank123",
-		//数据库连接信息。这一项是上面几项组合而得，不可直接配置。
-		MysqlUrl: "%MysqlUsername:%MysqlPassword@tcp(%MysqlHost:%MysqlPort)/%MysqlSchema?charset=utf8&parseTime=True&loc=Local",
-		//超级管理员用户名，只能包含英文和数字
-		AdminUsername: "admin",
-		//超级管理员邮箱
-		AdminEmail: "admin@tank.eyeblue.cn",
-		//超级管理员密码
-		AdminPassword: "123456",
-	}
-)
+var CONFIG = &Config{}
 
 //依赖外部定义的变量。
 type Config struct {
 	//默认监听端口号
 	ServerPort int
+	//数据库是否配置完备
+	DBConfigured bool
 	//上传的文件路径，要求不以/结尾。如果没有指定，默认在根目录下的matter文件夹中。eg: /var/www/matter
 	MatterPath string
+	//数据库连接信息。
+	MysqlUrl string
+	//配置文件中的项
+	Item *ConfigItem
+}
 
+//和tank.json文件中的键值一一对应。
+type ConfigItem struct {
+	//默认监听端口号
+	ServerPort int
+	//上传的文件路径，要求不以/结尾。如果没有指定，默认在根目录下的matter文件夹中。eg: /var/www/matter
+	MatterPath string
 	//mysql相关配置。
 	//数据库端口
 	MysqlPort int
@@ -81,52 +58,49 @@ type Config struct {
 	MysqlUsername string
 	//密码
 	MysqlPassword string
-	//数据库连接信息。
-	MysqlUrl string
-
-	//超级管理员用户名，只能包含英文和数字
-	AdminUsername string
-	//超级管理员邮箱
-	AdminEmail string
-	//超级管理员密码
-	AdminPassword string
 }
 
 //验证配置文件的正确性。
-func (this *Config) validate() {
+func (this *ConfigItem) validate() bool {
 
 	if this.ServerPort == 0 {
 		LOGGER.Error("ServerPort 未配置")
+		return false
 	}
 
 	if this.MysqlUsername == "" {
 		LOGGER.Error("MysqlUsername 未配置")
+		return false
 	}
 
 	if this.MysqlPassword == "" {
 		LOGGER.Error("MysqlPassword 未配置")
+		return false
 	}
 
 	if this.MysqlHost == "" {
 		LOGGER.Error("MysqlHost 未配置")
+		return false
 	}
 
 	if this.MysqlPort == 0 {
 		LOGGER.Error("MysqlPort 未配置")
+		return false
 	}
 
 	if this.MysqlSchema == "" {
 		LOGGER.Error("MysqlSchema 未配置")
+		return false
 	}
 
-	this.MysqlUrl = fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8&parseTime=True&loc=Local", this.MysqlUsername, this.MysqlPassword, this.MysqlHost, this.MysqlPort, this.MysqlSchema)
+	return true
 
 }
 
-//init方法只要这个包被引入了就一定会执行。
-func init() {
+//验证配置文件是否完好
+func (this *Config) Init() {
 
-	//json中需要去特殊处理时间。
+	//JSON初始化
 	jsoniter.RegisterTypeDecoderFunc("time.Time", func(ptr unsafe.Pointer, iter *jsoniter.Iterator) {
 		//如果使用time.UTC，那么时间会相差8小时
 		t, err := time.ParseInLocation("2006-01-02 15:04:05", iter.ReadString(), time.Local)
@@ -142,171 +116,39 @@ func init() {
 		//如果使用time.UTC，那么时间会相差8小时
 		stream.WriteString(t.Local().Format("2006-01-02 15:04:05"))
 	}, nil)
-}
 
-//第一级. 从配置文件conf/tank.json中读取配置项
-func LoadConfigFromFile() {
+	//默认从6010端口启动
+	CONFIG.ServerPort = 6010
+
 	//读取配置文件
 	filePath := GetConfPath() + "/tank.json"
 	content, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		LOGGER.Warn("无法找到配置文件：%s 将使用config.go中的默认配置项。", filePath)
+		LOGGER.Warn("即将进入安装过程，无法找到配置文件：%s", filePath)
+		this.DBConfigured = false
 	} else {
 		// 用 json.Unmarshal
-		err := json.Unmarshal(content, CONFIG)
+		err := json.Unmarshal(content, this.Item)
 		if err != nil {
-			LOGGER.Panic("配置文件格式错误！")
+			LOGGER.Error("配置文件格式错误！")
+			this.DBConfigured = false
+			return
 		}
-	}
 
-}
-
-//第二级. 从环境变量中读取配置项
-func LoadConfigFromEnvironment() {
-
-	tmpServerPort := os.Getenv("TANK_SERVER_PORT")
-	if tmpServerPort != "" {
-		i, e := strconv.Atoi(tmpServerPort)
-		if e == nil {
-			CONFIG.ServerPort = i
-		} else {
-			LOGGER.Panic("环境变量TANK_SERVER_PORT必须为整数！%v", tmpServerPort)
+		//验证项是否齐全
+		itemValidate := this.Item.validate()
+		if !itemValidate {
+			this.DBConfigured = false
+			return
 		}
-	}
 
-	tmpMatterPath := os.Getenv("TANK_MATTER_PATH")
-	if tmpMatterPath != "" {
-		CONFIG.MatterPath = tmpMatterPath
-	}
-
-	tmpMysqlPort := os.Getenv("TANK_MYSQL_PORT")
-	if tmpMysqlPort != "" {
-		i, e := strconv.Atoi(tmpMysqlPort)
-		if e == nil {
-			CONFIG.MysqlPort = i
-		} else {
-			LOGGER.Panic("环境变量TANK_MYSQL_PORT必须为整数！%v", tmpMysqlPort)
+		if this.Item.MatterPath == "" {
+			CONFIG.MatterPath = GetHomePath() + "/matter"
 		}
+		MakeDirAll(CONFIG.MatterPath)
+
+		this.MysqlUrl = GetMysqlUrl(this.Item.MysqlPort, this.Item.MysqlHost, this.Item.MysqlSchema, this.Item.MysqlUsername, this.Item.MysqlPassword)
+		this.DBConfigured = true
 	}
 
-	tmpMysqlHost := os.Getenv("TANK_MYSQL_HOST")
-	if tmpMysqlHost != "" {
-		CONFIG.MysqlHost = tmpMysqlHost
-	}
-	tmpMysqlSchema := os.Getenv("TANK_MYSQL_SCHEMA")
-	if tmpMysqlSchema != "" {
-		CONFIG.MysqlSchema = tmpMysqlSchema
-	}
-	tmpMysqlUsername := os.Getenv("TANK_MYSQL_USERNAME")
-	if tmpMysqlUsername != "" {
-		CONFIG.MysqlUsername = tmpMysqlUsername
-	}
-	tmpMysqlPassword := os.Getenv("TANK_MYSQL_PASSWORD")
-	if tmpMysqlPassword != "" {
-		CONFIG.MysqlPassword = tmpMysqlPassword
-	}
-	tmpAdminUsername := os.Getenv("TANK_ADMIN_USERNAME")
-	if tmpAdminUsername != "" {
-		CONFIG.AdminUsername = tmpAdminUsername
-	}
-	tmpAdminEmail := os.Getenv("TANK_ADMIN_EMAIL")
-	if tmpAdminEmail != "" {
-		CONFIG.AdminEmail = tmpAdminEmail
-	}
-	tmpAdminPassword := os.Getenv("TANK_ADMIN_PASSWORD")
-	if tmpAdminPassword != "" {
-		CONFIG.AdminPassword = tmpAdminPassword
-	}
-
-}
-
-//第三级. 从程序参数中读取配置项
-func LoadConfigFromArguments() {
-
-	//从运行时参数中读取，运行时参数具有更高优先级。
-	//系统端口号
-	ServerPortPtr := flag.Int("ServerPort", CONFIG.ServerPort, "server port")
-
-	//日志和上传文件的路径
-	MatterPathPtr := flag.String("MatterPath", CONFIG.MatterPath, "matter path")
-
-	//mysql相关配置。
-	MysqlPortPtr := flag.Int("MysqlPort", CONFIG.MysqlPort, "mysql port")
-	MysqlHostPtr := flag.String("MysqlHost", CONFIG.MysqlHost, "mysql host")
-	MysqlSchemaPtr := flag.String("MysqlSchema", CONFIG.MysqlSchema, "mysql schema")
-	MysqlUsernamePtr := flag.String("MysqlUsername", CONFIG.MysqlUsername, "mysql username")
-	MysqlPasswordPtr := flag.String("MysqlPassword", CONFIG.MysqlPassword, "mysql password")
-
-	//超级管理员信息
-	AdminUsernamePtr := flag.String("AdminUsername", CONFIG.AdminUsername, "administrator username")
-	AdminEmailPtr := flag.String("AdminEmail", CONFIG.AdminEmail, "administrator email")
-	AdminPasswordPtr := flag.String("AdminPassword", CONFIG.AdminPassword, "administrator password")
-
-	//flag.Parse()方法必须要在使用之前调用。
-	flag.Parse()
-
-	if *ServerPortPtr != CONFIG.ServerPort {
-		CONFIG.ServerPort = *ServerPortPtr
-	}
-
-	if *MatterPathPtr != CONFIG.MatterPath {
-		CONFIG.MatterPath = *MatterPathPtr
-	}
-
-	if *MysqlPortPtr != CONFIG.MysqlPort {
-		CONFIG.MysqlPort = *MysqlPortPtr
-	}
-
-	if *MysqlHostPtr != CONFIG.MysqlHost {
-		CONFIG.MysqlHost = *MysqlHostPtr
-	}
-
-	if *MysqlSchemaPtr != CONFIG.MysqlSchema {
-		CONFIG.MysqlSchema = *MysqlSchemaPtr
-	}
-
-	if *MysqlUsernamePtr != CONFIG.MysqlUsername {
-		CONFIG.MysqlUsername = *MysqlUsernamePtr
-	}
-
-	if *MysqlPasswordPtr != CONFIG.MysqlPassword {
-		CONFIG.MysqlPassword = *MysqlPasswordPtr
-	}
-
-	if *AdminUsernamePtr != CONFIG.AdminUsername {
-		CONFIG.AdminUsername = *AdminUsernamePtr
-	}
-
-	if *AdminEmailPtr != CONFIG.AdminEmail {
-		CONFIG.AdminEmail = *AdminEmailPtr
-	}
-
-	if *AdminPasswordPtr != CONFIG.AdminPassword {
-		CONFIG.AdminPassword = *AdminPasswordPtr
-	}
-
-}
-
-//三种方式指定配置项，后面的策略会覆盖前面的策略。
-func PrepareConfigs() {
-
-	//第一级. 从配置文件conf/tank.json中读取配置项
-	LoadConfigFromFile()
-
-	//第二级. 从环境变量中读取配置项
-	LoadConfigFromEnvironment()
-
-	//第三级. 从程序参数中读取配置项
-	LoadConfigFromArguments()
-
-	if CONFIG.MatterPath == "" {
-		CONFIG.MatterPath = GetHomePath() + "/matter"
-	}
-	MakeDirAll(CONFIG.MatterPath)
-
-	//验证配置项的正确性
-	CONFIG.validate()
-
-	//TODO:安装程序开始导入初始表和初始数据。 做成可视化安装。
-	//InstallDatabase()
 }
