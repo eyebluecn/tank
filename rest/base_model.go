@@ -1,12 +1,17 @@
 package rest
 
 import (
-	"time"
-	"reflect"
 	"math"
+	"reflect"
+	"time"
 )
 
 type Time time.Time
+
+type IBase interface {
+	//返回其对应的数据库表名
+	TableName() string
+}
 
 type Base struct {
 	Uuid       string    `gorm:"primary_key" json:"uuid"`
@@ -25,6 +30,10 @@ func (this *Base) Map() map[string]interface{} {
 		data[t.Field(i).Name] = v.Field(i).Interface()
 	}
 	return data
+}
+
+func (Base) TableName() string {
+	return TABLE_PREFIX + "base"
 }
 
 //分页类
