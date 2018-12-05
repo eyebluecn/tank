@@ -28,18 +28,18 @@ const (
 
 type User struct {
 	Base
-	Role      string    `json:"role"`
-	Username  string    `json:"username"`
-	Password  string    `json:"-"`
-	Email     string    `json:"email"`
-	Phone     string    `json:"phone"`
-	Gender    string    `json:"gender"`
-	City      string    `json:"city"`
-	AvatarUrl string    `json:"avatarUrl"`
-	LastIp    string    `json:"lastIp"`
-	LastTime  time.Time `json:"lastTime"`
-	SizeLimit int64     `json:"sizeLimit"`
-	Status    string    `json:"status"`
+	Role      string    `json:"role" gorm:"type:varchar(45)"`
+	Username  string    `json:"username" gorm:"type:varchar(45) not null;unique"`
+	Password  string    `json:"-" gorm:"type:varchar(255)"`
+	Email     string    `json:"email" gorm:"type:varchar(45) not null;unique"`
+	Phone     string    `json:"phone" gorm:"type:varchar(45)"`
+	Gender    string    `json:"gender" gorm:"type:varchar(45)"`
+	City      string    `json:"city" gorm:"type:varchar(45)"`
+	AvatarUrl string    `json:"avatarUrl" gorm:"type:varchar(255)"`
+	LastIp    string    `json:"lastIp" gorm:"type:varchar(128)"`
+	LastTime  time.Time `json:"lastTime" gorm:"type:timestamp not null;default:CURRENT_TIMESTAMP"`
+	SizeLimit int64     `json:"sizeLimit" gorm:"type:bigint(20) not null;default:-1"`
+	Status    string    `json:"status" gorm:"type:varchar(45)"`
 }
 
 // set User's table name to be `profiles`

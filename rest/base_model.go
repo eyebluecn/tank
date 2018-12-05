@@ -14,10 +14,10 @@ type IBase interface {
 }
 
 type Base struct {
-	Uuid       string    `gorm:"primary_key" json:"uuid"`
-	Sort       int64     `json:"sort"`
-	UpdateTime time.Time `json:"updateTime"`
-	CreateTime time.Time `json:"createTime"`
+	Uuid       string    `json:"uuid" gorm:"type:char(36);primary_key;unique"`
+	Sort       int64     `json:"sort" gorm:"type:bigint(20) not null"`
+	UpdateTime time.Time `json:"updateTime" gorm:"type:timestamp not null;default:CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"`
+	CreateTime time.Time `json:"createTime" gorm:"type:timestamp not null;default:CURRENT_TIMESTAMP"`
 }
 
 //将 Struct 转换成map[string]interface{}类型

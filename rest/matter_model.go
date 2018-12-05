@@ -5,17 +5,17 @@ package rest
  */
 type Matter struct {
 	Base
-	Puuid    string  `json:"puuid"`
-	UserUuid string  `json:"userUuid"`
-	Dir      bool    `json:"dir"`
-	Alien    bool    `json:"alien"`
-	Name     string  `json:"name"`
-	Md5      string  `json:"md5"`
-	Size     int64   `json:"size"`
-	Privacy  bool    `json:"privacy"`
-	Path     string  `json:"path"`
-	Times    int64   `json:"times"`
-	Parent   *Matter `gorm:"-" json:"parent"`
+	Puuid    string  `json:"puuid" gorm:"type:char(36);index:idx_puuid"`
+	UserUuid string  `json:"userUuid" gorm:"type:char(36);index:idx_uu"`
+	Dir      bool    `json:"dir" gorm:"type:tinyint(1) not null;default:0"`
+	Alien    bool    `json:"alien" gorm:"type:tinyint(1) not null;default:0"`
+	Name     string  `json:"name" gorm:"type:varchar(255) not null"`
+	Md5      string  `json:"md5" gorm:"type:varchar(45)"`
+	Size     int64   `json:"size" gorm:"type:bigint(20) not null;default:0"`
+	Privacy  bool    `json:"privacy" gorm:"type:tinyint(1) not null;default:0"`
+	Path     string  `json:"path" gorm:"type:varchar(512)"`
+	Times    int64   `json:"times" gorm:"type:bigint(20) not null;default:0"`
+	Parent   *Matter `json:"parent" gorm:"-"`
 }
 
 // set File's table name to be `profiles`

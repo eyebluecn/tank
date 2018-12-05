@@ -6,9 +6,9 @@ import (
 
 type Session struct {
 	Base
-	UserUuid       string    `json:"userUuid"`
-	Ip             string    `json:"ip"`
-	ExpireTime     time.Time `json:"expireTime"`
+	UserUuid       string    `json:"userUuid" gorm:"type:char(36)"`
+	Ip             string    `json:"ip" gorm:"type:varchar(128) not null"`
+	ExpireTime     time.Time `json:"expireTime" gorm:"type:timestamp not null;default:CURRENT_TIMESTAMP"`
 }
 
 // set User's table name to be `profiles`

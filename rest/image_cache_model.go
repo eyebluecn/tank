@@ -5,13 +5,13 @@ package rest
  */
 type ImageCache struct {
 	Base
-	UserUuid   string  `json:"userUuid"`
-	MatterUuid string  `json:"matterUuid"`
-	Mode       string  `json:"mode"`
-	Md5        string  `json:"md5"`
-	Size       int64   `json:"size"`
-	Path       string  `json:"path"`
-	Matter     *Matter `gorm:"-" json:"matter"`
+	UserUuid   string  `json:"userUuid" gorm:"type:char(36)"`
+	MatterUuid string  `json:"matterUuid" gorm:"type:char(36);index:idx_mu"`
+	Mode       string  `json:"mode" gorm:"type:varchar(512)"`
+	Md5        string  `json:"md5" gorm:"type:varchar(45)"`
+	Size       int64   `json:"size" gorm:"type:bigint(20) not null;default:0"`
+	Path       string  `json:"path" gorm:"type:varchar(512)"`
+	Matter     *Matter `json:"matter" gorm:"-"`
 }
 
 // set File's table name to be `profiles`

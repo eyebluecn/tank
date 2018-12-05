@@ -6,10 +6,10 @@ import (
 
 type DownloadToken struct {
 	Base
-	UserUuid   string    `json:"userUuid"`
-	MatterUuid string    `json:"matterUuid"`
-	ExpireTime time.Time `json:"expireTime"`
-	Ip         string    `json:"ip"`
+	UserUuid   string    `json:"userUuid" gorm:"type:char(36) not null"`
+	MatterUuid string    `json:"matterUuid" gorm:"type:char(36) not null;index:idx_mu"`
+	ExpireTime time.Time `json:"expireTime" gorm:"type:timestamp not null;default:CURRENT_TIMESTAMP"`
+	Ip         string    `json:"ip" gorm:"type:varchar(128) not null"`
 }
 
 func (DownloadToken) TableName() string {

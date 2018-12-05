@@ -3,10 +3,13 @@ package rest
 import (
 	"fmt"
 	"github.com/jinzhu/gorm"
+	"github.com/nu7hatch/gouuid"
 	"go/build"
 	"io/ioutil"
 	"net/http"
+	"regexp"
 	"strconv"
+	"time"
 )
 
 //安装程序的接口，只有安装阶段可以访问。
@@ -64,7 +67,9 @@ func (this *InstallController) RegisterRoutes() map[string]func(writer http.Resp
 
 	//每个Controller需要主动注册自己的路由。
 	routeMap["/api/install/verify"] = this.Wrap(this.Verify, USER_ROLE_GUEST)
-	routeMap["/api/install/table/info/list"] = this.Wrap(this.InstallTableInfoList, USER_ROLE_GUEST)
+	routeMap["/api/install/table/info/list"] = this.Wrap(this.TableInfoList, USER_ROLE_GUEST)
+	routeMap["/api/install/create/table"] = this.Wrap(this.CreateTable, USER_ROLE_GUEST)
+	routeMap["/api/install/create/admin"] = this.Wrap(this.CreateAdmin, USER_ROLE_GUEST)
 
 	return routeMap
 }
@@ -143,27 +148,34 @@ func (this *InstallController) getCreateSQLFromFile(tableName string) string {
 }
 
 //根据表名获取建表SQL语句
-func (this *InstallController) getCreateSQLFromDb(db *gorm.DB, base IBase) (bool, string) {
+func (this *InstallController) getTableMeta(gormDb *gorm.DB, entity IBase) (bool, []*gorm.StructField, []*gorm.StructField) {
 
-	var hasTable = true
-	var tableName = base.TableName()
-	hasTable = db.HasTable(base)
-	if !hasTable {
-		return false, ""
+	//挣扎一下，尝试获取建表语句。
+	db := gormDb.Unscoped()
+	scope := db.NewScope(entity)
+
+	tableName := scope.TableName()
+	modelStruct := scope.GetModelStruct()
+	allFields := modelStruct.StructFields
+	var missingFields = make([]*gorm.StructField, 0)
+
+	if !scope.Dialect().HasTable(tableName) {
+		missingFields = append(missingFields, allFields...)
+
+		return false, allFields, missingFields
+	} else {
+
+		for _, field := range allFields {
+			if !scope.Dialect().HasColumn(tableName, field.DBName) {
+				if field.IsNormal {
+					missingFields = append(missingFields, field)
+				}
+			}
+		}
+
+		return true, allFields, missingFields
 	}
 
-	// Scan
-	type Result struct {
-		Table       string
-		CreateTable string
-	}
-
-	//读取建表语句。
-	var result = &Result{}
-	db1 := db.Exec("SHOW CREATE TABLE " + tableName).Scan(result)
-	this.PanicError(db1.Error)
-
-	return true, result.CreateTable
 }
 
 //验证数据库连接
@@ -180,7 +192,7 @@ func (this *InstallController) Verify(writer http.ResponseWriter, request *http.
 }
 
 //获取需要安装的数据库表
-func (this *InstallController) InstallTableInfoList(writer http.ResponseWriter, request *http.Request) *WebResult {
+func (this *InstallController) TableInfoList(writer http.ResponseWriter, request *http.Request) *WebResult {
 
 	var tableNames = []IBase{&Dashboard{}, &DownloadToken{}, &Footprint{}, &ImageCache{}, &Matter{}, &Preference{}, &Session{}, UploadToken{}, &User{}}
 	var installTableInfos []*InstallTableInfo
@@ -190,16 +202,91 @@ func (this *InstallController) InstallTableInfoList(writer http.ResponseWriter, 
 
 	for _, iBase := range tableNames {
 
-		exist, sql := this.getCreateSQLFromDb(db, iBase)
+		exist, allFields, missingFields := this.getTableMeta(db, iBase)
 		installTableInfos = append(installTableInfos, &InstallTableInfo{
-			Name:           iBase.TableName(),
-			CreateSql:      this.getCreateSQLFromFile(iBase.TableName()),
-			TableExist:     exist,
-			ExistCreateSql: sql,
+			Name:          iBase.TableName(),
+			TableExist:    exist,
+			AllFields:     allFields,
+			MissingFields: missingFields,
 		})
 
 	}
 
 	return this.Success(installTableInfos)
+
+}
+
+//创建缺失数据库和表
+func (this *InstallController) CreateTable(writer http.ResponseWriter, request *http.Request) *WebResult {
+
+	var tableNames = []IBase{&Dashboard{}, &DownloadToken{}, &Footprint{}, &ImageCache{}, &Matter{}, &Preference{}, &Session{}, UploadToken{}, &User{}}
+	var installTableInfos []*InstallTableInfo
+
+	db := this.openDbConnection(writer, request)
+	defer this.closeDbConnection(db)
+
+	for _, iBase := range tableNames {
+
+		//补全缺失字段或者创建数据库表
+		db1 := db.AutoMigrate(iBase)
+		this.PanicError(db1.Error)
+
+		exist, allFields, missingFields := this.getTableMeta(db, iBase)
+		installTableInfos = append(installTableInfos, &InstallTableInfo{
+			Name:          iBase.TableName(),
+			TableExist:    exist,
+			AllFields:     allFields,
+			MissingFields: missingFields,
+		})
+
+	}
+
+	return this.Success(installTableInfos)
+
+}
+
+
+//创建管理员
+func (this *InstallController) CreateAdmin(writer http.ResponseWriter, request *http.Request) *WebResult {
+
+	db := this.openDbConnection(writer, request)
+	defer this.closeDbConnection(db)
+
+	adminUsername := request.FormValue("adminUsername")
+	adminEmail := request.FormValue("adminEmail")
+	adminPassword := request.FormValue("adminPassword")
+
+	//验证超级管理员的信息
+	if m, _ := regexp.MatchString(`^[0-9a-zA-Z_]+$`, adminUsername); !m {
+		this.PanicBadRequest(`超级管理员用户名必填，且只能包含字母，数字和'_''`)
+	}
+
+	if len(adminPassword) < 6 {
+		this.PanicBadRequest(`超级管理员密码长度至少为6位`)
+	}
+
+	if adminEmail == "" {
+		this.PanicBadRequest(`超级管理员邮箱必填`)
+	}
+
+	user := &User{}
+	timeUUID, _ := uuid.NewV4()
+	user.Uuid = string(timeUUID.String())
+	user.CreateTime = time.Now()
+	user.UpdateTime = time.Now()
+	user.LastTime = time.Now()
+	user.Sort = time.Now().UnixNano() / 1e6
+	user.Role = USER_ROLE_ADMINISTRATOR
+	user.Username = adminUsername
+	user.Password = GetBcrypt(adminPassword)
+	user.Email = adminEmail
+	user.Phone = ""
+	user.Gender = USER_GENDER_UNKNOWN
+	user.SizeLimit = -1
+	user.Status = USER_STATUS_OK
+
+	db.Create(user)
+
+	return this.Success("OK")
 
 }
