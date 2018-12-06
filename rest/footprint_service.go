@@ -73,7 +73,7 @@ func (this *FootprintService) Trace(writer http.ResponseWriter, request *http.Re
 	}
 
 	//有可能DB尚且没有配置 直接打印出内容，并且退出
-	if CONFIG.DBConfigured {
+	if CONFIG.Installed {
 		user := this.findUser(writer, request)
 		userUuid := ""
 		if user != nil {

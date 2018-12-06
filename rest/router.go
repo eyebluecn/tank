@@ -122,7 +122,7 @@ func (this *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 	path := request.URL.Path
 	if strings.HasPrefix(path, "/api") {
 
-		if CONFIG.DBConfigured {
+		if CONFIG.Installed {
 			//已安装的模式
 
 			//统一处理用户的身份信息。

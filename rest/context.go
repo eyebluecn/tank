@@ -43,10 +43,7 @@ func (this *Context) Init() {
 	this.Router = NewRouter()
 
 	//如果数据库信息配置好了，就直接打开数据库连接 同时执行Bean的ConfigPost方法
-	if CONFIG.DBConfigured {
-		this.OpenDb()
-		this.configPostBeans()
-	}
+	this.InstallOk()
 
 }
 
@@ -173,12 +170,18 @@ func (this *Context) initBeans() {
 	}
 }
 
-//所有配置项完备后执行的方法
-func (this *Context) configPostBeans() {
 
-	for _, bean := range this.BeanMap {
-		bean.ConfigPost()
+//系统如果安装好了就调用这个方法。
+func (this *Context) InstallOk() {
+
+	if CONFIG.Installed {
+		this.OpenDb()
+
+		for _, bean := range this.BeanMap {
+			bean.ConfigPost()
+		}
 	}
+
 }
 
 //销毁的方法

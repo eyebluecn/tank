@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"encoding/json"
 	"github.com/json-iterator/go"
 	"io/ioutil"
 	"time"
@@ -31,8 +30,8 @@ var CONFIG = &Config{}
 type Config struct {
 	//默认监听端口号
 	ServerPort int
-	//数据库是否配置完备
-	DBConfigured bool
+	//网站是否已经完成安装
+	Installed bool
 	//上传的文件路径，要求不以/结尾。如果没有指定，默认在根目录下的matter文件夹中。eg: /var/www/matter
 	MatterPath string
 	//数据库连接信息。
@@ -118,37 +117,61 @@ func (this *Config) Init() {
 	}, nil)
 
 	//默认从6010端口启动
-	CONFIG.ServerPort = 6010
+	this.ServerPort = 6010
+
+	this.ReadFromConfigFile()
+
+}
+
+//系统如果安装好了就调用这个方法。
+func (this *Config) ReadFromConfigFile() {
 
 	//读取配置文件
 	filePath := GetConfPath() + "/tank.json"
 	content, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		LOGGER.Warn("即将进入安装过程，无法找到配置文件：%s", filePath)
-		this.DBConfigured = false
+		LOGGER.Warn("无法找到配置文件：%s 即将进入安装过程！", filePath)
+		this.Installed = false
 	} else {
-		// 用 json.Unmarshal
-		err := json.Unmarshal(content, this.Item)
+		this.Item = &ConfigItem{}
+		err := jsoniter.ConfigCompatibleWithStandardLibrary.Unmarshal(content, this.Item)
 		if err != nil {
 			LOGGER.Error("配置文件格式错误！")
-			this.DBConfigured = false
+			this.Installed = false
 			return
 		}
 
 		//验证项是否齐全
 		itemValidate := this.Item.validate()
 		if !itemValidate {
-			this.DBConfigured = false
+			LOGGER.Error("配置文件信息不齐全！")
+			this.Installed = false
 			return
 		}
 
+		//使用配置项中的文件路径
 		if this.Item.MatterPath == "" {
-			CONFIG.MatterPath = GetHomePath() + "/matter"
+			this.MatterPath = GetHomePath() + "/matter"
+		} else {
+			this.MatterPath = this.Item.MatterPath
 		}
 		MakeDirAll(CONFIG.MatterPath)
 
-		this.MysqlUrl = GetMysqlUrl(this.Item.MysqlPort, this.Item.MysqlHost, this.Item.MysqlSchema, this.Item.MysqlUsername, this.Item.MysqlPassword)
-		this.DBConfigured = true
-	}
+		//使用配置项中的端口
+		if this.Item.ServerPort != 0 {
+			this.ServerPort = this.Item.ServerPort
+		}
 
+		this.MysqlUrl = GetMysqlUrl(this.Item.MysqlPort, this.Item.MysqlHost, this.Item.MysqlSchema, this.Item.MysqlUsername, this.Item.MysqlPassword)
+		this.Installed = true
+
+		LOGGER.Info("使用配置文件：%s", filePath)
+		LOGGER.Info("上传文件存放路径：%s", this.MatterPath)
+	}
+}
+
+//系统如果安装好了就调用这个方法。
+func (this *Config) InstallOk() {
+
+	this.ReadFromConfigFile()
 }
