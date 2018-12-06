@@ -254,13 +254,13 @@ func (this *MatterDao) Delete(matter *Matter) {
 		//删除文件
 		err := os.Remove(filePath)
 		if err != nil {
-			this.logger.Error(fmt.Sprintf("删除磁盘上的文件出错，不做任何处理 %s", err.Error()))
+			this.logger.Error(fmt.Sprintf("删除磁盘上的文件出错 %s", err.Error()))
 		}
 
 		//删除这一层文件夹
 		err = os.Remove(dirPath)
 		if err != nil {
-			this.logger.Error(fmt.Sprintf("删除磁盘上的文件夹出错，不做任何处理 %s", err.Error()))
+			this.logger.Error(fmt.Sprintf("删除磁盘上的文件夹出错 %s", err.Error()))
 		}
 
 	}

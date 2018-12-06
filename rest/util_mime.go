@@ -98,7 +98,7 @@ var allMimeMap = map[string]string{
 	".csh":                    "application/x-csh",
 	".csproj":                 "text/plain",
 	".css":                    "text/css",
-	".csv":                    "text/csv",
+	".csv":                    "application/csv",
 	".cur":                    "application/octet-stream",
 	".cxx":                    "text/plain",
 	".dat":                    "application/octet-stream",
