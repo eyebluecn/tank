@@ -267,7 +267,9 @@ func (this *MatterController) Upload(writer http.ResponseWriter, request *http.R
 		privacy = true
 	}
 
-	request.ParseMultipartForm(32 << 20)
+	err := request.ParseMultipartForm(32 << 20)
+	this.PanicError(err)
+
 	file, handler, err := request.FormFile("file")
 	this.PanicError(err)
 	defer file.Close()

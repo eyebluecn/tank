@@ -71,6 +71,9 @@ cp -r "$GOPATH/src/tank/build/." $distPath
 echo "remove pack"
 rm -rf $distPath/pack
 
+echo "remove doc"
+rm -rf $distPath/doc
+
 echo "compress to tar.gz"
 echo "tar -zcvf $distFolder/$FINAL_NAME ./$VERSION_NAME"
 cd $distPath

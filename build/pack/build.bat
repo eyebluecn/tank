@@ -82,6 +82,9 @@ rmdir /s/q %distPath%\pack
 echo "remove service"
 rmdir /s/q %distPath%\service
 
+echo "remove doc"
+rmdir /s/q %distPath%\doc
+
 cd %PRE_DIR%
 
 echo check the dist file in %distPath%
