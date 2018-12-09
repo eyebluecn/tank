@@ -2,7 +2,6 @@ package rest
 
 import (
 	"encoding/json"
-	"github.com/json-iterator/go"
 	"net/http"
 	"time"
 )
@@ -81,11 +80,9 @@ func (this *FootprintService) Trace(writer http.ResponseWriter, request *http.Re
 		}
 		footprint.UserUuid = userUuid
 		footprint = this.footprintDao.Create(footprint)
-	} else {
-		//用json的方式输出返回值。
-		b, _ := jsoniter.ConfigCompatibleWithStandardLibrary.Marshal(footprint)
-
-		this.logger.Info("%s", string(b))
 	}
+
+	//用json的方式输出返回值。
+	this.logger.Info("Ip:%s Host:%s Uri:%s Params:%s Cost:%d", footprint.Ip, footprint.Host, footprint.Uri, paramsString, int64(duration/time.Millisecond))
 
 }
