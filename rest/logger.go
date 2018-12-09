@@ -28,9 +28,6 @@ type Logger struct {
 //处理日志的统一方法。
 func (this *Logger) log(prefix string, format string, v ...interface{}) {
 
-	this.Lock()
-	defer this.Unlock()
-
 	//控制台中打印日志
 	var consoleFormat = fmt.Sprintf("%s%s %s\r\n", prefix, ConvertTimeToTimeString(time.Now()), format)
 	fmt.Printf(consoleFormat, v...)
@@ -68,9 +65,14 @@ func (this *Logger) Init() {
 	this.openFile()
 
 	//日志需要自我备份，自我维护。明天第一秒触发
-	nextTime := FirstSecondOfDay(Tomorrow())
+	//nextTime := FirstSecondOfDay(Tomorrow())
+	//duration := nextTime.Sub(time.Now())
+
+	nextTime := time.Now()
+	nextTime = nextTime.Add(time.Second * 10)
 	duration := nextTime.Sub(time.Now())
-	this.Info("%vs后将进行下一次日志维护 下次时间%v ", int64(duration/time.Second), nextTime)
+
+	this.Info("下一次日志维护时间%v 距当前 %ds ", ConvertTimeToDateTimeString(nextTime), duration/time.Second)
 	this.maintainTimer = time.AfterFunc(duration, func() {
 		go SafeMethod(this.maintain)
 	})
@@ -80,10 +82,10 @@ func (this *Logger) Init() {
 //将日志写入到今天的日期中(该方法内必须使用异步方法记录日志，否则会引发死锁)
 func (this *Logger) maintain() {
 
+	this.Info("每日维护日志")
+
 	this.Lock()
 	defer this.Unlock()
-
-	this.Info("每日维护日志")
 
 	//首先关闭文件。
 	this.closeFile()
