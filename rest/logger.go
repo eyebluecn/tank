@@ -65,14 +65,10 @@ func (this *Logger) Init() {
 	this.openFile()
 
 	//日志需要自我备份，自我维护。明天第一秒触发
-	//nextTime := FirstSecondOfDay(Tomorrow())
-	//duration := nextTime.Sub(time.Now())
-
-	nextTime := time.Now()
-	nextTime = nextTime.Add(time.Second * 10)
+	nextTime := FirstSecondOfDay(Tomorrow())
 	duration := nextTime.Sub(time.Now())
 
-	this.Info("下一次日志维护时间%v 距当前 %ds ", ConvertTimeToDateTimeString(nextTime), duration/time.Second)
+	this.Info("下一次日志维护时间%s 距当前 %ds ", ConvertTimeToDateTimeString(nextTime), duration/time.Second)
 	this.maintainTimer = time.AfterFunc(duration, func() {
 		go SafeMethod(this.maintain)
 	})
@@ -106,7 +102,7 @@ func (this *Logger) maintain() {
 	now := time.Now()
 	nextTime := FirstSecondOfDay(Tomorrow())
 	duration := nextTime.Sub(now)
-	this.Info("下次维护时间：%v ", int64(duration/time.Second), nextTime)
+	this.Info("下次维护时间：%s ", ConvertTimeToDateTimeString(nextTime))
 	this.maintainTimer = time.AfterFunc(duration, func() {
 		go SafeMethod(this.maintain)
 	})
