@@ -122,6 +122,12 @@ func (this *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 	path := request.URL.Path
 	if strings.HasPrefix(path, "/api") {
 
+		//对于IE浏览器，会自动缓存，因此设置不缓存Header.
+		writer.Header().Set("Pragma", "No-cache")
+		writer.Header().Set("Cache-Control", "no-cache")
+		writer.Header().Set("Expires", "0")
+
+
 		if CONFIG.Installed {
 			//已安装的模式
 

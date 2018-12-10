@@ -274,7 +274,18 @@ func (this *MatterController) Upload(writer http.ResponseWriter, request *http.R
 	this.PanicError(err)
 	defer file.Close()
 
-	matter := this.matterService.Upload(file, user, puuid, handler.Filename, privacy, alien)
+	//对于IE浏览器，filename可能包含了路径。
+	fileName := handler.Filename
+	pos := strings.LastIndex(fileName, "\\")
+	if pos != -1 {
+		fileName = fileName[pos+1:]
+	}
+	pos = strings.LastIndex(fileName, "/")
+	if pos != -1 {
+		fileName = fileName[pos+1:]
+	}
+
+	matter := this.matterService.Upload(file, user, puuid, fileName, privacy, alien)
 
 	return this.Success(matter)
 }
@@ -333,7 +344,7 @@ func (this *MatterController) Delete(writer http.ResponseWriter, request *http.R
 		this.PanicBadRequest("文件的uuid必填")
 	}
 
-	matter := this.matterDao.FindByUuid(uuid)
+	matter := this.matterDao.CheckByUuid(uuid)
 
 	//判断文件的所属人是否正确
 	user := this.checkUser(writer, request)
@@ -359,6 +370,12 @@ func (this *MatterController) DeleteBatch(writer http.ResponseWriter, request *h
 	for _, uuid := range uuidArray {
 
 		matter := this.matterDao.FindByUuid(uuid)
+
+		//如果matter已经是nil了，直接跳过
+		if matter == nil {
+			this.logger.Warn("%s 对应的文件记录已经不存在了", uuid)
+			continue
+		}
 
 		//判断文件的所属人是否正确
 		user := this.checkUser(writer, request)

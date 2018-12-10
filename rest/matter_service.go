@@ -124,6 +124,7 @@ func (this *MatterService) Upload(file multipart.File, user *User, puuid string,
 		panic("文件名不能超过200")
 	}
 
+
 	//获取文件应该存放在的物理路径的绝对路径和相对路径。
 	absolutePath, relativePath := GetUserFilePath(user.Username, false)
 	absolutePath = absolutePath + "/" + filename
