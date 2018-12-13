@@ -302,6 +302,10 @@ cd tank/build/pack/
 
 如果您也想参与进来，请尽情的fork, star, post issue, pull requests
 
+当然你可以加入钉钉群一起直接交流
+
+![](https://tank.eyeblue.cn/api/alien/download/acb8a624-cb6f-4609-5944-44ff03e85842/钉钉二维码.jpg)
+
 ### License
 
 [MIT](http://opensource.org/licenses/MIT)
