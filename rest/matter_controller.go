@@ -14,6 +14,7 @@ type MatterController struct {
 	matterDao        *MatterDao
 	matterService    *MatterService
 	downloadTokenDao *DownloadTokenDao
+	imageCacheDao    *ImageCacheDao
 }
 
 //初始化方法
@@ -34,6 +35,11 @@ func (this *MatterController) Init() {
 	b = CONTEXT.GetBean(this.downloadTokenDao)
 	if b, ok := b.(*DownloadTokenDao); ok {
 		this.downloadTokenDao = b
+	}
+
+	b = CONTEXT.GetBean(this.imageCacheDao)
+	if b, ok := b.(*ImageCacheDao); ok {
+		this.imageCacheDao = b
 	}
 
 }
@@ -429,6 +435,11 @@ func (this *MatterController) Rename(writer http.ResponseWriter, request *http.R
 
 	matter.Name = name
 	matter = this.matterDao.Save(matter)
+
+	//删除对应的缓存图片。
+	if !matter.Dir {
+		this.imageCacheDao.DeleteByMatterUuid(matter.Uuid)
+	}
 
 	return this.Success(matter)
 }
