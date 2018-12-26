@@ -3,7 +3,7 @@ package rest
 import (
 	"fmt"
 	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/mysql"
+
 	"github.com/nu7hatch/gouuid"
 	"os"
 	"strings"
@@ -146,7 +146,7 @@ func (this *MatterDao) List(puuid string, userUuid string, sortArray []OrderPair
 }
 
 //获取某个文件夹下所有的文件和子文件
-func (this *MatterDao) Page(page int, pageSize int, puuid string, userUuid string, name string, dir string, extensions []string, sortArray []OrderPair) *Pager {
+func (this *MatterDao) Page(page int, pageSize int, puuid string, userUuid string, name string, dir string, alien string, extensions []string, sortArray []OrderPair) *Pager {
 
 	var wp = &WherePair{}
 
@@ -166,6 +166,12 @@ func (this *MatterDao) Page(page int, pageSize int, puuid string, userUuid strin
 		wp = wp.And(&WherePair{Query: "dir = ?", Args: []interface{}{1}})
 	} else if dir == "false" {
 		wp = wp.And(&WherePair{Query: "dir = ?", Args: []interface{}{0}})
+	}
+
+	if alien == "true" {
+		wp = wp.And(&WherePair{Query: "alien = ?", Args: []interface{}{1}})
+	} else if alien == "false" {
+		wp = wp.And(&WherePair{Query: "alien = ?", Args: []interface{}{0}})
 	}
 
 	var conditionDB *gorm.DB

@@ -444,12 +444,12 @@ func (this *InstallController) Finish(writer http.ResponseWriter, request *http.
 		MysqlPassword: mysqlPassword,
 	}
 
-	//用json的方式输出返回值。
-	jsonStr, _ := jsoniter.ConfigCompatibleWithStandardLibrary.Marshal(configItem)
+	//用json的方式输出返回值。为了让格式更好看。
+	jsonStr, _ := jsoniter.ConfigCompatibleWithStandardLibrary.MarshalIndent(configItem, "", " ")
 
-	//写入到配置文件中
+	//写入到配置文件中（不能使用os.O_APPEND 否则会追加）
 	filePath := GetConfPath() + "/tank.json"
-	f, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0777)
+	f, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE, 0777)
 	this.PanicError(err)
 	_, err = f.Write(jsonStr)
 	this.PanicError(err)

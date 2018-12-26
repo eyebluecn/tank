@@ -1,7 +1,6 @@
 package rest
 
 import (
-	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"github.com/nu7hatch/gouuid"
 	"time"
 )
@@ -20,7 +19,7 @@ func (this *PreferenceDao) Fetch() *Preference {
 
 		if db.Error.Error() == "record not found" {
 			preference.Name = "蓝眼云盘"
-			preference.Version = VERSION
+			preference.ShowAlien = true
 			this.Create(preference)
 			return preference
 		} else {

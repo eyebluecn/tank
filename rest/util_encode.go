@@ -1,9 +1,9 @@
 package rest
 
 import (
-	"golang.org/x/crypto/bcrypt"
-	"fmt"
 	"crypto/md5"
+	"fmt"
+	"golang.org/x/crypto/bcrypt"
 )
 
 //给密码字符串加密

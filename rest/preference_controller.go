@@ -60,6 +60,7 @@ func (this *PreferenceController) Edit(writer http.ResponseWriter, request *http
 	faviconUrl := request.FormValue("faviconUrl")
 	footerLine1 := request.FormValue("footerLine1")
 	footerLine2 := request.FormValue("footerLine2")
+	showAlienStr := request.FormValue("showAlien")
 
 	preference := this.preferenceDao.Fetch()
 	preference.Name = name
@@ -67,6 +68,11 @@ func (this *PreferenceController) Edit(writer http.ResponseWriter, request *http
 	preference.FaviconUrl = faviconUrl
 	preference.FooterLine1 = footerLine1
 	preference.FooterLine2 = footerLine2
+	if showAlienStr == "true" {
+		preference.ShowAlien = true
+	} else if showAlienStr == "false" {
+		preference.ShowAlien = false
+	}
 
 	preference = this.preferenceDao.Save(preference)
 

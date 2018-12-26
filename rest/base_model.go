@@ -13,11 +13,12 @@ type IBase interface {
 	TableName() string
 }
 
+//Mysql 5.5只支持一个CURRENT_TIMESTAMP的默认值，因此时间的默认值都使用蓝眼云盘第一个发布版本时间 2018-01-01 00:00:00
 type Base struct {
 	Uuid       string    `json:"uuid" gorm:"type:char(36);primary_key;unique"`
 	Sort       int64     `json:"sort" gorm:"type:bigint(20) not null"`
-	UpdateTime time.Time `json:"updateTime" gorm:"type:timestamp not null;default:CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"`
-	CreateTime time.Time `json:"createTime" gorm:"type:timestamp not null;default:CURRENT_TIMESTAMP"`
+	UpdateTime time.Time `json:"updateTime" gorm:"type:timestamp not null;default:CURRENT_TIMESTAMP"`
+	CreateTime time.Time `json:"createTime" gorm:"type:timestamp not null;default:'2018-01-01 00:00:00'"`
 }
 
 //将 Struct 转换成map[string]interface{}类型

@@ -169,6 +169,7 @@ func (this *MatterController) Page(writer http.ResponseWriter, request *http.Req
 	userUuid := request.FormValue("userUuid")
 	name := request.FormValue("name")
 	dir := request.FormValue("dir")
+	alien := request.FormValue("alien")
 	orderDir := request.FormValue("orderDir")
 	orderSize := request.FormValue("orderSize")
 	orderName := request.FormValue("orderName")
@@ -229,7 +230,7 @@ func (this *MatterController) Page(writer http.ResponseWriter, request *http.Req
 		},
 	}
 
-	pager := this.matterDao.Page(page, pageSize, puuid, userUuid, name, dir, extensions, sortArray)
+	pager := this.matterDao.Page(page, pageSize, puuid, userUuid, name, dir, alien, extensions, sortArray)
 
 	return this.Success(pager)
 }

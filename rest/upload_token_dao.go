@@ -1,7 +1,7 @@
 package rest
 
 import (
-	_ "github.com/jinzhu/gorm/dialects/mysql"
+
 	"github.com/nu7hatch/gouuid"
 	"time"
 )

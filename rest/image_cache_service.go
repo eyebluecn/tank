@@ -1,13 +1,13 @@
 package rest
 
 import (
-	"net/http"
+	"fmt"
+	"github.com/disintegration/imaging"
 	"image"
+	"net/http"
 	"os"
 	"strconv"
-	"github.com/disintegration/imaging"
 	"strings"
-	"fmt"
 )
 
 //@Service

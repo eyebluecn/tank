@@ -3,11 +3,10 @@ package rest
 import (
 	"fmt"
 	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"github.com/nu7hatch/gouuid"
 	"os"
-	"time"
 	"strings"
+	"time"
 )
 
 type ImageCacheDao struct {
@@ -114,7 +113,6 @@ func (this *ImageCacheDao) Page(page int, pageSize int, userUuid string, matterU
 	return pager
 }
 
-
 //创建
 func (this *ImageCacheDao) Create(imageCache *ImageCache) *ImageCache {
 
@@ -150,16 +148,15 @@ func (this *ImageCacheDao) deleteFileAndDir(imageCache *ImageCache) {
 	//删除文件
 	err := os.Remove(filePath)
 	if err != nil {
-		this.logger.Error(fmt.Sprintf("删除磁盘上的文件%s出错，不做任何处理 %s", filePath, err.Error()))
+		this.logger.Error(fmt.Sprintf("删除磁盘上的文件%s出错 %s", filePath, err.Error()))
 	}
 
 	//删除这一层文件夹
 	err = os.Remove(dirPath)
 	if err != nil {
-		this.logger.Error(fmt.Sprintf("删除磁盘上的文件夹%s出错，不做任何处理 %s", dirPath, err.Error()))
+		this.logger.Error(fmt.Sprintf("删除磁盘上的文件夹%s出错 %s", dirPath, err.Error()))
 	}
 }
-
 
 //删除一个文件，数据库中删除，物理磁盘上删除。
 func (this *ImageCacheDao) Delete(imageCache *ImageCache) {

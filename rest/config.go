@@ -65,6 +65,9 @@ func (this *ConfigItem) validate() bool {
 	if this.ServerPort == 0 {
 		LOGGER.Error("ServerPort 未配置")
 		return false
+	} else {
+		//只要配置文件中有配置端口，就使用。
+		CONFIG.ServerPort = this.ServerPort
 	}
 
 	if this.MysqlUsername == "" {
@@ -134,9 +137,10 @@ func (this *Config) ReadFromConfigFile() {
 		this.Installed = false
 	} else {
 		this.Item = &ConfigItem{}
+		LOGGER.Warn("读取配置文件：%s", filePath)
 		err := jsoniter.ConfigCompatibleWithStandardLibrary.Unmarshal(content, this.Item)
 		if err != nil {
-			LOGGER.Error("配置文件格式错误！")
+			LOGGER.Error("配置文件格式错误！ 即将进入安装过程！")
 			this.Installed = false
 			return
 		}
@@ -144,7 +148,7 @@ func (this *Config) ReadFromConfigFile() {
 		//验证项是否齐全
 		itemValidate := this.Item.validate()
 		if !itemValidate {
-			LOGGER.Error("配置文件信息不齐全！")
+			LOGGER.Error("配置文件信息不齐全！ 即将进入安装过程！")
 			this.Installed = false
 			return
 		}

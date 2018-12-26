@@ -37,7 +37,7 @@ type User struct {
 	City      string    `json:"city" gorm:"type:varchar(45)"`
 	AvatarUrl string    `json:"avatarUrl" gorm:"type:varchar(255)"`
 	LastIp    string    `json:"lastIp" gorm:"type:varchar(128)"`
-	LastTime  time.Time `json:"lastTime" gorm:"type:timestamp not null;default:CURRENT_TIMESTAMP"`
+	LastTime  time.Time `json:"lastTime" gorm:"type:timestamp not null;default:'2018-01-01 00:00:00'"`
 	SizeLimit int64     `json:"sizeLimit" gorm:"type:bigint(20) not null;default:-1"`
 	Status    string    `json:"status" gorm:"type:varchar(45)"`
 }
