@@ -209,7 +209,7 @@ cd tank/build/pack/
 
 当然你可以加入钉钉群一起直接交流
 
-![](https://tank.eyeblue.cn/api/alien/download/acb8a624-cb6f-4609-5944-44ff03e85842/钉钉二维码.jpg)
+![](https://tank.eyeblue.cn/api/alien/download/b9c59c96-93b9-4c37-476f-501d1a26e792/dingding.jpg)
 
 ### License
 
