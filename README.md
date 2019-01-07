@@ -11,11 +11,13 @@
 ### 简介
 蓝眼云盘是 [蓝眼系列开源软件](https://github.com/eyebluecn) 之一，也是蓝眼系列其他软件的基础服务软件。蓝眼云盘具有以下几大特色：
 
-**1. 支持docker**
+**1. 软件氛围友好**
 
-- 蓝眼云盘的docker镜像已经发布到了Docker Hub，可以一行指令运行。
+- 文末有钉钉群，欢迎加入。你的任何合理需求，我都会尽量满足
 
 **2. 软件体积小，跨平台，运行简单，自带UI引导安装**
+
+- 支持docker安装，蓝眼云盘的docker镜像已经发布到了Docker Hub，可以一行指令运行。
 
 - 蓝眼云盘[安装包](https://github.com/eyebluecn/tank/releases) 10M左右，在`windows`  `linux`  `mac OS`操作系统中均可安装运行；
 
