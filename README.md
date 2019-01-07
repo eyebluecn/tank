@@ -1,6 +1,6 @@
 [![蓝眼云盘logo](https://raw.githubusercontent.com/eyebluecn/tank/master/build/doc/img/logo.png)](https://github.com/eyebluecn/tank)
 
-# 蓝眼云盘
+# 蓝眼云盘（2.0.0）
 
 [在线Demo](https://tank.eyeblue.cn) (体验账号： demo@tank.eyeblue.cn 密码：123456)
 
@@ -15,11 +15,11 @@
 
 - 蓝眼云盘的docker镜像已经发布到了Docker Hub，可以一行指令运行。
 
-**2. 软件体积小，跨平台，运行简单**
+**2. 软件体积小，跨平台，运行简单，自带UI引导安装**
 
-- 蓝眼云盘[安装包](https://github.com/eyebluecn/tank/releases) 6M左右，在`windows`  `linux`  `mac OS`操作系统中均可安装运行；
+- 蓝眼云盘[安装包](https://github.com/eyebluecn/tank/releases) 10M左右，在`windows`  `linux`  `mac OS`操作系统中均可安装运行；
 
-- 蓝眼云盘为绿色软件，将安装包解压缩，修改配置文件后即可一行命令立即运行。
+- 蓝眼云盘为绿色软件，将安装包解压缩，一行命令立即运行。
 
 **3. 使用方便，核心功能齐全**
 
@@ -31,7 +31,9 @@
 
 **4. 支持接口编程**
 
-- 蓝眼云盘提供了[编程接口](https://github.com/eyebluecn/tank/blob/master/build/doc/alien_zh.md)，实现了云存储（如：[七牛云](https://www.qiniu.com)，[阿里云OSS](https://www.aliyun.com/product/oss)）的核心功能，可以使用编程接口上传文件，作为其他网站、系统、app的资源存储器。可以在下载图片时对图片做缩放裁剪处理，可以有效地节省客户端流量。
+- 蓝眼云盘提供了[编程接口](https://github.com/eyebluecn/tank/blob/master/build/doc/alien_zh.md)，实现了云存储（如：[七牛云](https://www.qiniu.com)，[阿里云OSS](https://www.aliyun.com/product/oss)）的核心功能
+
+- 可以使用编程接口上传文件，作为其他网站、系统、app的资源存储器。可以在下载图片时对图片做缩放裁剪处理，可以有效地节省客户端流量。同时对于缩略图有缓存策略，全面提升资源访问速度。
 
 - 蓝眼系列开源软件之二的[《蓝眼博客》](https://github.com/eyebluecn/blog)正是使用蓝眼博客作为第三方资源存储器。蓝眼博客中的所有图片，附件均是存储在蓝眼云盘中。
 
@@ -43,118 +45,43 @@
 
 - 后端技术栈使用 `golang`，没有使用任何web框架；初始化安装，生命周期控制，路由管理，路由匹配，日志管理，依赖注入，错误处理，panic拦截，打包，安装脚本等功能全采用纯手动打造，绿色环保，因此代码更精炼，更具有探讨学习的价值。
 
+**6. 2.x版本人性化的升级**
+
+- 新增了监控大盘，一个页面查看云盘访问情况，热门文件一目了然
+
+- 常用文件(doc,ppt,xls,pdf,mp3,mp4,jpg,png等格式)一键预览，方便快捷
+
+- UI 全面升级，颜色更加沉稳大气，布局更加紧凑，文件上传最多支持1000个同时进行
+
+- mysql支持到5.5，后端代码架构全新迭代升级，日志异常离线任务更加强健
+
+
 如果您觉得蓝眼云盘对您有帮助，请不要吝惜您的star <i class="fa fa-star"></i>
 
 ### 软件截图
 
 #### PC端截图
 
-![](https://raw.githubusercontent.com/eyebluecn/tank/master/build/doc/img/tank0.png)
+![](./build/doc/img/tank0.png)
 
-![](https://raw.githubusercontent.com/eyebluecn/tank/master/build/doc/img/tank1.png)
+![](./build/doc/img/tank1.png)
 
-![](https://raw.githubusercontent.com/eyebluecn/tank/master/build/doc/img/tank2.png)
+![](./build/doc/img/tank2.png)
+
+![](./build/doc/img/tank3.png)
+
+![](./build/doc/img/tank4.png)
 
 #### 手机端截图
 
-![](https://raw.githubusercontent.com/eyebluecn/tank/master/build/doc/img/mobile.png)
+![](./build/doc/img/mobile.png)
 
-### Docker方式运行
 
-蓝眼云盘在运行时依赖`mysql`数据库，因此最好的方式是使用`docker-compose`来运行，如果你对`docker-compose`不熟悉，可以参考这篇文章：[《Docker Compose 项目》](https://yeasy.gitbooks.io/docker_practice/content/compose/introduction.html) 
+### Docker安装
 
-** 1.准备 docker-compose.yml 文件 **
+正在打包中，即将支持2.0
 
-`docker-compose.yml`描述了镜像启动的数据卷，环境变量，启动方式，依赖项等。该文件位于项目的根目录下，内容如下：
-```shell
-#docker-compose版本，这里的3不要动
-version: "3"
-services:
-
-   # 数据库的镜像信息
-   # 使用mysql:5.7的镜像
-   db:
-     image: mysql:5.7
-     volumes:
-       # 数据库文件存放在宿主机的`~/data/mysql`位置，如果宿主机目录不存在，则会自动创建
-       - ~/data/mysql:/var/lib/mysql
-     # 如果启动失败，则总是会重启。因为镜像有依赖的情况，不停重启可以保证依赖项启动成功后自己再运行
-     restart: always
-     environment:
-       # 指定root密码为`tank123`，并且创建一个新数据库`tank`，同时用户名和密码为`tank` `tank123`
-       MYSQL_ROOT_PASSWORD: tank123
-       MYSQL_DATABASE: tank
-       MYSQL_USER: tank
-       MYSQL_PASSWORD: tank123
-
-   # 蓝眼云盘的镜像信息
-   # 依赖 mysql:5.7 的镜像
-   tank:
-     image: eyeblue/tank:1.0.5
-     depends_on:
-       - db
-     ports:
-       # 端口映射关系，宿主机端口:镜像端口
-       - "6010:6010"
-     # 如果启动失败，则总是会重启。因为镜像有依赖的情况，不停重启可以保证依赖项启动成功后自己再运行
-     restart: always
-     environment:
-       # mysql的端口
-       TANK_MYSQL_PORT: 3306
-       # Mysql的主机，和services的第一个节点一致。
-       TANK_MYSQL_HOST: db
-       # 数据库
-       TANK_MYSQL_SCHEMA: tank
-       # 数据库的用户名
-       TANK_MYSQL_USERNAME: tank
-       # 数据库的密码
-       TANK_MYSQL_PASSWORD: tank123
-       # 超级管理员的昵称。只能是英文或数字
-       TANK_ADMIN_USERNAME: admin
-       # 超级管理员邮箱，作为登录账号
-       TANK_ADMIN_EMAIL: admin@tank.eyeblue.cn
-       # 超级管理员密码，作为登录密码
-       TANK_ADMIN_PASSWORD: 123456
-     volumes:
-       # 日志文件存放在宿主机的`~/data/eyeblue/tank/log`位置，如果宿主机目录不存在，则会自动创建
-       - ~/data/eyeblue/tank/log:/data/log
-       # 上传文件存放在宿主机的`~/data/eyeblue/tank/matter`位置，如果宿主机目录不存在，则会自动创建
-       - ~/data/eyeblue/tank/matter:/data/matter
-```
-
-** 2.运行项目 **
-
-首先保证当前目录是`docker-compose.yml`所在的目录，然后执行以下指令即可运行蓝眼云盘：
-```shell
-$ docker-compose up -d
-```
-
-** 3.验证 **
-
-由于数据库启动需要一定的时间，因此大约20s后，打开浏览器访问`http://127.0.0.1:6010`，如果看到登录界面则表示运行成功。
-
-** 4.停止项目**
-
-方法一：使用以下命令来停止蓝眼云盘
-``` shell
-$ docker-compose stop
-```
-
-方法二：当然你也可以用停止容器的方式来停止蓝眼云盘
-``` shell
-$ docker container ls
-
-CONTAINER ID        IMAGE                COMMAND                  CREATED             STATUS              PORTS                    NAMES
-f5f64735fc53        eyeblue/tank:1.0.5   "/go/bin/tank"           20 minutes ago      Up 13 seconds       0.0.0.0:6010->6010/tcp   tank_tank_1
-3a859cad3e7e        mysql:5.7            "docker-entrypoint.s…"   20 minutes ago      Up 14 seconds       3306/tcp                 tank_db_1
-
-$ docker container stop f5
-$ docker container stop 3a
-```
-
-如果你比较关心如何使用docker来构建蓝眼云盘，请参考 [《Docker 化你的开源项目》](https://blog.eyeblue.cn/home/article/510f9316-9ca1-40fe-b1b3-5285505a527d) 
-
-### 常规安装
+### 常规安装(windows/linux方法基本一致)
 
 ** a) 准备工作 **
 
@@ -164,33 +91,7 @@ $ docker container stop 3a
 
 3. [在这里](https://github.com/eyebluecn/tank/releases)下载服务器对应的安装包
 
-4. 在服务器上解压缩，修改配置文件`conf/tank.json`，各项说明如下：
-
-```
-{
-   //服务器运行的端口，默认6010。如果配置为80，则可直接用http打开
-  "ServerPort": 6010,
-  //日志是否需要打印到控制台，默认false，主要用于调试
-  "LogToConsole": false,
-  //Mysql端口，默认3306
-  "MysqlPort": 3306,
-  //Mysql主机
-  "MysqlHost": "127.0.0.1",
-  //Mysql数据库名称
-  "MysqlSchema": "tank",
-  //Mysql用户名，建议为蓝眼云盘创建一个用户，不建议使用root
-  "MysqlUserName": "tank",
-  //Mysql密码
-  "MysqlPassword": "tank123",
-  //超级管理员用户名，只能是字母和数字
-  "AdminUsername": "admin",
-  //超级管理员邮箱，作为登录的账号
-  "AdminEmail": "admin@tank.eyeblue.cn",
-  //超级管理员密码
-  "AdminPassword": "123456"
-}
-
-```
+4. 在服务器上解压缩
 
 ** b) 运行 **
 
@@ -217,7 +118,11 @@ cd 应用目录路径/service
 
 ** c) 验证 **
 
-浏览器中打开 http://127.0.0.1:6010 (127.0.0.1请使用服务器所在ip，6010请使用`tank.json`中配置的`ServerPort`) 可以看到登录页面，并且使用配置文件中的邮箱和密码登录成功后可以看到全部文件（见上文截图）即表示安装成功。
+浏览器中打开 http://127.0.0.1:6010 
+
+(127.0.0.1请使用服务器所在ip，6010请使用`tank.json`中配置的`ServerPort`) 
+
+可以看到安装引导页面（见上文PC截图最后一张）即表示安装成功。然后按照引导逐步配置即可。
 
 
 ### 使用源代码自行打包
