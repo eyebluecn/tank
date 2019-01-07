@@ -286,10 +286,6 @@ func (this *InstallController) AdminList(writer http.ResponseWriter, request *ht
 
 	wp = wp.And(&WherePair{Query: "role = ?", Args: []interface{}{USER_ROLE_ADMINISTRATOR}})
 
-	count := 0
-	db = db.Model(&User{}).Where(wp.Query, wp.Args...).Count(&count)
-	this.PanicError(db.Error)
-
 	var users []*User
 	db = db.Where(wp.Query, wp.Args...).Offset(0).Limit(10).Find(&users)
 

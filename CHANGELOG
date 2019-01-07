@@ -33,7 +33,7 @@ docker container prune
 # 构建新版本 (最后的.不能少)
 docker build -t eyeblue/tank:x.x.x .
 # 本地测试
-docker-compose up -d
+docker run --name tank -p 6010:6010 -d eyeblue/tank:x.x.x
 # 没问题后，推送到远程
 docker push eyeblue/tank:x.x.x
 ```

@@ -10,18 +10,16 @@ WORKDIR $GOPATH/src/tank
 # 将tank项目下的所有文件移动到golang镜像中去
 COPY . $GOPATH/src/tank
 
-# 这里为了维持docker无状态性，准备数据卷作为日志目录和上传文件目录
-VOLUME /data/log
+# 这里为了维持docker无状态性，准备数据卷上传文件目录
 VOLUME /data/matter
-# 通过环境变量的方式，为应用指定日志目录和上传文件目录。
-ENV TANK_LOG_PATH=/data/log TANK_MATTER_PATH=/data/matter
 
-
+# 将文件存放的位置指定到挂载的这个点。
 # golang.org库国内无法下载，这里从我准备的github中clone
 # github.com的库可以直接通过`go get`命令下载
 # `go install tank`是对项目进行打包
 # `cp`是将项目需要的html等文件移动到可执行文件的目录下。
-RUN git clone https://github.com/eyebluecn/golang.org.git $GOPATH/src/golang.org \
+RUN echo '{"ServerPort": 6010,"MatterPath": "/data/matter"}' > $GOPATH/src/tank/build/conf/tank.json \
+    && git clone https://github.com/eyebluecn/golang.org.git $GOPATH/src/golang.org \
     && go get github.com/disintegration/imaging \
     && go get github.com/json-iterator/go \
     && go get github.com/go-sql-driver/mysql \
