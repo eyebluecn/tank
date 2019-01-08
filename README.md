@@ -96,7 +96,7 @@ docker run --name tank -p 6010:6010 -d eyeblue/tank:2.0.0
 
 1. 一台windows/linux服务器，当然你可以使用自己的电脑充当这台服务器
 
-2. [安装好Mysql数据库](https://www.mysql.com/downloads/)
+2. [安装好Mysql数据库](https://www.mysql.com/downloads/) (请使用utf8编码)
 
 3. [在这里](https://github.com/eyebluecn/tank/releases)下载服务器对应的安装包
 
