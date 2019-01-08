@@ -87,6 +87,11 @@
 ```
 docker run --name tank -p 6010:6010 -d eyeblue/tank:2.0.0
 ```
+如果你的mysql也希望用docker运行，可以使用这句话
+```
+docker run --name mysql4tank -p 3306:3306 -e MYSQL_ROOT_PASSWORD=123456 -e MYSQL_DATABASE=tank -e MYSQL_USER=tank -e MYSQL_PASSWORD=tank123 -v ~/data/mysqldemo1:/var/lib/mysql -d mysql:5.7
+```
+
 ##### b) 验证
 浏览器中打开 http://127.0.0.1:6010 看到PC截图最后一张的安装引导页面即表示成功。
 
