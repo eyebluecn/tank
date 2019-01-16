@@ -176,8 +176,14 @@ golang                       #环境变量GOPATH所在路径
 │   │   │   ├── pack         #打包的脚本
 │   │   │   ├── service      #将tank当作服务启动的脚本
 │   │   ├── dist             #运行打包脚本后获得的安装包目录
-│   │   ├── rest             #golang源代码
-      
+│   │   ├── rest             #golang源代码目录
+│   │   │   ├── ...          #golang源代码 不同文件用前缀区分
+│   │   ├── .gitignore       #gitignore文件
+│   │   ├── CHNAGELOG        #版本变化日志
+│   │   ├── DOCKERFILE       #构建Docker的文件
+│   │   ├── LICENSE          #证书说明文件
+│   │   ├── main.go          #程序入口文件
+│   │   ├── README.md        #README文件
 ```
 
 3. 准备项目依赖的第三方库
