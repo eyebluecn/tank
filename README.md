@@ -1,5 +1,7 @@
 [![蓝眼云盘logo](https://raw.githubusercontent.com/eyebluecn/tank/master/build/doc/img/logo.png)](https://github.com/eyebluecn/tank)
 
+[English Version](./README_EN.md)
+
 # 蓝眼云盘（2.0.0）
 
 [在线Demo](https://tank.eyeblue.cn) (体验账号： demo@tank.eyeblue.cn 密码：123456)
