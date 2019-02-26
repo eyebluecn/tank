@@ -1,5 +1,7 @@
 [![蓝眼云盘logo](https://raw.githubusercontent.com/eyebluecn/tank/master/build/doc/img/logo.png)](https://github.com/eyebluecn/tank)
 
+[English Version](./README_EN.md)
+
 # 蓝眼云盘（2.0.0）
 
 [在线Demo](https://tank.eyeblue.cn) (体验账号： demo@tank.eyeblue.cn 密码：123456)
@@ -60,7 +62,7 @@
 - mysql支持到5.5，后端代码架构全新迭代升级，日志异常离线任务更加强健
 
 
-如果您觉得蓝眼云盘对您有帮助，请不要吝惜您的star <i class="fa fa-star"></i>
+如果您觉得蓝眼云盘对您有帮助，请不要吝惜您的star ⭐
 
 ### 软件截图
 
@@ -91,6 +93,7 @@ docker run --name tank -p 6010:6010 -d eyeblue/tank:2.0.0
 ```
 docker run --name mysql4tank -p 3306:3306 -e MYSQL_ROOT_PASSWORD=123456 -e MYSQL_DATABASE=tank -e MYSQL_USER=tank -e MYSQL_PASSWORD=tank123 -v ~/data/mysqldemo1:/var/lib/mysql -d mysql:5.7
 ```
+如果mysql是docker启动的，那么在填写mysql host的时候不能用 127.0.0.1，要用局域网ip。 或者你可以在tank的镜像启动中使用 --link=mysql4tank:mysql4tank 从而填写 mysql4tank 作为mysql的host.
 
 ##### b) 验证
 浏览器中打开 http://127.0.0.1:6010 看到PC截图最后一张的安装引导页面即表示成功。
