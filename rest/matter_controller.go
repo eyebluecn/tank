@@ -17,7 +17,7 @@ type MatterController struct {
 	imageCacheDao    *ImageCacheDao
 }
 
-//初始化方法
+//初始化方法 start to develop v3.
 func (this *MatterController) Init() {
 	this.BaseController.Init()
 
