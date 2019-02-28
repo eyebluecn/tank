@@ -105,6 +105,7 @@ func (this *MatterController) CreateDirectory(writer http.ResponseWriter, reques
 		this.PanicBadRequest(`名称中不能包含以下特殊符号：< > | * ? / \`)
 	}
 
+	//管理员可以指定给某个用户创建文件夹。
 	userUuid := request.FormValue("userUuid")
 	user := this.checkUser(writer, request)
 	if user.Role != USER_ROLE_ADMINISTRATOR {
@@ -115,12 +116,17 @@ func (this *MatterController) CreateDirectory(writer http.ResponseWriter, reques
 	if puuid == "" {
 		panic("puuid必填")
 	}
-	if puuid != "root" {
+
+	path := fmt.Sprintf("/%s/%s", user.Username, name)
+	if puuid != MATTER_ROOT {
 		//验证目标文件夹存在。
 		this.matterDao.CheckByUuidAndUserUuid(puuid, user.Uuid)
 
 		//获取上级的详情
 		pMatter := this.matterService.Detail(puuid)
+
+		//根据父目录拼接处子目录
+		path = fmt.Sprintf("%s/%s", pMatter.Path, name)
 
 		//文件夹最多只能有32层。
 		count := 1
@@ -132,7 +138,6 @@ func (this *MatterController) CreateDirectory(writer http.ResponseWriter, reques
 		if count >= 32 {
 			panic("文件夹最多32层")
 		}
-
 	}
 
 	//判断同级文件夹中是否有同名的文件。
@@ -142,14 +147,21 @@ func (this *MatterController) CreateDirectory(writer http.ResponseWriter, reques
 		this.PanicBadRequest("【" + name + "】已经存在了，请使用其他名称。")
 	}
 
+	//磁盘中创建文件夹。
+	dirPath := MakeDirAll(CONFIG.MatterPath + path)
+	this.logger.Info("Create Directory: %s", dirPath)
+
+
+	//数据库中创建文件夹。
 	matter := &Matter{
 		Puuid:    puuid,
 		UserUuid: user.Uuid,
 		Dir:      true,
 		Name:     name,
+		Path:     path,
 	}
-
 	matter = this.matterDao.Create(matter)
+
 
 	return this.Success(matter)
 }
@@ -260,7 +272,7 @@ func (this *MatterController) Upload(writer http.ResponseWriter, request *http.R
 		if puuid == "" {
 			this.PanicBadRequest("puuid必填")
 		} else {
-			if puuid != "root" {
+			if puuid != MATTER_ROOT {
 				//找出上一级的文件夹。
 				this.matterDao.CheckByUuidAndUserUuid(puuid, userUuid)
 
@@ -316,7 +328,7 @@ func (this *MatterController) Crawl(writer http.ResponseWriter, request *http.Re
 	if puuid == "" {
 		this.PanicBadRequest("puuid必填")
 	} else {
-		if puuid != "root" {
+		if puuid != MATTER_ROOT {
 			//找出上一级的文件夹。
 			this.matterDao.CheckByUuidAndUserUuid(puuid, userUuid)
 		}
@@ -502,7 +514,7 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 	if destUuid == "" {
 		this.PanicBadRequest("destUuid参数必填")
 	} else {
-		if destUuid != "root" {
+		if destUuid != MATTER_ROOT {
 			destMatter = this.matterService.Detail(destUuid)
 
 			if user.Role != USER_ROLE_ADMINISTRATOR && destMatter.UserUuid != user.Uuid {
@@ -533,7 +545,7 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 		}
 
 		//判断和目标文件夹是否是同一个主人。
-		if destUuid != "root" {
+		if destUuid != MATTER_ROOT {
 			if srcMatter.UserUuid != destMatter.UserUuid {
 				panic("文件和目标文件夹的拥有者不是同一人")
 			}

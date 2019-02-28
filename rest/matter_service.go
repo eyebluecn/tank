@@ -53,7 +53,7 @@ func (this *MatterService) GetDirUuid(userUuid string, dir string) string {
 	}
 
 	if dir == "/" {
-		return "root"
+		return MATTER_ROOT
 	}
 
 	if dir[len(dir)-1] == '/' {
@@ -67,7 +67,7 @@ func (this *MatterService) GetDirUuid(userUuid string, dir string) string {
 		panic("文件夹最多32层。")
 	}
 
-	puuid := "root"
+	puuid := MATTER_ROOT
 	for k, name := range folders {
 
 		if len(name) > 200 {
@@ -105,7 +105,7 @@ func (this *MatterService) Detail(uuid string) *Matter {
 	//组装file的内容，展示其父组件。
 	puuid := matter.Puuid
 	tmpMatter := matter
-	for puuid != "root" {
+	for puuid != MATTER_ROOT {
 		pFile := this.matterDao.CheckByUuid(puuid)
 		tmpMatter.Parent = pFile
 		tmpMatter = pFile

@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"fmt"
 	"github.com/jinzhu/gorm"
 
 	"github.com/nu7hatch/gouuid"
@@ -240,6 +239,12 @@ func (this *MatterDao) Delete(matter *Matter) {
 			this.Delete(f)
 		}
 
+		//从磁盘中删除该文件夹。
+		removeError := os.Remove(CONFIG.MatterPath + matter.Path)
+		if removeError != nil {
+			this.logger.Error("从磁盘上删除文件夹%s出错：%s", CONFIG.MatterPath+matter.Path, removeError.Error())
+		}
+
 		//删除文件夹本身
 		db := CONTEXT.DB.Delete(&matter)
 		this.PanicError(db.Error)
@@ -253,6 +258,9 @@ func (this *MatterDao) Delete(matter *Matter) {
 		this.imageCacheDao.DeleteByMatterUuid(matter.Uuid)
 
 		filePath := CONFIG.MatterPath + matter.Path
+
+
+		//TODO: do it here.
 		//递归找寻文件的上级目录uuid. 因为是/开头的缘故
 		parts := strings.Split(matter.Path, "/")
 		dirPath := CONFIG.MatterPath + "/" + parts[1] + "/" + parts[2] + "/" + parts[3]
@@ -260,13 +268,13 @@ func (this *MatterDao) Delete(matter *Matter) {
 		//删除文件
 		err := os.Remove(filePath)
 		if err != nil {
-			this.logger.Error(fmt.Sprintf("删除磁盘上的文件出错 %s", err.Error()))
+			this.logger.Error("删除磁盘上的文件出错 %s", err.Error())
 		}
 
 		//删除这一层文件夹
 		err = os.Remove(dirPath)
 		if err != nil {
-			this.logger.Error(fmt.Sprintf("删除磁盘上的文件夹出错 %s", err.Error()))
+			this.logger.Error("删除磁盘上的文件夹出错 %s", err.Error())
 		}
 
 	}

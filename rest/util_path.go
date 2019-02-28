@@ -58,9 +58,28 @@ func MakeDirAll(dirPath string) string {
 		panic("判断文件是否存在时出错！")
 	}
 	if !exists {
+		//TODO:文件权限需要进一步考虑
 		err = os.MkdirAll(dirPath, 0777)
 		if err != nil {
 			panic("创建文件夹时出错！")
+		}
+	}
+
+	return dirPath
+}
+
+//移除某个文件夹。 例如：/var/www/matter => /var/www
+func RemoveDirectory(dirPath string) string {
+
+	exists, err := PathExists(dirPath)
+	if err != nil {
+		panic("判断文件是否存在时出错！")
+	}
+	if exists {
+
+		err = os.Remove(dirPath)
+		if err != nil {
+			panic("删除文件夹时出错！")
 		}
 	}
 
@@ -115,7 +134,7 @@ func GetUserFilePath(username string, cache bool) (string, string) {
 	datePath := now.Format("2006-01-02")
 	//毫秒时间戳
 	timestamp := now.UnixNano() / 1e6
-	
+
 	//如果是缓存文件夹，那么统一放在cache这个文件夹下面
 	if cache {
 		datePath = fmt.Sprintf("cache/%s", datePath)
