@@ -2,8 +2,11 @@ package rest
 
 import (
 	"fmt"
+	"go/build"
 	"os"
+	"os/user"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -19,6 +22,13 @@ func PathExists(path string) (bool, error) {
 	return false, err
 }
 
+//获取GOPATH路径
+func GetGoPath() string {
+
+	return build.Default.GOPATH
+
+}
+
 //获取该应用可执行文件的位置。
 //例如：C:\Users\lishuang\AppData\Local\Temp
 func GetHomePath() string {
@@ -27,6 +37,20 @@ func GetHomePath() string {
 		panic(err)
 	}
 	exPath := filepath.Dir(ex)
+
+	//如果exPath中包含了 /private/var/folders 我们认为是在Mac的开发环境中
+	macDev := strings.HasPrefix(exPath, "/private/var/folders")
+	if macDev {
+		exPath = GetGoPath() + "/src/tank/tmp"
+	}
+
+	//如果exPath中包含了 \\AppData\\Local\\Temp 我们认为是在Win的开发环境中
+	systemUser, err := user.Current()
+	winDev := strings.HasPrefix(exPath, systemUser.HomeDir+"\\AppData\\Local\\Temp")
+	if winDev {
+		exPath = GetGoPath() + "/src/tank/tmp"
+	}
+
 	return exPath
 }
 

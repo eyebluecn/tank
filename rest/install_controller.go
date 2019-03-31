@@ -102,7 +102,7 @@ func (this *InstallController) openDbConnection(writer http.ResponseWriter, requ
 	db, err := gorm.Open("mysql", mysqlUrl)
 	this.PanicError(err)
 
-	db.LogMode(true)
+	db.LogMode(false)
 
 	return db
 
