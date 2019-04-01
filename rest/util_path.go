@@ -158,7 +158,7 @@ func GetUserFileDir(username string, cache bool) (absolutePath string, relativeP
 
 	if cache {
 		//如果是缓存文件夹，那么统一放在cache这个文件夹下面
-		firstDir := "cache"
+		firstDir := MATTER_CACHE
 
 		now := time.Now()
 		datePath := now.Format("2006-01-02")
@@ -169,7 +169,7 @@ func GetUserFileDir(username string, cache bool) (absolutePath string, relativeP
 		relativePath = fmt.Sprintf("/%s/%s/%s/%d", username, firstDir, datePath, timestamp)
 
 	} else {
-		firstDir := "root"
+		firstDir := MATTER_ROOT
 		absolutePath = fmt.Sprintf("%s/%s/%s", filePath, username, firstDir)
 		relativePath = fmt.Sprintf("/%s/%s", username, firstDir)
 	}

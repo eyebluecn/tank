@@ -6,7 +6,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 )
 
 type MatterController struct {
@@ -249,51 +248,35 @@ func (this *MatterController) Page(writer http.ResponseWriter, request *http.Req
 func (this *MatterController) Upload(writer http.ResponseWriter, request *http.Request) *WebResult {
 
 	userUuid := request.FormValue("userUuid")
+	puuid := request.FormValue("puuid")
+	privacyStr := request.FormValue("privacy")
+	file, handler, err := request.FormFile("file")
+	this.PanicError(err)
+	defer func() {
+		err := file.Close()
+		this.PanicError(err)
+	}()
+
 	user := this.checkUser(writer, request)
+	//管理员可以传到指定用户的目录下。
 	if user.Role != USER_ROLE_ADMINISTRATOR {
 		userUuid = user.Uuid
 	}
 	user = this.userDao.CheckByUuid(userUuid)
 
-	alienStr := request.FormValue("alien")
-	alien := false
-	puuid := ""
-
-	if alienStr == "true" {
-		alien = true
-
-		//如果是应用文件的话，统一放在同一个地方。
-		puuid = this.matterService.GetDirUuid(userUuid, fmt.Sprintf("/应用数据/%s", time.Now().Local().Format("20060102150405")))
-
+	if puuid == "" {
+		this.PanicBadRequest("puuid必填")
 	} else {
-		puuid = request.FormValue("puuid")
-		if puuid == "" {
-			this.PanicBadRequest("puuid必填")
-		} else {
-			if puuid != MATTER_ROOT {
-				//找出上一级的文件夹。
-				this.matterDao.CheckByUuidAndUserUuid(puuid, userUuid)
-
-			}
+		if puuid != MATTER_ROOT {
+			//验证puuid是否存在
+			this.matterDao.CheckByUuidAndUserUuid(puuid, userUuid)
 		}
 	}
 
-	privacy := false
-	privacyStr := request.FormValue("privacy")
-	if privacyStr == "true" {
-		privacy = true
-	}
+	privacy := privacyStr == TRUE
 
-	err := request.ParseMultipartForm(32 << 20)
+	err = request.ParseMultipartForm(32 << 20)
 	this.PanicError(err)
-
-	file, handler, err := request.FormFile("file")
-	this.PanicError(err)
-
-	defer func() {
-		err := file.Close()
-		this.PanicError(err)
-	}()
 
 	//对于IE浏览器，filename可能包含了路径。
 	fileName := handler.Filename
@@ -306,7 +289,7 @@ func (this *MatterController) Upload(writer http.ResponseWriter, request *http.R
 		fileName = fileName[pos+1:]
 	}
 
-	matter := this.matterService.Upload(file, user, puuid, fileName, privacy, alien)
+	matter := this.matterService.Upload(file, user, puuid, fileName, privacy, false)
 
 	return this.Success(matter)
 }
@@ -338,7 +321,7 @@ func (this *MatterController) Crawl(writer http.ResponseWriter, request *http.Re
 
 	privacy := false
 	privacyStr := request.FormValue("privacy")
-	if privacyStr == "true" {
+	if privacyStr == TRUE {
 		privacy = true
 	}
 
@@ -464,7 +447,7 @@ func (this *MatterController) ChangePrivacy(writer http.ResponseWriter, request 
 	uuid := request.FormValue("uuid")
 	privacyStr := request.FormValue("privacy")
 	privacy := false
-	if privacyStr == "true" {
+	if privacyStr == TRUE {
 		privacy = true
 	}
 	//找出该文件或者文件夹

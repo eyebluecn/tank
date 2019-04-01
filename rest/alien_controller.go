@@ -169,7 +169,7 @@ func (this *AlienController) FetchUploadToken(writer http.ResponseWriter, reques
 	if privacyStr == "" {
 		panic(`文件公有性必填`)
 	} else {
-		if privacyStr == "true" {
+		if privacyStr == TRUE {
 			privacy = true
 		} else if privacyStr == "false" {
 			privacy = false
@@ -343,9 +343,9 @@ func (this *AlienController) CrawlDirect(writer http.ResponseWriter, request *ht
 	if privacyStr == "" {
 		panic(`文件公有性必填`)
 	} else {
-		if privacyStr == "true" {
+		if privacyStr == TRUE {
 			privacy = true
-		} else if privacyStr == "false" {
+		} else if privacyStr == FALSE {
 			privacy = false
 		} else {
 			panic(`文件公有性不符合规范`)

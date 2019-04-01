@@ -6,6 +6,11 @@ import (
 	"time"
 )
 
+const (
+	TRUE = "true"
+	FALSE = "false"
+)
+
 type Time time.Time
 
 type IBase interface {

@@ -2,6 +2,7 @@ package rest
 
 const (
 	MATTER_ROOT    = "root"
+	MATTER_CACHE    = "cache"
 )
 
 /**

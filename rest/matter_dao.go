@@ -161,15 +161,15 @@ func (this *MatterDao) Page(page int, pageSize int, puuid string, userUuid strin
 		wp = wp.And(&WherePair{Query: "name LIKE ?", Args: []interface{}{"%" + name + "%"}})
 	}
 
-	if dir == "true" {
+	if dir == TRUE {
 		wp = wp.And(&WherePair{Query: "dir = ?", Args: []interface{}{1}})
-	} else if dir == "false" {
+	} else if dir == FALSE {
 		wp = wp.And(&WherePair{Query: "dir = ?", Args: []interface{}{0}})
 	}
 
-	if alien == "true" {
+	if alien == TRUE {
 		wp = wp.And(&WherePair{Query: "alien = ?", Args: []interface{}{1}})
-	} else if alien == "false" {
+	} else if alien == FALSE {
 		wp = wp.And(&WherePair{Query: "alien = ?", Args: []interface{}{0}})
 	}
 

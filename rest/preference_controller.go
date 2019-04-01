@@ -68,9 +68,9 @@ func (this *PreferenceController) Edit(writer http.ResponseWriter, request *http
 	preference.FaviconUrl = faviconUrl
 	preference.FooterLine1 = footerLine1
 	preference.FooterLine2 = footerLine2
-	if showAlienStr == "true" {
+	if showAlienStr == TRUE {
 		preference.ShowAlien = true
-	} else if showAlienStr == "false" {
+	} else if showAlienStr == FALSE {
 		preference.ShowAlien = false
 	}
 
