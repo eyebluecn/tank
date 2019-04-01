@@ -119,7 +119,10 @@ func (this *ImageCacheService) ResizeImage(request *http.Request, filePath strin
 
 	diskFile, err := os.Open(filePath)
 	this.PanicError(err)
-	defer diskFile.Close()
+	defer func() {
+		e := diskFile.Close()
+		this.PanicError(e)
+	}()
 
 	_, imageResizeM, imageResizeW, imageResizeH := this.ResizeParams(request)
 
@@ -190,13 +193,16 @@ func (this *ImageCacheService) cacheImage(writer http.ResponseWriter, request *h
 
 	user := this.userDao.FindByUuid(matter.UserUuid)
 	//获取文件应该存放在的物理路径的绝对路径和相对路径。
-	absolutePath, relativePath := GetUserFilePath(user.Username, true)
+	absolutePath, relativePath := GetUserFileDir(user.Username, true)
 	absolutePath = absolutePath + "/" + matter.Name
 	relativePath = relativePath + "/" + matter.Name
 
 	fileWriter, err := os.Create(absolutePath)
 	this.PanicError(err)
-	defer fileWriter.Close()
+	defer func() {
+		e := fileWriter.Close()
+		this.PanicError(e)
+	}()
 
 	//处理后的图片存放在本地
 	err = imaging.Encode(fileWriter, dstImage, format)

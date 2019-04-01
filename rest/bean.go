@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"fmt"
 	"net/http"
 )
 
@@ -33,36 +34,34 @@ func (this *Bean) PanicError(err error) {
 }
 
 //请求参数有问题
-func (this *Bean) PanicBadRequest(msg string) {
-	panic(CustomWebResult(CODE_WRAPPER_BAD_REQUEST, msg))
+func (this *Bean) PanicBadRequest(format string, v ...interface{}) {
+	panic(CustomWebResult(CODE_WRAPPER_BAD_REQUEST, fmt.Sprintf(format, v...)))
 }
 
 //没有权限
-func (this *Bean) PanicUnauthorized(msg string) {
-	panic(CustomWebResult(CODE_WRAPPER_UNAUTHORIZED, msg))
+func (this *Bean) PanicUnauthorized(format string, v ...interface{}) {
+	panic(CustomWebResult(CODE_WRAPPER_UNAUTHORIZED, fmt.Sprintf(format, v...)))
 }
 
 //没有找到
-func (this *Bean) PanicNotFound(msg string) {
-	panic(CustomWebResult(CODE_WRAPPER_NOT_FOUND, msg))
+func (this *Bean) PanicNotFound(format string, v ...interface{}) {
+	panic(CustomWebResult(CODE_WRAPPER_NOT_FOUND, fmt.Sprintf(format, v...)))
 }
 
 //服务器内部出问题
-func (this *Bean) PanicServer(msg string) {
-	panic(CustomWebResult(CODE_WRAPPER_UNKNOWN, msg))
+func (this *Bean) PanicServer(format string, v ...interface{}) {
+	panic(CustomWebResult(CODE_WRAPPER_SERVER, fmt.Sprintf(format, v...)))
 }
 
 //能找到一个user就找到一个
 func (this *Bean) findUser(writer http.ResponseWriter, request *http.Request) *User {
 
 	//验证用户是否已经登录。
-	sessionCookie, err := request.Cookie(COOKIE_AUTH_KEY)
-	if err != nil {
-		this.logger.Warn("cookie 信息不存在~")
+	//登录身份有效期以数据库中记录的为准
+	sessionId := GetSessionUuidFromRequest(request)
+	if sessionId == "" {
 		return nil
 	}
-
-	sessionId := sessionCookie.Value
 
 	//去缓存中捞取看看
 	cacheItem, err := CONTEXT.SessionCache.Value(sessionId)

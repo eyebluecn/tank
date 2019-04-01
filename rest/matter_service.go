@@ -124,16 +124,34 @@ func (this *MatterService) Upload(file multipart.File, user *User, puuid string,
 		panic("文件名不能超过200")
 	}
 
+	//查找文件夹下面是否有同名文件。
+	matters := this.matterDao.ListByUserUuidAndPuuidAndDirAndName(user.Uuid, puuid, false, filename)
+	//如果有同名的文件，那么我们直接覆盖同名文件。
+	for _, dbFile := range matters {
+		this.PanicBadRequest("该目录下%s已经存在了", dbFile.Name)
+	}
 
 	//获取文件应该存放在的物理路径的绝对路径和相对路径。
-	absolutePath, relativePath := GetUserFilePath(user.Username, false)
+	absolutePath, relativePath := GetUserFileDir(user.Username, false)
 	absolutePath = absolutePath + "/" + filename
 	relativePath = relativePath + "/" + filename
+
+	//如果文件已经存在了，那么直接覆盖。
+	exist, err := PathExists(absolutePath)
+	this.PanicError(err)
+	if exist {
+		this.logger.Error("%s已经存在，将其删除", absolutePath)
+		removeError := os.Remove(absolutePath)
+		this.PanicError(removeError)
+	}
 
 	distFile, err := os.OpenFile(absolutePath, os.O_WRONLY|os.O_CREATE, 0777)
 	this.PanicError(err)
 
-	defer distFile.Close()
+	defer func() {
+		err := distFile.Close()
+		this.PanicError(err)
+	}()
 
 	written, err := io.Copy(distFile, file)
 	this.PanicError(err)
@@ -145,12 +163,7 @@ func (this *MatterService) Upload(file multipart.File, user *User, puuid string,
 		}
 	}
 
-	//查找文件夹下面是否有同名文件。
-	matters := this.matterDao.ListByUserUuidAndPuuidAndDirAndName(user.Uuid, puuid, false, filename)
-	//如果有同名的文件，那么我们直接覆盖同名文件。
-	for _, dbFile := range matters {
-		this.matterDao.Delete(dbFile)
-	}
+
 
 	//将文件信息存入数据库中。
 	matter := &Matter{
@@ -178,14 +191,20 @@ func (this *MatterService) httpDownloadFile(filepath string, url string) (int64,
 	if err != nil {
 		return 0, err
 	}
-	defer out.Close()
+	defer func() {
+		e := out.Close()
+		this.PanicError(e)
+	}()
 
 	// Get the data
 	resp, err := http.Get(url)
 	if err != nil {
 		return 0, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		e := resp.Body.Close()
+		this.PanicError(e)
+	}()
 
 	// Write the body to file
 	size, err := io.Copy(out, resp.Body)
@@ -205,7 +224,7 @@ func (this *MatterService) Crawl(url string, filename string, user *User, puuid 
 	}
 
 	//获取文件应该存放在的物理路径的绝对路径和相对路径。
-	absolutePath, relativePath := GetUserFilePath(user.Username, false)
+	absolutePath, relativePath := GetUserFileDir(user.Username, false)
 	absolutePath = absolutePath + "/" + filename
 	relativePath = relativePath + "/" + filename
 
@@ -415,10 +434,13 @@ func (this *MatterService) rangesMIMESize(ranges []httpRange, contentType string
 	var w countingWriter
 	mw := multipart.NewWriter(&w)
 	for _, ra := range ranges {
-		mw.CreatePart(ra.mimeHeader(contentType, contentSize))
+		_, e := mw.CreatePart(ra.mimeHeader(contentType, contentSize))
+		this.PanicError(e)
+
 		encSize += ra.length
 	}
-	mw.Close()
+	e := mw.Close()
+	this.PanicError(e)
 	encSize += int64(w)
 	return
 }
@@ -441,7 +463,10 @@ func (this *MatterService) DownloadFile(
 
 	diskFile, err := os.Open(filePath)
 	this.PanicError(err)
-	defer diskFile.Close()
+	defer func() {
+		e := diskFile.Close()
+		this.PanicError(e)
+	}()
 
 	//如果是图片或者文本或者视频就直接打开。其余的一律以下载形式返回。
 	if withContentDisposition {

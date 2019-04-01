@@ -31,3 +31,36 @@ func GetHostFromRequest(r *http.Request) string {
 	return r.Host
 
 }
+
+//根据一个请求，获取authenticationId
+func GetSessionUuidFromRequest(request *http.Request) string {
+
+	//验证用户是否已经登录。
+	sessionCookie, err := request.Cookie(COOKIE_AUTH_KEY)
+	var sessionId string
+	if err != nil {
+		//从入参中捞取
+		sessionId = request.FormValue(COOKIE_AUTH_KEY)
+	} else {
+		sessionId = sessionCookie.Value
+	}
+
+	return sessionId
+
+}
+
+//允许跨域请求
+func AllowCORS(writer http.ResponseWriter) {
+	writer.Header().Add("Access-Control-Allow-Origin", "*")
+	writer.Header().Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE")
+	writer.Header().Add("Access-Control-Max-Age", "3600")
+	writer.Header().Add("Access-Control-Allow-Headers", "content-type")
+}
+
+//禁用缓存
+func DisableCache(writer http.ResponseWriter) {
+	//对于IE浏览器，会自动缓存，因此设置不缓存Header.
+	writer.Header().Set("Pragma", "No-cache")
+	writer.Header().Set("Cache-Control", "no-cache")
+	writer.Header().Set("Expires", "0")
+}

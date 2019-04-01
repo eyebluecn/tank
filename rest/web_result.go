@@ -32,6 +32,7 @@ var (
 	CODE_WRAPPER_NOT_FOUND               = &CodeWrapper{Code: "NOT_FOUND", HttpStatus: http.StatusNotFound, Description: "内容不存在"}
 	CODE_WRAPPER_RANGE_NOT_SATISFIABLE   = &CodeWrapper{Code: "RANGE_NOT_SATISFIABLE", HttpStatus: http.StatusRequestedRangeNotSatisfiable, Description: "文件范围读取错误"}
 	CODE_WRAPPER_NOT_INSTALLED           = &CodeWrapper{Code: "NOT_INSTALLED", HttpStatus: http.StatusInternalServerError, Description: "系统尚未安装"}
+	CODE_WRAPPER_SERVER                  = &CodeWrapper{Code: "SERVER", HttpStatus: http.StatusInternalServerError, Description: "服务器出错"}
 	CODE_WRAPPER_UNKNOWN                 = &CodeWrapper{Code: "UNKNOWN", HttpStatus: http.StatusInternalServerError, Description: "服务器未知错误"}
 )
 
@@ -61,6 +62,10 @@ func FetchHttpStatus(code string) int {
 		return CODE_WRAPPER_NOT_FOUND.HttpStatus
 	} else if code == CODE_WRAPPER_RANGE_NOT_SATISFIABLE.Code {
 		return CODE_WRAPPER_RANGE_NOT_SATISFIABLE.HttpStatus
+	} else if code == CODE_WRAPPER_NOT_INSTALLED.Code {
+		return CODE_WRAPPER_NOT_INSTALLED.HttpStatus
+	} else if code == CODE_WRAPPER_SERVER.Code {
+		return CODE_WRAPPER_SERVER.HttpStatus
 	} else {
 		return CODE_WRAPPER_UNKNOWN.HttpStatus
 	}
@@ -83,3 +88,11 @@ func CustomWebResult(codeWrapper *CodeWrapper, description string) *WebResult {
 	}
 	return wr
 }
+
+//所有的数据库错误情况
+var (
+	DB_ERROR_DUPLICATE_KEY  = "Error 1062: Duplicate entry"
+	DB_ERROR_NOT_FOUND      = "record not found"
+	DB_TOO_MANY_CONNECTIONS = "Error 1040: Too many connections"
+	DB_BAD_CONNECTION       = "driver: bad connection"
+)

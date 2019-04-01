@@ -151,7 +151,6 @@ func (this *MatterController) CreateDirectory(writer http.ResponseWriter, reques
 	dirPath := MakeDirAll(CONFIG.MatterPath + path)
 	this.logger.Info("Create Directory: %s", dirPath)
 
-
 	//数据库中创建文件夹。
 	matter := &Matter{
 		Puuid:    puuid,
@@ -161,7 +160,6 @@ func (this *MatterController) CreateDirectory(writer http.ResponseWriter, reques
 		Path:     path,
 	}
 	matter = this.matterDao.Create(matter)
-
 
 	return this.Success(matter)
 }
@@ -291,7 +289,11 @@ func (this *MatterController) Upload(writer http.ResponseWriter, request *http.R
 
 	file, handler, err := request.FormFile("file")
 	this.PanicError(err)
-	defer file.Close()
+
+	defer func() {
+		err := file.Close()
+		this.PanicError(err)
+	}()
 
 	//对于IE浏览器，filename可能包含了路径。
 	fileName := handler.Filename

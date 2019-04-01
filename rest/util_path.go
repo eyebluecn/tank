@@ -151,21 +151,28 @@ func GetLogPath() string {
 }
 
 //获取某个用户文件应该存放的位置。这个是相对GetFilePath的路径
-//例如：/zicla/2006-01-02/1510122428000
-func GetUserFilePath(username string, cache bool) (string, string) {
+//例如：/zicla/root
+func GetUserFileDir(username string, cache bool) (absolutePath string, relativePath string) {
 
-	now := time.Now()
-	datePath := now.Format("2006-01-02")
-	//毫秒时间戳
-	timestamp := now.UnixNano() / 1e6
-
-	//如果是缓存文件夹，那么统一放在cache这个文件夹下面
-	if cache {
-		datePath = fmt.Sprintf("cache/%s", datePath)
-	}
 	filePath := CONFIG.MatterPath
-	absolutePath := fmt.Sprintf("%s/%s/%s/%d", filePath, username, datePath, timestamp)
-	relativePath := fmt.Sprintf("/%s/%s/%d", username, datePath, timestamp)
+
+	if cache {
+		//如果是缓存文件夹，那么统一放在cache这个文件夹下面
+		firstDir := "cache"
+
+		now := time.Now()
+		datePath := now.Format("2006-01-02")
+		//毫秒时间戳
+		timestamp := now.UnixNano() / 1e6
+
+		absolutePath = fmt.Sprintf("%s/%s/%s/%s/%d", filePath, username, firstDir, datePath, timestamp)
+		relativePath = fmt.Sprintf("/%s/%s/%s/%d", username, firstDir, datePath, timestamp)
+
+	} else {
+		firstDir := "root"
+		absolutePath = fmt.Sprintf("%s/%s/%s", filePath, username, firstDir)
+		relativePath = fmt.Sprintf("/%s/%s", username, firstDir)
+	}
 
 	exists, err := PathExists(absolutePath)
 	if err != nil {
