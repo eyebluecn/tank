@@ -59,7 +59,6 @@ func (this *AlienController) Init() {
 	if c, ok := b.(*AlienService); ok {
 		this.alienService = c
 	}
-
 }
 
 //注册自己的路由。
@@ -199,7 +198,7 @@ func (this *AlienController) FetchUploadToken(writer http.ResponseWriter, reques
 	dir := request.FormValue("dir")
 
 	user := this.CheckRequestUser(writer, request)
-	dirUuid := this.matterService.GetDirUuid(user.Uuid, dir)
+	dirUuid, _ := this.matterService.GetDirUuid(user, dir)
 
 	mm, _ := time.ParseDuration(fmt.Sprintf("%ds", expire))
 	uploadToken := &UploadToken{
@@ -261,10 +260,15 @@ func (this *AlienController) Upload(writer http.ResponseWriter, request *http.Re
 
 	user := this.userDao.CheckByUuid(uploadToken.UserUuid)
 
-	request.ParseMultipartForm(32 << 20)
+	err := request.ParseMultipartForm(32 << 20)
+	this.PanicError(err)
+
 	file, handler, err := request.FormFile("file")
 	this.PanicError(err)
-	defer file.Close()
+	defer func() {
+		e := file.Close()
+		this.PanicError(e)
+	}()
 
 	if handler.Filename != uploadToken.Filename {
 		panic("文件名称不正确")
@@ -312,7 +316,17 @@ func (this *AlienController) CrawlToken(writer http.ResponseWriter, request *htt
 		panic("资源url必填，并且应该以http://或者https://开头")
 	}
 
-	matter := this.matterService.Crawl(url, uploadToken.Filename, user, uploadToken.FolderUuid, uploadToken.Privacy)
+	var dirPath string
+	if uploadToken.FolderUuid == MATTER_ROOT {
+
+		dirPath = "/"
+	} else {
+
+		dirMatter := this.matterDao.CheckByUuid(uploadToken.FolderUuid)
+		dirPath = dirMatter.Path
+	}
+
+	matter := this.matterService.Crawl(url, uploadToken.Filename, user, uploadToken.FolderUuid, dirPath, uploadToken.Privacy)
 
 	//更新这个uploadToken的信息.
 	uploadToken.ExpireTime = time.Now()
@@ -355,9 +369,9 @@ func (this *AlienController) CrawlDirect(writer http.ResponseWriter, request *ht
 	//文件夹路径，以 / 开头。
 	dir := request.FormValue("dir")
 	user := this.CheckRequestUser(writer, request)
-	dirUuid := this.matterService.GetDirUuid(user.Uuid, dir)
+	dirUuid, dirRelativePath := this.matterService.GetDirUuid(user, dir)
 
-	matter := this.matterService.Crawl(url, filename, user, dirUuid, privacy)
+	matter := this.matterService.Crawl(url, filename, user, dirUuid, dirRelativePath, privacy)
 
 	return this.Success(matter)
 }
@@ -412,11 +426,11 @@ func (this *AlienController) FetchDownloadToken(writer http.ResponseWriter, requ
 //预览一个文件。既可以使用登录的方式，也可以使用授权的方式
 func (this *AlienController) Preview(writer http.ResponseWriter, request *http.Request, uuid string, filename string) {
 
-	this.alienService.PreviewOrDownload(writer, request, uuid, filename,  false)
+	this.alienService.PreviewOrDownload(writer, request, uuid, filename, false)
 }
 
 //下载一个文件。既可以使用登录的方式，也可以使用授权的方式
 func (this *AlienController) Download(writer http.ResponseWriter, request *http.Request, uuid string, filename string) {
 
-	this.alienService.PreviewOrDownload(writer, request, uuid, filename,  true)
+	this.alienService.PreviewOrDownload(writer, request, uuid, filename, true)
 }

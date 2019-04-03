@@ -40,7 +40,7 @@ func (this *MatterService) Init() {
 }
 
 //根据一个文件夹路径，找到最后一个文件夹的uuid，如果中途出错，返回err.
-func (this *MatterService) GetDirUuid(userUuid string, dir string) string {
+func (this *MatterService) GetDirUuid(user *User, dir string) (puuid string, dirRelativePath string) {
 
 	if dir == "" {
 		panic(`文件夹不能为空`)
@@ -53,7 +53,7 @@ func (this *MatterService) GetDirUuid(userUuid string, dir string) string {
 	}
 
 	if dir == "/" {
-		return MATTER_ROOT
+		return MATTER_ROOT, ""
 	}
 
 	if dir[len(dir)-1] == '/' {
@@ -67,7 +67,8 @@ func (this *MatterService) GetDirUuid(userUuid string, dir string) string {
 		panic("文件夹最多32层。")
 	}
 
-	puuid := MATTER_ROOT
+	puuid = MATTER_ROOT
+	parentRelativePath := "/"
 	for k, name := range folders {
 
 		if len(name) > 200 {
@@ -78,23 +79,26 @@ func (this *MatterService) GetDirUuid(userUuid string, dir string) string {
 			continue
 		}
 
-		matter := this.matterDao.FindByUserUuidAndPuuidAndNameAndDirTrue(userUuid, puuid, name)
+		matter := this.matterDao.FindByUserUuidAndPuuidAndNameAndDirTrue(user.Uuid, puuid, name)
 		if matter == nil {
 			//创建一个文件夹。这里一般都是通过alien接口来创建的文件夹。
 			matter = &Matter{
 				Puuid:    puuid,
-				UserUuid: userUuid,
+				UserUuid: user.Uuid,
+				Username: user.Username,
 				Dir:      true,
 				Alien:    true,
 				Name:     name,
+				Path:     parentRelativePath + "/" + name,
 			}
 			matter = this.matterDao.Create(matter)
 		}
 
 		puuid = matter.Uuid
+		parentRelativePath = matter.Path
 	}
 
-	return puuid
+	return puuid, parentRelativePath
 }
 
 //获取某个文件的详情，会把父级依次倒着装进去。如果中途出错，直接抛出异常。
@@ -124,6 +128,26 @@ func (this *MatterService) Upload(file multipart.File, user *User, puuid string,
 		panic("文件名不能超过200")
 	}
 
+	//文件夹路径
+	var dirAbsolutePath string
+	var dirRelativePath string
+	if puuid == "" {
+		this.PanicBadRequest("puuid必填")
+	} else {
+
+		if puuid == MATTER_ROOT {
+			dirAbsolutePath = GetUserFileRootDir(user.Username)
+			dirRelativePath = ""
+		} else {
+			//验证puuid是否存在
+			dirMatter := this.matterDao.CheckByUuidAndUserUuid(puuid, user.Uuid)
+
+			dirAbsolutePath = GetUserFileRootDir(user.Username) + dirMatter.Path
+			dirRelativePath = dirMatter.Path
+
+		}
+	}
+
 	//查找文件夹下面是否有同名文件。
 	matters := this.matterDao.ListByUserUuidAndPuuidAndDirAndName(user.Uuid, puuid, false, filename)
 	//如果有同名的文件，那么我们直接覆盖同名文件。
@@ -132,20 +156,19 @@ func (this *MatterService) Upload(file multipart.File, user *User, puuid string,
 	}
 
 	//获取文件应该存放在的物理路径的绝对路径和相对路径。
-	absolutePath, relativePath := GetUserFileDir(user.Username, false)
-	absolutePath = absolutePath + "/" + filename
-	relativePath = relativePath + "/" + filename
+	fileAbsolutePath := dirAbsolutePath + "/" + filename
+	fileRelativePath := dirRelativePath + "/" + filename
 
 	//如果文件已经存在了，那么直接覆盖。
-	exist, err := PathExists(absolutePath)
+	exist, err := PathExists(fileAbsolutePath)
 	this.PanicError(err)
 	if exist {
-		this.logger.Error("%s已经存在，将其删除", absolutePath)
-		removeError := os.Remove(absolutePath)
+		this.logger.Error("%s已经存在，将其删除", fileAbsolutePath)
+		removeError := os.Remove(fileAbsolutePath)
 		this.PanicError(removeError)
 	}
 
-	distFile, err := os.OpenFile(absolutePath, os.O_WRONLY|os.O_CREATE, 0777)
+	distFile, err := os.OpenFile(fileAbsolutePath, os.O_WRONLY|os.O_CREATE, 0777)
 	this.PanicError(err)
 
 	defer func() {
@@ -163,19 +186,18 @@ func (this *MatterService) Upload(file multipart.File, user *User, puuid string,
 		}
 	}
 
-
-
 	//将文件信息存入数据库中。
 	matter := &Matter{
 		Puuid:    puuid,
 		UserUuid: user.Uuid,
+		Username: user.Username,
 		Dir:      false,
 		Alien:    alien,
 		Name:     filename,
 		Md5:      "",
 		Size:     written,
 		Privacy:  privacy,
-		Path:     relativePath,
+		Path:     fileRelativePath,
 	}
 
 	matter = this.matterDao.Create(matter)
@@ -216,7 +238,7 @@ func (this *MatterService) httpDownloadFile(filepath string, url string) (int64,
 }
 
 //去指定的url中爬文件
-func (this *MatterService) Crawl(url string, filename string, user *User, puuid string, privacy bool) *Matter {
+func (this *MatterService) Crawl(url string, filename string, user *User, puuid string, dirRelativePath string, privacy bool) *Matter {
 
 	//文件名不能太长。
 	if len(filename) > 200 {
@@ -224,9 +246,8 @@ func (this *MatterService) Crawl(url string, filename string, user *User, puuid 
 	}
 
 	//获取文件应该存放在的物理路径的绝对路径和相对路径。
-	absolutePath, relativePath := GetUserFileDir(user.Username, false)
-	absolutePath = absolutePath + "/" + filename
-	relativePath = relativePath + "/" + filename
+	absolutePath := GetUserFileRootDir(user.Username) + dirRelativePath + "/" + filename
+	relativePath := dirRelativePath + "/" + filename
 
 	//使用临时文件存放
 	fmt.Printf("存放于%s", absolutePath)
@@ -251,6 +272,7 @@ func (this *MatterService) Crawl(url string, filename string, user *User, puuid 
 	matter := &Matter{
 		Puuid:    puuid,
 		UserUuid: user.Uuid,
+		Username: user.Username,
 		Dir:      false,
 		Alien:    false,
 		Name:     filename,

@@ -18,7 +18,7 @@ type Dashboard struct {
 }
 
 // set File's table name to be `profiles`
-func (Dashboard) TableName() string {
+func (this *Dashboard) TableName() string {
 	return TABLE_PREFIX + "dashboard"
 }
 

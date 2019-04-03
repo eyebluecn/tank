@@ -1,8 +1,8 @@
 package rest
 
 const (
-	MATTER_ROOT    = "root"
-	MATTER_CACHE    = "cache"
+	MATTER_ROOT  = "root"
+	MATTER_CACHE = "cache"
 )
 
 /**
@@ -12,6 +12,7 @@ type Matter struct {
 	Base
 	Puuid    string  `json:"puuid" gorm:"type:char(36);index:idx_puuid"`
 	UserUuid string  `json:"userUuid" gorm:"type:char(36);index:idx_uu"`
+	Username string  `json:"username" gorm:"type:varchar(45) not null"`
 	Dir      bool    `json:"dir" gorm:"type:tinyint(1) not null;default:0"`
 	Alien    bool    `json:"alien" gorm:"type:tinyint(1) not null;default:0"`
 	Name     string  `json:"name" gorm:"type:varchar(255) not null"`
@@ -26,4 +27,10 @@ type Matter struct {
 // set File's table name to be `profiles`
 func (Matter) TableName() string {
 	return TABLE_PREFIX + "matter"
+}
+
+
+// 获取该Matter的绝对路径。path代表的是相对路径。相对路径的根目录是 CONFIG.MatterPath
+func (this *Matter) AbsolutePath() string {
+	return CONFIG.MatterPath + this.Path
 }

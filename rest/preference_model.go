@@ -11,6 +11,6 @@ type Preference struct {
 }
 
 // set File's table name to be `profiles`
-func (Preference) TableName() string {
+func (this *Preference) TableName() string {
 	return TABLE_PREFIX + "preference"
 }

@@ -12,6 +12,6 @@ type Session struct {
 }
 
 // set User's table name to be `profiles`
-func (Session) TableName() string {
+func (this *Session) TableName() string {
 	return TABLE_PREFIX + "session"
 }

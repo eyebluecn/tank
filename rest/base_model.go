@@ -38,7 +38,7 @@ func (this *Base) Map() map[string]interface{} {
 	return data
 }
 
-func (Base) TableName() string {
+func (this *Base) TableName() string {
 	return TABLE_PREFIX + "base"
 }
 

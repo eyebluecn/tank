@@ -43,7 +43,7 @@ type User struct {
 }
 
 // set User's table name to be `profiles`
-func (User) TableName() string {
+func (this *User) TableName() string {
 	return TABLE_PREFIX + "user"
 }
 

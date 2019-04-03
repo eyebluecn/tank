@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -623,6 +624,18 @@ func GetExtension(filename string) string {
 	var extension = filepath.Ext(filename)
 
 	return strings.ToLower(extension)
+
+}
+
+//根据文件名字获取去除后缀的名称
+func GetSimpleFileName(filename string) string {
+
+	for i := len(filename) - 1; i >= 0 && !os.IsPathSeparator(filename[i]); i-- {
+		if filename[i] == '.' {
+			return filename[:i]
+		}
+	}
+	return filename
 
 }
 

@@ -168,7 +168,7 @@ func (this *ImageCacheService) ResizeImage(request *http.Request, filePath strin
 	}
 }
 
-//缓存一张处理完毕了的图片
+//缓存一张图片
 func (this *ImageCacheService) cacheImage(writer http.ResponseWriter, request *http.Request, matter *Matter) *ImageCache {
 
 	//当前的文件是否是图片，只有图片才能处理。
@@ -183,21 +183,22 @@ func (this *ImageCacheService) cacheImage(writer http.ResponseWriter, request *h
 		".gif":  imaging.GIF,
 	}
 
+	_, imageResizeM, imageResizeW, imageResizeH := this.ResizeParams(request)
+	mode := fmt.Sprintf("%s_%d_%d", imageResizeM, imageResizeW, imageResizeH)
+
 	format, ok := formats[extension]
 	if !ok {
 		panic("该图片格式不支持处理")
 	}
 
-	//resize图片
-	dstImage := this.ResizeImage(request, CONFIG.MatterPath+matter.Path)
-
 	user := this.userDao.FindByUuid(matter.UserUuid)
-	//获取文件应该存放在的物理路径的绝对路径和相对路径。
-	absolutePath, relativePath := GetUserFileDir(user.Username, true)
-	absolutePath = absolutePath + "/" + matter.Name
-	relativePath = relativePath + "/" + matter.Name
 
-	fileWriter, err := os.Create(absolutePath)
+	//resize图片
+	dstImage := this.ResizeImage(request, GetUserCacheRootDir(user.Username)+matter.Path)
+
+	cacheImagePath := GetSimpleFileName(matter.Path) + "_" + mode + extension
+
+	fileWriter, err := os.Create(cacheImagePath)
 	this.PanicError(err)
 	defer func() {
 		e := fileWriter.Close()
@@ -212,15 +213,13 @@ func (this *ImageCacheService) cacheImage(writer http.ResponseWriter, request *h
 	fileInfo, err := fileWriter.Stat()
 	this.PanicError(err)
 
-	_, imageResizeM, imageResizeW, imageResizeH := this.ResizeParams(request)
-
 	//相关信息写到缓存中去
 	imageCache := &ImageCache{
 		UserUuid:   matter.UserUuid,
 		MatterUuid: matter.Uuid,
-		Mode:       fmt.Sprintf("%s_%d_%d", imageResizeM, imageResizeW, imageResizeH),
+		Mode:       mode,
 		Size:       fileInfo.Size(),
-		Path:       relativePath,
+		Path:       cacheImagePath,
 	}
 	this.imageCacheDao.Create(imageCache)
 

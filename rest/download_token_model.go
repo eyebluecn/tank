@@ -12,6 +12,6 @@ type DownloadToken struct {
 	Ip         string    `json:"ip" gorm:"type:varchar(128) not null"`
 }
 
-func (DownloadToken) TableName() string {
+func (this *DownloadToken) TableName() string {
 	return TABLE_PREFIX + "download_token"
 }

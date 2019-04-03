@@ -188,7 +188,7 @@ func (this *InstallController) getTableMeta(gormDb *gorm.DB, entity IBase) (bool
 //根据表名获取建表SQL语句
 func (this *InstallController) getTableMetaList(db *gorm.DB) []*InstallTableInfo {
 
-	var tableNames = []IBase{&Dashboard{}, &DownloadToken{}, &Footprint{}, &ImageCache{}, &Matter{}, &Preference{}, &Session{}, UploadToken{}, &User{}}
+	var tableNames = []IBase{&Dashboard{}, &DownloadToken{}, &Footprint{}, &ImageCache{}, &Matter{}, &Preference{}, &Session{}, &UploadToken{}, &User{}}
 	var installTableInfos []*InstallTableInfo
 
 	for _, iBase := range tableNames {
@@ -250,7 +250,7 @@ func (this *InstallController) TableInfoList(writer http.ResponseWriter, request
 //创建缺失数据库和表
 func (this *InstallController) CreateTable(writer http.ResponseWriter, request *http.Request) *WebResult {
 
-	var tableNames = []IBase{&Dashboard{}, &DownloadToken{}, &Footprint{}, &ImageCache{}, &Matter{}, &Preference{}, &Session{}, UploadToken{}, &User{}}
+	var tableNames = []IBase{&Dashboard{}, &DownloadToken{}, &Footprint{}, &ImageCache{}, &Matter{}, &Preference{}, &Session{}, &UploadToken{}, &User{}}
 	var installTableInfos []*InstallTableInfo
 
 	db := this.openDbConnection(writer, request)

@@ -16,6 +16,6 @@ type UploadToken struct {
 	Ip         string    `json:"ip"`
 }
 
-func (UploadToken) TableName() string {
+func (this *UploadToken) TableName() string {
 	return TABLE_PREFIX + "upload_token"
 }

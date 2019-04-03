@@ -15,6 +15,6 @@ type Footprint struct {
 }
 
 // set File's table name to be `profiles`
-func (Footprint) TableName() string {
+func (this *Footprint) TableName() string {
 	return TABLE_PREFIX + "footprint"
 }

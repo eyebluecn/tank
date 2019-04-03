@@ -15,6 +15,6 @@ type ImageCache struct {
 }
 
 // set File's table name to be `profiles`
-func (ImageCache) TableName() string {
+func (this *ImageCache) TableName() string {
 	return TABLE_PREFIX + "image_cache"
 }

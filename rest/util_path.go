@@ -7,7 +7,6 @@ import (
 	"os/user"
 	"path/filepath"
 	"strings"
-	"time"
 )
 
 //判断文件或文件夹是否已经存在
@@ -150,40 +149,18 @@ func GetLogPath() string {
 	return filePath
 }
 
-//获取某个用户文件应该存放的位置。这个是相对GetFilePath的路径
-//例如：/zicla/root
-func GetUserFileDir(username string, cache bool) (absolutePath string, relativePath string) {
+//获取到用户文件的根目录。
+func GetUserFileRootDir(username string) (rootDirPath string) {
 
-	filePath := CONFIG.MatterPath
+	rootDirPath = fmt.Sprintf("%s/%s/%s", CONFIG.MatterPath, username, MATTER_ROOT)
 
-	if cache {
-		//如果是缓存文件夹，那么统一放在cache这个文件夹下面
-		firstDir := MATTER_CACHE
+	return rootDirPath
+}
 
-		now := time.Now()
-		datePath := now.Format("2006-01-02")
-		//毫秒时间戳
-		timestamp := now.UnixNano() / 1e6
+//获取到用户缓存的根目录。
+func GetUserCacheRootDir(username string) (rootDirPath string) {
 
-		absolutePath = fmt.Sprintf("%s/%s/%s/%s/%d", filePath, username, firstDir, datePath, timestamp)
-		relativePath = fmt.Sprintf("/%s/%s/%s/%d", username, firstDir, datePath, timestamp)
+	rootDirPath = fmt.Sprintf("%s/%s/%s", CONFIG.MatterPath, username, MATTER_CACHE)
 
-	} else {
-		firstDir := MATTER_ROOT
-		absolutePath = fmt.Sprintf("%s/%s/%s", filePath, username, firstDir)
-		relativePath = fmt.Sprintf("/%s/%s", username, firstDir)
-	}
-
-	exists, err := PathExists(absolutePath)
-	if err != nil {
-		panic("判断上传文件是否存在时出错！请检查文件夹 " + filePath + " 的访问权限。")
-	}
-	if !exists {
-		err = os.MkdirAll(absolutePath, 0777)
-		if err != nil {
-			panic("创建上传文件夹时出错！")
-		}
-	}
-
-	return absolutePath, relativePath
+	return rootDirPath
 }

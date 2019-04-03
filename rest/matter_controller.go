@@ -116,7 +116,14 @@ func (this *MatterController) CreateDirectory(writer http.ResponseWriter, reques
 		panic("puuid必填")
 	}
 
-	path := fmt.Sprintf("/%s/%s", user.Username, name)
+	//判断同级文件夹中是否有同名的文件。
+	count := this.matterDao.CountByUserUuidAndPuuidAndDirAndName(user.Uuid, puuid, true, name)
+
+	if count > 0 {
+		this.PanicBadRequest("【" + name + "】已经存在了，请使用其他名称。")
+	}
+
+	path := fmt.Sprintf("/%s", name)
 	if puuid != MATTER_ROOT {
 		//验证目标文件夹存在。
 		this.matterDao.CheckByUuidAndUserUuid(puuid, user.Uuid)
@@ -139,21 +146,15 @@ func (this *MatterController) CreateDirectory(writer http.ResponseWriter, reques
 		}
 	}
 
-	//判断同级文件夹中是否有同名的文件。
-	count := this.matterDao.CountByUserUuidAndPuuidAndDirAndName(user.Uuid, puuid, true, name)
-
-	if count > 0 {
-		this.PanicBadRequest("【" + name + "】已经存在了，请使用其他名称。")
-	}
-
 	//磁盘中创建文件夹。
-	dirPath := MakeDirAll(CONFIG.MatterPath + path)
+	dirPath := MakeDirAll(GetUserFileRootDir(user.Username) + path)
 	this.logger.Info("Create Directory: %s", dirPath)
 
 	//数据库中创建文件夹。
 	matter := &Matter{
 		Puuid:    puuid,
 		UserUuid: user.Uuid,
+		Username: user.Username,
 		Dir:      true,
 		Name:     name,
 		Path:     path,
@@ -264,15 +265,6 @@ func (this *MatterController) Upload(writer http.ResponseWriter, request *http.R
 	}
 	user = this.userDao.CheckByUuid(userUuid)
 
-	if puuid == "" {
-		this.PanicBadRequest("puuid必填")
-	} else {
-		if puuid != MATTER_ROOT {
-			//验证puuid是否存在
-			this.matterDao.CheckByUuidAndUserUuid(puuid, userUuid)
-		}
-	}
-
 	privacy := privacyStr == TRUE
 
 	err = request.ParseMultipartForm(32 << 20)
@@ -310,12 +302,16 @@ func (this *MatterController) Crawl(writer http.ResponseWriter, request *http.Re
 	user = this.userDao.CheckByUuid(userUuid)
 
 	puuid := request.FormValue("puuid")
+	var dirRelativePath string
 	if puuid == "" {
 		this.PanicBadRequest("puuid必填")
 	} else {
-		if puuid != MATTER_ROOT {
+		if puuid == MATTER_ROOT {
+			dirRelativePath = ""
+		} else {
 			//找出上一级的文件夹。
-			this.matterDao.CheckByUuidAndUserUuid(puuid, userUuid)
+			dirMatter := this.matterDao.CheckByUuidAndUserUuid(puuid, userUuid)
+			dirRelativePath = dirMatter.Path
 		}
 	}
 
@@ -335,7 +331,7 @@ func (this *MatterController) Crawl(writer http.ResponseWriter, request *http.Re
 		panic("文件名必传")
 	}
 
-	matter := this.matterService.Crawl(url, filename, user, puuid, privacy)
+	matter := this.matterService.Crawl(url, filename, user, puuid, dirRelativePath, privacy)
 
 	return this.Success(matter)
 }
