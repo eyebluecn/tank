@@ -128,7 +128,7 @@ func (this *AlienService) PreviewOrDownload(
 		this.matterService.DownloadFile(writer, request, GetUserCacheRootDir(imageCache.Username)+imageCache.Path, imageCache.Name, withContentDisposition)
 
 	} else {
-		this.matterService.DownloadFile(writer, request, GetUserFileRootDir(matter.Username)+matter.Path, matter.Name, withContentDisposition)
+		this.matterService.DownloadFile(writer, request, matter.AbsolutePath(), matter.Name, withContentDisposition)
 	}
 
 	//文件下载次数加一，为了加快访问速度，异步进行

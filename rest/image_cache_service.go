@@ -195,7 +195,7 @@ func (this *ImageCacheService) cacheImage(writer http.ResponseWriter, request *h
 	user := this.userDao.FindByUuid(matter.UserUuid)
 
 	//resize图片
-	dstImage := this.ResizeImage(request, GetUserFileRootDir(user.Username)+matter.Path)
+	dstImage := this.ResizeImage(request, matter.AbsolutePath())
 
 	cacheImageName := GetSimpleFileName(matter.Name) + "_" + mode + extension
 	cacheImageRelativePath := GetSimpleFileName(matter.Path) + "_" + mode + extension

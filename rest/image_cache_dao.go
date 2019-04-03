@@ -5,7 +5,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/nu7hatch/gouuid"
 	"os"
-	"strings"
+	"path/filepath"
 	"time"
 )
 
@@ -140,10 +140,9 @@ func (this *ImageCacheDao) Save(imageCache *ImageCache) *ImageCache {
 //删除一个文件包括文件夹
 func (this *ImageCacheDao) deleteFileAndDir(imageCache *ImageCache) {
 
-	filePath := CONFIG.MatterPath + imageCache.Path
-	//递归找寻文件的上级目录uuid. 因为是/开头的缘故
-	parts := strings.Split(imageCache.Path, "/")
-	dirPath := CONFIG.MatterPath + "/" + parts[1] + "/" + parts[2] + "/" + parts[3] + "/" + parts[4]
+	filePath := GetUserCacheRootDir(imageCache.Username) + imageCache.Path
+
+	dirPath := filepath.Dir(filePath)
 
 	//删除文件
 	err := os.Remove(filePath)
@@ -151,11 +150,9 @@ func (this *ImageCacheDao) deleteFileAndDir(imageCache *ImageCache) {
 		this.logger.Error(fmt.Sprintf("删除磁盘上的文件%s出错 %s", filePath, err.Error()))
 	}
 
-	//删除这一层文件夹
-	err = os.Remove(dirPath)
-	if err != nil {
-		this.logger.Error(fmt.Sprintf("删除磁盘上的文件夹%s出错 %s", dirPath, err.Error()))
-	}
+	//如果这一层文件夹是空的，那么删除文件夹本身。
+	DeleteEmptyDir(dirPath)
+
 }
 
 //删除一个文件，数据库中删除，物理磁盘上删除。

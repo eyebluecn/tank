@@ -2,10 +2,10 @@ package rest
 
 import (
 	"github.com/jinzhu/gorm"
+	"path/filepath"
 
 	"github.com/nu7hatch/gouuid"
 	"os"
-	"strings"
 	"time"
 )
 
@@ -239,17 +239,16 @@ func (this *MatterDao) Delete(matter *Matter) {
 			this.Delete(f)
 		}
 
-		//从磁盘中删除该文件夹。
-		removeError := os.Remove(CONFIG.MatterPath + matter.Path)
-		if removeError != nil {
-			this.logger.Error("从磁盘上删除文件夹%s出错：%s", CONFIG.MatterPath+matter.Path, removeError.Error())
-		}
-
-		//删除文件夹本身
+		//删除数据库中文件夹本身
 		db := CONTEXT.DB.Delete(&matter)
 		this.PanicError(db.Error)
 
+		//从磁盘中删除该文件夹。
+		DeleteEmptyDir(matter.AbsolutePath())
+
+
 	} else {
+
 		//删除数据库中文件记录
 		db := CONTEXT.DB.Delete(&matter)
 		this.PanicError(db.Error)
@@ -257,25 +256,15 @@ func (this *MatterDao) Delete(matter *Matter) {
 		//删除对应的缓存图片。
 		this.imageCacheDao.DeleteByMatterUuid(matter.Uuid)
 
-		filePath := CONFIG.MatterPath + matter.Path
-
-
-		//TODO: do it here.
-		//递归找寻文件的上级目录uuid. 因为是/开头的缘故
-		parts := strings.Split(matter.Path, "/")
-		dirPath := CONFIG.MatterPath + "/" + parts[1] + "/" + parts[2] + "/" + parts[3]
-
 		//删除文件
-		err := os.Remove(filePath)
+		err := os.Remove(matter.AbsolutePath())
 		if err != nil {
 			this.logger.Error("删除磁盘上的文件出错 %s", err.Error())
 		}
 
-		//删除这一层文件夹
-		err = os.Remove(dirPath)
-		if err != nil {
-			this.logger.Error("删除磁盘上的文件夹出错 %s", err.Error())
-		}
+		//如果目录为空，那么一并删除
+		dirPath := filepath.Dir(matter.AbsolutePath())
+		DeleteEmptyDir(dirPath)
 
 	}
 }
@@ -294,6 +283,7 @@ func (this *MatterDao) SizeBetweenTime(startTime time.Time, endTime time.Time) i
 	db := CONTEXT.DB.Model(&Matter{}).Where("create_time >= ? AND create_time <= ?", startTime, endTime).Select("SUM(size)")
 	this.PanicError(db.Error)
 	row := db.Row()
-	row.Scan(&size)
+	err := row.Scan(&size)
+	this.PanicError(err)
 	return size
 }

@@ -20,3 +20,8 @@ type ImageCache struct {
 func (this *ImageCache) TableName() string {
 	return TABLE_PREFIX + "image_cache"
 }
+
+// 获取该ImageCache的绝对路径。path代表的是相对路径。
+func (this *ImageCache) AbsolutePath() string {
+	return GetUserCacheRootDir(this.Username) + this.Path
+}

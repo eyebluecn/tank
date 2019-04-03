@@ -29,8 +29,7 @@ func (Matter) TableName() string {
 	return TABLE_PREFIX + "matter"
 }
 
-
-// 获取该Matter的绝对路径。path代表的是相对路径。相对路径的根目录是 CONFIG.MatterPath
+// 获取该Matter的绝对路径。path代表的是相对路径。
 func (this *Matter) AbsolutePath() string {
-	return CONFIG.MatterPath + this.Path
+	return GetUserFileRootDir(this.Username) + this.Path
 }

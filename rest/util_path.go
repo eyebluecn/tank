@@ -3,6 +3,7 @@ package rest
 import (
 	"fmt"
 	"go/build"
+	"io/ioutil"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -89,6 +90,25 @@ func MakeDirAll(dirPath string) string {
 	}
 
 	return dirPath
+}
+
+//尝试删除空文件夹
+func DeleteEmptyDir(dirPath string) {
+	dir, err := ioutil.ReadDir(dirPath)
+	if err != nil {
+		LOGGER.Error("尝试读取目录%s时出错 %s", dirPath, err.Error())
+		panic("尝试读取目录时出错 " + err.Error())
+	}
+
+	if len(dir) == 0 {
+		//空文件夹
+		err = os.Remove(dirPath)
+		if err != nil {
+			LOGGER.Error("删除磁盘上的文件夹%s出错 %s", dirPath, err.Error())
+		}
+	} else {
+		LOGGER.Info("文件夹不为空，%v", len(dir))
+	}
 }
 
 //移除某个文件夹。 例如：/var/www/matter => /var/www
