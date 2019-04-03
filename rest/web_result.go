@@ -94,5 +94,5 @@ var (
 	DB_ERROR_DUPLICATE_KEY  = "Error 1062: Duplicate entry"
 	DB_ERROR_NOT_FOUND      = "record not found"
 	DB_TOO_MANY_CONNECTIONS = "Error 1040: Too many connections"
-	DB_BAD_CONNECTION       = "driver: bad connection"
+	DB_BAD_CONNECTION = "driver: bad connection"
 )

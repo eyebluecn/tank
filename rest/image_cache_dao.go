@@ -197,3 +197,12 @@ func (this *ImageCacheDao) SizeBetweenTime(startTime time.Time, endTime time.Tim
 	row.Scan(&size)
 	return size
 }
+
+
+//执行清理操作
+func (this *ImageCacheDao) Cleanup() {
+	this.logger.Info("[ImageCacheDao]执行清理：清除数据库中所有ImageCache记录。")
+	db := CONTEXT.DB.Where("uuid is not null").Delete(ImageCache{})
+	this.PanicError(db.Error)
+}
+

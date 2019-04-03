@@ -137,6 +137,7 @@ func (this *Context) registerBeans() {
 
 	//session
 	this.registerBean(new(SessionDao))
+	this.registerBean(new(SessionService))
 
 	//uploadToken
 	this.registerBean(new(UploadTokenDao))

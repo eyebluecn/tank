@@ -1,7 +1,6 @@
 package rest
 
 import (
-
 	"github.com/nu7hatch/gouuid"
 	"time"
 )
@@ -137,4 +136,11 @@ func (this *UserDao) Save(user *User) *User {
 		Save(user)
 	this.PanicError(db.Error)
 	return user
+}
+
+//执行清理操作
+func (this *UserDao) Cleanup() {
+	this.logger.Info("[UserDao]执行清理：清除数据库中所有User记录。")
+	db := CONTEXT.DB.Where("uuid is not null and role != ?", USER_ROLE_ADMINISTRATOR).Delete(User{})
+	this.PanicError(db.Error)
 }

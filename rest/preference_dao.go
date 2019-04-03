@@ -17,7 +17,7 @@ func (this *PreferenceDao) Fetch() *Preference {
 	db := CONTEXT.DB.First(preference)
 	if db.Error != nil {
 
-		if db.Error.Error() == "record not found" {
+		if db.Error.Error() == DB_ERROR_NOT_FOUND {
 			preference.Name = "蓝眼云盘"
 			preference.ShowAlien = true
 			this.Create(preference)
@@ -25,7 +25,6 @@ func (this *PreferenceDao) Fetch() *Preference {
 		} else {
 			return nil
 		}
-
 	}
 
 	return preference
@@ -53,4 +52,13 @@ func (this *PreferenceDao) Save(preference *Preference) *Preference {
 	this.PanicError(db.Error)
 
 	return preference
+}
+
+
+//执行清理操作
+func (this *PreferenceDao) Cleanup() {
+
+	this.logger.Info("[PreferenceDao]执行清理：清除数据库中所有Preference记录。")
+	db := CONTEXT.DB.Where("uuid is not null").Delete(Preference{})
+	this.PanicError(db.Error)
 }

@@ -8,6 +8,8 @@ import (
 type IBean interface {
 	//初始化方法
 	Init()
+	//系统清理方法
+	Cleanup()
 	//所有配置都加载完成后调用的方法，包括数据库加载完毕
 	ConfigPost()
 	//快速的Panic方法
@@ -23,6 +25,11 @@ func (this *Bean) Init() {
 }
 
 func (this *Bean) ConfigPost() {
+
+}
+
+//系统大清理，一般时产品即将上线时，清除脏数据，只执行一次。
+func (this *Bean) Cleanup() {
 
 }
 

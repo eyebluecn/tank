@@ -246,7 +246,6 @@ func (this *MatterDao) Delete(matter *Matter) {
 		//从磁盘中删除该文件夹。
 		DeleteEmptyDir(matter.AbsolutePath())
 
-
 	} else {
 
 		//删除数据库中文件记录
@@ -286,4 +285,15 @@ func (this *MatterDao) SizeBetweenTime(startTime time.Time, endTime time.Time) i
 	err := row.Scan(&size)
 	this.PanicError(err)
 	return size
+}
+
+//执行清理操作
+func (this *MatterDao) Cleanup() {
+	this.logger.Info("[MatterDao]执行清理：清除数据库中所有Matter记录。删除磁盘中所有Matter文件。")
+	db := CONTEXT.DB.Where("uuid is not null").Delete(Matter{})
+	this.PanicError(db.Error)
+
+	err := os.RemoveAll(CONFIG.MatterPath)
+	this.PanicError(err)
+
 }

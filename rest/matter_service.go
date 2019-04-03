@@ -159,6 +159,9 @@ func (this *MatterService) Upload(file multipart.File, user *User, puuid string,
 	fileAbsolutePath := dirAbsolutePath + "/" + filename
 	fileRelativePath := dirRelativePath + "/" + filename
 
+	//创建父文件夹
+	MakeDirAll(fileAbsolutePath)
+
 	//如果文件已经存在了，那么直接覆盖。
 	exist, err := PathExists(fileAbsolutePath)
 	this.PanicError(err)

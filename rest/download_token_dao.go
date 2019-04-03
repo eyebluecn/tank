@@ -58,3 +58,10 @@ func (this *DownloadTokenDao) Save(downloadToken *DownloadToken) *DownloadToken 
 
 	return downloadToken
 }
+
+//执行清理操作
+func (this *DownloadTokenDao) Cleanup() {
+	this.logger.Info("[DownloadTokenDao]执行清理：清除数据库中所有DownloadToken记录。")
+	db := CONTEXT.DB.Where("uuid is not null").Delete(DownloadToken{})
+	this.PanicError(db.Error)
+}

@@ -35,16 +35,17 @@ func (this *PreferenceController) RegisterRoutes() map[string]func(writer http.R
 	//每个Controller需要主动注册自己的路由。
 	routeMap["/api/preference/fetch"] = this.Wrap(this.Fetch, USER_ROLE_GUEST)
 	routeMap["/api/preference/edit"] = this.Wrap(this.Edit, USER_ROLE_ADMINISTRATOR)
+	routeMap["/api/preference/system_cleanup"] = this.Wrap(this.SystemCleanup, USER_ROLE_ADMINISTRATOR)
+
 	return routeMap
 }
 
 //查看某个偏好设置的详情。
 func (this *PreferenceController) Fetch(writer http.ResponseWriter, request *http.Request) *WebResult {
 
-	preference := this.preferenceDao.Fetch()
+	preference := this.preferenceService.Fetch()
 
 	return this.Success(preference)
-
 }
 
 //修改
@@ -76,5 +77,25 @@ func (this *PreferenceController) Edit(writer http.ResponseWriter, request *http
 
 	preference = this.preferenceDao.Save(preference)
 
+	//重置缓存中的偏好
+	this.preferenceService.Reset()
+
 	return this.Success(preference)
+}
+
+//清扫系统，所有数据全部丢失。一定要非常慎点，非常慎点！只在系统初始化的时候点击！
+func (this *PreferenceController) SystemCleanup(writer http.ResponseWriter, request *http.Request) *WebResult {
+
+	user := this.checkUser(writer, request)
+	password := request.FormValue("password")
+
+	if !MatchBcrypt(password, user.Password) {
+		this.PanicBadRequest("密码错误，不能执行！")
+	}
+
+	for _, bean := range CONTEXT.BeanMap {
+		bean.Cleanup()
+	}
+
+	return this.Success("OK")
 }

@@ -10,14 +10,6 @@ type SessionDao struct {
 	BaseDao
 }
 
-//构造函数
-func NewSessionDao() *SessionDao {
-
-	var sessionDao = &SessionDao{}
-	sessionDao.Init()
-	return sessionDao
-}
-
 //按照Id查询session.
 func (this *SessionDao) FindByUuid(uuid string) *Session {
 
@@ -78,3 +70,9 @@ func (this *SessionDao) Delete(uuid string) {
 }
 
 
+//执行清理操作
+func (this *SessionDao) Cleanup() {
+	this.logger.Info("[SessionDao]执行清理：清除数据库中所有Session记录。")
+	db := CONTEXT.DB.Where("uuid is not null").Delete(Session{})
+	this.PanicError(db.Error)
+}

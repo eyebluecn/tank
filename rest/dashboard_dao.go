@@ -110,3 +110,10 @@ func (this *DashboardDao) ActiveIpTop10() []*DashboardIpTimes {
 
 	return dashboardIpTimes
 }
+
+//执行清理操作
+func (this *DashboardDao) Cleanup() {
+	this.logger.Info("[DashboardDao]执行清理：清除数据库中所有Dashboard记录。")
+	db := CONTEXT.DB.Where("uuid is not null").Delete(Dashboard{})
+	this.PanicError(db.Error)
+}
