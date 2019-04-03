@@ -5,7 +5,9 @@ package rest
  */
 type ImageCache struct {
 	Base
+	Name       string  `json:"name" gorm:"type:varchar(255) not null"`
 	UserUuid   string  `json:"userUuid" gorm:"type:char(36)"`
+	Username   string  `json:"username" gorm:"type:varchar(45) not null"`
 	MatterUuid string  `json:"matterUuid" gorm:"type:char(36);index:idx_mu"`
 	Mode       string  `json:"mode" gorm:"type:varchar(512)"`
 	Md5        string  `json:"md5" gorm:"type:varchar(45)"`

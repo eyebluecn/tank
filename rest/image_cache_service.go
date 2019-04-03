@@ -6,6 +6,7 @@ import (
 	"image"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -194,11 +195,17 @@ func (this *ImageCacheService) cacheImage(writer http.ResponseWriter, request *h
 	user := this.userDao.FindByUuid(matter.UserUuid)
 
 	//resize图片
-	dstImage := this.ResizeImage(request, GetUserCacheRootDir(user.Username)+matter.Path)
+	dstImage := this.ResizeImage(request, GetUserFileRootDir(user.Username)+matter.Path)
 
-	cacheImagePath := GetSimpleFileName(matter.Path) + "_" + mode + extension
+	cacheImageName := GetSimpleFileName(matter.Name) + "_" + mode + extension
+	cacheImageRelativePath := GetSimpleFileName(matter.Path) + "_" + mode + extension
+	cacheImageAbsolutePath := GetUserCacheRootDir(user.Username) + GetSimpleFileName(matter.Path) + "_" + mode + extension
 
-	fileWriter, err := os.Create(cacheImagePath)
+	//创建目录。
+	dir := filepath.Dir(cacheImageAbsolutePath)
+	MakeDirAll(dir)
+
+	fileWriter, err := os.Create(cacheImageAbsolutePath)
 	this.PanicError(err)
 	defer func() {
 		e := fileWriter.Close()
@@ -215,11 +222,13 @@ func (this *ImageCacheService) cacheImage(writer http.ResponseWriter, request *h
 
 	//相关信息写到缓存中去
 	imageCache := &ImageCache{
+		Name:       cacheImageName,
 		UserUuid:   matter.UserUuid,
+		Username:   user.Username,
 		MatterUuid: matter.Uuid,
 		Mode:       mode,
 		Size:       fileInfo.Size(),
-		Path:       cacheImagePath,
+		Path:       cacheImageRelativePath,
 	}
 	this.imageCacheDao.Create(imageCache)
 
