@@ -18,8 +18,9 @@ import (
 //@Service
 type MatterService struct {
 	Bean
-	matterDao *MatterDao
-	userDao   *UserDao
+	matterDao         *MatterDao
+	userDao           *UserDao
+	imageCacheService *ImageCacheService
 }
 
 //初始化方法
@@ -35,6 +36,11 @@ func (this *MatterService) Init() {
 	b = CONTEXT.GetBean(this.userDao)
 	if b, ok := b.(*UserDao); ok {
 		this.userDao = b
+	}
+
+	b = CONTEXT.GetBean(this.imageCacheService)
+	if b, ok := b.(*ImageCacheService); ok {
+		this.imageCacheService = b
 	}
 
 }
@@ -624,4 +630,81 @@ func (this *MatterService) DownloadFile(
 		io.CopyN(writer, sendContent, sendSize)
 	}
 
+}
+
+//调整一个Matter的path值
+func (this *MatterService) adjustPath(matter *Matter, parentMatter *Matter) {
+
+	if matter.Dir {
+		//如果源是文件夹
+
+		//首先调整好自己
+		matter.Path = parentMatter.Path + "/" + matter.Name
+		matter = this.matterDao.Save(matter)
+
+		//调整该文件夹下文件的Path.
+		matters := this.matterDao.List(matter.Uuid, matter.UserUuid, nil)
+
+		for _, m := range matters {
+			this.adjustPath(m, matter)
+		}
+
+	} else {
+		//如果源是普通文件
+
+		matter.Path = parentMatter.Path + "/" + matter.Name
+		matter = this.matterDao.Save(matter)
+
+	}
+
+}
+
+//将一个srcMatter放置到另一个destMatter(必须为文件夹)下
+func (this *MatterService) Move(srcMatter *Matter, destMatter *Matter) {
+
+	if !destMatter.Dir {
+		this.PanicBadRequest("目标必须为文件夹")
+	}
+
+	if srcMatter.Dir {
+		//如果源是文件夹
+		destAbsolutePath := destMatter.AbsolutePath() + "/" + srcMatter.Name
+		srcAbsolutePath := srcMatter.AbsolutePath()
+
+		err := os.Rename(srcAbsolutePath, destAbsolutePath)
+		this.PanicError(err)
+
+		//修改数据库中信息
+		srcMatter.Puuid = destMatter.Uuid
+		srcMatter.Path = destMatter.Path + "/" + srcMatter.Name
+		srcMatter = this.matterDao.Save(srcMatter)
+
+		//调整该文件夹下文件的Path.
+		matters := this.matterDao.List(srcMatter.Uuid, srcMatter.UserUuid, nil)
+
+		//调整该文件夹下面所有文件的Path值
+		for _, m := range matters {
+			this.adjustPath(m, srcMatter)
+		}
+
+	} else {
+		//如果源是普通文件
+
+		destAbsolutePath := destMatter.AbsolutePath() + "/" + srcMatter.Name
+		srcAbsolutePath := srcMatter.AbsolutePath()
+
+		err := os.Rename(srcAbsolutePath, destAbsolutePath)
+		this.PanicError(err)
+
+		//删除对应的缓存。
+		this.imageCacheService.Delete(srcMatter)
+
+		//修改数据库中信息
+		srcMatter.Puuid = destMatter.Uuid
+		srcMatter.Path = destMatter.Path + "/" + srcMatter.Name
+		srcMatter = this.matterDao.Save(srcMatter)
+
+	}
+
+	return
 }

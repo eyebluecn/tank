@@ -101,10 +101,16 @@ func (this *DashboardService) maintain() {
 	totalMatterNum := this.matterDao.CountBetweenTime(longTimeAgo, endTime)
 	this.logger.Info("历史文件总数：%d", totalMatterNum)
 
-	matterSize := this.matterDao.SizeBetweenTime(startTime, endTime)
+	var matterSize int64
+	if matterNum != 0 {
+		matterSize = this.matterDao.SizeBetweenTime(startTime, endTime)
+	}
 	this.logger.Info("文件大小：%d", matterSize)
 
-	totalMatterSize := this.matterDao.SizeBetweenTime(longTimeAgo, endTime)
+	var totalMatterSize int64
+	if totalMatterNum != 0 {
+		totalMatterSize = this.matterDao.SizeBetweenTime(longTimeAgo, endTime)
+	}
 	this.logger.Info("历史文件总大小：%d", totalMatterSize)
 
 	cacheSize := this.imageCacheDao.SizeBetweenTime(startTime, endTime)

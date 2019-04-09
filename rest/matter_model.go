@@ -33,3 +33,15 @@ func (Matter) TableName() string {
 func (this *Matter) AbsolutePath() string {
 	return GetUserFileRootDir(this.Username) + this.Path
 }
+
+//创建一个 ROOT 的matter，主要用于统一化处理移动复制等内容。
+func NewRootMatter(user *User) *Matter {
+	matter := &Matter{}
+	matter.Uuid = MATTER_ROOT
+	matter.UserUuid = user.Uuid
+	matter.Username = user.Username
+	matter.Dir = true
+	matter.Path = ""
+
+	return matter
+}

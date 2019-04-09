@@ -10,10 +10,11 @@ import (
 
 type MatterController struct {
 	BaseController
-	matterDao        *MatterDao
-	matterService    *MatterService
-	downloadTokenDao *DownloadTokenDao
-	imageCacheDao    *ImageCacheDao
+	matterDao         *MatterDao
+	matterService     *MatterService
+	downloadTokenDao  *DownloadTokenDao
+	imageCacheDao     *ImageCacheDao
+	imageCacheService *ImageCacheService
 }
 
 //初始化方法 start to develop v3.
@@ -39,6 +40,10 @@ func (this *MatterController) Init() {
 	b = CONTEXT.GetBean(this.imageCacheDao)
 	if b, ok := b.(*ImageCacheDao); ok {
 		this.imageCacheDao = b
+	}
+	b = CONTEXT.GetBean(this.imageCacheService)
+	if b, ok := b.(*ImageCacheService); ok {
+		this.imageCacheService = b
 	}
 
 }
@@ -470,6 +475,7 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 
 	srcUuidsStr := request.FormValue("srcUuids")
 	destUuid := request.FormValue("destUuid")
+	userUuid := request.FormValue("userUuid")
 
 	var srcUuids []string
 	//验证参数。
@@ -479,7 +485,6 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 		srcUuids = strings.Split(srcUuidsStr, ",")
 	}
 
-	userUuid := request.FormValue("userUuid")
 	user := this.checkUser(writer, request)
 	if user.Role != USER_ROLE_ADMINISTRATOR {
 		userUuid = user.Uuid
@@ -495,9 +500,13 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 	if destUuid == "" {
 		this.PanicBadRequest("destUuid参数必填")
 	} else {
-		if destUuid != MATTER_ROOT {
+		if destUuid == MATTER_ROOT {
+			destMatter = NewRootMatter(user)
+		} else {
 			destMatter = this.matterService.Detail(destUuid)
-
+			if !destMatter.Dir {
+				this.PanicBadRequest("目标不是文件夹")
+			}
 			if user.Role != USER_ROLE_ADMINISTRATOR && destMatter.UserUuid != user.Uuid {
 				this.PanicUnauthorized("没有权限")
 			}
@@ -514,40 +523,39 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 			this.PanicUnauthorized("没有权限")
 		}
 
-		if srcMatter.Puuid == destUuid {
+		if srcMatter.Puuid == destMatter.Uuid {
 			this.PanicBadRequest("没有进行移动，操作无效！")
 		}
 
 		//判断同级文件夹中是否有同名的文件
-		count := this.matterDao.CountByUserUuidAndPuuidAndDirAndName(user.Uuid, destUuid, srcMatter.Dir, srcMatter.Name)
+		count := this.matterDao.CountByUserUuidAndPuuidAndDirAndName(user.Uuid, destMatter.Uuid, srcMatter.Dir, srcMatter.Name)
 
 		if count > 0 {
 			this.PanicBadRequest("【" + srcMatter.Name + "】在目标文件夹已经存在了，操作失败。")
 		}
 
 		//判断和目标文件夹是否是同一个主人。
-		if destUuid != MATTER_ROOT {
-			if srcMatter.UserUuid != destMatter.UserUuid {
-				panic("文件和目标文件夹的拥有者不是同一人")
-			}
+		if srcMatter.UserUuid != destMatter.UserUuid {
+			panic("文件和目标文件夹的拥有者不是同一人")
+		}
 
-			//文件夹不能把自己移入到自己中，也不可以移入到自己的子文件夹下。
-			tmpMatter := destMatter
-			for tmpMatter != nil {
-				if uuid == tmpMatter.Uuid {
-					panic("文件夹不能把自己移入到自己中，也不可以移入到自己的子文件夹下。")
-				}
-				tmpMatter = tmpMatter.Parent
+		//文件夹不能把自己移入到自己中，也不可以移入到自己的子文件夹下。
+		tmpMatter := destMatter
+		for tmpMatter != nil {
+			if uuid == tmpMatter.Uuid {
+				panic("文件夹不能把自己移入到自己中，也不可以移入到自己的子文件夹下。")
 			}
-
+			tmpMatter = tmpMatter.Parent
 		}
 
 		srcMatters = append(srcMatters, srcMatter)
 	}
 
 	for _, srcMatter := range srcMatters {
-		srcMatter.Puuid = destUuid
-		srcMatter = this.matterDao.Save(srcMatter)
+
+		//TODO:移动物理目录并且加锁。
+		this.matterService.Move(srcMatter, destMatter)
+
 	}
 
 	return this.Success(nil)
