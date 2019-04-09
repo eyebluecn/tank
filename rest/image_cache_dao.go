@@ -151,7 +151,7 @@ func (this *ImageCacheDao) deleteFileAndDir(imageCache *ImageCache) {
 	}
 
 	//如果这一层文件夹是空的，那么删除文件夹本身。
-	DeleteEmptyDir(dirPath)
+	DeleteEmptyDirRecursive(dirPath)
 
 }
 

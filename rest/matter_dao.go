@@ -2,8 +2,6 @@ package rest
 
 import (
 	"github.com/jinzhu/gorm"
-	"path/filepath"
-
 	"github.com/nu7hatch/gouuid"
 	"os"
 	"time"
@@ -261,9 +259,7 @@ func (this *MatterDao) Delete(matter *Matter) {
 			this.logger.Error("删除磁盘上的文件出错 %s", err.Error())
 		}
 
-		//如果目录为空，那么一并删除
-		dirPath := filepath.Dir(matter.AbsolutePath())
-		DeleteEmptyDir(dirPath)
+		//由于目录和物理结构一一对应，这里不能删除上级文件夹。
 
 	}
 }

@@ -20,6 +20,7 @@ type MatterService struct {
 	Bean
 	matterDao         *MatterDao
 	userDao           *UserDao
+	imageCacheDao     *ImageCacheDao
 	imageCacheService *ImageCacheService
 }
 
@@ -36,6 +37,11 @@ func (this *MatterService) Init() {
 	b = CONTEXT.GetBean(this.userDao)
 	if b, ok := b.(*UserDao); ok {
 		this.userDao = b
+	}
+
+	b = CONTEXT.GetBean(this.imageCacheDao)
+	if b, ok := b.(*ImageCacheDao); ok {
+		this.imageCacheDao = b
 	}
 
 	b = CONTEXT.GetBean(this.imageCacheService)
@@ -644,7 +650,6 @@ func (this *MatterService) adjustPath(matter *Matter, parentMatter *Matter) {
 
 		//调整该文件夹下文件的Path.
 		matters := this.matterDao.List(matter.Uuid, matter.UserUuid, nil)
-
 		for _, m := range matters {
 			this.adjustPath(m, matter)
 		}
@@ -652,9 +657,12 @@ func (this *MatterService) adjustPath(matter *Matter, parentMatter *Matter) {
 	} else {
 		//如果源是普通文件
 
+		//删除该文件的所有缓存
+		this.imageCacheDao.DeleteByMatterUuid(matter.Uuid)
+
+		//调整path
 		matter.Path = parentMatter.Path + "/" + matter.Name
 		matter = this.matterDao.Save(matter)
-
 	}
 
 }
@@ -671,6 +679,7 @@ func (this *MatterService) Move(srcMatter *Matter, destMatter *Matter) {
 		destAbsolutePath := destMatter.AbsolutePath() + "/" + srcMatter.Name
 		srcAbsolutePath := srcMatter.AbsolutePath()
 
+		//物理文件一口气移动
 		err := os.Rename(srcAbsolutePath, destAbsolutePath)
 		this.PanicError(err)
 
@@ -681,8 +690,6 @@ func (this *MatterService) Move(srcMatter *Matter, destMatter *Matter) {
 
 		//调整该文件夹下文件的Path.
 		matters := this.matterDao.List(srcMatter.Uuid, srcMatter.UserUuid, nil)
-
-		//调整该文件夹下面所有文件的Path值
 		for _, m := range matters {
 			this.adjustPath(m, srcMatter)
 		}
@@ -693,15 +700,67 @@ func (this *MatterService) Move(srcMatter *Matter, destMatter *Matter) {
 		destAbsolutePath := destMatter.AbsolutePath() + "/" + srcMatter.Name
 		srcAbsolutePath := srcMatter.AbsolutePath()
 
+		//物理文件进行移动
 		err := os.Rename(srcAbsolutePath, destAbsolutePath)
 		this.PanicError(err)
 
 		//删除对应的缓存。
-		this.imageCacheService.Delete(srcMatter)
+		this.imageCacheDao.DeleteByMatterUuid(srcMatter.Uuid)
 
 		//修改数据库中信息
 		srcMatter.Puuid = destMatter.Uuid
 		srcMatter.Path = destMatter.Path + "/" + srcMatter.Name
+		srcMatter = this.matterDao.Save(srcMatter)
+
+	}
+
+	return
+}
+
+//将一个srcMatter 重命名为 name
+func (this *MatterService) Rename(srcMatter *Matter, name string) {
+
+	if srcMatter.Dir {
+		//如果源是文件夹
+
+		oldAbsolutePath := srcMatter.AbsolutePath()
+		absoluteDirPath := GetDirOfPath(oldAbsolutePath)
+		relativeDirPath := GetDirOfPath(srcMatter.Path)
+		newAbsolutePath := absoluteDirPath + "/" + name
+
+		//物理文件一口气移动
+		err := os.Rename(oldAbsolutePath, newAbsolutePath)
+		this.PanicError(err)
+
+		//修改数据库中信息
+		srcMatter.Name = name
+		srcMatter.Path = relativeDirPath + "/" + name
+		srcMatter = this.matterDao.Save(srcMatter)
+
+		//调整该文件夹下文件的Path.
+		matters := this.matterDao.List(srcMatter.Uuid, srcMatter.UserUuid, nil)
+		for _, m := range matters {
+			this.adjustPath(m, srcMatter)
+		}
+
+	} else {
+		//如果源是普通文件
+
+		oldAbsolutePath := srcMatter.AbsolutePath()
+		absoluteDirPath := GetDirOfPath(oldAbsolutePath)
+		relativeDirPath := GetDirOfPath(srcMatter.Path)
+		newAbsolutePath := absoluteDirPath + "/" + name
+
+		//物理文件进行移动
+		err := os.Rename(oldAbsolutePath, newAbsolutePath)
+		this.PanicError(err)
+
+		//删除对应的缓存。
+		this.imageCacheDao.DeleteByMatterUuid(srcMatter.Uuid)
+
+		//修改数据库中信息
+		srcMatter.Name = name
+		srcMatter.Path = relativeDirPath + "/" + name
 		srcMatter = this.matterDao.Save(srcMatter)
 
 	}

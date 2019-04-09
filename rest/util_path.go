@@ -92,22 +92,53 @@ func MakeDirAll(dirPath string) string {
 	return dirPath
 }
 
-//尝试删除空文件夹
-func DeleteEmptyDir(dirPath string) {
+//获取到一个Path的文件夹路径，eg /var/www/xx.log -> /var/www
+func GetDirOfPath(fullPath string) string {
+
+	index1 := strings.LastIndex(fullPath, "/")
+	//可能是windows的环境
+	index2 := strings.LastIndex(fullPath, "\\")
+	index := index1
+	if index2 > index1 {
+		index = index2
+	}
+
+	return fullPath[:index]
+}
+
+//尝试删除空文件夹 true表示删掉了一个空文件夹，false表示没有删掉任何东西
+func DeleteEmptyDir(dirPath string) bool {
 	dir, err := ioutil.ReadDir(dirPath)
 	if err != nil {
 		LOGGER.Error("尝试读取目录%s时出错 %s", dirPath, err.Error())
 		panic("尝试读取目录时出错 " + err.Error())
 	}
-
 	if len(dir) == 0 {
 		//空文件夹
 		err = os.Remove(dirPath)
 		if err != nil {
 			LOGGER.Error("删除磁盘上的文件夹%s出错 %s", dirPath, err.Error())
 		}
+		return true
 	} else {
 		LOGGER.Info("文件夹不为空，%v", len(dir))
+	}
+	return false
+}
+
+//递归尝试删除空文件夹，一直空就一直删，直到不空为止
+func DeleteEmptyDirRecursive(dirPath string) {
+
+	fmt.Printf("递归删除删 %v \n", dirPath)
+
+	tmpPath := dirPath
+	for DeleteEmptyDir(tmpPath) {
+
+		dir := GetDirOfPath(tmpPath)
+
+		fmt.Printf("尝试删除 %v\n", dir)
+
+		tmpPath = dir
 	}
 }
 

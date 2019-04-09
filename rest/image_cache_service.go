@@ -232,6 +232,7 @@ func (this *ImageCacheService) cacheImage(writer http.ResponseWriter, request *h
 		UserUuid:   matter.UserUuid,
 		Username:   user.Username,
 		MatterUuid: matter.Uuid,
+		MatterName: matter.Name,
 		Mode:       mode,
 		Size:       fileInfo.Size(),
 		Path:       cacheImageRelativePath,
@@ -239,22 +240,4 @@ func (this *ImageCacheService) cacheImage(writer http.ResponseWriter, request *h
 	this.imageCacheDao.Create(imageCache)
 
 	return imageCache
-}
-
-//删除一个Matter的所有缓存文件。如果matter是文件夹，那么就删除该文件夹下的所有文件的缓存文件。
-func (this *ImageCacheService) Delete(matter *Matter) {
-
-	//目录的话递归删除。
-	if matter.Dir {
-		matters := this.matterDao.List(matter.Uuid, matter.UserUuid, nil)
-
-		for _, f := range matters {
-			this.Delete(f)
-		}
-
-	} else {
-
-		this.imageCacheDao.DeleteByMatterUuid(matter.Uuid)
-
-	}
 }

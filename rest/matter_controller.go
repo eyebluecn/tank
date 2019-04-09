@@ -432,13 +432,7 @@ func (this *MatterController) Rename(writer http.ResponseWriter, request *http.R
 		this.PanicBadRequest("【" + name + "】已经存在了，请使用其他名称。")
 	}
 
-	matter.Name = name
-	matter = this.matterDao.Save(matter)
-
-	//删除对应的缓存图片。
-	if !matter.Dir {
-		this.imageCacheDao.DeleteByMatterUuid(matter.Uuid)
-	}
+	this.matterService.Rename(matter, name)
 
 	return this.Success(matter)
 }
