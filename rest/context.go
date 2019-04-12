@@ -147,6 +147,9 @@ func (this *Context) registerBeans() {
 	this.registerBean(new(UserDao))
 	this.registerBean(new(UserService))
 
+	//webdav
+	this.registerBean(new(WebdavController))
+
 }
 
 //从Map中获取某个Bean.
