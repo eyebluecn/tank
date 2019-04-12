@@ -748,7 +748,7 @@ func copyFiles(ctx context.Context, fs FileSystem, src, dst string, overwrite bo
 // Allowed values for depth are 0, 1 or infiniteDepth. For each visited node,
 // walkFS calls walkFn. If a visited file system node is a directory and
 // walkFn returns filepath.SkipDir, walkFS will skip traversal of this node.
-func walkFS(ctx context.Context, fs FileSystem, depth int, name string, info os.FileInfo, walkFn filepath.WalkFunc) error {
+func WalkFS(ctx context.Context, fs FileSystem, depth int, name string, info os.FileInfo, walkFn filepath.WalkFunc) error {
 	// This implementation is based on Walk's code in the standard path/filepath package.
 	err := walkFn(name, info, nil)
 	if err != nil {
@@ -783,7 +783,7 @@ func walkFS(ctx context.Context, fs FileSystem, depth int, name string, info os.
 				return err
 			}
 		} else {
-			err = walkFS(ctx, fs, depth, filename, fileInfo, walkFn)
+			err = WalkFS(ctx, fs, depth, filename, fileInfo, walkFn)
 			if err != nil {
 				if !fileInfo.IsDir() || err != filepath.SkipDir {
 					return err

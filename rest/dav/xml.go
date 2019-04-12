@@ -50,7 +50,7 @@ type owner struct {
 }
 
 func readLockInfo(r io.Reader) (li lockInfo, status int, err error) {
-	c := &countingReader{r: r}
+	c := &CountingReader{r: r}
 	if err = ixml.NewDecoder(c).Decode(&li); err != nil {
 		if err == io.EOF {
 			if c.n == 0 {
@@ -70,12 +70,12 @@ func readLockInfo(r io.Reader) (li lockInfo, status int, err error) {
 	return li, 0, nil
 }
 
-type countingReader struct {
+type CountingReader struct {
 	n int
 	r io.Reader
 }
 
-func (c *countingReader) Read(p []byte) (int, error) {
+func (c *CountingReader) Read(p []byte) (int, error) {
 	n, err := c.r.Read(p)
 	c.n += n
 	return n, err
@@ -175,8 +175,8 @@ type Propfind struct {
 	Include  PropfindProps `xml:"DAV: include"`
 }
 
-func readPropfind(r io.Reader) (pf Propfind, status int, err error) {
-	c := countingReader{r: r}
+func ReadPropfind(r io.Reader) (pf Propfind, status int, err error) {
+	c := CountingReader{r: r}
 	if err = ixml.NewDecoder(&c).Decode(&pf); err != nil {
 		if err == io.EOF {
 			if c.n == 0 {
@@ -233,14 +233,14 @@ type ixmlProperty struct {
 }
 
 // http://www.webdav.org/specs/rfc4918.html#ELEMENT_error
-// See multistatusWriter for the "D:" namespace prefix.
+// See MultiStatusWriter for the "D:" namespace prefix.
 type xmlError struct {
 	XMLName  ixml.Name `xml:"D:error"`
 	InnerXML []byte    `xml:",innerxml"`
 }
 
 // http://www.webdav.org/specs/rfc4918.html#ELEMENT_propstat
-// See multistatusWriter for the "D:" namespace prefix.
+// See MultiStatusWriter for the "D:" namespace prefix.
 type propstat struct {
 	Prop                []Property `xml:"D:prop>_ignored_"`
 	Status              string     `xml:"D:status"`
@@ -258,7 +258,7 @@ type ixmlPropstat struct {
 }
 
 // MarshalXML prepends the "D:" namespace prefix on properties in the DAV: namespace
-// before encoding. See multistatusWriter.
+// before encoding. See MultiStatusWriter.
 func (ps propstat) MarshalXML(e *ixml.Encoder, start ixml.StartElement) error {
 	// Convert from a propstat to an ixmlPropstat.
 	ixmlPs := ixmlPropstat{
@@ -287,7 +287,7 @@ func (ps propstat) MarshalXML(e *ixml.Encoder, start ixml.StartElement) error {
 }
 
 // http://www.webdav.org/specs/rfc4918.html#ELEMENT_response
-// See multistatusWriter for the "D:" namespace prefix.
+// See MultiStatusWriter for the "D:" namespace prefix.
 type response struct {
 	XMLName             ixml.Name  `xml:"D:response"`
 	Href                []string   `xml:"D:href"`
@@ -306,15 +306,15 @@ type response struct {
 // well. This is because some versions of Mini-Redirector (on windows 7) ignore
 // elements with a default namespace (no prefixed namespace). A less intrusive fix
 // should be possible after golang.org/cl/11074. See https://golang.org/issue/11177
-type multistatusWriter struct {
+type MultiStatusWriter struct {
 	// ResponseDescription contains the optional responsedescription
 	// of the multistatus XML element. Only the latest content before
 	// close will be emitted. Empty response descriptions are not
 	// written.
 	responseDescription string
 
-	w   http.ResponseWriter
-	enc *ixml.Encoder
+	Writer http.ResponseWriter
+	enc    *ixml.Encoder
 }
 
 // Write validates and emits a DAV response as part of a multistatus response
@@ -325,7 +325,7 @@ type multistatusWriter struct {
 // first, valid response to be written, Write prepends the XML representation
 // of r with a multistatus tag. Callers must call close after the last response
 // has been written.
-func (w *multistatusWriter) write(r *response) error {
+func (w *MultiStatusWriter) Write(r *response) error {
 	switch len(r.Href) {
 	case 0:
 		return errInvalidResponse
@@ -338,7 +338,7 @@ func (w *multistatusWriter) write(r *response) error {
 			return errInvalidResponse
 		}
 	}
-	err := w.writeHeader()
+	err := w.WriteHeader()
 	if err != nil {
 		return err
 	}
@@ -348,17 +348,17 @@ func (w *multistatusWriter) write(r *response) error {
 // writeHeader writes a XML multistatus start element on w's underlying
 // http.ResponseWriter and returns the result of the write operation.
 // After the first write attempt, writeHeader becomes a no-op.
-func (w *multistatusWriter) writeHeader() error {
+func (w *MultiStatusWriter) WriteHeader() error {
 	if w.enc != nil {
 		return nil
 	}
-	w.w.Header().Add("Content-Type", "text/xml; charset=utf-8")
-	w.w.WriteHeader(StatusMulti)
-	_, err := fmt.Fprintf(w.w, `<?xml version="1.0" encoding="UTF-8"?>`)
+	w.Writer.Header().Add("Content-Type", "text/xml; charset=utf-8")
+	w.Writer.WriteHeader(StatusMulti)
+	_, err := fmt.Fprintf(w.Writer, `<?xml version="1.0" encoding="UTF-8"?>`)
 	if err != nil {
 		return err
 	}
-	w.enc = ixml.NewEncoder(w.w)
+	w.enc = ixml.NewEncoder(w.Writer)
 	return w.enc.EncodeToken(ixml.StartElement{
 		Name: ixml.Name{
 			Space: "DAV:",
@@ -375,7 +375,7 @@ func (w *multistatusWriter) writeHeader() error {
 // an error if the multistatus response could not be completed. If both the
 // return value and field enc of w are nil, then no multistatus response has
 // been written.
-func (w *multistatusWriter) close() error {
+func (w *MultiStatusWriter) Close() error {
 	if w.enc == nil {
 		return nil
 	}

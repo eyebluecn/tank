@@ -527,12 +527,12 @@ func (h *Handler) handlePropfind(w http.ResponseWriter, r *http.Request) (status
 			return http.StatusBadRequest, errInvalidDepth
 		}
 	}
-	pf, status, err := readPropfind(r.Body)
+	pf, status, err := ReadPropfind(r.Body)
 	if err != nil {
 		return status, err
 	}
 
-	mw := multistatusWriter{w: w}
+	mw := MultiStatusWriter{Writer: w}
 
 	walkFn := func(reqPath string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -540,7 +540,7 @@ func (h *Handler) handlePropfind(w http.ResponseWriter, r *http.Request) (status
 		}
 		var pstats []Propstat
 		if pf.Propname != nil {
-			pnames, err := propnames(ctx, h.FileSystem, h.LockSystem, reqPath)
+			pnames, err := Propnames(ctx, h.FileSystem, h.LockSystem, reqPath)
 			if err != nil {
 				return err
 			}
@@ -550,9 +550,9 @@ func (h *Handler) handlePropfind(w http.ResponseWriter, r *http.Request) (status
 			}
 			pstats = append(pstats, pstat)
 		} else if pf.Allprop != nil {
-			pstats, err = allprop(ctx, h.FileSystem, h.LockSystem, reqPath, pf.Prop)
+			pstats, err = Allprop(ctx, h.FileSystem, h.LockSystem, reqPath, pf.Prop)
 		} else {
-			pstats, err = props(ctx, h.FileSystem, h.LockSystem, reqPath, pf.Prop)
+			pstats, err = Props(ctx, h.FileSystem, h.LockSystem, reqPath, pf.Prop)
 		}
 		if err != nil {
 			return err
@@ -561,11 +561,11 @@ func (h *Handler) handlePropfind(w http.ResponseWriter, r *http.Request) (status
 		if info.IsDir() {
 			href += "/"
 		}
-		return mw.write(makePropstatResponse(href, pstats))
+		return mw.Write(MakePropstatResponse(href, pstats))
 	}
 
-	walkErr := walkFS(ctx, h.FileSystem, depth, reqPath, fi, walkFn)
-	closeErr := mw.close()
+	walkErr := WalkFS(ctx, h.FileSystem, depth, reqPath, fi, walkFn)
+	closeErr := mw.Close()
 	if walkErr != nil {
 		return http.StatusInternalServerError, walkErr
 	}
@@ -602,9 +602,9 @@ func (h *Handler) handleProppatch(w http.ResponseWriter, r *http.Request) (statu
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
-	mw := multistatusWriter{w: w}
-	writeErr := mw.write(makePropstatResponse(r.URL.Path, pstats))
-	closeErr := mw.close()
+	mw := MultiStatusWriter{Writer: w}
+	writeErr := mw.Write(MakePropstatResponse(r.URL.Path, pstats))
+	closeErr := mw.Close()
 	if writeErr != nil {
 		return http.StatusInternalServerError, writeErr
 	}
@@ -614,7 +614,7 @@ func (h *Handler) handleProppatch(w http.ResponseWriter, r *http.Request) (statu
 	return 0, nil
 }
 
-func makePropstatResponse(href string, pstats []Propstat) *response {
+func MakePropstatResponse(href string, pstats []Propstat) *response {
 	resp := response{
 		Href:     []string{(&url.URL{Path: href}).EscapedPath()},
 		Propstat: make([]propstat, 0, len(pstats)),
