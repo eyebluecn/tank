@@ -693,7 +693,7 @@ var (
 	errInvalidIfHeader         = errors.New("webdav: invalid If header")
 	errInvalidLockInfo         = errors.New("webdav: invalid lock info")
 	errInvalidLockToken        = errors.New("webdav: invalid lock token")
-	errInvalidPropfind         = errors.New("webdav: invalid propfind")
+	errInvalidPropfind         = errors.New("webdav: invalid Propfind")
 	errInvalidProppatch        = errors.New("webdav: invalid proppatch")
 	errInvalidResponse         = errors.New("webdav: invalid response")
 	errInvalidTimeout          = errors.New("webdav: invalid timeout")

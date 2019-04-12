@@ -77,7 +77,7 @@ func (this *DavController) HandleRoutes(writer http.ResponseWriter, request *htt
 
 	path := request.URL.Path
 
-	//匹配 /api/webdav{subPath}
+	//匹配 /api/dav{subPath}
 	reg := regexp.MustCompile(`^/api/dav(.*)$`)
 	strs := reg.FindStringSubmatch(path)
 	if len(strs) == 2 {
@@ -90,16 +90,25 @@ func (this *DavController) HandleRoutes(writer http.ResponseWriter, request *htt
 	return nil, false
 }
 
+
 //完成系统安装
 func (this *DavController) Index(writer http.ResponseWriter, request *http.Request, subPath string) {
 
 	this.logger.Info("请求访问来了：%s %s", request.RequestURI, subPath)
 
-	handler := &dav.Handler{
-		FileSystem: dav.Dir("/Users/fusu/d/group/golang/src/tank/tmp/dav"),
-		LockSystem: dav.NewMemLS(),
-	}
+	if request.Method == "PROPFIND1" {
 
-	handler.ServeHTTP(writer, request)
+		this.davService.HandlePropfind(writer, request)
+
+	} else {
+
+		handler := &dav.Handler{
+			FileSystem: dav.Dir("/Users/fusu/d/group/golang/src/tank/tmp/dav"),
+			LockSystem: dav.NewMemLS(),
+		}
+
+		handler.ServeHTTP(writer, request)
+
+	}
 
 }
