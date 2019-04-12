@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 // Package webdav provides a WebDAV server implementation.
-package dav // import "golang.org/x/net/webdav"
+package dav
 
 import (
 	"errors"
@@ -70,6 +70,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// status = 0 表示没有问题
 	if status != 0 {
 		w.WriteHeader(status)
 		if status != http.StatusNoContent {

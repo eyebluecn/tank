@@ -1,9 +1,9 @@
 package rest
 
 import (
-	"golang.org/x/net/webdav"
 	"net/http"
 	"regexp"
+	"tank/rest/dav"
 )
 
 /**
@@ -12,7 +12,7 @@ import (
  * https://tools.ietf.org/html/rfc4918
  *
  */
-type WebdavController struct {
+type DavController struct {
 	BaseController
 	uploadTokenDao    *UploadTokenDao
 	downloadTokenDao  *DownloadTokenDao
@@ -20,10 +20,11 @@ type WebdavController struct {
 	matterService     *MatterService
 	imageCacheDao     *ImageCacheDao
 	imageCacheService *ImageCacheService
+	davService        *DavService
 }
 
 //初始化方法
-func (this *WebdavController) Init() {
+func (this *DavController) Init() {
 	this.BaseController.Init()
 
 	//手动装填本实例的Bean.
@@ -56,10 +57,15 @@ func (this *WebdavController) Init() {
 	if c, ok := b.(*ImageCacheService); ok {
 		this.imageCacheService = c
 	}
+
+	b = CONTEXT.GetBean(this.davService)
+	if c, ok := b.(*DavService); ok {
+		this.davService = c
+	}
 }
 
 //注册自己的路由。
-func (this *WebdavController) RegisterRoutes() map[string]func(writer http.ResponseWriter, request *http.Request) {
+func (this *DavController) RegisterRoutes() map[string]func(writer http.ResponseWriter, request *http.Request) {
 
 	routeMap := make(map[string]func(writer http.ResponseWriter, request *http.Request))
 
@@ -67,12 +73,12 @@ func (this *WebdavController) RegisterRoutes() map[string]func(writer http.Respo
 }
 
 //处理一些特殊的接口，比如参数包含在路径中,一般情况下，controller不将参数放在url路径中
-func (this *WebdavController) HandleRoutes(writer http.ResponseWriter, request *http.Request) (func(writer http.ResponseWriter, request *http.Request), bool) {
+func (this *DavController) HandleRoutes(writer http.ResponseWriter, request *http.Request) (func(writer http.ResponseWriter, request *http.Request), bool) {
 
 	path := request.URL.Path
 
 	//匹配 /api/webdav{subPath}
-	reg := regexp.MustCompile(`^/api/webdav(.*)$`)
+	reg := regexp.MustCompile(`^/api/dav(.*)$`)
 	strs := reg.FindStringSubmatch(path)
 	if len(strs) == 2 {
 		var f = func(writer http.ResponseWriter, request *http.Request) {
@@ -85,15 +91,14 @@ func (this *WebdavController) HandleRoutes(writer http.ResponseWriter, request *
 }
 
 //完成系统安装
-func (this *WebdavController) Index(writer http.ResponseWriter, request *http.Request, subPath string) {
+func (this *DavController) Index(writer http.ResponseWriter, request *http.Request, subPath string) {
 
 	this.logger.Info("请求访问来了：%s %s", request.RequestURI, subPath)
 
-	handler := &webdav.Handler{
-		FileSystem: webdav.Dir("/Users/fusu/d/group/golang/src/tank/tmp/webdav"),
-		LockSystem: webdav.NewMemLS(),
+	handler := &dav.Handler{
+		FileSystem: dav.Dir("/Users/fusu/d/group/golang/src/tank/tmp/dav"),
+		LockSystem: dav.NewMemLS(),
 	}
-
 
 	handler.ServeHTTP(writer, request)
 

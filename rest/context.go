@@ -148,7 +148,8 @@ func (this *Context) registerBeans() {
 	this.registerBean(new(UserService))
 
 	//webdav
-	this.registerBean(new(WebdavController))
+	this.registerBean(new(DavController))
+	this.registerBean(new(DavService))
 
 }
 
