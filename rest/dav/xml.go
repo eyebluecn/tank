@@ -327,7 +327,7 @@ type multistatusWriter struct {
 // first, valid response to be written, Write prepends the XML representation
 // of r with a multistatus tag. Callers must call close after the last response
 // has been written.
-func (w *multistatusWriter) write(r *response) error {
+func (this *multistatusWriter) write(r *response) error {
 	switch len(r.Href) {
 	case 0:
 		return errInvalidResponse
@@ -340,28 +340,28 @@ func (w *multistatusWriter) write(r *response) error {
 			return errInvalidResponse
 		}
 	}
-	err := w.writeHeader()
+	err := this.writeHeader()
 	if err != nil {
 		return err
 	}
-	return w.enc.Encode(r)
+	return this.enc.Encode(r)
 }
 
 // writeHeader writes a XML multistatus start element on w's underlying
 // http.ResponseWriter and returns the result of the write operation.
 // After the first write attempt, writeHeader becomes a no-op.
-func (w *multistatusWriter) writeHeader() error {
-	if w.enc != nil {
+func (this *multistatusWriter) writeHeader() error {
+	if this.enc != nil {
 		return nil
 	}
-	w.w.Header().Add("Content-Type", "text/xml; charset=utf-8")
-	w.w.WriteHeader(StatusMulti)
-	_, err := fmt.Fprintf(w.w, `<?xml version="1.0" encoding="UTF-8"?>`)
+	this.w.Header().Add("Content-Type", "text/xml; charset=utf-8")
+	this.w.WriteHeader(StatusMulti)
+	_, err := fmt.Fprintf(this.w, `<?xml version="1.0" encoding="UTF-8"?>`)
 	if err != nil {
 		return err
 	}
-	w.enc = ixml.NewEncoder(w.w)
-	return w.enc.EncodeToken(ixml.StartElement{
+	this.enc = ixml.NewEncoder(this.w)
+	return this.enc.EncodeToken(ixml.StartElement{
 		Name: ixml.Name{
 			Space: "DAV:",
 			Local: "multistatus",
@@ -377,16 +377,16 @@ func (w *multistatusWriter) writeHeader() error {
 // an error if the multistatus response could not be completed. If both the
 // return value and field enc of w are nil, then no multistatus response has
 // been written.
-func (w *multistatusWriter) close() error {
-	if w.enc == nil {
+func (this *multistatusWriter) close() error {
+	if this.enc == nil {
 		return nil
 	}
 	var end []ixml.Token
-	if w.responseDescription != "" {
+	if this.responseDescription != "" {
 		name := ixml.Name{Space: "DAV:", Local: "responsedescription"}
 		end = append(end,
 			ixml.StartElement{Name: name},
-			ixml.CharData(w.responseDescription),
+			ixml.CharData(this.responseDescription),
 			ixml.EndElement{Name: name},
 		)
 	}
@@ -394,12 +394,12 @@ func (w *multistatusWriter) close() error {
 		Name: ixml.Name{Space: "DAV:", Local: "multistatus"},
 	})
 	for _, t := range end {
-		err := w.enc.EncodeToken(t)
+		err := this.enc.EncodeToken(t)
 		if err != nil {
 			return err
 		}
 	}
-	return w.enc.Flush()
+	return this.enc.Flush()
 }
 
 var xmlLangName = ixml.Name{Space: "http://www.w3.org/XML/1998/namespace", Local: "lang"}

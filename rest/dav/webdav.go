@@ -512,7 +512,7 @@ func (this *Handler) handlePropfind(writer http.ResponseWriter, request *http.Re
 		return status, err
 	}
 	ctx := request.Context()
-	fi, err := this.FileSystem.Stat(ctx, reqPath)
+	fileInfo, err := this.FileSystem.Stat(ctx, reqPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return http.StatusNotFound, err
@@ -532,7 +532,7 @@ func (this *Handler) handlePropfind(writer http.ResponseWriter, request *http.Re
 		return status, err
 	}
 
-	mw := multistatusWriter{w: writer}
+	multiStatusWriter := multistatusWriter{w: writer}
 
 	walkFn := func(reqPath string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -541,7 +541,7 @@ func (this *Handler) handlePropfind(writer http.ResponseWriter, request *http.Re
 
 		fmt.Printf("浏览：%s {name=%s,IsDir=%v,Mode=%v,ModTime=%v,Size=%v}\n",
 			reqPath, info.Name(), info.IsDir(), info.Mode(), info.ModTime(), info.Size())
-		var pstats []Propstat
+		var propstats []Propstat
 		if pf.Propname != nil {
 			pnames, err := propnames(ctx, this.FileSystem, this.LockSystem, reqPath)
 			if err != nil {
@@ -551,11 +551,11 @@ func (this *Handler) handlePropfind(writer http.ResponseWriter, request *http.Re
 			for _, xmlname := range pnames {
 				pstat.Props = append(pstat.Props, Property{XMLName: xmlname})
 			}
-			pstats = append(pstats, pstat)
+			propstats = append(propstats, pstat)
 		} else if pf.Allprop != nil {
-			pstats, err = allprop(ctx, this.FileSystem, this.LockSystem, reqPath, pf.Prop)
+			propstats, err = allprop(ctx, this.FileSystem, this.LockSystem, reqPath, pf.Prop)
 		} else {
-			pstats, err = props(ctx, this.FileSystem, this.LockSystem, reqPath, pf.Prop)
+			propstats, err = props(ctx, this.FileSystem, this.LockSystem, reqPath, pf.Prop)
 		}
 		if err != nil {
 			return err
@@ -564,11 +564,11 @@ func (this *Handler) handlePropfind(writer http.ResponseWriter, request *http.Re
 		if info.IsDir() {
 			href += "/"
 		}
-		return mw.write(makePropstatResponse(href, pstats))
+		return multiStatusWriter.write(makePropstatResponse(href, propstats))
 	}
 
-	walkErr := walkFS(ctx, this.FileSystem, depth, reqPath, fi, walkFn)
-	closeErr := mw.close()
+	walkErr := walkFS(ctx, this.FileSystem, depth, reqPath, fileInfo, walkFn)
+	closeErr := multiStatusWriter.close()
 	if walkErr != nil {
 		return http.StatusInternalServerError, walkErr
 	}
