@@ -70,7 +70,6 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// status = 0 表示没有问题
 	if status != 0 {
 		w.WriteHeader(status)
 		if status != http.StatusNoContent {
@@ -527,12 +526,12 @@ func (h *Handler) handlePropfind(w http.ResponseWriter, r *http.Request) (status
 			return http.StatusBadRequest, errInvalidDepth
 		}
 	}
-	pf, status, err := ReadPropfind(r.Body)
+	pf, status, err := readPropfind(r.Body)
 	if err != nil {
 		return status, err
 	}
 
-	mw := MultiStatusWriter{Writer: w}
+	mw := multistatusWriter{w: w}
 
 	walkFn := func(reqPath string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -540,7 +539,7 @@ func (h *Handler) handlePropfind(w http.ResponseWriter, r *http.Request) (status
 		}
 		var pstats []Propstat
 		if pf.Propname != nil {
-			pnames, err := Propnames(ctx, h.FileSystem, h.LockSystem, reqPath)
+			pnames, err := propnames(ctx, h.FileSystem, h.LockSystem, reqPath)
 			if err != nil {
 				return err
 			}
@@ -550,9 +549,9 @@ func (h *Handler) handlePropfind(w http.ResponseWriter, r *http.Request) (status
 			}
 			pstats = append(pstats, pstat)
 		} else if pf.Allprop != nil {
-			pstats, err = Allprop(ctx, h.FileSystem, h.LockSystem, reqPath, pf.Prop)
+			pstats, err = allprop(ctx, h.FileSystem, h.LockSystem, reqPath, pf.Prop)
 		} else {
-			pstats, err = Props(ctx, h.FileSystem, h.LockSystem, reqPath, pf.Prop)
+			pstats, err = props(ctx, h.FileSystem, h.LockSystem, reqPath, pf.Prop)
 		}
 		if err != nil {
 			return err
@@ -561,11 +560,11 @@ func (h *Handler) handlePropfind(w http.ResponseWriter, r *http.Request) (status
 		if info.IsDir() {
 			href += "/"
 		}
-		return mw.Write(MakePropstatResponse(href, pstats))
+		return mw.write(makePropstatResponse(href, pstats))
 	}
 
-	walkErr := WalkFS(ctx, h.FileSystem, depth, reqPath, fi, walkFn)
-	closeErr := mw.Close()
+	walkErr := walkFS(ctx, h.FileSystem, depth, reqPath, fi, walkFn)
+	closeErr := mw.close()
 	if walkErr != nil {
 		return http.StatusInternalServerError, walkErr
 	}
@@ -602,9 +601,9 @@ func (h *Handler) handleProppatch(w http.ResponseWriter, r *http.Request) (statu
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
-	mw := MultiStatusWriter{Writer: w}
-	writeErr := mw.Write(MakePropstatResponse(r.URL.Path, pstats))
-	closeErr := mw.Close()
+	mw := multistatusWriter{w: w}
+	writeErr := mw.write(makePropstatResponse(r.URL.Path, pstats))
+	closeErr := mw.close()
 	if writeErr != nil {
 		return http.StatusInternalServerError, writeErr
 	}
@@ -614,7 +613,7 @@ func (h *Handler) handleProppatch(w http.ResponseWriter, r *http.Request) (statu
 	return 0, nil
 }
 
-func MakePropstatResponse(href string, pstats []Propstat) *response {
+func makePropstatResponse(href string, pstats []Propstat) *response {
 	resp := response{
 		Href:     []string{(&url.URL{Path: href}).EscapedPath()},
 		Propstat: make([]propstat, 0, len(pstats)),
@@ -693,7 +692,7 @@ var (
 	errInvalidIfHeader         = errors.New("webdav: invalid If header")
 	errInvalidLockInfo         = errors.New("webdav: invalid lock info")
 	errInvalidLockToken        = errors.New("webdav: invalid lock token")
-	errInvalidPropfind         = errors.New("webdav: invalid Propfind")
+	errInvalidPropfind         = errors.New("webdav: invalid propfind")
 	errInvalidProppatch        = errors.New("webdav: invalid proppatch")
 	errInvalidResponse         = errors.New("webdav: invalid response")
 	errInvalidTimeout          = errors.New("webdav: invalid timeout")

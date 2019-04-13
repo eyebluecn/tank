@@ -96,19 +96,11 @@ func (this *DavController) Index(writer http.ResponseWriter, request *http.Reque
 
 	this.logger.Info("请求访问来了：%s %s", request.RequestURI, subPath)
 
-	if request.Method == "PROPFIND" {
-
-		this.davService.HandlePropfind(writer, request)
-
-	} else {
-
-		handler := &dav.Handler{
-			FileSystem: dav.Dir("/Users/fusu/d/group/golang/src/tank/tmp/dav"),
-			LockSystem: dav.NewMemLS(),
-		}
-
-		handler.ServeHTTP(writer, request)
-
+	handler := &dav.Handler{
+		FileSystem: dav.Dir("D:/Group/Golang/src/webdav/tmp"),
+		LockSystem: dav.NewMemLS(),
 	}
+
+	handler.ServeHTTP(writer, request)
 
 }
