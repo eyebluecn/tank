@@ -70,6 +70,7 @@ func readLockInfo(r io.Reader) (li lockInfo, status int, err error) {
 	return li, 0, nil
 }
 
+//这是一个带字节计数器的Reader，可以知道总共读取了多少个字节。
 type countingReader struct {
 	n int
 	r io.Reader
@@ -175,6 +176,7 @@ type propfind struct {
 	Include  propfindProps `xml:"DAV: include"`
 }
 
+//从request中读出需要的属性。比如：getcontentlength 大小 creationdate 创建时间
 func readPropfind(r io.Reader) (pf propfind, status int, err error) {
 	c := countingReader{r: r}
 	if err = ixml.NewDecoder(&c).Decode(&pf); err != nil {
