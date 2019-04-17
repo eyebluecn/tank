@@ -25,12 +25,12 @@ func TestReadLockInfo(t *testing.T) {
 	testCases := []struct {
 		desc       string
 		input      string
-		wantLI     lockInfo
+		wantLI     LockInfo
 		wantStatus int
 	}{{
 		"bad: junk",
 		"xxx",
-		lockInfo{},
+		LockInfo{},
 		http.StatusBadRequest,
 	}, {
 		"bad: invalid owner XML",
@@ -42,7 +42,7 @@ func TestReadLockInfo(t *testing.T) {
 			"    <D:href>   no end tag   \n" +
 			"  </D:owner>\n" +
 			"</D:lockinfo>",
-		lockInfo{},
+		LockInfo{},
 		http.StatusBadRequest,
 	}, {
 		"bad: invalid UTF-8",
@@ -54,7 +54,7 @@ func TestReadLockInfo(t *testing.T) {
 			"    <D:href>   \xff   </D:href>\n" +
 			"  </D:owner>\n" +
 			"</D:lockinfo>",
-		lockInfo{},
+		LockInfo{},
 		http.StatusBadRequest,
 	}, {
 		"bad: unfinished XML #1",
@@ -62,7 +62,7 @@ func TestReadLockInfo(t *testing.T) {
 			"<D:lockinfo xmlns:D='DAV:'>\n" +
 			"  <D:lockscope><D:exclusive/></D:lockscope>\n" +
 			"  <D:locktype><D:write/></D:locktype>\n",
-		lockInfo{},
+		LockInfo{},
 		http.StatusBadRequest,
 	}, {
 		"bad: unfinished XML #2",
@@ -71,12 +71,12 @@ func TestReadLockInfo(t *testing.T) {
 			"  <D:lockscope><D:exclusive/></D:lockscope>\n" +
 			"  <D:locktype><D:write/></D:locktype>\n" +
 			"  <D:owner>\n",
-		lockInfo{},
+		LockInfo{},
 		http.StatusBadRequest,
 	}, {
 		"good: empty",
 		"",
-		lockInfo{},
+		LockInfo{},
 		0,
 	}, {
 		"good: plain-text owner",
@@ -86,11 +86,11 @@ func TestReadLockInfo(t *testing.T) {
 			"  <D:locktype><D:write/></D:locktype>\n" +
 			"  <D:owner>gopher</D:owner>\n" +
 			"</D:lockinfo>",
-		lockInfo{
+		LockInfo{
 			XMLName:   ixml.Name{Space: "DAV:", Local: "lockinfo"},
 			Exclusive: new(struct{}),
 			Write:     new(struct{}),
-			Owner: owner{
+			Owner: Owner{
 				InnerXML: "gopher",
 			},
 		},
@@ -105,11 +105,11 @@ func TestReadLockInfo(t *testing.T) {
 			"    <D:href>http://example.org/~ejw/contact.html</D:href>\n" +
 			"  </D:owner>\n" +
 			"</D:lockinfo>",
-		lockInfo{
+		LockInfo{
 			XMLName:   ixml.Name{Space: "DAV:", Local: "lockinfo"},
 			Exclusive: new(struct{}),
 			Write:     new(struct{}),
-			Owner: owner{
+			Owner: Owner{
 				InnerXML: "\n    <D:href>http://example.org/~ejw/contact.html</D:href>\n  ",
 			},
 		},
@@ -117,7 +117,7 @@ func TestReadLockInfo(t *testing.T) {
 	}}
 
 	for _, tc := range testCases {
-		li, status, err := readLockInfo(strings.NewReader(tc.input))
+		li, status, err := ReadLockInfo(strings.NewReader(tc.input))
 		if tc.wantStatus != 0 {
 			if err == nil {
 				t.Errorf("%s: got nil error, want non-nil", tc.desc)
@@ -139,7 +139,7 @@ func TestReadPropfind(t *testing.T) {
 	testCases := []struct {
 		desc       string
 		input      string
-		wantPF     propfind
+		wantPF     Propfind
 		wantStatus int
 	}{{
 		desc: "propfind: propname",
@@ -147,14 +147,14 @@ func TestReadPropfind(t *testing.T) {
 			"<A:propfind xmlns:A='DAV:'>\n" +
 			"  <A:propname/>\n" +
 			"</A:propfind>",
-		wantPF: propfind{
+		wantPF: Propfind{
 			XMLName:  ixml.Name{Space: "DAV:", Local: "propfind"},
 			Propname: new(struct{}),
 		},
 	}, {
 		desc:  "propfind: empty body means allprop",
 		input: "",
-		wantPF: propfind{
+		wantPF: Propfind{
 			Allprop: new(struct{}),
 		},
 	}, {
@@ -163,7 +163,7 @@ func TestReadPropfind(t *testing.T) {
 			"<A:propfind xmlns:A='DAV:'>\n" +
 			"   <A:allprop/>\n" +
 			"</A:propfind>",
-		wantPF: propfind{
+		wantPF: Propfind{
 			XMLName: ixml.Name{Space: "DAV:", Local: "propfind"},
 			Allprop: new(struct{}),
 		},
@@ -174,10 +174,10 @@ func TestReadPropfind(t *testing.T) {
 			"  <A:allprop/>\n" +
 			"  <A:include><A:displayname/></A:include>\n" +
 			"</A:propfind>",
-		wantPF: propfind{
+		wantPF: Propfind{
 			XMLName: ixml.Name{Space: "DAV:", Local: "propfind"},
 			Allprop: new(struct{}),
-			Include: propfindProps{xml.Name{Space: "DAV:", Local: "displayname"}},
+			Include: PropfindProps{xml.Name{Space: "DAV:", Local: "displayname"}},
 		},
 	}, {
 		desc: "propfind: include followed by allprop",
@@ -186,10 +186,10 @@ func TestReadPropfind(t *testing.T) {
 			"  <A:include><A:displayname/></A:include>\n" +
 			"  <A:allprop/>\n" +
 			"</A:propfind>",
-		wantPF: propfind{
+		wantPF: Propfind{
 			XMLName: ixml.Name{Space: "DAV:", Local: "propfind"},
 			Allprop: new(struct{}),
-			Include: propfindProps{xml.Name{Space: "DAV:", Local: "displayname"}},
+			Include: PropfindProps{xml.Name{Space: "DAV:", Local: "displayname"}},
 		},
 	}, {
 		desc: "propfind: propfind",
@@ -197,9 +197,9 @@ func TestReadPropfind(t *testing.T) {
 			"<A:propfind xmlns:A='DAV:'>\n" +
 			"  <A:prop><A:displayname/></A:prop>\n" +
 			"</A:propfind>",
-		wantPF: propfind{
+		wantPF: Propfind{
 			XMLName: ixml.Name{Space: "DAV:", Local: "propfind"},
-			Prop:    propfindProps{xml.Name{Space: "DAV:", Local: "displayname"}},
+			Prop:    PropfindProps{xml.Name{Space: "DAV:", Local: "displayname"}},
 		},
 	}, {
 		desc: "propfind: prop with ignored comments",
@@ -210,9 +210,9 @@ func TestReadPropfind(t *testing.T) {
 			"    <A:displayname><!-- ignore --></A:displayname>\n" +
 			"  </A:prop>\n" +
 			"</A:propfind>",
-		wantPF: propfind{
+		wantPF: Propfind{
 			XMLName: ixml.Name{Space: "DAV:", Local: "propfind"},
-			Prop:    propfindProps{xml.Name{Space: "DAV:", Local: "displayname"}},
+			Prop:    PropfindProps{xml.Name{Space: "DAV:", Local: "displayname"}},
 		},
 	}, {
 		desc: "propfind: propfind with ignored whitespace",
@@ -220,9 +220,9 @@ func TestReadPropfind(t *testing.T) {
 			"<A:propfind xmlns:A='DAV:'>\n" +
 			"  <A:prop>   <A:displayname/></A:prop>\n" +
 			"</A:propfind>",
-		wantPF: propfind{
+		wantPF: Propfind{
 			XMLName: ixml.Name{Space: "DAV:", Local: "propfind"},
-			Prop:    propfindProps{xml.Name{Space: "DAV:", Local: "displayname"}},
+			Prop:    PropfindProps{xml.Name{Space: "DAV:", Local: "displayname"}},
 		},
 	}, {
 		desc: "propfind: propfind with ignored mixed-content",
@@ -230,9 +230,9 @@ func TestReadPropfind(t *testing.T) {
 			"<A:propfind xmlns:A='DAV:'>\n" +
 			"  <A:prop>foo<A:displayname/>bar</A:prop>\n" +
 			"</A:propfind>",
-		wantPF: propfind{
+		wantPF: Propfind{
 			XMLName: ixml.Name{Space: "DAV:", Local: "propfind"},
-			Prop:    propfindProps{xml.Name{Space: "DAV:", Local: "displayname"}},
+			Prop:    PropfindProps{xml.Name{Space: "DAV:", Local: "displayname"}},
 		},
 	}, {
 		desc: "propfind: propname with ignored element (section A.4)",
@@ -241,7 +241,7 @@ func TestReadPropfind(t *testing.T) {
 			"  <A:propname/>\n" +
 			"  <E:leave-out xmlns:E='E:'>*boss*</E:leave-out>\n" +
 			"</A:propfind>",
-		wantPF: propfind{
+		wantPF: Propfind{
 			XMLName:  ixml.Name{Space: "DAV:", Local: "propfind"},
 			Propname: new(struct{}),
 		},
@@ -330,7 +330,7 @@ func TestReadPropfind(t *testing.T) {
 	}}
 
 	for _, tc := range testCases {
-		pf, status, err := readPropfind(strings.NewReader(tc.input))
+		pf, status, err := ReadPropfind(strings.NewReader(tc.input))
 		if tc.wantStatus != 0 {
 			if err == nil {
 				t.Errorf("%s: got nil error, want non-nil", tc.desc)
@@ -353,7 +353,7 @@ func TestMultistatusWriter(t *testing.T) {
 	// http://www.webdav.org/specs/rfc4918.html
 	testCases := []struct {
 		desc        string
-		responses   []response
+		responses   []Response
 		respdesc    string
 		writeHeader bool
 		wantXML     string
@@ -361,9 +361,9 @@ func TestMultistatusWriter(t *testing.T) {
 		wantErr     error
 	}{{
 		desc: "section 9.2.2 (failed dependency)",
-		responses: []response{{
+		responses: []Response{{
 			Href: []string{"http://example.com/foo"},
-			Propstat: []propstat{{
+			Propstat: []SubPropstat{{
 				Prop: []Property{{
 					XMLName: xml.Name{
 						Space: "http://ns.example.com/",
@@ -405,10 +405,10 @@ func TestMultistatusWriter(t *testing.T) {
 		wantCode: StatusMulti,
 	}, {
 		desc: "section 9.6.2 (lock-token-submitted)",
-		responses: []response{{
+		responses: []Response{{
 			Href:   []string{"http://example.com/foo"},
 			Status: "HTTP/1.1 423 Locked",
-			Error: &xmlError{
+			Error: &XmlError{
 				InnerXML: []byte(`<lock-token-submitted xmlns="DAV:"/>`),
 			},
 		}},
@@ -424,9 +424,9 @@ func TestMultistatusWriter(t *testing.T) {
 		wantCode: StatusMulti,
 	}, {
 		desc: "section 9.1.3",
-		responses: []response{{
+		responses: []Response{{
 			Href: []string{"http://example.com/foo"},
-			Propstat: []propstat{{
+			Propstat: []SubPropstat{{
 				Prop: []Property{{
 					XMLName: xml.Name{Space: "http://ns.example.com/boxschema/", Local: "bigbox"},
 					InnerXML: []byte(`` +
@@ -492,8 +492,8 @@ func TestMultistatusWriter(t *testing.T) {
 		wantCode:    StatusMulti,
 	}, {
 		desc: "bad: no href",
-		responses: []response{{
-			Propstat: []propstat{{
+		responses: []Response{{
+			Propstat: []SubPropstat{{
 				Prop: []Property{{
 					XMLName: xml.Name{
 						Space: "http://example.com/",
@@ -508,7 +508,7 @@ func TestMultistatusWriter(t *testing.T) {
 		wantCode: http.StatusOK,
 	}, {
 		desc: "bad: multiple hrefs and no status",
-		responses: []response{{
+		responses: []Response{{
 			Href: []string{"http://example.com/foo", "http://example.com/bar"},
 		}},
 		wantErr: errInvalidResponse,
@@ -516,7 +516,7 @@ func TestMultistatusWriter(t *testing.T) {
 		wantCode: http.StatusOK,
 	}, {
 		desc: "bad: one href and no propstat",
-		responses: []response{{
+		responses: []Response{{
 			Href: []string{"http://example.com/foo"},
 		}},
 		wantErr: errInvalidResponse,
@@ -524,9 +524,9 @@ func TestMultistatusWriter(t *testing.T) {
 		wantCode: http.StatusOK,
 	}, {
 		desc: "bad: status with one href and propstat",
-		responses: []response{{
+		responses: []Response{{
 			Href: []string{"http://example.com/foo"},
-			Propstat: []propstat{{
+			Propstat: []SubPropstat{{
 				Prop: []Property{{
 					XMLName: xml.Name{
 						Space: "http://example.com/",
@@ -542,12 +542,12 @@ func TestMultistatusWriter(t *testing.T) {
 		wantCode: http.StatusOK,
 	}, {
 		desc: "bad: multiple hrefs and propstat",
-		responses: []response{{
+		responses: []Response{{
 			Href: []string{
 				"http://example.com/foo",
 				"http://example.com/bar",
 			},
-			Propstat: []propstat{{
+			Propstat: []SubPropstat{{
 				Prop: []Property{{
 					XMLName: xml.Name{
 						Space: "http://example.com/",
@@ -566,7 +566,7 @@ func TestMultistatusWriter(t *testing.T) {
 loop:
 	for _, tc := range testCases {
 		rec := httptest.NewRecorder()
-		w := multistatusWriter{w: rec, responseDescription: tc.respdesc}
+		w := MultiStatusWriter{Writer: rec, ResponseDescription: tc.respdesc}
 		if tc.writeHeader {
 			if err := w.writeHeader(); err != nil {
 				t.Errorf("%s: got writeHeader error %v, want nil", tc.desc, err)
@@ -574,7 +574,7 @@ loop:
 			}
 		}
 		for _, r := range tc.responses {
-			if err := w.write(&r); err != nil {
+			if err := w.Write(&r); err != nil {
 				if err != tc.wantErr {
 					t.Errorf("%s: got write error %v, want %v",
 						tc.desc, err, tc.wantErr)
@@ -705,7 +705,7 @@ func TestReadProppatch(t *testing.T) {
 	}}
 
 	for _, tc := range testCases {
-		pp, status, err := readProppatch(strings.NewReader(tc.input))
+		pp, status, err := ReadProppatch(strings.NewReader(tc.input))
 		if tc.wantStatus != 0 {
 			if err == nil {
 				t.Errorf("%s: got nil error, want non-nil", tc.desc)
@@ -800,7 +800,7 @@ func TestUnmarshalXMLValue(t *testing.T) {
 	var n xmlNormalizer
 	for _, tc := range testCases {
 		d := ixml.NewDecoder(strings.NewReader(tc.input))
-		var v xmlValue
+		var v XmlValue
 		if err := d.Decode(&v); err != nil {
 			t.Errorf("%s: got error %v, want nil", tc.desc, err)
 			continue

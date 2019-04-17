@@ -1,17 +1,17 @@
 package rest
 
 import (
-	"encoding/xml"
 	"fmt"
-	"io/ioutil"
 	"net/http"
+	"net/url"
+	"tank/rest/dav"
 )
 
 /**
  *
  * WebDav协议文档
  * https://tools.ietf.org/html/rfc4918
- *
+ * 主要参考 golang.org/x/net/webdav
  */
 //@Service
 type DavService struct {
@@ -30,22 +30,24 @@ func (this *DavService) Init() {
 	}
 }
 
-//从request中读取深度
-func (this *DavService) readDepth(request *http.Request) int {
-
-	depth := INFINITE_DEPTH
-	if hdr := request.Header.Get("Depth"); hdr != "" {
-		if hdr == "0" {
-			depth = 0
-		} else if hdr == "1" {
-			depth = 1
-		} else if hdr == "infinity" {
-			depth = INFINITE_DEPTH
-		} else {
-			panic("Depth格式错误！")
-		}
+func (this *DavService) makePropstatResponse(href string, pstats []dav.Propstat) *dav.Response {
+	resp := dav.Response{
+		Href:     []string{(&url.URL{Path: href}).EscapedPath()},
+		Propstat: make([]dav.SubPropstat, 0, len(pstats)),
 	}
-	return depth
+	for _, p := range pstats {
+		var xmlErr *dav.XmlError
+		if p.XMLError != "" {
+			xmlErr = &dav.XmlError{InnerXML: []byte(p.XMLError)}
+		}
+		resp.Propstat = append(resp.Propstat, dav.SubPropstat{
+			Status:              fmt.Sprintf("HTTP/1.1 %d %s", p.Status, dav.StatusText(p.Status)),
+			Prop:                p.Props,
+			ResponseDescription: p.ResponseDescription,
+			Error:               xmlErr,
+		})
+	}
+	return &resp
 }
 
 //处理 方法
@@ -54,28 +56,25 @@ func (this *DavService) HandlePropfind(writer http.ResponseWriter, request *http
 	//获取请求者
 	user := this.checkUser(writer, request)
 
-	//读取希望访问的深度。
-	depth := this.readDepth(request)
-
 	//找寻请求的目录
 	matter := this.matterDao.checkByUserUuidAndPath(user.Uuid, subPath)
 
-	//TODO: 读取请求参数。按照用户的参数请求返回内容。
-	propfind := &Propfind{}
-	body, err := ioutil.ReadAll(request.Body)
+	//读取请求参数。按照用户的参数请求返回内容。
+	propfind, _, err := dav.ReadPropfind(request.Body)
 	this.PanicError(err)
 
-	//从xml中解析内容到struct
-	err = xml.Unmarshal(body, &propfind)
+	//准备一个输出结果的Writer
+	multiStatusWriter := dav.MultiStatusWriter{Writer: writer}
+	var propstats []dav.Propstat
+	propstats = append(propstats, dav.Propstat{
+		ResponseDescription: "有点问题",
+	})
+
+	response := this.makePropstatResponse("/eyeblue/ready/go", propstats)
+
+	err = multiStatusWriter.Write(response)
 	this.PanicError(err)
 
-	//从struct还原到xml
-	output, err := xml.MarshalIndent(propfind, "  ", "    ")
-	this.PanicError(err)
-	fmt.Println(string(output))
-
-
-
-	fmt.Printf("%v %v \n", depth, matter.Name)
+	fmt.Printf("%v %v \n", matter.Name, propfind.Prop)
 
 }

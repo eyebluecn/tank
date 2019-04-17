@@ -98,7 +98,7 @@ func (this *DavController) Index(writer http.ResponseWriter, request *http.Reque
 	this.logger.Info("请求访问来了：%s %s", request.RequestURI, subPath)
 
 	method := request.Method
-	if method == "PROPFIND1" {
+	if method == "PROPFIND" {
 
 		this.davService.HandlePropfind(writer, request, subPath)
 

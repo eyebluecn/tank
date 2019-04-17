@@ -394,14 +394,14 @@ func (this *Handler) handleLock(w http.ResponseWriter, r *http.Request) (retStat
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
-	li, status, err := readLockInfo(r.Body)
+	li, status, err := ReadLockInfo(r.Body)
 	if err != nil {
 		return status, err
 	}
 
 	ctx := r.Context()
 	token, ld, now, created := "", LockDetails{}, time.Now(), false
-	if li == (lockInfo{}) {
+	if li == (LockInfo{}) {
 		// An empty lockInfo means to refresh the lock.
 		ih, ok := parseIfHeader(r.Header.Get("If"))
 		if !ok {
@@ -479,7 +479,7 @@ func (this *Handler) handleLock(w http.ResponseWriter, r *http.Request) (retStat
 		// and Handler.ServeHTTP would otherwise write "Created".
 		w.WriteHeader(http.StatusCreated)
 	}
-	writeLockInfo(w, token, ld)
+	WriteLockInfo(w, token, ld)
 	return 0, nil
 }
 
@@ -527,12 +527,12 @@ func (this *Handler) handlePropfind(writer http.ResponseWriter, request *http.Re
 		}
 	}
 	//读取出request希望获取的文件属性。
-	pf, status, err := readPropfind(request.Body)
+	pf, status, err := ReadPropfind(request.Body)
 	if err != nil {
 		return status, err
 	}
 
-	multiStatusWriter := multistatusWriter{w: writer}
+	multiStatusWriter := MultiStatusWriter{Writer: writer}
 
 	walkFn := func(reqPath string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -566,7 +566,7 @@ func (this *Handler) handlePropfind(writer http.ResponseWriter, request *http.Re
 		}
 
 		propstatResponse := makePropstatResponse(href, propstats)
-		return multiStatusWriter.write(propstatResponse)
+		return multiStatusWriter.Write(propstatResponse)
 	}
 
 	walkErr := walkFS(ctx, this.FileSystem, depth, reqPath, fileInfo, walkFn)
@@ -599,7 +599,7 @@ func (this *Handler) handleProppatch(w http.ResponseWriter, r *http.Request) (st
 		}
 		return http.StatusMethodNotAllowed, err
 	}
-	patches, status, err := readProppatch(r.Body)
+	patches, status, err := ReadProppatch(r.Body)
 	if err != nil {
 		return status, err
 	}
@@ -607,8 +607,8 @@ func (this *Handler) handleProppatch(w http.ResponseWriter, r *http.Request) (st
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
-	mw := multistatusWriter{w: w}
-	writeErr := mw.write(makePropstatResponse(r.URL.Path, pstats))
+	mw := MultiStatusWriter{Writer: w}
+	writeErr := mw.Write(makePropstatResponse(r.URL.Path, pstats))
 	closeErr := mw.close()
 	if writeErr != nil {
 		return http.StatusInternalServerError, writeErr
@@ -619,17 +619,17 @@ func (this *Handler) handleProppatch(w http.ResponseWriter, r *http.Request) (st
 	return 0, nil
 }
 
-func makePropstatResponse(href string, pstats []Propstat) *response {
-	resp := response{
+func makePropstatResponse(href string, pstats []Propstat) *Response {
+	resp := Response{
 		Href:     []string{(&url.URL{Path: href}).EscapedPath()},
-		Propstat: make([]propstat, 0, len(pstats)),
+		Propstat: make([]SubPropstat, 0, len(pstats)),
 	}
 	for _, p := range pstats {
-		var xmlErr *xmlError
+		var xmlErr *XmlError
 		if p.XMLError != "" {
-			xmlErr = &xmlError{InnerXML: []byte(p.XMLError)}
+			xmlErr = &XmlError{InnerXML: []byte(p.XMLError)}
 		}
-		resp.Propstat = append(resp.Propstat, propstat{
+		resp.Propstat = append(resp.Propstat, SubPropstat{
 			Status:              fmt.Sprintf("HTTP/1.1 %d %s", p.Status, StatusText(p.Status)),
 			Prop:                p.Props,
 			ResponseDescription: p.ResponseDescription,

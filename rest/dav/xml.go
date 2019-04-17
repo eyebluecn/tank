@@ -36,53 +36,53 @@ import (
 )
 
 // http://www.webdav.org/specs/rfc4918.html#ELEMENT_lockinfo
-type lockInfo struct {
+type LockInfo struct {
 	XMLName   ixml.Name `xml:"lockinfo"`
 	Exclusive *struct{} `xml:"lockscope>exclusive"`
 	Shared    *struct{} `xml:"lockscope>shared"`
 	Write     *struct{} `xml:"locktype>write"`
-	Owner     owner     `xml:"owner"`
+	Owner     Owner     `xml:"owner"`
 }
 
 // http://www.webdav.org/specs/rfc4918.html#ELEMENT_owner
-type owner struct {
+type Owner struct {
 	InnerXML string `xml:",innerxml"`
 }
 
-func readLockInfo(r io.Reader) (li lockInfo, status int, err error) {
-	c := &countingReader{r: r}
+func ReadLockInfo(r io.Reader) (li LockInfo, status int, err error) {
+	c := &CountingReader{r: r}
 	if err = ixml.NewDecoder(c).Decode(&li); err != nil {
 		if err == io.EOF {
 			if c.n == 0 {
 				// An empty body means to refresh the lock.
 				// http://www.webdav.org/specs/rfc4918.html#refreshing-locks
-				return lockInfo{}, 0, nil
+				return LockInfo{}, 0, nil
 			}
 			err = errInvalidLockInfo
 		}
-		return lockInfo{}, http.StatusBadRequest, err
+		return LockInfo{}, http.StatusBadRequest, err
 	}
 	// We only support exclusive (non-shared) write locks. In practice, these are
 	// the only types of locks that seem to matter.
 	if li.Exclusive == nil || li.Shared != nil || li.Write == nil {
-		return lockInfo{}, http.StatusNotImplemented, errUnsupportedLockInfo
+		return LockInfo{}, http.StatusNotImplemented, errUnsupportedLockInfo
 	}
 	return li, 0, nil
 }
 
 //这是一个带字节计数器的Reader，可以知道总共读取了多少个字节。
-type countingReader struct {
+type CountingReader struct {
 	n int
 	r io.Reader
 }
 
-func (c *countingReader) Read(p []byte) (int, error) {
+func (c *CountingReader) Read(p []byte) (int, error) {
 	n, err := c.r.Read(p)
 	c.n += n
 	return n, err
 }
 
-func writeLockInfo(w io.Writer, token string, ld LockDetails) (int, error) {
+func WriteLockInfo(w io.Writer, token string, ld LockDetails) (int, error) {
 	depth := "infinity"
 	if ld.ZeroDepth {
 		depth = "0"
@@ -135,13 +135,13 @@ func next(d *ixml.Decoder) (ixml.Token, error) {
 }
 
 // http://www.webdav.org/specs/rfc4918.html#ELEMENT_prop (for propfind)
-type propfindProps []xml.Name
+type PropfindProps []xml.Name
 
 // UnmarshalXML appends the property names enclosed within start to pn.
 //
 // It returns an error if start does not contain any properties or if
 // properties contain values. Character data between properties is ignored.
-func (pn *propfindProps) UnmarshalXML(d *ixml.Decoder, start ixml.StartElement) error {
+func (pn *PropfindProps) UnmarshalXML(d *ixml.Decoder, start ixml.StartElement) error {
 	for {
 		t, err := next(d)
 		if err != nil {
@@ -168,40 +168,40 @@ func (pn *propfindProps) UnmarshalXML(d *ixml.Decoder, start ixml.StartElement) 
 }
 
 // http://www.webdav.org/specs/rfc4918.html#ELEMENT_propfind
-type propfind struct {
+type Propfind struct {
 	XMLName  ixml.Name     `xml:"DAV: propfind"`
 	Allprop  *struct{}     `xml:"DAV: allprop"`
 	Propname *struct{}     `xml:"DAV: propname"`
-	Prop     propfindProps `xml:"DAV: prop"`
-	Include  propfindProps `xml:"DAV: include"`
+	Prop     PropfindProps `xml:"DAV: prop"`
+	Include  PropfindProps `xml:"DAV: include"`
 }
 
 //从request中读出需要的属性。比如：getcontentlength 大小 creationdate 创建时间
-func readPropfind(r io.Reader) (pf propfind, status int, err error) {
-	c := countingReader{r: r}
+func ReadPropfind(r io.Reader) (pf Propfind, status int, err error) {
+	c := CountingReader{r: r}
 	if err = ixml.NewDecoder(&c).Decode(&pf); err != nil {
 		if err == io.EOF {
 			if c.n == 0 {
 				// An empty body means to propfind allprop.
 				// http://www.webdav.org/specs/rfc4918.html#METHOD_PROPFIND
-				return propfind{Allprop: new(struct{})}, 0, nil
+				return Propfind{Allprop: new(struct{})}, 0, nil
 			}
 			err = errInvalidPropfind
 		}
-		return propfind{}, http.StatusBadRequest, err
+		return Propfind{}, http.StatusBadRequest, err
 	}
 
 	if pf.Allprop == nil && pf.Include != nil {
-		return propfind{}, http.StatusBadRequest, errInvalidPropfind
+		return Propfind{}, http.StatusBadRequest, errInvalidPropfind
 	}
 	if pf.Allprop != nil && (pf.Prop != nil || pf.Propname != nil) {
-		return propfind{}, http.StatusBadRequest, errInvalidPropfind
+		return Propfind{}, http.StatusBadRequest, errInvalidPropfind
 	}
 	if pf.Prop != nil && pf.Propname != nil {
-		return propfind{}, http.StatusBadRequest, errInvalidPropfind
+		return Propfind{}, http.StatusBadRequest, errInvalidPropfind
 	}
 	if pf.Propname == nil && pf.Allprop == nil && pf.Prop == nil {
-		return propfind{}, http.StatusBadRequest, errInvalidPropfind
+		return Propfind{}, http.StatusBadRequest, errInvalidPropfind
 	}
 	return pf, 0, nil
 }
@@ -228,49 +228,49 @@ type Property struct {
 
 // ixmlProperty is the same as the Property type except it holds an ixml.Name
 // instead of an xml.Name.
-type ixmlProperty struct {
+type IxmlProperty struct {
 	XMLName  ixml.Name
 	Lang     string `xml:"xml:lang,attr,omitempty"`
 	InnerXML []byte `xml:",innerxml"`
 }
 
 // http://www.webdav.org/specs/rfc4918.html#ELEMENT_error
-// See multistatusWriter for the "D:" namespace prefix.
-type xmlError struct {
+// See MultiStatusWriter for the "D:" namespace prefix.
+type XmlError struct {
 	XMLName  ixml.Name `xml:"D:error"`
 	InnerXML []byte    `xml:",innerxml"`
 }
 
 // http://www.webdav.org/specs/rfc4918.html#ELEMENT_propstat
-// See multistatusWriter for the "D:" namespace prefix.
-type propstat struct {
+// See MultiStatusWriter for the "D:" namespace prefix.
+type SubPropstat struct {
 	Prop                []Property `xml:"D:prop>_ignored_"`
 	Status              string     `xml:"D:status"`
-	Error               *xmlError  `xml:"D:error"`
+	Error               *XmlError  `xml:"D:error"`
 	ResponseDescription string     `xml:"D:responsedescription,omitempty"`
 }
 
 // ixmlPropstat is the same as the propstat type except it holds an ixml.Name
 // instead of an xml.Name.
-type ixmlPropstat struct {
-	Prop                []ixmlProperty `xml:"D:prop>_ignored_"`
+type IxmlPropstat struct {
+	Prop                []IxmlProperty `xml:"D:prop>_ignored_"`
 	Status              string         `xml:"D:status"`
-	Error               *xmlError      `xml:"D:error"`
+	Error               *XmlError      `xml:"D:error"`
 	ResponseDescription string         `xml:"D:responsedescription,omitempty"`
 }
 
 // MarshalXML prepends the "D:" namespace prefix on properties in the DAV: namespace
-// before encoding. See multistatusWriter.
-func (ps propstat) MarshalXML(e *ixml.Encoder, start ixml.StartElement) error {
+// before encoding. See MultiStatusWriter.
+func (ps SubPropstat) MarshalXML(e *ixml.Encoder, start ixml.StartElement) error {
 	// Convert from a propstat to an ixmlPropstat.
-	ixmlPs := ixmlPropstat{
-		Prop:                make([]ixmlProperty, len(ps.Prop)),
+	ixmlPs := IxmlPropstat{
+		Prop:                make([]IxmlProperty, len(ps.Prop)),
 		Status:              ps.Status,
 		Error:               ps.Error,
 		ResponseDescription: ps.ResponseDescription,
 	}
 	for k, prop := range ps.Prop {
-		ixmlPs.Prop[k] = ixmlProperty{
+		ixmlPs.Prop[k] = IxmlProperty{
 			XMLName:  ixml.Name(prop.XMLName),
 			Lang:     prop.Lang,
 			InnerXML: prop.InnerXML,
@@ -284,19 +284,19 @@ func (ps propstat) MarshalXML(e *ixml.Encoder, start ixml.StartElement) error {
 		}
 	}
 	// Distinct type to avoid infinite recursion of MarshalXML.
-	type newpropstat ixmlPropstat
+	type newpropstat IxmlPropstat
 	return e.EncodeElement(newpropstat(ixmlPs), start)
 }
 
 // http://www.webdav.org/specs/rfc4918.html#ELEMENT_response
-// See multistatusWriter for the "D:" namespace prefix.
-type response struct {
-	XMLName             ixml.Name  `xml:"D:response"`
-	Href                []string   `xml:"D:href"`
-	Propstat            []propstat `xml:"D:propstat"`
-	Status              string     `xml:"D:status,omitempty"`
-	Error               *xmlError  `xml:"D:error"`
-	ResponseDescription string     `xml:"D:responsedescription,omitempty"`
+// See MultiStatusWriter for the "D:" namespace prefix.
+type Response struct {
+	XMLName             ixml.Name     `xml:"D:response"`
+	Href                []string      `xml:"D:href"`
+	Propstat            []SubPropstat `xml:"D:propstat"`
+	Status              string        `xml:"D:status,omitempty"`
+	Error               *XmlError     `xml:"D:error"`
+	ResponseDescription string        `xml:"D:responsedescription,omitempty"`
 }
 
 // MultistatusWriter marshals one or more Responses into a XML
@@ -308,15 +308,15 @@ type response struct {
 // well. This is because some versions of Mini-Redirector (on windows 7) ignore
 // elements with a default namespace (no prefixed namespace). A less intrusive fix
 // should be possible after golang.org/cl/11074. See https://golang.org/issue/11177
-type multistatusWriter struct {
+type MultiStatusWriter struct {
 	// ResponseDescription contains the optional responsedescription
 	// of the multistatus XML element. Only the latest content before
 	// close will be emitted. Empty response descriptions are not
 	// written.
-	responseDescription string
+	ResponseDescription string
 
-	w   http.ResponseWriter
-	enc *ixml.Encoder
+	Writer  http.ResponseWriter
+	Encoder *ixml.Encoder
 }
 
 // Write validates and emits a DAV response as part of a multistatus response
@@ -327,7 +327,7 @@ type multistatusWriter struct {
 // first, valid response to be written, Write prepends the XML representation
 // of r with a multistatus tag. Callers must call close after the last response
 // has been written.
-func (this *multistatusWriter) write(r *response) error {
+func (this *MultiStatusWriter) Write(r *Response) error {
 	switch len(r.Href) {
 	case 0:
 		return errInvalidResponse
@@ -344,24 +344,24 @@ func (this *multistatusWriter) write(r *response) error {
 	if err != nil {
 		return err
 	}
-	return this.enc.Encode(r)
+	return this.Encoder.Encode(r)
 }
 
 // writeHeader writes a XML multistatus start element on w's underlying
 // http.ResponseWriter and returns the result of the write operation.
 // After the first write attempt, writeHeader becomes a no-op.
-func (this *multistatusWriter) writeHeader() error {
-	if this.enc != nil {
+func (this *MultiStatusWriter) writeHeader() error {
+	if this.Encoder != nil {
 		return nil
 	}
-	this.w.Header().Add("Content-Type", "text/xml; charset=utf-8")
-	this.w.WriteHeader(StatusMulti)
-	_, err := fmt.Fprintf(this.w, `<?xml version="1.0" encoding="UTF-8"?>`)
+	this.Writer.Header().Add("Content-Type", "text/xml; charset=utf-8")
+	this.Writer.WriteHeader(StatusMulti)
+	_, err := fmt.Fprintf(this.Writer, `<?xml version="1.0" encoding="UTF-8"?>`)
 	if err != nil {
 		return err
 	}
-	this.enc = ixml.NewEncoder(this.w)
-	return this.enc.EncodeToken(ixml.StartElement{
+	this.Encoder = ixml.NewEncoder(this.Writer)
+	return this.Encoder.EncodeToken(ixml.StartElement{
 		Name: ixml.Name{
 			Space: "DAV:",
 			Local: "multistatus",
@@ -375,18 +375,18 @@ func (this *multistatusWriter) writeHeader() error {
 
 // Close completes the marshalling of the multistatus response. It returns
 // an error if the multistatus response could not be completed. If both the
-// return value and field enc of w are nil, then no multistatus response has
+// return value and field Encoder of w are nil, then no multistatus response has
 // been written.
-func (this *multistatusWriter) close() error {
-	if this.enc == nil {
+func (this *MultiStatusWriter) close() error {
+	if this.Encoder == nil {
 		return nil
 	}
 	var end []ixml.Token
-	if this.responseDescription != "" {
+	if this.ResponseDescription != "" {
 		name := ixml.Name{Space: "DAV:", Local: "responsedescription"}
 		end = append(end,
 			ixml.StartElement{Name: name},
-			ixml.CharData(this.responseDescription),
+			ixml.CharData(this.ResponseDescription),
 			ixml.EndElement{Name: name},
 		)
 	}
@@ -394,12 +394,12 @@ func (this *multistatusWriter) close() error {
 		Name: ixml.Name{Space: "DAV:", Local: "multistatus"},
 	})
 	for _, t := range end {
-		err := this.enc.EncodeToken(t)
+		err := this.Encoder.EncodeToken(t)
 		if err != nil {
 			return err
 		}
 	}
-	return this.enc.Flush()
+	return this.Encoder.Flush()
 }
 
 var xmlLangName = ixml.Name{Space: "http://www.w3.org/XML/1998/namespace", Local: "lang"}
@@ -413,9 +413,9 @@ func xmlLang(s ixml.StartElement, d string) string {
 	return d
 }
 
-type xmlValue []byte
+type XmlValue []byte
 
-func (v *xmlValue) UnmarshalXML(d *ixml.Decoder, start ixml.StartElement) error {
+func (v *XmlValue) UnmarshalXML(d *ixml.Decoder, start ixml.StartElement) error {
 	// The XML value of a property can be arbitrary, mixed-content XML.
 	// To make sure that the unmarshalled value contains all required
 	// namespaces, we encode all the property value XML tokens into a
@@ -443,7 +443,7 @@ func (v *xmlValue) UnmarshalXML(d *ixml.Decoder, start ixml.StartElement) error 
 }
 
 // http://www.webdav.org/specs/rfc4918.html#ELEMENT_prop (for proppatch)
-type proppatchProps []Property
+type ProppatchProps []Property
 
 // UnmarshalXML appends the property names and values enclosed within start
 // to ps.
@@ -453,7 +453,7 @@ type proppatchProps []Property
 //
 // UnmarshalXML returns an error if start does not contain any properties or if
 // property values contain syntactically incorrect XML.
-func (ps *proppatchProps) UnmarshalXML(d *ixml.Decoder, start ixml.StartElement) error {
+func (ps *ProppatchProps) UnmarshalXML(d *ixml.Decoder, start ixml.StartElement) error {
 	lang := xmlLang(start, "")
 	for {
 		t, err := next(d)
@@ -471,7 +471,7 @@ func (ps *proppatchProps) UnmarshalXML(d *ixml.Decoder, start ixml.StartElement)
 				XMLName: xml.Name(t.(ixml.StartElement).Name),
 				Lang:    xmlLang(t.(ixml.StartElement), lang),
 			}
-			err = d.DecodeElement(((*xmlValue)(&p.InnerXML)), &elem)
+			err = d.DecodeElement(((*XmlValue)(&p.InnerXML)), &elem)
 			if err != nil {
 				return err
 			}
@@ -482,21 +482,21 @@ func (ps *proppatchProps) UnmarshalXML(d *ixml.Decoder, start ixml.StartElement)
 
 // http://www.webdav.org/specs/rfc4918.html#ELEMENT_set
 // http://www.webdav.org/specs/rfc4918.html#ELEMENT_remove
-type setRemove struct {
+type SetRemove struct {
 	XMLName ixml.Name
 	Lang    string         `xml:"xml:lang,attr,omitempty"`
-	Prop    proppatchProps `xml:"DAV: prop"`
+	Prop    ProppatchProps `xml:"DAV: prop"`
 }
 
 // http://www.webdav.org/specs/rfc4918.html#ELEMENT_propertyupdate
-type propertyupdate struct {
+type PropertyUpdate struct {
 	XMLName   ixml.Name   `xml:"DAV: propertyupdate"`
 	Lang      string      `xml:"xml:lang,attr,omitempty"`
-	SetRemove []setRemove `xml:",any"`
+	SetRemove []SetRemove `xml:",any"`
 }
 
-func readProppatch(r io.Reader) (patches []Proppatch, status int, err error) {
-	var pu propertyupdate
+func ReadProppatch(r io.Reader) (patches []Proppatch, status int, err error) {
+	var pu PropertyUpdate
 	if err = ixml.NewDecoder(r).Decode(&pu); err != nil {
 		return nil, http.StatusBadRequest, err
 	}
