@@ -564,7 +564,9 @@ func (this *Handler) handlePropfind(writer http.ResponseWriter, request *http.Re
 		if info.IsDir() {
 			href += "/"
 		}
-		return multiStatusWriter.write(makePropstatResponse(href, propstats))
+
+		propstatResponse := makePropstatResponse(href, propstats)
+		return multiStatusWriter.write(propstatResponse)
 	}
 
 	walkErr := walkFS(ctx, this.FileSystem, depth, reqPath, fileInfo, walkFn)

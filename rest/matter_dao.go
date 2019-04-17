@@ -283,6 +283,26 @@ func (this *MatterDao) SizeBetweenTime(startTime time.Time, endTime time.Time) i
 	return size
 }
 
+//根据userUuid和path来查找
+func (this *MatterDao) checkByUserUuidAndPath(userUuid string, path string) *Matter {
+
+	var wp = &WherePair{Query: "user_uuid = ? AND path = ?", Args: []interface{}{userUuid, path}}
+
+	var matter = &Matter{}
+	db := CONTEXT.DB.Model(&Matter{}).Where(wp.Query, wp.Args...).First(matter)
+
+
+	if db.Error != nil {
+		if db.Error.Error() == DB_ERROR_NOT_FOUND {
+			this.PanicNotFound("%s 不存在", path)
+		} else {
+			this.PanicError(db.Error)
+		}
+	}
+
+	return matter
+}
+
 //执行清理操作
 func (this *MatterDao) Cleanup() {
 	this.logger.Info("[MatterDao]执行清理：清除数据库中所有Matter记录。删除磁盘中所有Matter文件。")

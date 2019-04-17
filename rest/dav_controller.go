@@ -10,8 +10,10 @@ import (
  *
  * WebDav协议文档
  * https://tools.ietf.org/html/rfc4918
+ * http://www.webdav.org/specs/rfc4918.html
  *
  */
+
 type DavController struct {
 	BaseController
 	uploadTokenDao    *UploadTokenDao
@@ -90,17 +92,24 @@ func (this *DavController) HandleRoutes(writer http.ResponseWriter, request *htt
 	return nil, false
 }
 
-
 //完成系统安装
 func (this *DavController) Index(writer http.ResponseWriter, request *http.Request, subPath string) {
 
 	this.logger.Info("请求访问来了：%s %s", request.RequestURI, subPath)
 
-	handler := &dav.Handler{
-		FileSystem: dav.Dir("D:/Group/Golang/src/webdav/tmp"),
-		LockSystem: dav.NewMemLS(),
-	}
+	method := request.Method
+	if method == "PROPFIND1" {
 
-	handler.ServeHTTP(writer, request)
+		this.davService.HandlePropfind(writer, request, subPath)
+
+	} else {
+
+		handler := &dav.Handler{
+			FileSystem: dav.Dir("D:/Group/Golang/src/webdav/tmp"),
+			LockSystem: dav.NewMemLS(),
+		}
+
+		handler.ServeHTTP(writer, request)
+	}
 
 }
