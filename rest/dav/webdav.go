@@ -543,7 +543,7 @@ func (this *Handler) handlePropfind(writer http.ResponseWriter, request *http.Re
 			reqPath, info.Name(), info.IsDir(), info.Mode(), info.ModTime(), info.Size())
 		var propstats []Propstat
 		if pf.Propname != nil {
-			pnames, err := propnames(ctx, this.FileSystem, this.LockSystem, reqPath)
+			pnames, err := Propnames(ctx, this.FileSystem, this.LockSystem, reqPath)
 			if err != nil {
 				return err
 			}
@@ -570,7 +570,7 @@ func (this *Handler) handlePropfind(writer http.ResponseWriter, request *http.Re
 	}
 
 	walkErr := walkFS(ctx, this.FileSystem, depth, reqPath, fileInfo, walkFn)
-	closeErr := multiStatusWriter.close()
+	closeErr := multiStatusWriter.Close()
 	if walkErr != nil {
 		return http.StatusInternalServerError, walkErr
 	}
@@ -609,7 +609,7 @@ func (this *Handler) handleProppatch(w http.ResponseWriter, r *http.Request) (st
 	}
 	mw := MultiStatusWriter{Writer: w}
 	writeErr := mw.Write(makePropstatResponse(r.URL.Path, pstats))
-	closeErr := mw.close()
+	closeErr := mw.Close()
 	if writeErr != nil {
 		return http.StatusInternalServerError, writeErr
 	}

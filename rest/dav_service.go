@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"encoding/xml"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -50,8 +51,17 @@ func (this *DavService) makePropstatResponse(href string, pstats []dav.Propstat)
 	return &resp
 }
 
+//从一个matter中获取其propnames，每个propname都是一个xml标签。
+func (this *DavService) PropNames(matter *Matter) []xml.Name {
+
+	return nil
+
+}
+
 //处理 方法
 func (this *DavService) HandlePropfind(writer http.ResponseWriter, request *http.Request, subPath string) {
+
+	fmt.Printf("列出文件/文件夹 %s\n", subPath)
 
 	//获取请求者
 	user := this.checkUser(writer, request)
@@ -63,16 +73,37 @@ func (this *DavService) HandlePropfind(writer http.ResponseWriter, request *http
 	propfind, _, err := dav.ReadPropfind(request.Body)
 	this.PanicError(err)
 
+	//寻找符合条件的matter.
+	matters := this.matterDao.ListByUserUuidAndPath(user.Uuid, subPath)
+	if len(matters) == 0 {
+		this.PanicNotFound("%s不存在", subPath)
+	}
+
 	//准备一个输出结果的Writer
 	multiStatusWriter := dav.MultiStatusWriter{Writer: writer}
-	var propstats []dav.Propstat
-	propstats = append(propstats, dav.Propstat{
-		ResponseDescription: "有点问题",
-	})
 
-	response := this.makePropstatResponse("/eyeblue/ready/go", propstats)
+	for _, matter := range matters {
 
-	err = multiStatusWriter.Write(response)
+		fmt.Printf("开始分析 %s\n", matter.Name)
+
+		var propstats []dav.Propstat
+		var props = make([]dav.Property, 0)
+		props = append(props, dav.Property{
+			XMLName: xml.Name{Space: "DAV:"},
+		})
+		propstats = append(propstats, dav.Propstat{
+			Props:               props,
+			ResponseDescription: "有点问题",
+		})
+
+		response := this.makePropstatResponse("/eyeblue/ready/go", propstats)
+
+		err = multiStatusWriter.Write(response)
+		this.PanicError(err)
+	}
+
+	//闭合
+	err = multiStatusWriter.Close()
 	this.PanicError(err)
 
 	fmt.Printf("%v %v \n", matter.Name, propfind.Prop)

@@ -132,6 +132,31 @@ func (this *MatterDao) ListByUserUuidAndPuuidAndDirAndName(userUuid string, puui
 	return matters
 }
 
+//获取某个用户的某个文件夹下的某个名字的文件(或文件夹)列表
+func (this *MatterDao) ListByUserUuidAndPath(userUuid string, path string) []*Matter {
+
+	var wp = &WherePair{}
+
+	if userUuid == "" {
+		this.PanicBadRequest("userUuid必填！")
+	}
+
+	if path == "" {
+		this.PanicBadRequest("path必填！")
+	}
+
+	wp = wp.And(&WherePair{Query: "user_uuid = ?", Args: []interface{}{userUuid}})
+
+	wp = wp.And(&WherePair{Query: "path = ?", Args: []interface{}{path}})
+
+	var matters []*Matter
+	db := CONTEXT.DB.Model(&Matter{}).Where(wp.Query, wp.Args...).Find(&matters)
+
+	this.PanicError(db.Error)
+
+	return matters
+}
+
 //获取某个文件夹下所有的文件和子文件
 func (this *MatterDao) List(puuid string, userUuid string, sortArray []OrderPair) []*Matter {
 	var matters []*Matter
@@ -290,7 +315,6 @@ func (this *MatterDao) checkByUserUuidAndPath(userUuid string, path string) *Mat
 
 	var matter = &Matter{}
 	db := CONTEXT.DB.Model(&Matter{}).Where(wp.Query, wp.Args...).First(matter)
-
 
 	if db.Error != nil {
 		if db.Error.Error() == DB_ERROR_NOT_FOUND {

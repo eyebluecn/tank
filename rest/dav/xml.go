@@ -377,7 +377,7 @@ func (this *MultiStatusWriter) writeHeader() error {
 // an error if the multistatus response could not be completed. If both the
 // return value and field Encoder of w are nil, then no multistatus response has
 // been written.
-func (this *MultiStatusWriter) close() error {
+func (this *MultiStatusWriter) Close() error {
 	if this.Encoder == nil {
 		return nil
 	}

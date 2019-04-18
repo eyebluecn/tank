@@ -522,7 +522,7 @@ func TestMemPS(t *testing.T) {
 			var propstats []Propstat
 			switch op.op {
 			case "propname":
-				pnames, err := propnames(ctx, fs, ls, op.name)
+				pnames, err := Propnames(ctx, fs, ls, op.name)
 				if err != nil {
 					t.Errorf("%s: got error %v, want nil", desc, err)
 					continue

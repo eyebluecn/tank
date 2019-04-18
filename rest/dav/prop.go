@@ -214,7 +214,7 @@ func props(ctx context.Context, fs FileSystem, ls LockSystem, name string, pname
 }
 
 // Propnames returns the property names defined for resource name.
-func propnames(ctx context.Context, fs FileSystem, ls LockSystem, name string) ([]xml.Name, error) {
+func Propnames(ctx context.Context, fs FileSystem, ls LockSystem, name string) ([]xml.Name, error) {
 	f, err := fs.OpenFile(ctx, name, os.O_RDONLY, 0)
 	if err != nil {
 		return nil, err
@@ -255,7 +255,7 @@ func propnames(ctx context.Context, fs FileSystem, ls LockSystem, name string) (
 //
 // See http://www.webdav.org/specs/rfc4918.html#METHOD_PROPFIND
 func allprop(ctx context.Context, fs FileSystem, ls LockSystem, name string, include []xml.Name) ([]Propstat, error) {
-	pnames, err := propnames(ctx, fs, ls, name)
+	pnames, err := Propnames(ctx, fs, ls, name)
 	if err != nil {
 		return nil, err
 	}
