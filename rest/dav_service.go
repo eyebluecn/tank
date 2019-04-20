@@ -140,15 +140,12 @@ func (this *DavService) Propstats(matter *Matter, propfind dav.Propfind) []dav.P
 }
 
 //处理 方法
-func (this *DavService) HandlePropfind(writer http.ResponseWriter, request *http.Request, subPath string) {
+func (this *DavService) HandlePropfind(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
 
 	fmt.Printf("列出文件/文件夹 %s\n", subPath)
 
 	//获取请求的层数。暂不支持 infinity
 	depth := this.ParseDepth(request)
-
-	//获取请求者
-	user := this.checkUser(writer, request)
 
 	//读取请求参数。按照用户的参数请求返回内容。
 	propfind, _, err := dav.ReadPropfind(request.Body)
@@ -162,7 +159,6 @@ func (this *DavService) HandlePropfind(writer http.ResponseWriter, request *http
 	} else {
 		matter = this.matterDao.checkByUserUuidAndPath(user.Uuid, subPath)
 	}
-
 
 	var matters []*Matter
 	if depth == 0 {

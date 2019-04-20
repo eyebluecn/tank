@@ -2,9 +2,9 @@ package rest
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"regexp"
-	"tank/rest/dav"
 )
 
 /**
@@ -67,6 +67,30 @@ func (this *DavController) Init() {
 	}
 }
 
+//通过BasicAuth的方式授权。
+func (this *DavController) CheckCurrentUser(writer http.ResponseWriter, request *http.Request) *User {
+
+	username, password, ok := request.BasicAuth()
+	if !ok {
+		//要求前端使用Basic的形式授权
+		writer.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
+
+		panic(ConstWebResult(CODE_WRAPPER_LOGIN))
+
+	}
+
+	user := this.userDao.FindByUsername(username)
+	if user == nil {
+		this.PanicBadRequest("邮箱或密码错误")
+	} else {
+		if !MatchBcrypt(password, user.Password) {
+			this.PanicBadRequest("邮箱或密码错误")
+		}
+	}
+
+	return user
+}
+
 //注册自己的路由。
 func (this *DavController) RegisterRoutes() map[string]func(writer http.ResponseWriter, request *http.Request) {
 
@@ -97,21 +121,45 @@ func (this *DavController) HandleRoutes(writer http.ResponseWriter, request *htt
 //完成系统安装
 func (this *DavController) Index(writer http.ResponseWriter, request *http.Request, subPath string) {
 
-	this.logger.Info("请求访问来了：%s %s", request.RequestURI, subPath)
+	this.logger.Info("--------- URI: %s SUB_PATH: %s ---------", request.RequestURI, subPath)
+
+	//获取请求者
+	user := this.CheckCurrentUser(writer, request)
 
 	method := request.Method
 	if method == "PROPFIND" {
 
-		this.davService.HandlePropfind(writer, request, subPath)
+		this.davService.HandlePropfind(writer, request, user, subPath)
 
 	} else {
 
-		handler := &dav.Handler{
-			FileSystem: dav.Dir("D:/Group/Golang/src/webdav/tmp"),
-			LockSystem: dav.NewMemLS(),
+		/*打印所有HEADER以及请求参数*/
+
+		fmt.Printf("\n------ 请求： %s ------\n", request.URL)
+
+		fmt.Printf("\n------Method：------\n")
+		fmt.Println(request.Method)
+
+		fmt.Printf("\n------Header：------\n")
+		for key, value := range request.Header {
+			fmt.Printf("%s = %s\n", key, value)
 		}
 
-		handler.ServeHTTP(writer, request)
+		fmt.Printf("\n------请求参数：------\n")
+		for key, value := range request.Form {
+			fmt.Printf("%s = %s\n", key, value)
+		}
+
+		fmt.Printf("\n------Body：------\n")
+		body, err := ioutil.ReadAll(request.Body)
+		if err != nil {
+			fmt.Println("读取body时出错" + err.Error())
+		}
+		fmt.Println(string(body))
+
+		fmt.Println("------------------")
+
+		this.PanicBadRequest("该方法还不支持。")
 	}
 
 }

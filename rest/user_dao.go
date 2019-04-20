@@ -49,9 +49,20 @@ func (this *UserDao) CheckByUuid(uuid string) *User {
 	}
 
 	// Read
-	var user *User = &User{}
+	var user = &User{}
 	db := CONTEXT.DB.Where(&User{Base: Base{Uuid: uuid}}).First(user)
 	this.PanicError(db.Error)
+	return user
+}
+
+//按照邮箱查询用户。
+func (this *UserDao) FindByUsername(username string) *User {
+
+	var user = &User{}
+	db := CONTEXT.DB.Where(&User{Username: username}).First(user)
+	if db.Error != nil {
+		return nil
+	}
 	return user
 }
 
