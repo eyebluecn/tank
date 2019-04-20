@@ -31,6 +31,25 @@ func (this *DavService) Init() {
 	}
 }
 
+//获取Header头中的Depth值，暂不支持 infinity
+func (this *DavService) ParseDepth(request *http.Request) int {
+
+	depth := 1
+	if hdr := request.Header.Get("Depth"); hdr != "" {
+		switch hdr {
+		case "0":
+			return 0
+		case "1":
+			return 1
+		case "infinity":
+			return 1
+		}
+	} else {
+		this.PanicBadRequest("必须指定Header Depth")
+	}
+	return depth
+}
+
 func (this *DavService) makePropstatResponse(href string, pstats []dav.Propstat) *dav.Response {
 	resp := dav.Response{
 		Href:     []string{(&url.URL{Path: href}).EscapedPath()},
@@ -49,13 +68,6 @@ func (this *DavService) makePropstatResponse(href string, pstats []dav.Propstat)
 		})
 	}
 	return &resp
-}
-
-//从一个matter中获取其propnames，每个propname都是一个xml标签。
-func (this *DavService) PropNames(matter *Matter) []xml.Name {
-
-	return nil
-
 }
 
 //从一个matter中获取其 []dav.Propstat
@@ -132,6 +144,9 @@ func (this *DavService) HandlePropfind(writer http.ResponseWriter, request *http
 
 	fmt.Printf("列出文件/文件夹 %s\n", subPath)
 
+	//获取请求的层数。暂不支持 infinity
+	depth := this.ParseDepth(request)
+
 	//获取请求者
 	user := this.checkUser(writer, request)
 
@@ -148,14 +163,20 @@ func (this *DavService) HandlePropfind(writer http.ResponseWriter, request *http
 		matter = this.matterDao.checkByUserUuidAndPath(user.Uuid, subPath)
 	}
 
-	matters := this.matterDao.List(matter.Uuid, user.Uuid, nil)
 
-	if len(matters) == 0 {
-		this.PanicNotFound("%s不存在", subPath)
+	var matters []*Matter
+	if depth == 0 {
+		matters = []*Matter{matter}
+	} else {
+		matters = this.matterDao.List(matter.Uuid, user.Uuid, nil)
+
+		if len(matters) == 0 {
+			this.PanicNotFound("%s不存在", subPath)
+		}
+
+		//将当前的matter添加到头部
+		matters = append([]*Matter{matter}, matters...)
 	}
-
-	//将当前的matter添加到头部
-	matters = append([]*Matter{matter}, matters...)
 
 	//准备一个输出结果的Writer
 	multiStatusWriter := dav.MultiStatusWriter{Writer: writer}
