@@ -29,12 +29,10 @@ func (Matter) TableName() string {
 	return TABLE_PREFIX + "matter"
 }
 
-
 // 获取该Matter的绝对路径。path代表的是相对路径。
 func (this *Matter) AbsolutePath() string {
 	return GetUserFileRootDir(this.Username) + this.Path
 }
-
 
 // 获取该Matter的MimeType
 func (this *Matter) MimeType() string {
@@ -50,6 +48,8 @@ func NewRootMatter(user *User) *Matter {
 	matter.Username = user.Username
 	matter.Dir = true
 	matter.Path = ""
+	matter.CreateTime = user.CreateTime
+	matter.UpdateTime = user.UpdateTime
 
 	return matter
 }

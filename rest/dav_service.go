@@ -58,6 +58,53 @@ func (this *DavService) PropNames(matter *Matter) []xml.Name {
 
 }
 
+//从一个matter中获取其 []dav.Propstat
+func (this *DavService) PropstatsFromXmlNames(matter *Matter, xmlNames []xml.Name) []dav.Propstat {
+
+	propstats := make([]dav.Propstat, 0)
+
+	var properties []dav.Property
+
+	for _, xmlName := range xmlNames {
+		//TODO: deadprops尚未考虑
+
+		// Otherwise, it must either be a live property or we don't know it.
+		if liveProp := LivePropMap[xmlName]; liveProp.findFn != nil && (liveProp.dir || !matter.Dir) {
+			innerXML := liveProp.findFn(matter)
+
+			properties = append(properties, dav.Property{
+				XMLName:  xmlName,
+				InnerXML: []byte(innerXML),
+			})
+		} else {
+			this.logger.Info("%s的%s无法完成", matter.Path, xmlName.Local)
+		}
+	}
+
+	if len(properties) == 0 {
+		this.PanicBadRequest("请求的属性项无法解析！")
+	}
+
+	okPropstat := dav.Propstat{Status: http.StatusOK, Props: properties}
+
+	propstats = append(propstats, okPropstat)
+
+	return propstats
+
+}
+
+//从一个matter中获取所有的propsNames
+func (this *DavService) AllPropXmlNames(matter *Matter) []xml.Name {
+
+	pnames := make([]xml.Name, 0)
+	for pn, prop := range LivePropMap {
+		if prop.findFn != nil && (prop.dir || !matter.Dir) {
+			pnames = append(pnames, pn)
+		}
+	}
+
+	return pnames
+}
 
 //从一个matter中获取其 []dav.Propstat
 func (this *DavService) Propstats(matter *Matter, propfind dav.Propfind) []dav.Propstat {
@@ -66,34 +113,14 @@ func (this *DavService) Propstats(matter *Matter, propfind dav.Propfind) []dav.P
 	if propfind.Propname != nil {
 		this.PanicBadRequest("propfind.Propname != nil 尚未处理")
 	} else if propfind.Allprop != nil {
-		this.PanicBadRequest("propfind.Allprop != nil 尚未处理")
+
+		//TODO: 如果include中还有内容，那么包含进去。
+		xmlNames := this.AllPropXmlNames(matter)
+
+		propstats = this.PropstatsFromXmlNames(matter, xmlNames)
+
 	} else {
-
-		var properties []dav.Property
-
-		for _, prop := range propfind.Prop {
-			//TODO: deadprops尚未考虑
-
-			// Otherwise, it must either be a live property or we don't know it.
-			if liveProp := LivePropMap[prop]; liveProp.findFn != nil && (liveProp.dir || !matter.Dir) {
-				innerXML := liveProp.findFn(matter)
-
-				properties = append(properties, dav.Property{
-					XMLName:  prop,
-					InnerXML: []byte(innerXML),
-				})
-			} else {
-				//TODO: 某一项请求的prop没有对应的结果
-			}
-		}
-
-		if len(properties) == 0 {
-			this.PanicBadRequest("请求的属性项无法解析！")
-		}
-
-		okPropstat := dav.Propstat{Status: http.StatusOK, Props: properties}
-
-		propstats = append(propstats, okPropstat)
+		propstats = this.PropstatsFromXmlNames(matter, propfind.Prop)
 	}
 
 	return propstats
@@ -108,18 +135,27 @@ func (this *DavService) HandlePropfind(writer http.ResponseWriter, request *http
 	//获取请求者
 	user := this.checkUser(writer, request)
 
-	//找寻请求的目录
-	matter := this.matterDao.checkByUserUuidAndPath(user.Uuid, subPath)
-
 	//读取请求参数。按照用户的参数请求返回内容。
 	propfind, _, err := dav.ReadPropfind(request.Body)
 	this.PanicError(err)
 
 	//寻找符合条件的matter.
-	matters := this.matterDao.ListByUserUuidAndPath(user.Uuid, subPath)
+	var matter *Matter
+	//如果是空或者/就是请求根目录
+	if subPath == "" || subPath == "/" {
+		matter = NewRootMatter(user)
+	} else {
+		matter = this.matterDao.checkByUserUuidAndPath(user.Uuid, subPath)
+	}
+
+	matters := this.matterDao.List(matter.Uuid, user.Uuid, nil)
+
 	if len(matters) == 0 {
 		this.PanicNotFound("%s不存在", subPath)
 	}
+
+	//将当前的matter添加到头部
+	matters = append([]*Matter{matter}, matters...)
 
 	//准备一个输出结果的Writer
 	multiStatusWriter := dav.MultiStatusWriter{Writer: writer}
@@ -140,6 +176,6 @@ func (this *DavService) HandlePropfind(writer http.ResponseWriter, request *http
 	err = multiStatusWriter.Close()
 	this.PanicError(err)
 
-	fmt.Printf("%v %v \n", matter.Name, propfind.Prop)
+	fmt.Printf("%v %v \n", subPath, propfind.Prop)
 
 }

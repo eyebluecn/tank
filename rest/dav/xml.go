@@ -168,6 +168,7 @@ func (pn *PropfindProps) UnmarshalXML(d *ixml.Decoder, start ixml.StartElement) 
 }
 
 // http://www.webdav.org/specs/rfc4918.html#ELEMENT_propfind
+// <!ELEMENT propfind ( propname | (allprop, include?) | prop ) >
 type Propfind struct {
 	XMLName  ixml.Name     `xml:"DAV: propfind"`
 	Allprop  *struct{}     `xml:"DAV: allprop"`
@@ -177,9 +178,9 @@ type Propfind struct {
 }
 
 //从request中读出需要的属性。比如：getcontentlength 大小 creationdate 创建时间
-func ReadPropfind(r io.Reader) (pf Propfind, status int, err error) {
+func ReadPropfind(r io.Reader) (propfind Propfind, status int, err error) {
 	c := CountingReader{r: r}
-	if err = ixml.NewDecoder(&c).Decode(&pf); err != nil {
+	if err = ixml.NewDecoder(&c).Decode(&propfind); err != nil {
 		if err == io.EOF {
 			if c.n == 0 {
 				// An empty body means to propfind allprop.
@@ -191,19 +192,19 @@ func ReadPropfind(r io.Reader) (pf Propfind, status int, err error) {
 		return Propfind{}, http.StatusBadRequest, err
 	}
 
-	if pf.Allprop == nil && pf.Include != nil {
+	if propfind.Allprop == nil && propfind.Include != nil {
 		return Propfind{}, http.StatusBadRequest, errInvalidPropfind
 	}
-	if pf.Allprop != nil && (pf.Prop != nil || pf.Propname != nil) {
+	if propfind.Allprop != nil && (propfind.Prop != nil || propfind.Propname != nil) {
 		return Propfind{}, http.StatusBadRequest, errInvalidPropfind
 	}
-	if pf.Prop != nil && pf.Propname != nil {
+	if propfind.Prop != nil && propfind.Propname != nil {
 		return Propfind{}, http.StatusBadRequest, errInvalidPropfind
 	}
-	if pf.Propname == nil && pf.Allprop == nil && pf.Prop == nil {
+	if propfind.Propname == nil && propfind.Allprop == nil && propfind.Prop == nil {
 		return Propfind{}, http.StatusBadRequest, errInvalidPropfind
 	}
-	return pf, 0, nil
+	return propfind, 0, nil
 }
 
 // Property represents a single DAV resource property as defined in RFC 4918.
