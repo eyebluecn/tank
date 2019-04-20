@@ -58,6 +58,48 @@ func (this *DavService) PropNames(matter *Matter) []xml.Name {
 
 }
 
+
+//从一个matter中获取其 []dav.Propstat
+func (this *DavService) Propstats(matter *Matter, propfind dav.Propfind) []dav.Propstat {
+
+	propstats := make([]dav.Propstat, 0)
+	if propfind.Propname != nil {
+		this.PanicBadRequest("propfind.Propname != nil 尚未处理")
+	} else if propfind.Allprop != nil {
+		this.PanicBadRequest("propfind.Allprop != nil 尚未处理")
+	} else {
+
+		var properties []dav.Property
+
+		for _, prop := range propfind.Prop {
+			//TODO: deadprops尚未考虑
+
+			// Otherwise, it must either be a live property or we don't know it.
+			if liveProp := LivePropMap[prop]; liveProp.findFn != nil && (liveProp.dir || !matter.Dir) {
+				innerXML := liveProp.findFn(matter)
+
+				properties = append(properties, dav.Property{
+					XMLName:  prop,
+					InnerXML: []byte(innerXML),
+				})
+			} else {
+				//TODO: 某一项请求的prop没有对应的结果
+			}
+		}
+
+		if len(properties) == 0 {
+			this.PanicBadRequest("请求的属性项无法解析！")
+		}
+
+		okPropstat := dav.Propstat{Status: http.StatusOK, Props: properties}
+
+		propstats = append(propstats, okPropstat)
+	}
+
+	return propstats
+
+}
+
 //处理 方法
 func (this *DavService) HandlePropfind(writer http.ResponseWriter, request *http.Request, subPath string) {
 
@@ -84,19 +126,11 @@ func (this *DavService) HandlePropfind(writer http.ResponseWriter, request *http
 
 	for _, matter := range matters {
 
-		fmt.Printf("开始分析 %s\n", matter.Name)
+		fmt.Printf("开始分析 %s\n", matter.Path)
 
-		var propstats []dav.Propstat
-		var props = make([]dav.Property, 0)
-		props = append(props, dav.Property{
-			XMLName: xml.Name{Space: "DAV:"},
-		})
-		propstats = append(propstats, dav.Propstat{
-			Props:               props,
-			ResponseDescription: "有点问题",
-		})
-
-		response := this.makePropstatResponse("/eyeblue/ready/go", propstats)
+		propstats := this.Propstats(matter, propfind)
+		path := fmt.Sprintf("%s%s", WEBDAV_PREFFIX, matter.Path)
+		response := this.makePropstatResponse(path, propstats)
 
 		err = multiStatusWriter.Write(response)
 		this.PanicError(err)

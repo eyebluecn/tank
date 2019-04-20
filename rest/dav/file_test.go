@@ -37,7 +37,7 @@ func TestSlashClean(t *testing.T) {
 		"a/b/c",
 	}
 	for _, tc := range testCases {
-		got := slashClean(tc)
+		got := SlashClean(tc)
 		want := path.Clean("/" + tc)
 		if got != want {
 			t.Errorf("tc=%q: got %q, want %q", tc, got, want)

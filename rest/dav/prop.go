@@ -336,7 +336,7 @@ loop:
 	return []Propstat{pstat}, nil
 }
 
-func escapeXML(s string) string {
+func EscapeXML(s string) string {
 	for i := 0; i < len(s); i++ {
 		// As an optimization, if s contains only ASCII letters, digits or a
 		// few special characters, the escaped value is s itself and we don't
@@ -364,11 +364,11 @@ func findResourceType(ctx context.Context, fs FileSystem, ls LockSystem, name st
 }
 
 func findDisplayName(ctx context.Context, fs FileSystem, ls LockSystem, name string, fi os.FileInfo) (string, error) {
-	if slashClean(name) == "/" {
+	if SlashClean(name) == "/" {
 		// Hide the real name of a possibly prefixed root directory.
 		return "", nil
 	}
-	return escapeXML(fi.Name()), nil
+	return EscapeXML(fi.Name()), nil
 }
 
 func findContentLength(ctx context.Context, fs FileSystem, ls LockSystem, name string, fi os.FileInfo) (string, error) {

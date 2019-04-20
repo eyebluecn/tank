@@ -151,12 +151,12 @@ func (m *memLS) Confirm(now time.Time, name0, name1 string, conditions ...Condit
 
 	var n0, n1 *memLSNode
 	if name0 != "" {
-		if n0 = m.lookup(slashClean(name0), conditions...); n0 == nil {
+		if n0 = m.lookup(SlashClean(name0), conditions...); n0 == nil {
 			return nil, ErrConfirmationFailed
 		}
 	}
 	if name1 != "" {
-		if n1 = m.lookup(slashClean(name1), conditions...); n1 == nil {
+		if n1 = m.lookup(SlashClean(name1), conditions...); n1 == nil {
 			return nil, ErrConfirmationFailed
 		}
 	}
@@ -233,7 +233,7 @@ func (m *memLS) Create(now time.Time, details LockDetails) (string, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.collectExpiredNodes(now)
-	details.Root = slashClean(details.Root)
+	details.Root = SlashClean(details.Root)
 
 	if !m.canCreate(details.Root, details.ZeroDepth) {
 		return "", ErrLocked

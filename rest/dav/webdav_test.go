@@ -208,7 +208,7 @@ func TestEscapeXML(t *testing.T) {
 	// These test cases aren't exhaustive, and there is more than one way to
 	// escape e.g. a quot (as "&#34;" or "&quot;") or an apos. We presume that
 	// the encoding/xml package tests xml.EscapeText more thoroughly. This test
-	// here is just a sanity check for this package's escapeXML function, and
+	// here is just a sanity check for this package's EscapeXML function, and
 	// its attempt to provide a fast path (and avoid a bytes.Buffer allocation)
 	// when escaping filenames is obviously a no-op.
 	testCases := map[string]string{
@@ -236,7 +236,7 @@ func TestEscapeXML(t *testing.T) {
 	}
 
 	for in, want := range testCases {
-		if got := escapeXML(in); got != want {
+		if got := EscapeXML(in); got != want {
 			t.Errorf("in=%q: got %q, want %q", in, got, want)
 		}
 	}

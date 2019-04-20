@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"fmt"
 	"net/http"
 	"regexp"
 	"tank/rest/dav"
@@ -80,7 +81,8 @@ func (this *DavController) HandleRoutes(writer http.ResponseWriter, request *htt
 	path := request.URL.Path
 
 	//匹配 /api/dav{subPath}
-	reg := regexp.MustCompile(`^/api/dav(.*)$`)
+	pattern := fmt.Sprintf(`^%s(.*)$`, WEBDAV_PREFFIX)
+	reg := regexp.MustCompile(pattern)
 	strs := reg.FindStringSubmatch(path)
 	if len(strs) == 2 {
 		var f = func(writer http.ResponseWriter, request *http.Request) {

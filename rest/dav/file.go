@@ -17,9 +17,9 @@ import (
 	"time"
 )
 
-// slashClean is equivalent to but slightly more efficient than
+// SlashClean is equivalent to but slightly more efficient than
 // path.Clean("/" + name).
-func slashClean(name string) string {
+func SlashClean(name string) string {
 	if name == "" || name[0] != '/' {
 		name = "/" + name
 	}
@@ -74,7 +74,7 @@ func (d Dir) resolve(name string) string {
 	if dir == "" {
 		dir = "."
 	}
-	return filepath.Join(dir, filepath.FromSlash(slashClean(name)))
+	return filepath.Join(dir, filepath.FromSlash(SlashClean(name)))
 }
 
 func (d Dir) Mkdir(ctx context.Context, name string, perm os.FileMode) error {
@@ -166,7 +166,7 @@ type memFS struct {
 // ends at that root node.
 func (fs *memFS) walk(op, fullname string, f func(dir *memFSNode, frag string, final bool) error) error {
 	original := fullname
-	fullname = slashClean(fullname)
+	fullname = SlashClean(fullname)
 
 	// Strip any leading "/"s to make fullname a relative path, as the walk
 	// starts at fs.root.
@@ -335,8 +335,8 @@ func (fs *memFS) Rename(ctx context.Context, oldName, newName string) error {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
-	oldName = slashClean(oldName)
-	newName = slashClean(newName)
+	oldName = SlashClean(oldName)
+	newName = SlashClean(newName)
 	if oldName == newName {
 		return nil
 	}
