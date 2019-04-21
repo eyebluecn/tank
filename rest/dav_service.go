@@ -78,7 +78,7 @@ func (this *DavService) makePropstatResponse(href string, pstats []dav.Propstat)
 }
 
 //从一个matter中获取其 []dav.Propstat
-func (this *DavService) PropstatsFromXmlNames(matter *Matter, xmlNames []xml.Name) []dav.Propstat {
+func (this *DavService) PropstatsFromXmlNames(user *User, matter *Matter, xmlNames []xml.Name) []dav.Propstat {
 
 	propstats := make([]dav.Propstat, 0)
 
@@ -89,7 +89,7 @@ func (this *DavService) PropstatsFromXmlNames(matter *Matter, xmlNames []xml.Nam
 
 		// Otherwise, it must either be a live property or we don't know it.
 		if liveProp := LivePropMap[xmlName]; liveProp.findFn != nil && (liveProp.dir || !matter.Dir) {
-			innerXML := liveProp.findFn(matter)
+			innerXML := liveProp.findFn(user, matter)
 
 			properties = append(properties, dav.Property{
 				XMLName:  xmlName,
@@ -126,7 +126,7 @@ func (this *DavService) AllPropXmlNames(matter *Matter) []xml.Name {
 }
 
 //从一个matter中获取其 []dav.Propstat
-func (this *DavService) Propstats(matter *Matter, propfind dav.Propfind) []dav.Propstat {
+func (this *DavService) Propstats(user *User, matter *Matter, propfind dav.Propfind) []dav.Propstat {
 
 	propstats := make([]dav.Propstat, 0)
 	if propfind.Propname != nil {
@@ -136,10 +136,10 @@ func (this *DavService) Propstats(matter *Matter, propfind dav.Propfind) []dav.P
 		//TODO: 如果include中还有内容，那么包含进去。
 		xmlNames := this.AllPropXmlNames(matter)
 
-		propstats = this.PropstatsFromXmlNames(matter, xmlNames)
+		propstats = this.PropstatsFromXmlNames(user, matter, xmlNames)
 
 	} else {
-		propstats = this.PropstatsFromXmlNames(matter, propfind.Prop)
+		propstats = this.PropstatsFromXmlNames(user, matter, propfind.Prop)
 	}
 
 	return propstats
@@ -185,7 +185,7 @@ func (this *DavService) HandlePropfind(writer http.ResponseWriter, request *http
 
 		fmt.Printf("处理Matter %s\n", matter.Path)
 
-		propstats := this.Propstats(matter, propfind)
+		propstats := this.Propstats(user, matter, propfind)
 		path := fmt.Sprintf("%s%s", WEBDAV_PREFFIX, matter.Path)
 		response := this.makePropstatResponse(path, propstats)
 

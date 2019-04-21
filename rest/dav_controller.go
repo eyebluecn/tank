@@ -1,7 +1,9 @@
 package rest
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"regexp"
 )
@@ -139,6 +141,19 @@ func (this *DavController) Index(writer http.ResponseWriter, request *http.Reque
 
 	fmt.Printf("\n------Body：------\n")
 	//ioutil.ReadAll 不可重复读，第二次读的时候就什么都没有了。
+
+	bodyBytes, err := ioutil.ReadAll(request.Body)
+	if err != nil {
+		fmt.Println("读取body时出错" + err.Error())
+	}
+	fmt.Println(string(bodyBytes))
+
+	//关闭之后再重新赋值
+	err = request.Body.Close()
+	if err != nil {
+		panic(err)
+	}
+	request.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
 
 	fmt.Println("------------------")
 

@@ -13,14 +13,14 @@ var WEBDAV_PREFFIX = "/api/dav"
 
 //动态的文件属性
 type LiveProp struct {
-	findFn func(matter *Matter) string
+	findFn func(user *User, matter *Matter) string
 	dir    bool
 }
 
 //所有的动态属性定义及其值的获取方式
 var LivePropMap = map[xml.Name]LiveProp{
 	{Space: "DAV:", Local: "resourcetype"}: {
-		findFn: func(matter *Matter) string {
+		findFn: func(user *User, matter *Matter) string {
 			if matter.Dir {
 				return `<D:collection xmlns:D="DAV:"/>`
 			} else {
@@ -30,7 +30,7 @@ var LivePropMap = map[xml.Name]LiveProp{
 		dir: true,
 	},
 	{Space: "DAV:", Local: "displayname"}: {
-		findFn: func(matter *Matter) string {
+		findFn: func(user *User, matter *Matter) string {
 			if dav.SlashClean(matter.Name) == "/" {
 				return ""
 			} else {
@@ -40,13 +40,13 @@ var LivePropMap = map[xml.Name]LiveProp{
 		dir: true,
 	},
 	{Space: "DAV:", Local: "getcontentlength"}: {
-		findFn: func(matter *Matter) string {
+		findFn: func(user *User, matter *Matter) string {
 			return strconv.FormatInt(matter.Size, 10)
 		},
 		dir: false,
 	},
 	{Space: "DAV:", Local: "getlastmodified"}: {
-		findFn: func(matter *Matter) string {
+		findFn: func(user *User, matter *Matter) string {
 			return matter.UpdateTime.UTC().Format(http.TimeFormat)
 		},
 		// http://webdav.org/specs/rfc4918.html#PROPERTY_getlastmodified
@@ -67,7 +67,7 @@ var LivePropMap = map[xml.Name]LiveProp{
 		dir:    false,
 	},
 	{Space: "DAV:", Local: "getcontenttype"}: {
-		findFn: func(matter *Matter) string {
+		findFn: func(user *User, matter *Matter) string {
 			if matter.Dir {
 				return ""
 			} else {
@@ -77,7 +77,7 @@ var LivePropMap = map[xml.Name]LiveProp{
 		dir: false,
 	},
 	{Space: "DAV:", Local: "getetag"}: {
-		findFn: func(matter *Matter) string {
+		findFn: func(user *User, matter *Matter) string {
 			return fmt.Sprintf(`"%x%x"`, matter.UpdateTime.UnixNano(), matter.Size)
 		},
 		// findETag implements ETag as the concatenated hex values of a file's
@@ -90,7 +90,7 @@ var LivePropMap = map[xml.Name]LiveProp{
 	// active locks on a resource.
 	{Space: "DAV:", Local: "lockdiscovery"}: {},
 	{Space: "DAV:", Local: "supportedlock"}: {
-		findFn: func(matter *Matter) string {
+		findFn: func(user *User, matter *Matter) string {
 			return `` +
 				`<D:lockentry xmlns:D="DAV:">` +
 				`<D:lockscope><D:exclusive/></D:lockscope>` +
@@ -99,4 +99,25 @@ var LivePropMap = map[xml.Name]LiveProp{
 		},
 		dir: true,
 	},
+	{Space: "DAV:", Local: "quota-available-bytes"}: {
+		findFn: func(user *User, matter *Matter) string {
+			var size int64 = 0
+			if user.SizeLimit >= 0 {
+				size = user.SizeLimit
+			} else {
+				//没有限制，默认100G
+				size = 100 * 1024 * 1024 * 1024
+			}
+			return fmt.Sprintf(`%d`, size)
+		},
+		dir: true,
+	},
+	{Space: "DAV:", Local: "quota-used-bytes"}: {
+		findFn: func(user *User, matter *Matter) string {
+			//已使用大小，默认0
+			return fmt.Sprintf(`%d`, 0)
+		},
+		dir: true,
+	},
+
 }
