@@ -50,7 +50,7 @@ type Owner struct {
 }
 
 func ReadLockInfo(r io.Reader) (li LockInfo, status int, err error) {
-	c := &CountingReader{r: r}
+	c := &CountingReader{reader: r}
 	if err = ixml.NewDecoder(c).Decode(&li); err != nil {
 		if err == io.EOF {
 			if c.n == 0 {
@@ -72,12 +72,12 @@ func ReadLockInfo(r io.Reader) (li LockInfo, status int, err error) {
 
 //这是一个带字节计数器的Reader，可以知道总共读取了多少个字节。
 type CountingReader struct {
-	n int
-	r io.Reader
+	n      int
+	reader io.Reader
 }
 
 func (c *CountingReader) Read(p []byte) (int, error) {
-	n, err := c.r.Read(p)
+	n, err := c.reader.Read(p)
 	c.n += n
 	return n, err
 }
@@ -178,8 +178,8 @@ type Propfind struct {
 }
 
 //从request中读出需要的属性。比如：getcontentlength 大小 creationdate 创建时间
-func ReadPropfind(r io.Reader) (propfind Propfind, status int, err error) {
-	c := CountingReader{r: r}
+func ReadPropfind(reader io.Reader) (propfind Propfind, status int, err error) {
+	c := CountingReader{reader: reader}
 	if err = ixml.NewDecoder(&c).Decode(&propfind); err != nil {
 		if err == io.EOF {
 			if c.n == 0 {

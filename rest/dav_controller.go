@@ -2,7 +2,6 @@ package rest
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"regexp"
 )
@@ -139,11 +138,7 @@ func (this *DavController) Index(writer http.ResponseWriter, request *http.Reque
 	}
 
 	fmt.Printf("\n------Body：------\n")
-	body, err := ioutil.ReadAll(request.Body)
-	if err != nil {
-		fmt.Println("读取body时出错" + err.Error())
-	}
-	fmt.Println(string(body))
+	//ioutil.ReadAll 不可重复读，第二次读的时候就什么都没有了。
 
 	fmt.Println("------------------")
 
@@ -152,12 +147,17 @@ func (this *DavController) Index(writer http.ResponseWriter, request *http.Reque
 
 	method := request.Method
 	if method == "PROPFIND" {
+
 		//列出文件夹或者目录详情
 		this.davService.HandlePropfind(writer, request, user, subPath)
 
 	} else if method == "GET" {
 		//请求文件详情（下载）
 		this.davService.HandleGet(writer, request, user, subPath)
+
+	} else if method == "PUT" {
+		//上传文件
+		this.davService.HandlePut(writer, request, user, subPath)
 
 	} else if method == "DELETE" {
 		//删除文件

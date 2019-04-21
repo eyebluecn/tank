@@ -106,6 +106,20 @@ func GetDirOfPath(fullPath string) string {
 	return fullPath[:index]
 }
 
+//获取到一个Path 中的文件名，eg /var/www/xx.log -> xx.log
+func GetFilenameOfPath(fullPath string) string {
+
+	index1 := strings.LastIndex(fullPath, "/")
+	//可能是windows的环境
+	index2 := strings.LastIndex(fullPath, "\\")
+	index := index1
+	if index2 > index1 {
+		index = index2
+	}
+
+	return fullPath[index+1:]
+}
+
 //尝试删除空文件夹 true表示删掉了一个空文件夹，false表示没有删掉任何东西
 func DeleteEmptyDir(dirPath string) bool {
 	dir, err := ioutil.ReadDir(dirPath)

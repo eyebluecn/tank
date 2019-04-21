@@ -226,6 +226,26 @@ func (this *DavService) HandleGet(writer http.ResponseWriter, request *http.Requ
 
 }
 
+//上传文件
+func (this *DavService) HandlePut(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
+
+	fmt.Printf("PUT %s\n", subPath)
+
+	filename := GetFilenameOfPath(subPath)
+	dirPath := GetDirOfPath(subPath)
+
+	//寻找符合条件的matter.
+	var matter *Matter
+	//如果是空或者/就是请求根目录
+	if dirPath == "" || dirPath == "/" {
+		matter = NewRootMatter(user)
+	} else {
+		matter = this.matterDao.checkByUserUuidAndPath(user.Uuid, dirPath)
+	}
+
+	this.matterService.Upload(request.Body, user, matter.Uuid, filename, true, false)
+
+}
 
 //删除文件
 func (this *DavService) HandleDelete(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {

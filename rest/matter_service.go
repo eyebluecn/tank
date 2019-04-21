@@ -133,7 +133,7 @@ func (this *MatterService) Detail(uuid string) *Matter {
 
 //开始上传文件
 //上传文件. alien表明文件是否是应用使用的文件。
-func (this *MatterService) Upload(file multipart.File, user *User, puuid string, filename string, privacy bool, alien bool) *Matter {
+func (this *MatterService) Upload(file io.Reader, user *User, puuid string, filename string, privacy bool, alien bool) *Matter {
 
 	//文件名不能太长。
 	if len(filename) > 200 {
@@ -172,7 +172,7 @@ func (this *MatterService) Upload(file multipart.File, user *User, puuid string,
 	fileRelativePath := dirRelativePath + "/" + filename
 
 	//创建父文件夹
-	MakeDirAll(fileAbsolutePath)
+	MakeDirAll(dirAbsolutePath)
 
 	//如果文件已经存在了，那么直接覆盖。
 	exist, err := PathExists(fileAbsolutePath)
@@ -193,6 +193,8 @@ func (this *MatterService) Upload(file multipart.File, user *User, puuid string,
 
 	written, err := io.Copy(distFile, file)
 	this.PanicError(err)
+
+	this.logger.Info("上传文件%s大小为%v", filename, HumanFileSize(written))
 
 	//判断用户自身上传大小的限制。
 	if user.SizeLimit >= 0 {
