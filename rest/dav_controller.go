@@ -159,6 +159,10 @@ func (this *DavController) Index(writer http.ResponseWriter, request *http.Reque
 		//请求文件详情（下载）
 		this.davService.HandleGet(writer, request, user, subPath)
 
+	} else if method == "DELETE" {
+		//删除文件
+		this.davService.HandleDelete(writer, request, user, subPath)
+
 	} else {
 
 		this.PanicBadRequest("该方法还不支持。%s", method)

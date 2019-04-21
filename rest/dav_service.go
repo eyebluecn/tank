@@ -225,3 +225,21 @@ func (this *DavService) HandleGet(writer http.ResponseWriter, request *http.Requ
 	this.matterService.DownloadFile(writer, request, matter.AbsolutePath(), matter.Name, false)
 
 }
+
+
+//删除文件
+func (this *DavService) HandleDelete(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
+
+	fmt.Printf("DELETE %s\n", subPath)
+
+	//寻找符合条件的matter.
+	var matter *Matter
+	//如果是空或者/就是请求根目录
+	if subPath == "" || subPath == "/" {
+		matter = NewRootMatter(user)
+	} else {
+		matter = this.matterDao.checkByUserUuidAndPath(user.Uuid, subPath)
+	}
+
+	this.matterDao.Delete(matter)
+}
