@@ -121,45 +121,47 @@ func (this *DavController) HandleRoutes(writer http.ResponseWriter, request *htt
 //完成系统安装
 func (this *DavController) Index(writer http.ResponseWriter, request *http.Request, subPath string) {
 
-	this.logger.Info("--------- URI: %s SUB_PATH: %s ---------", request.RequestURI, subPath)
+	/*打印所有HEADER以及请求参数*/
+
+	fmt.Printf("\n------ 请求： %s  --  %s  ------\n", request.URL, subPath)
+
+	fmt.Printf("\n------Method：------\n")
+	fmt.Println(request.Method)
+
+	fmt.Printf("\n------Header：------\n")
+	for key, value := range request.Header {
+		fmt.Printf("%s = %s\n", key, value)
+	}
+
+	fmt.Printf("\n------请求参数：------\n")
+	for key, value := range request.Form {
+		fmt.Printf("%s = %s\n", key, value)
+	}
+
+	fmt.Printf("\n------Body：------\n")
+	body, err := ioutil.ReadAll(request.Body)
+	if err != nil {
+		fmt.Println("读取body时出错" + err.Error())
+	}
+	fmt.Println(string(body))
+
+	fmt.Println("------------------")
 
 	//获取请求者
 	user := this.CheckCurrentUser(writer, request)
 
 	method := request.Method
 	if method == "PROPFIND" {
-
+		//列出文件夹或者目录详情
 		this.davService.HandlePropfind(writer, request, user, subPath)
+
+	} else if method == "GET" {
+		//请求文件详情（下载）
+		this.davService.HandleGet(writer, request, user, subPath)
 
 	} else {
 
-		/*打印所有HEADER以及请求参数*/
-
-		fmt.Printf("\n------ 请求： %s ------\n", request.URL)
-
-		fmt.Printf("\n------Method：------\n")
-		fmt.Println(request.Method)
-
-		fmt.Printf("\n------Header：------\n")
-		for key, value := range request.Header {
-			fmt.Printf("%s = %s\n", key, value)
-		}
-
-		fmt.Printf("\n------请求参数：------\n")
-		for key, value := range request.Form {
-			fmt.Printf("%s = %s\n", key, value)
-		}
-
-		fmt.Printf("\n------Body：------\n")
-		body, err := ioutil.ReadAll(request.Body)
-		if err != nil {
-			fmt.Println("读取body时出错" + err.Error())
-		}
-		fmt.Println(string(body))
-
-		fmt.Println("------------------")
-
-		this.PanicBadRequest("该方法还不支持。")
+		this.PanicBadRequest("该方法还不支持。%s", method)
 	}
 
 }

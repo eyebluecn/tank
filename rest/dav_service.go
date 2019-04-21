@@ -17,7 +17,8 @@ import (
 //@Service
 type DavService struct {
 	Bean
-	matterDao *MatterDao
+	matterDao     *MatterDao
+	matterService *MatterService
 }
 
 //初始化方法
@@ -29,6 +30,12 @@ func (this *DavService) Init() {
 	if b, ok := b.(*MatterDao); ok {
 		this.matterDao = b
 	}
+
+	b = CONTEXT.GetBean(this.matterService)
+	if b, ok := b.(*MatterService); ok {
+		this.matterService = b
+	}
+
 }
 
 //获取Header头中的Depth值，暂不支持 infinity
@@ -139,10 +146,10 @@ func (this *DavService) Propstats(matter *Matter, propfind dav.Propfind) []dav.P
 
 }
 
-//处理 方法
+//列出文件夹或者目录详情
 func (this *DavService) HandlePropfind(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
 
-	fmt.Printf("列出文件/文件夹 %s\n", subPath)
+	fmt.Printf("PROPFIND %s\n", subPath)
 
 	//获取请求的层数。暂不支持 infinity
 	depth := this.ParseDepth(request)
@@ -164,11 +171,8 @@ func (this *DavService) HandlePropfind(writer http.ResponseWriter, request *http
 	if depth == 0 {
 		matters = []*Matter{matter}
 	} else {
+		// len(matters) == 0 表示该文件夹下面是空文件夹
 		matters = this.matterDao.List(matter.Uuid, user.Uuid, nil)
-
-		if len(matters) == 0 {
-			this.PanicNotFound("%s不存在", subPath)
-		}
 
 		//将当前的matter添加到头部
 		matters = append([]*Matter{matter}, matters...)
@@ -179,7 +183,7 @@ func (this *DavService) HandlePropfind(writer http.ResponseWriter, request *http
 
 	for _, matter := range matters {
 
-		fmt.Printf("开始分析 %s\n", matter.Path)
+		fmt.Printf("处理Matter %s\n", matter.Path)
 
 		propstats := this.Propstats(matter, propfind)
 		path := fmt.Sprintf("%s%s", WEBDAV_PREFFIX, matter.Path)
@@ -194,5 +198,30 @@ func (this *DavService) HandlePropfind(writer http.ResponseWriter, request *http
 	this.PanicError(err)
 
 	fmt.Printf("%v %v \n", subPath, propfind.Prop)
+
+}
+
+//请求文件详情（下载）
+func (this *DavService) HandleGet(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
+
+	fmt.Printf("GET %s\n", subPath)
+
+	//寻找符合条件的matter.
+	var matter *Matter
+	//如果是空或者/就是请求根目录
+	if subPath == "" || subPath == "/" {
+		matter = NewRootMatter(user)
+	} else {
+		matter = this.matterDao.checkByUserUuidAndPath(user.Uuid, subPath)
+	}
+
+	//如果是文件夹，相当于是 Propfind
+	if matter.Dir {
+		this.HandlePropfind(writer, request, user, subPath)
+		return
+	}
+
+	//下载一个文件。
+	this.matterService.DownloadFile(writer, request, matter.AbsolutePath(), matter.Name, false)
 
 }

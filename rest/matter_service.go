@@ -505,7 +505,7 @@ func (this *MatterService) DownloadFile(
 		this.PanicError(e)
 	}()
 
-	//如果是图片或者文本或者视频就直接打开。其余的一律以下载形式返回。
+	//根据参数添加content-disposition。该Header会让浏览器自动下载，而不是预览。
 	if withContentDisposition {
 		fileName := url.QueryEscape(filename)
 		writer.Header().Set("content-disposition", "attachment; filename=\""+fileName+"\"")
