@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"regexp"
+	"strings"
 )
 
 /**
@@ -111,7 +112,13 @@ func (this *DavController) HandleRoutes(writer http.ResponseWriter, request *htt
 	strs := reg.FindStringSubmatch(path)
 	if len(strs) == 2 {
 		var f = func(writer http.ResponseWriter, request *http.Request) {
-			this.Index(writer, request, strs[1])
+			subPath := strs[1]
+			//保证subPath不是以/结尾的。
+			//最后多余的/要去掉
+			if strings.HasSuffix(subPath, "/") {
+				subPath = subPath[0 : len(subPath)-1]
+			}
+			this.Index(writer, request, subPath)
 		}
 		return f, true
 	}
