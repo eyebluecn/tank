@@ -305,9 +305,12 @@ func (this *MatterDao) findByUserUuidAndPath(userUuid string, path string) *Matt
 //根据userUuid和path来查找
 func (this *MatterDao) checkByUserUuidAndPath(userUuid string, path string) *Matter {
 
-	matter := this.findByUserUuidAndPath(userUuid,path)
+	if path == "" {
+		this.PanicBadRequest("path 不能为空")
+	}
+	matter := this.findByUserUuidAndPath(userUuid, path)
 	if matter == nil {
-		this.PanicNotFound("%s 不存在", path)
+		this.PanicNotFound("path = %s 不存在", path)
 	}
 
 	return matter

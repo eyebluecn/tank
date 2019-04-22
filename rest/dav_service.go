@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"regexp"
+	"strings"
 	"tank/rest/dav"
 )
 
@@ -281,7 +283,7 @@ func (this *DavService) HandleMkcol(writer http.ResponseWriter, request *http.Re
 		matter = this.matterDao.checkByUserUuidAndPath(user.Uuid, dirPath)
 	}
 
-	this.matterService.Upload(request.Body, user, matter.Uuid, thisDirName, true, false)
+	this.matterService.CreateDirectory(matter.Uuid, thisDirName, user)
 
 }
 
@@ -315,33 +317,55 @@ func (this *DavService) HandleOptions(w http.ResponseWriter, r *http.Request, us
 }
 
 //移动或者重命名
-func (this *DavService) HandleMove(w http.ResponseWriter, r *http.Request, user *User, subPath string) {
+func (this *DavService) HandleMove(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
 
 	fmt.Printf("MOVE %s\n", subPath)
 
 	//解析出目标路径。
-	destinationUrl := r.Header.Get("Destination")
-	if destinationUrl == "" {
-		this.PanicBadRequest("Header Destination必填")
-	}
-	u, err := url.Parse(destinationUrl)
-	this.PanicError(err)
-
-	if u.Host != r.Host {
-		this.PanicBadRequest("Destination Host不一致")
-	}
+	destinationStr := request.Header.Get("Destination")
 
 	//解析出Overwrite。
-	overwriteStr := r.Header.Get("Overwrite")
+	overwriteStr := request.Header.Get("Overwrite")
+
+	//有前缀的目标path
+	var fullDestinationPath string
+	//去掉前缀的目标path
+	var destinationPath string
+
+	if destinationStr == "" {
+		this.PanicBadRequest("Header Destination必填")
+	}
+
+	//如果是重命名，那么就不是http开头了。
+	if strings.HasPrefix(destinationStr, WEBDAV_PREFFIX) {
+		fullDestinationPath = destinationStr
+	} else {
+		destinationUrl, err := url.Parse(destinationStr)
+		this.PanicError(err)
+		if destinationUrl.Host != request.Host {
+			this.PanicBadRequest("Destination Host不一致. %s  %s != %s", destinationStr, destinationUrl.Host, request.Host)
+		}
+		fullDestinationPath = destinationUrl.Path
+	}
+
+	//去除前缀
+	pattern := fmt.Sprintf(`^%s(.*)$`, WEBDAV_PREFFIX)
+	reg := regexp.MustCompile(pattern)
+	strs := reg.FindStringSubmatch(fullDestinationPath)
+	if len(strs) == 2 {
+		destinationPath = strs[1]
+	} else {
+		this.PanicBadRequest("目标前缀必须为：%s", WEBDAV_PREFFIX)
+	}
+
+	destinationName := GetFilenameOfPath(destinationPath)
+	destinationDirPath := GetDirOfPath(destinationPath)
+	srcDirPath := GetDirOfPath(subPath)
+
 	overwrite := false
 	if overwriteStr == "T" {
 		overwrite = true
 	}
-
-	destinationPath := u.Path
-	destinationName := GetFilenameOfPath(destinationPath)
-	destinationDirPath := GetDirOfPath(destinationPath)
-	dirPath := GetDirOfPath(subPath)
 
 	//如果前后一致，那么相当于没有改变
 	if destinationPath == subPath {
@@ -360,6 +384,14 @@ func (this *DavService) HandleMove(w http.ResponseWriter, r *http.Request, user 
 	//目标matter
 	destMatter := this.matterDao.findByUserUuidAndPath(user.Uuid, destinationPath)
 
+	//目标文件夹matter
+	var destDirMatter *Matter
+	if destinationDirPath == "" || destinationDirPath == "/" {
+		destDirMatter = NewRootMatter(user)
+	} else {
+		destDirMatter = this.matterDao.checkByUserUuidAndPath(user.Uuid, destinationDirPath)
+	}
+
 	//如果目标matter存在了。
 	if destMatter != nil {
 
@@ -373,12 +405,14 @@ func (this *DavService) HandleMove(w http.ResponseWriter, r *http.Request, user 
 	}
 
 	//移动到新目录中去。
+	if destinationDirPath == srcDirPath {
+		//文件夹没变化，相当于重命名。
+		this.matterService.Rename(srcMatter, destinationName, user)
+	} else {
+		this.matterService.Move(srcMatter, destDirMatter)
+	}
 
-	//目标文件夹matter
-	destDirMatter := this.matterDao.checkByUserUuidAndPath(user.Uuid, destinationDirPath)
-
-	this.matterService.Move(srcMatter, destDirMatter)
-
+	this.logger.Info("完成移动 %s => %s", subPath, destinationDirPath)
 }
 
 //复制文件/文件夹
@@ -439,7 +473,6 @@ func (this *DavService) HandleDav(writer http.ResponseWriter, request *http.Requ
 
 	} else if method == "MKCOL" {
 
-		//TODO: 创建文件夹
 		this.HandleMkcol(writer, request, user, subPath)
 
 	} else if method == "COPY" {
