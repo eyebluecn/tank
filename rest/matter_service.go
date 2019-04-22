@@ -131,6 +131,75 @@ func (this *MatterService) Detail(uuid string) *Matter {
 	return matter
 }
 
+
+//创建文件夹 返回刚刚创建的这个文件夹
+func (this *MatterService) CreateDirectory(puuid string, name string,user *User) *Matter {
+
+	name = strings.TrimSpace(name)
+	//验证参数。
+	if name == "" {
+		this.PanicBadRequest("name参数必填，并且不能全是空格")
+	}
+	if len(name) > 200 {
+		panic("name长度不能超过200")
+	}
+
+	if m, _ := regexp.MatchString(`[<>|*?/\\]`, name); m {
+		this.PanicBadRequest(`名称中不能包含以下特殊符号：< > | * ? / \`)
+	}
+
+	if puuid == "" {
+		panic("puuid必填")
+	}
+
+	//判断同级文件夹中是否有同名的文件。
+	count := this.matterDao.CountByUserUuidAndPuuidAndDirAndName(user.Uuid, puuid, true, name)
+
+	if count > 0 {
+		this.PanicBadRequest("【" + name + "】已经存在了，请使用其他名称。")
+	}
+
+	path := fmt.Sprintf("/%s", name)
+	if puuid != MATTER_ROOT {
+		//验证目标文件夹存在。
+		this.matterDao.CheckByUuidAndUserUuid(puuid, user.Uuid)
+
+		//获取上级的详情
+		pMatter := this.Detail(puuid)
+
+		//根据父目录拼接处子目录
+		path = fmt.Sprintf("%s/%s", pMatter.Path, name)
+
+		//文件夹最多只能有32层。
+		count := 1
+		tmpMatter := pMatter
+		for tmpMatter != nil {
+			count++
+			tmpMatter = tmpMatter.Parent
+		}
+		if count >= 32 {
+			panic("文件夹最多32层")
+		}
+	}
+
+	//磁盘中创建文件夹。
+	dirPath := MakeDirAll(GetUserFileRootDir(user.Username) + path)
+	this.logger.Info("Create Directory: %s", dirPath)
+
+	//数据库中创建文件夹。
+	matter := &Matter{
+		Puuid:    puuid,
+		UserUuid: user.Uuid,
+		Username: user.Username,
+		Dir:      true,
+		Name:     name,
+		Path:     path,
+	}
+	matter = this.matterDao.Create(matter)
+
+	return matter
+}
+
 //开始上传文件
 //上传文件. alien表明文件是否是应用使用的文件。
 func (this *MatterService) Upload(file io.Reader, user *User, puuid string, filename string, privacy bool, alien bool) *Matter {

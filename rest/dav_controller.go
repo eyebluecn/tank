@@ -160,27 +160,6 @@ func (this *DavController) Index(writer http.ResponseWriter, request *http.Reque
 	//获取请求者
 	user := this.CheckCurrentUser(writer, request)
 
-	method := request.Method
-	if method == "PROPFIND" {
-
-		//列出文件夹或者目录详情
-		this.davService.HandlePropfind(writer, request, user, subPath)
-
-	} else if method == "GET" {
-		//请求文件详情（下载）
-		this.davService.HandleGet(writer, request, user, subPath)
-
-	} else if method == "PUT" {
-		//上传文件
-		this.davService.HandlePut(writer, request, user, subPath)
-
-	} else if method == "DELETE" {
-		//删除文件
-		this.davService.HandleDelete(writer, request, user, subPath)
-
-	} else {
-
-		this.PanicBadRequest("该方法还不支持。%s", method)
-	}
+	this.davService.HandleDav(writer, request, user, subPath)
 
 }

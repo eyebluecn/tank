@@ -202,7 +202,7 @@ func (this *DavService) HandlePropfind(writer http.ResponseWriter, request *http
 }
 
 //请求文件详情（下载）
-func (this *DavService) HandleGet(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
+func (this *DavService) HandleGetHeadPost(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
 
 	fmt.Printf("GET %s\n", subPath)
 
@@ -262,4 +262,96 @@ func (this *DavService) HandleDelete(writer http.ResponseWriter, request *http.R
 	}
 
 	this.matterDao.Delete(matter)
+}
+
+//创建文件夹
+func (this *DavService) HandleMkcol(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
+
+	fmt.Printf("MKCOL %s\n", subPath)
+
+	thisDirName := GetFilenameOfPath(subPath)
+	dirPath := GetDirOfPath(subPath)
+
+	//寻找符合条件的matter.
+	var matter *Matter
+	//如果是空或者/就是请求根目录
+	if dirPath == "" || dirPath == "/" {
+		matter = NewRootMatter(user)
+	} else {
+		matter = this.matterDao.checkByUserUuidAndPath(user.Uuid, dirPath)
+	}
+
+	this.matterService.Upload(request.Body, user, matter.Uuid, thisDirName, true, false)
+
+}
+
+//跨域请求的OPTIONS询问
+func (this *DavService) HandleOptions(w http.ResponseWriter, r *http.Request, user *User, subPath string) {
+
+	fmt.Printf("OPTIONS %s\n", subPath)
+
+	//寻找符合条件的matter.
+	var matter *Matter
+	//如果是空或者/就是请求根目录
+	if subPath == "" || subPath == "/" {
+		matter = NewRootMatter(user)
+	} else {
+		matter = this.matterDao.checkByUserUuidAndPath(user.Uuid, subPath)
+	}
+
+	allow := "OPTIONS, LOCK, PUT, MKCOL"
+	if matter.Dir {
+		allow = "OPTIONS, LOCK, DELETE, PROPPATCH, COPY, MOVE, UNLOCK, PROPFIND"
+	} else {
+		allow = "OPTIONS, LOCK, GET, HEAD, POST, DELETE, PROPPATCH, COPY, MOVE, UNLOCK, PROPFIND, PUT"
+	}
+
+	w.Header().Set("Allow", allow)
+	// http://www.webdav.org/specs/rfc4918.html#dav.compliance.classes
+	w.Header().Set("DAV", "1, 2")
+	// http://msdn.microsoft.com/en-au/library/cc250217.aspx
+	w.Header().Set("MS-Author-Via", "DAV")
+
+}
+
+//处理所有的请求
+func (this *DavService) HandleDav(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
+
+	method := request.Method
+	if method == "OPTIONS" {
+
+		//列出文件夹或者目录详情
+		this.HandleOptions(writer, request, user, subPath)
+
+	} else if method == "GET" || method == "HEAD" || method == "POST" {
+
+		//请求文件详情（下载）
+		this.HandleGetHeadPost(writer, request, user, subPath)
+
+	} else if method == "DELETE" {
+
+		//删除文件
+		this.HandleDelete(writer, request, user, subPath)
+
+	} else if method == "PUT" {
+
+		//上传文件
+		this.HandlePut(writer, request, user, subPath)
+
+	} else if method == "MKCOL" {
+
+		//TODO: 创建文件夹
+		this.HandleMkcol(writer, request, user, subPath)
+
+	} else if method == "PROPFIND" {
+
+		//列出文件夹或者目录详情
+		this.HandlePropfind(writer, request, user, subPath)
+
+	} else {
+
+		this.PanicBadRequest("该方法还不支持。%s", method)
+
+	}
+
 }
