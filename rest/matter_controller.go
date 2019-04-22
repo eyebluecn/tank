@@ -2,7 +2,6 @@ package rest
 
 import (
 	"net/http"
-	"regexp"
 	"strconv"
 	"strings"
 )
@@ -334,44 +333,24 @@ func (this *MatterController) DeleteBatch(writer http.ResponseWriter, request *h
 	return this.Success("删除成功！")
 }
 
+
 //重命名一个文件或一个文件夹
 func (this *MatterController) Rename(writer http.ResponseWriter, request *http.Request) *WebResult {
 
 	uuid := request.FormValue("uuid")
 	name := request.FormValue("name")
 
-	//验证参数。
-	if name == "" {
-		this.PanicBadRequest("name参数必填")
-	}
-	if m, _ := regexp.MatchString(`[<>|*?/\\]`, name); m {
-		this.PanicBadRequest(`名称中不能包含以下特殊符号：< > | * ? / \`)
-	}
-
-	if len(name) > 200 {
-		panic("name长度不能超过200")
-	}
+	user := this.checkUser(writer, request)
 
 	//找出该文件或者文件夹
 	matter := this.matterDao.CheckByUuid(uuid)
 
-	user := this.checkUser(writer, request)
 	if user.Role != USER_ROLE_ADMINISTRATOR && matter.UserUuid != user.Uuid {
 		this.PanicUnauthorized("没有权限")
 	}
 
-	if name == matter.Name {
-		this.PanicBadRequest("新名称和旧名称一样，操作失败！")
-	}
 
-	//判断同级文件夹中是否有同名的文件
-	count := this.matterDao.CountByUserUuidAndPuuidAndDirAndName(user.Uuid, matter.Puuid, matter.Dir, name)
-
-	if count > 0 {
-		this.PanicBadRequest("【" + name + "】已经存在了，请使用其他名称。")
-	}
-
-	this.matterService.Rename(matter, name)
+	this.matterService.Rename(matter, name, user)
 
 	return this.Success(matter)
 }

@@ -788,15 +788,39 @@ func (this *MatterService) Move(srcMatter *Matter, destMatter *Matter) {
 	return
 }
 
-//将一个srcMatter 重命名为 name
-func (this *MatterService) Rename(srcMatter *Matter, name string) {
 
-	if srcMatter.Dir {
+//将一个matter 重命名为 name
+func (this *MatterService) Rename(matter *Matter, name string,user *User) {
+
+	//验证参数。
+	if name == "" {
+		this.PanicBadRequest("name参数必填")
+	}
+	if m, _ := regexp.MatchString(`[<>|*?/\\]`, name); m {
+		this.PanicBadRequest(`名称中不能包含以下特殊符号：< > | * ? / \`)
+	}
+
+	if len(name) > 200 {
+		panic("name长度不能超过200")
+	}
+
+	if name == matter.Name {
+		this.PanicBadRequest("新名称和旧名称一样，操作失败！")
+	}
+
+	//判断同级文件夹中是否有同名的文件
+	count := this.matterDao.CountByUserUuidAndPuuidAndDirAndName(user.Uuid, matter.Puuid, matter.Dir, name)
+
+	if count > 0 {
+		this.PanicBadRequest("【" + name + "】已经存在了，请使用其他名称。")
+	}
+
+	if matter.Dir {
 		//如果源是文件夹
 
-		oldAbsolutePath := srcMatter.AbsolutePath()
+		oldAbsolutePath := matter.AbsolutePath()
 		absoluteDirPath := GetDirOfPath(oldAbsolutePath)
-		relativeDirPath := GetDirOfPath(srcMatter.Path)
+		relativeDirPath := GetDirOfPath(matter.Path)
 		newAbsolutePath := absoluteDirPath + "/" + name
 
 		//物理文件一口气移动
@@ -804,22 +828,22 @@ func (this *MatterService) Rename(srcMatter *Matter, name string) {
 		this.PanicError(err)
 
 		//修改数据库中信息
-		srcMatter.Name = name
-		srcMatter.Path = relativeDirPath + "/" + name
-		srcMatter = this.matterDao.Save(srcMatter)
+		matter.Name = name
+		matter.Path = relativeDirPath + "/" + name
+		matter = this.matterDao.Save(matter)
 
 		//调整该文件夹下文件的Path.
-		matters := this.matterDao.List(srcMatter.Uuid, srcMatter.UserUuid, nil)
+		matters := this.matterDao.List(matter.Uuid, matter.UserUuid, nil)
 		for _, m := range matters {
-			this.adjustPath(m, srcMatter)
+			this.adjustPath(m, matter)
 		}
 
 	} else {
 		//如果源是普通文件
 
-		oldAbsolutePath := srcMatter.AbsolutePath()
+		oldAbsolutePath := matter.AbsolutePath()
 		absoluteDirPath := GetDirOfPath(oldAbsolutePath)
-		relativeDirPath := GetDirOfPath(srcMatter.Path)
+		relativeDirPath := GetDirOfPath(matter.Path)
 		newAbsolutePath := absoluteDirPath + "/" + name
 
 		//物理文件进行移动
@@ -827,12 +851,12 @@ func (this *MatterService) Rename(srcMatter *Matter, name string) {
 		this.PanicError(err)
 
 		//删除对应的缓存。
-		this.imageCacheDao.DeleteByMatterUuid(srcMatter.Uuid)
+		this.imageCacheDao.DeleteByMatterUuid(matter.Uuid)
 
 		//修改数据库中信息
-		srcMatter.Name = name
-		srcMatter.Path = relativeDirPath + "/" + name
-		srcMatter = this.matterDao.Save(srcMatter)
+		matter.Name = name
+		matter.Path = relativeDirPath + "/" + name
+		matter = this.matterDao.Save(matter)
 
 	}
 

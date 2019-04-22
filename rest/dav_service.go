@@ -314,6 +314,105 @@ func (this *DavService) HandleOptions(w http.ResponseWriter, r *http.Request, us
 
 }
 
+//移动或者重命名
+func (this *DavService) HandleMove(w http.ResponseWriter, r *http.Request, user *User, subPath string) {
+
+	fmt.Printf("MOVE %s\n", subPath)
+
+	//解析出目标路径。
+	destinationUrl := r.Header.Get("Destination")
+	if destinationUrl == "" {
+		this.PanicBadRequest("Header Destination必填")
+	}
+	u, err := url.Parse(destinationUrl)
+	this.PanicError(err)
+
+	if u.Host != r.Host {
+		this.PanicBadRequest("Destination Host不一致")
+	}
+
+	//解析出Overwrite。
+	overwriteStr := r.Header.Get("Overwrite")
+	overwrite := false
+	if overwriteStr == "T" {
+		overwrite = true
+	}
+
+	destinationPath := u.Path
+	destinationName := GetFilenameOfPath(destinationPath)
+	destinationDirPath := GetDirOfPath(destinationPath)
+	dirPath := GetDirOfPath(subPath)
+
+	//如果前后一致，那么相当于没有改变
+	if destinationPath == subPath {
+		return
+	}
+
+	//源matter.
+	var srcMatter *Matter
+	//如果是空或者/就是请求根目录
+	if subPath == "" || subPath == "/" {
+		this.PanicBadRequest("你不能移动根目录！")
+	} else {
+		srcMatter = this.matterDao.checkByUserUuidAndPath(user.Uuid, subPath)
+	}
+
+	//目标matter
+	destMatter := this.matterDao.findByUserUuidAndPath(user.Uuid, destinationPath)
+
+	//如果目标matter存在了。
+	if destMatter != nil {
+
+		//如果目标matter还存在了。
+		if overwrite {
+			//要求覆盖。那么删除。
+			this.matterDao.Delete(destMatter)
+		} else {
+			this.PanicBadRequest("%s已经存在，操作失败！", destinationName)
+		}
+	}
+
+	//移动到新目录中去。
+
+	//目标文件夹matter
+	destDirMatter := this.matterDao.checkByUserUuidAndPath(user.Uuid, destinationDirPath)
+
+	this.matterService.Move(srcMatter, destDirMatter)
+
+}
+
+//复制文件/文件夹
+func (this *DavService) HandleCopy(w http.ResponseWriter, r *http.Request, user *User, subPath string) {
+
+	fmt.Printf("COPY %s\n", subPath)
+
+	//解析出目标路径。
+	destinationUrl := r.Header.Get("Destination")
+	if destinationUrl == "" {
+		this.PanicBadRequest("Header Destination必填")
+	}
+	u, err := url.Parse(destinationUrl)
+	this.PanicError(err)
+
+	if u.Host != r.Host {
+		this.PanicBadRequest("Destination Host不一致")
+	}
+
+	//
+	//destinationPath := u.Path
+	//
+	//
+	////寻找符合条件的matter.
+	//var matter *Matter
+	////如果是空或者/就是请求根目录
+	//if subPath == "" || subPath == "/" {
+	//	matter = NewRootMatter(user)
+	//} else {
+	//	matter = this.matterDao.checkByUserUuidAndPath(user.Uuid, subPath)
+	//}
+
+}
+
 //处理所有的请求
 func (this *DavService) HandleDav(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
 
@@ -342,6 +441,16 @@ func (this *DavService) HandleDav(writer http.ResponseWriter, request *http.Requ
 
 		//TODO: 创建文件夹
 		this.HandleMkcol(writer, request, user, subPath)
+
+	} else if method == "COPY" {
+
+		//复制文件/文件夹
+		this.HandleCopy(writer, request, user, subPath)
+
+	} else if method == "MOVE" {
+
+		//复制文件/文件夹
+		this.HandleMove(writer, request, user, subPath)
 
 	} else if method == "PROPFIND" {
 

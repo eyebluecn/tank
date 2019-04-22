@@ -284,7 +284,7 @@ func (this *MatterDao) SizeBetweenTime(startTime time.Time, endTime time.Time) i
 }
 
 //根据userUuid和path来查找
-func (this *MatterDao) checkByUserUuidAndPath(userUuid string, path string) *Matter {
+func (this *MatterDao) findByUserUuidAndPath(userUuid string, path string) *Matter {
 
 	var wp = &WherePair{Query: "user_uuid = ? AND path = ?", Args: []interface{}{userUuid, path}}
 
@@ -293,10 +293,21 @@ func (this *MatterDao) checkByUserUuidAndPath(userUuid string, path string) *Mat
 
 	if db.Error != nil {
 		if db.Error.Error() == DB_ERROR_NOT_FOUND {
-			this.PanicNotFound("%s 不存在", path)
+			return nil
 		} else {
 			this.PanicError(db.Error)
 		}
+	}
+
+	return matter
+}
+
+//根据userUuid和path来查找
+func (this *MatterDao) checkByUserUuidAndPath(userUuid string, path string) *Matter {
+
+	matter := this.findByUserUuidAndPath(userUuid,path)
+	if matter == nil {
+		this.PanicNotFound("%s 不存在", path)
 	}
 
 	return matter
