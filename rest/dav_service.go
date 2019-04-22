@@ -417,34 +417,7 @@ func (this *DavService) HandleMove(writer http.ResponseWriter, request *http.Req
 
 //复制文件/文件夹
 func (this *DavService) HandleCopy(w http.ResponseWriter, r *http.Request, user *User, subPath string) {
-
-	fmt.Printf("COPY %s\n", subPath)
-
-	//解析出目标路径。
-	destinationUrl := r.Header.Get("Destination")
-	if destinationUrl == "" {
-		this.PanicBadRequest("Header Destination必填")
-	}
-	u, err := url.Parse(destinationUrl)
-	this.PanicError(err)
-
-	if u.Host != r.Host {
-		this.PanicBadRequest("Destination Host不一致")
-	}
-
-	//
-	//destinationPath := u.Path
-	//
-	//
-	////寻找符合条件的matter.
-	//var matter *Matter
-	////如果是空或者/就是请求根目录
-	//if subPath == "" || subPath == "/" {
-	//	matter = NewRootMatter(user)
-	//} else {
-	//	matter = this.matterDao.checkByUserUuidAndPath(user.Uuid, subPath)
-	//}
-
+	this.PanicBadRequest("暂不支持COPY方法")
 }
 
 //处理所有的请求
@@ -473,6 +446,7 @@ func (this *DavService) HandleDav(writer http.ResponseWriter, request *http.Requ
 
 	} else if method == "MKCOL" {
 
+		//创建文件夹
 		this.HandleMkcol(writer, request, user, subPath)
 
 	} else if method == "COPY" {
