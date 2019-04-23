@@ -245,6 +245,13 @@ func (this *DavService) HandlePut(writer http.ResponseWriter, request *http.Requ
 		matter = this.matterDao.checkByUserUuidAndPath(user.Uuid, dirPath)
 	}
 
+
+	//如果存在，那么先删除再说。
+	srcMatter := this.matterDao.findByUserUuidAndPath(user.Uuid, subPath)
+	if srcMatter != nil {
+		this.matterDao.Delete(srcMatter)
+	}
+
 	this.matterService.Upload(request.Body, user, matter.Uuid, filename, true, false)
 
 }
@@ -315,7 +322,6 @@ func (this *DavService) HandleOptions(w http.ResponseWriter, r *http.Request, us
 	w.Header().Set("MS-Author-Via", "DAV")
 
 }
-
 
 //移动或者复制的准备工作
 func (this *DavService) prepareMoveCopy(
@@ -397,7 +403,6 @@ func (this *DavService) prepareMoveCopy(
 		destDirMatter = this.matterDao.checkByUserUuidAndPath(user.Uuid, destinationDirPath)
 	}
 
-
 	//如果目标matter存在了。
 	if destMatter != nil {
 
@@ -445,13 +450,31 @@ func (this *DavService) HandleCopy(writer http.ResponseWriter, request *http.Req
 
 }
 
+//加锁
+func (this *DavService) HandleLock(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
+
+	this.PanicBadRequest("不支持LOCK方法")
+}
+
+//解锁
+func (this *DavService) HandleUnlock(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
+
+	this.PanicBadRequest("不支持UNLOCK方法")
+}
+
+//修改文件属性
+func (this *DavService) HandleProppatch(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
+
+	this.PanicBadRequest("不支持PROPPATCH方法")
+}
+
 //处理所有的请求
 func (this *DavService) HandleDav(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
 
 	method := request.Method
 	if method == "OPTIONS" {
 
-		//列出文件夹或者目录详情
+		//跨域问询
 		this.HandleOptions(writer, request, user, subPath)
 
 	} else if method == "GET" || method == "HEAD" || method == "POST" {
@@ -481,13 +504,28 @@ func (this *DavService) HandleDav(writer http.ResponseWriter, request *http.Requ
 
 	} else if method == "MOVE" {
 
-		//复制文件/文件夹
+		//移动（重命名）文件/文件夹
 		this.HandleMove(writer, request, user, subPath)
+
+	} else if method == "LOCK" {
+
+		//加锁
+		this.HandleLock(writer, request, user, subPath)
+
+	} else if method == "UNLOCK" {
+
+		//释放锁
+		this.HandleUnlock(writer, request, user, subPath)
 
 	} else if method == "PROPFIND" {
 
 		//列出文件夹或者目录详情
 		this.HandlePropfind(writer, request, user, subPath)
+
+	} else if method == "PROPPATCH" {
+
+		//修改文件属性
+		this.HandleProppatch(writer, request, user, subPath)
 
 	} else {
 
