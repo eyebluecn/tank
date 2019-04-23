@@ -3,6 +3,7 @@ package rest
 import (
 	"fmt"
 	"go/build"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/user"
@@ -228,4 +229,43 @@ func GetUserCacheRootDir(username string) (rootDirPath string) {
 	rootDirPath = fmt.Sprintf("%s/%s/%s", CONFIG.MatterPath, username, MATTER_CACHE)
 
 	return rootDirPath
+}
+
+
+//复制文件
+func CopyFile(srcPath string, destPath string) (nBytes int64) {
+
+	srcFileStat, err := os.Stat(srcPath)
+	if err != nil {
+		panic(err)
+	}
+
+	if !srcFileStat.Mode().IsRegular() {
+		panic(fmt.Errorf("%s is not a regular file", srcPath))
+	}
+
+	srcFile, err := os.Open(srcPath)
+	if err != nil {
+		panic(err)
+	}
+	defer func() {
+		err = srcFile.Close()
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	destFile, err := os.Create(destPath)
+	if err != nil {
+		panic(err)
+	}
+	defer func() {
+		err = destFile.Close()
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	nBytes, err = io.Copy(destFile, srcFile)
+	return nBytes
 }

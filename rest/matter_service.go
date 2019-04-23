@@ -131,9 +131,8 @@ func (this *MatterService) Detail(uuid string) *Matter {
 	return matter
 }
 
-
 //创建文件夹 返回刚刚创建的这个文件夹
-func (this *MatterService) CreateDirectory(puuid string, name string,user *User) *Matter {
+func (this *MatterService) CreateDirectory(puuid string, name string, user *User) *Matter {
 
 	name = strings.TrimSpace(name)
 	//验证参数。
@@ -788,9 +787,69 @@ func (this *MatterService) Move(srcMatter *Matter, destMatter *Matter) {
 	return
 }
 
+//将一个srcMatter复制到另一个destMatter(必须为文件夹)下，名字叫做name
+func (this *MatterService) Copy(srcMatter *Matter, destDirMatter *Matter, name string) {
+
+	if !destDirMatter.Dir {
+		this.PanicBadRequest("目标必须为文件夹")
+	}
+
+	if srcMatter.Dir {
+
+		//如果源是文件夹
+
+		//在目标地址创建新文件夹。
+		newMatter := &Matter{
+			Puuid:    destDirMatter.Uuid,
+			UserUuid: srcMatter.UserUuid,
+			Username: srcMatter.Username,
+			Dir:      srcMatter.Dir,
+			Alien:    srcMatter.Alien,
+			Name:     name,
+			Md5:      "",
+			Size:     srcMatter.Size,
+			Privacy:  srcMatter.Privacy,
+			Path:     destDirMatter.Path + "/" + name,
+		}
+
+		newMatter = this.matterDao.Create(newMatter)
+
+		//复制子文件或文件夹
+		matters := this.matterDao.List(srcMatter.Uuid, srcMatter.UserUuid, nil)
+		for _, m := range matters {
+			this.Copy(m, newMatter, m.Name)
+		}
+
+	} else {
+		//如果源是普通文件
+		destAbsolutePath := destDirMatter.AbsolutePath() + "/" + name
+		srcAbsolutePath := srcMatter.AbsolutePath()
+
+		//物理文件进行复制
+		CopyFile(srcAbsolutePath, destAbsolutePath)
+
+		//创建新文件的数据库信息。
+		newMatter := &Matter{
+			Puuid:    destDirMatter.Uuid,
+			UserUuid: srcMatter.UserUuid,
+			Username: srcMatter.Username,
+			Dir:      srcMatter.Dir,
+			Alien:    srcMatter.Alien,
+			Name:     name,
+			Md5:      "",
+			Size:     srcMatter.Size,
+			Privacy:  srcMatter.Privacy,
+			Path:     destDirMatter.Path + "/" + name,
+		}
+
+		newMatter = this.matterDao.Create(newMatter)
+
+	}
+
+}
 
 //将一个matter 重命名为 name
-func (this *MatterService) Rename(matter *Matter, name string,user *User) {
+func (this *MatterService) Rename(matter *Matter, name string, user *User) {
 
 	//验证参数。
 	if name == "" {

@@ -316,10 +316,17 @@ func (this *DavService) HandleOptions(w http.ResponseWriter, r *http.Request, us
 
 }
 
-//移动或者重命名
-func (this *DavService) HandleMove(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
 
-	fmt.Printf("MOVE %s\n", subPath)
+//移动或者复制的准备工作
+func (this *DavService) prepareMoveCopy(
+	writer http.ResponseWriter,
+	request *http.Request,
+	user *User, subPath string) (
+	srcMatter *Matter,
+	destDirMatter *Matter,
+	srcDirPath string,
+	destinationDirPath string,
+	destinationName string) {
 
 	//解析出目标路径。
 	destinationStr := request.Header.Get("Destination")
@@ -358,9 +365,9 @@ func (this *DavService) HandleMove(writer http.ResponseWriter, request *http.Req
 		this.PanicBadRequest("目标前缀必须为：%s", WEBDAV_PREFFIX)
 	}
 
-	destinationName := GetFilenameOfPath(destinationPath)
-	destinationDirPath := GetDirOfPath(destinationPath)
-	srcDirPath := GetDirOfPath(subPath)
+	destinationName = GetFilenameOfPath(destinationPath)
+	destinationDirPath = GetDirOfPath(destinationPath)
+	srcDirPath = GetDirOfPath(subPath)
 
 	overwrite := false
 	if overwriteStr == "T" {
@@ -373,7 +380,6 @@ func (this *DavService) HandleMove(writer http.ResponseWriter, request *http.Req
 	}
 
 	//源matter.
-	var srcMatter *Matter
 	//如果是空或者/就是请求根目录
 	if subPath == "" || subPath == "/" {
 		this.PanicBadRequest("你不能移动根目录！")
@@ -385,12 +391,12 @@ func (this *DavService) HandleMove(writer http.ResponseWriter, request *http.Req
 	destMatter := this.matterDao.findByUserUuidAndPath(user.Uuid, destinationPath)
 
 	//目标文件夹matter
-	var destDirMatter *Matter
 	if destinationDirPath == "" || destinationDirPath == "/" {
 		destDirMatter = NewRootMatter(user)
 	} else {
 		destDirMatter = this.matterDao.checkByUserUuidAndPath(user.Uuid, destinationDirPath)
 	}
+
 
 	//如果目标matter存在了。
 	if destMatter != nil {
@@ -404,6 +410,16 @@ func (this *DavService) HandleMove(writer http.ResponseWriter, request *http.Req
 		}
 	}
 
+	return srcMatter, destDirMatter, srcDirPath, destinationDirPath, destinationName
+
+}
+
+//移动或者重命名
+func (this *DavService) HandleMove(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
+
+	fmt.Printf("MOVE %s\n", subPath)
+
+	srcMatter, destDirMatter, srcDirPath, destinationDirPath, destinationName := this.prepareMoveCopy(writer, request, user, subPath)
 	//移动到新目录中去。
 	if destinationDirPath == srcDirPath {
 		//文件夹没变化，相当于重命名。
@@ -416,8 +432,17 @@ func (this *DavService) HandleMove(writer http.ResponseWriter, request *http.Req
 }
 
 //复制文件/文件夹
-func (this *DavService) HandleCopy(w http.ResponseWriter, r *http.Request, user *User, subPath string) {
-	this.PanicBadRequest("暂不支持COPY方法")
+func (this *DavService) HandleCopy(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
+
+	fmt.Printf("COPY %s\n", subPath)
+
+	srcMatter, destDirMatter, _, destinationDirPath, destinationName := this.prepareMoveCopy(writer, request, user, subPath)
+
+	//复制到新目录中去。
+	this.matterService.Copy(srcMatter, destDirMatter, destinationName)
+
+	this.logger.Info("完成复制 %s => %s", subPath, destinationDirPath)
+
 }
 
 //处理所有的请求
