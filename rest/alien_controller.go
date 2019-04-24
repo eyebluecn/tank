@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
-	"strings"
 	"tank/rest/result"
 	"time"
 )
@@ -281,7 +280,7 @@ func (this *AlienController) Upload(writer http.ResponseWriter, request *http.Re
 
 	dirMatter := this.matterDao.CheckWithRootByUuid(uploadToken.FolderUuid, user)
 
-	matter := this.matterService.Upload(file, user, dirMatter, uploadToken.Filename, uploadToken.Privacy)
+	matter := this.matterService.AtomicUpload(file, user, dirMatter, uploadToken.Filename, uploadToken.Privacy)
 
 	//更新这个uploadToken的信息.
 	uploadToken.ExpireTime = time.Now()
@@ -299,6 +298,8 @@ func (this *AlienController) CrawlToken(writer http.ResponseWriter, request *htt
 	}
 
 	uploadTokenUuid := request.FormValue("uploadTokenUuid")
+	url := request.FormValue("url")
+
 	if uploadTokenUuid == "" {
 		panic("uploadTokenUuid必填")
 	}
@@ -314,22 +315,9 @@ func (this *AlienController) CrawlToken(writer http.ResponseWriter, request *htt
 
 	user := this.userDao.CheckByUuid(uploadToken.UserUuid)
 
-	url := request.FormValue("url")
-	if url == "" || (!strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://")) {
-		panic("资源url必填，并且应该以http://或者https://开头")
-	}
+	dirMatter := this.matterDao.CheckWithRootByUuid(uploadToken.FolderUuid, user)
 
-	var dirPath string
-	if uploadToken.FolderUuid == MATTER_ROOT {
-
-		dirPath = "/"
-	} else {
-
-		dirMatter := this.matterDao.CheckByUuid(uploadToken.FolderUuid)
-		dirPath = dirMatter.Path
-	}
-
-	matter := this.matterService.Crawl(url, uploadToken.Filename, user, uploadToken.FolderUuid, dirPath, uploadToken.Privacy)
+	matter := this.matterService.AtomicCrawl(url, uploadToken.Filename, user, dirMatter, uploadToken.Privacy)
 
 	//更新这个uploadToken的信息.
 	uploadToken.ExpireTime = time.Now()
@@ -347,16 +335,12 @@ func (this *AlienController) CrawlDirect(writer http.ResponseWriter, request *ht
 	privacyStr := request.FormValue("privacy")
 	//文件夹路径，以 / 开头。
 	dir := request.FormValue("dir")
+	url := request.FormValue("url")
 
 	if filename == "" {
 		panic("文件名必填")
 	} else if m, _ := regexp.MatchString(`[<>|*?/\\]`, filename); m {
 		panic(fmt.Sprintf(`【%s】不符合要求，文件名中不能包含以下特殊符号：< > | * ? / \`, filename))
-	}
-
-	url := request.FormValue("url")
-	if url == "" || (!strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://")) {
-		panic("资源url必填，并且应该以http://或者https://开头")
 	}
 
 	var privacy bool
@@ -375,7 +359,7 @@ func (this *AlienController) CrawlDirect(writer http.ResponseWriter, request *ht
 	user := this.CheckRequestUser(writer, request)
 	dirMatter := this.matterService.CreateDirectories(user, dir)
 
-	matter := this.matterService.Crawl(url, filename, user, dirMatter.Uuid, dirMatter.Path, privacy)
+	matter := this.matterService.AtomicCrawl(url, filename, user, dirMatter, privacy)
 
 	return this.Success(matter)
 }

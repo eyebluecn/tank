@@ -230,10 +230,10 @@ func (this *DavService) HandlePut(writer http.ResponseWriter, request *http.Requ
 	//如果存在，那么先删除再说。
 	srcMatter := this.matterDao.findByUserUuidAndPath(user.Uuid, subPath)
 	if srcMatter != nil {
-		this.matterService.Delete(srcMatter)
+		this.matterService.AtomicDelete(srcMatter)
 	}
 
-	this.matterService.Upload(request.Body, user, dirMatter, filename, true)
+	this.matterService.AtomicUpload(request.Body, user, dirMatter, filename, true)
 
 }
 
@@ -245,7 +245,7 @@ func (this *DavService) HandleDelete(writer http.ResponseWriter, request *http.R
 	//寻找符合条件的matter.
 	matter := this.matterDao.CheckWithRootByPath(subPath, user)
 
-	this.matterService.Delete(matter)
+	this.matterService.AtomicDelete(matter)
 }
 
 //创建文件夹
@@ -259,7 +259,7 @@ func (this *DavService) HandleMkcol(writer http.ResponseWriter, request *http.Re
 	//寻找符合条件的matter.
 	dirMatter := this.matterDao.CheckWithRootByPath(dirPath, user)
 
-	this.matterService.CreateDirectory(dirMatter, thisDirName, user)
+	this.matterService.AtomicCreateDirectory(dirMatter, thisDirName, user)
 
 }
 
@@ -371,9 +371,9 @@ func (this *DavService) HandleMove(writer http.ResponseWriter, request *http.Req
 	//移动到新目录中去。
 	if destinationDirPath == srcDirPath {
 		//文件夹没变化，相当于重命名。
-		this.matterService.Rename(srcMatter, destinationName, user)
+		this.matterService.AtomicRename(srcMatter, destinationName, user)
 	} else {
-		this.matterService.Move(srcMatter, destDirMatter, overwrite)
+		this.matterService.AtomicMove(srcMatter, destDirMatter, overwrite)
 	}
 
 	this.logger.Info("完成移动 %s => %s", subPath, destDirMatter.Path)
@@ -387,7 +387,7 @@ func (this *DavService) HandleCopy(writer http.ResponseWriter, request *http.Req
 	srcMatter, destDirMatter, _, _, destinationName, overwrite := this.prepareMoveCopy(writer, request, user, subPath)
 
 	//复制到新目录中去。
-	this.matterService.Copy(srcMatter, destDirMatter, destinationName,overwrite)
+	this.matterService.AtomicCopy(srcMatter, destDirMatter, destinationName,overwrite)
 
 	this.logger.Info("完成复制 %s => %s", subPath, destDirMatter.Path)
 

@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -11,6 +10,10 @@ import (
 	"tank/rest/result"
 )
 
+/**
+ * 操作文件的Service
+ * 以 Atomic 开头的方法带有操作锁，这种方法不能被其他的Atomic方法调用，只能提供给外部调用。
+ */
 //@Service
 type MatterService struct {
 	Bean
@@ -65,7 +68,7 @@ func (this *MatterService) DownloadFile(
 }
 
 //删除文件
-func (this *MatterService) Delete(matter *Matter) {
+func (this *MatterService) AtomicDelete(matter *Matter) {
 
 	if matter == nil {
 		panic(result.BadRequest("matter不能为nil"))
@@ -78,17 +81,12 @@ func (this *MatterService) Delete(matter *Matter) {
 	this.matterDao.Delete(matter)
 }
 
-//开始上传文件
-//上传文件. alien表明文件是否是应用使用的文件。
+//上传文件
 func (this *MatterService) Upload(file io.Reader, user *User, dirMatter *Matter, filename string, privacy bool) *Matter {
 
 	if user == nil {
 		panic(result.BadRequest("user cannot be nil."))
 	}
-
-	//操作锁
-	this.userService.MatterLock(user.Uuid)
-	defer this.userService.MatterUnlock(user.Uuid)
 
 	//验证dirMatter
 	if dirMatter == nil {
@@ -166,6 +164,20 @@ func (this *MatterService) Upload(file io.Reader, user *User, dirMatter *Matter,
 	return matter
 }
 
+//上传文件
+func (this *MatterService) AtomicUpload(file io.Reader, user *User, dirMatter *Matter, filename string, privacy bool) *Matter {
+
+	if user == nil {
+		panic(result.BadRequest("user cannot be nil."))
+	}
+
+	//操作锁
+	this.userService.MatterLock(user.Uuid)
+	defer this.userService.MatterUnlock(user.Uuid)
+
+	return this.Upload(file, user, dirMatter, filename, privacy)
+}
+
 //内部创建文件，不带操作锁。
 func (this *MatterService) innerCreateDirectory(dirMatter *Matter, name string, user *User) *Matter {
 
@@ -241,7 +253,7 @@ func (this *MatterService) innerCreateDirectory(dirMatter *Matter, name string, 
 }
 
 //在dirMatter中创建文件夹 返回刚刚创建的这个文件夹
-func (this *MatterService) CreateDirectory(dirMatter *Matter, name string, user *User) *Matter {
+func (this *MatterService) AtomicCreateDirectory(dirMatter *Matter, name string, user *User) *Matter {
 
 	//操作锁
 	this.userService.MatterLock(user.Uuid)
@@ -325,7 +337,7 @@ func (this *MatterService) innerMove(srcMatter *Matter, destDirMatter *Matter) {
 }
 
 //将一个srcMatter放置到另一个destMatter(必须为文件夹)下
-func (this *MatterService) Move(srcMatter *Matter, destDirMatter *Matter, overwrite bool) {
+func (this *MatterService) AtomicMove(srcMatter *Matter, destDirMatter *Matter, overwrite bool) {
 
 	if srcMatter == nil {
 		panic(result.BadRequest("srcMatter cannot be nil."))
@@ -358,7 +370,7 @@ func (this *MatterService) Move(srcMatter *Matter, destDirMatter *Matter, overwr
 }
 
 //将一个srcMatter放置到另一个destMatter(必须为文件夹)下
-func (this *MatterService) MoveBatch(srcMatters []*Matter, destDirMatter *Matter) {
+func (this *MatterService) AtomicMoveBatch(srcMatters []*Matter, destDirMatter *Matter) {
 
 	if destDirMatter == nil {
 		panic(result.BadRequest("destDirMatter cannot be nil."))
@@ -450,7 +462,7 @@ func (this *MatterService) innerCopy(srcMatter *Matter, destDirMatter *Matter, n
 }
 
 //将一个srcMatter复制到另一个destMatter(必须为文件夹)下，名字叫做name
-func (this *MatterService) Copy(srcMatter *Matter, destDirMatter *Matter, name string, overwrite bool) {
+func (this *MatterService) AtomicCopy(srcMatter *Matter, destDirMatter *Matter, name string, overwrite bool) {
 
 	if srcMatter == nil {
 		panic(result.BadRequest("srcMatter cannot be nil."))
@@ -471,7 +483,7 @@ func (this *MatterService) Copy(srcMatter *Matter, destDirMatter *Matter, name s
 }
 
 //将一个matter 重命名为 name
-func (this *MatterService) Rename(matter *Matter, name string, user *User) {
+func (this *MatterService) AtomicRename(matter *Matter, name string, user *User) {
 
 	if user == nil {
 		this.PanicBadRequest("user cannot be nil")
@@ -623,52 +635,25 @@ func (this *MatterService) Detail(uuid string) *Matter {
 }
 
 //去指定的url中爬文件
-func (this *MatterService) Crawl(url string, filename string, user *User, puuid string, dirRelativePath string, privacy bool) *Matter {
+func (this *MatterService) AtomicCrawl(url string, filename string, user *User, dirMatter *Matter, privacy bool) *Matter {
 
-	//文件名不能太长。
-	if len(filename) > 200 {
-		panic("文件名不能超过200")
+	if user == nil {
+		panic(result.BadRequest("user cannot be nil."))
 	}
 
-	//获取文件应该存放在的物理路径的绝对路径和相对路径。
-	absolutePath := GetUserFileRootDir(user.Username) + dirRelativePath + "/" + filename
-	relativePath := dirRelativePath + "/" + filename
+	if url == "" || (!strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://")) {
+		panic("资源url必填，并且应该以http://或者https://开头")
+	}
 
-	//使用临时文件存放
-	fmt.Printf("存放于%s", absolutePath)
-	size, err := download.HttpDownloadFile(absolutePath, url)
+	//操作锁
+	this.userService.MatterLock(user.Uuid)
+	defer this.userService.MatterUnlock(user.Uuid)
+
+	//从指定的url下载一个文件。参考：https://golangcode.com/download-a-file-from-a-url/
+	resp, err := http.Get(url)
 	this.PanicError(err)
 
-	//判断用户自身上传大小的限制。
-	if user.SizeLimit >= 0 {
-		if size > user.SizeLimit {
-			panic("您最大只能上传" + HumanFileSize(user.SizeLimit) + "的文件")
-		}
-	}
-
-	//查找文件夹下面是否有同名文件。
-	matters := this.matterDao.ListByUserUuidAndPuuidAndDirAndName(user.Uuid, puuid, false, filename)
-	//如果有同名的文件，那么我们直接覆盖同名文件。
-	for _, dbFile := range matters {
-		this.Delete(dbFile)
-	}
-
-	//将文件信息存入数据库中。
-	matter := &Matter{
-		Puuid:    puuid,
-		UserUuid: user.Uuid,
-		Username: user.Username,
-		Dir:      false,
-		Name:     filename,
-		Md5:      "",
-		Size:     size,
-		Privacy:  privacy,
-		Path:     relativePath,
-	}
-
-	matter = this.matterDao.Create(matter)
-
-	return matter
+	return this.Upload(resp.Body, user, dirMatter, filename, privacy)
 }
 
 //调整一个Matter的path值

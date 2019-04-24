@@ -192,7 +192,7 @@ func (this *MatterController) CreateDirectory(writer http.ResponseWriter, reques
 		dirMatter = this.matterDao.CheckByUuid(puuid)
 	}
 
-	matter := this.matterService.CreateDirectory(dirMatter, name, user);
+	matter := this.matterService.AtomicCreateDirectory(dirMatter, name, user);
 	return this.Success(matter)
 }
 
@@ -234,7 +234,7 @@ func (this *MatterController) Upload(writer http.ResponseWriter, request *http.R
 
 	dirMatter := this.matterDao.CheckWithRootByUuid(puuid, user)
 
-	matter := this.matterService.Upload(file, user, dirMatter, fileName, privacy)
+	matter := this.matterService.AtomicUpload(file, user, dirMatter, fileName, privacy)
 
 	return this.Success(matter)
 }
@@ -243,6 +243,10 @@ func (this *MatterController) Upload(writer http.ResponseWriter, request *http.R
 func (this *MatterController) Crawl(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	userUuid := request.FormValue("userUuid")
+	puuid := request.FormValue("puuid")
+	url := request.FormValue("url")
+	privacyStr := request.FormValue("privacy")
+
 	user := this.checkUser(writer, request)
 	if user.Role != USER_ROLE_ADMINISTRATOR {
 		userUuid = user.Uuid
@@ -254,27 +258,13 @@ func (this *MatterController) Crawl(writer http.ResponseWriter, request *http.Re
 
 	user = this.userDao.CheckByUuid(userUuid)
 
-	puuid := request.FormValue("puuid")
-	var dirRelativePath string
-	if puuid == "" {
-		this.PanicBadRequest("puuid必填")
-	} else {
-		if puuid == MATTER_ROOT {
-			dirRelativePath = ""
-		} else {
-			//找出上一级的文件夹。
-			dirMatter := this.matterDao.CheckByUuidAndUserUuid(puuid, userUuid)
-			dirRelativePath = dirMatter.Path
-		}
-	}
+	dirMatter := this.matterDao.CheckWithRootByUuid(puuid, user)
 
 	privacy := false
-	privacyStr := request.FormValue("privacy")
 	if privacyStr == TRUE {
 		privacy = true
 	}
 
-	url := request.FormValue("url")
 	if url == "" || (!strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://")) {
 		panic("资源url必填，并且应该以http://或者https://开头")
 	}
@@ -284,7 +274,7 @@ func (this *MatterController) Crawl(writer http.ResponseWriter, request *http.Re
 		panic("文件名必传")
 	}
 
-	matter := this.matterService.Crawl(url, filename, user, puuid, dirRelativePath, privacy)
+	matter := this.matterService.AtomicCrawl(url, filename, user, dirMatter, privacy)
 
 	return this.Success(matter)
 }
@@ -305,7 +295,7 @@ func (this *MatterController) Delete(writer http.ResponseWriter, request *http.R
 		this.PanicUnauthorized("没有权限")
 	}
 
-	this.matterService.Delete(matter)
+	this.matterService.AtomicDelete(matter)
 
 	return this.Success("删除成功！")
 }
@@ -336,7 +326,7 @@ func (this *MatterController) DeleteBatch(writer http.ResponseWriter, request *h
 			this.PanicUnauthorized("没有权限")
 		}
 
-		this.matterService.Delete(matter)
+		this.matterService.AtomicDelete(matter)
 
 	}
 
@@ -358,7 +348,7 @@ func (this *MatterController) Rename(writer http.ResponseWriter, request *http.R
 		this.PanicUnauthorized("没有权限")
 	}
 
-	this.matterService.Rename(matter, name, user)
+	this.matterService.AtomicRename(matter, name, user)
 
 	return this.Success(matter)
 }
@@ -447,7 +437,7 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 		srcMatters = append(srcMatters, srcMatter)
 	}
 
-	this.matterService.MoveBatch(srcMatters, destMatter)
+	this.matterService.AtomicMoveBatch(srcMatters, destMatter)
 
 	return this.Success(nil)
 }

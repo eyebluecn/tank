@@ -366,33 +366,11 @@ func DownloadFile(
 
 
 // 从指定的url下载一个文件。参考：https://golangcode.com/download-a-file-from-a-url/
-func HttpDownloadFile(filepath string, url string) (int64, error) {
-
-	// Create the file
-	out, err := os.Create(filepath)
-	if err != nil {
-		return 0, err
-	}
-	defer func() {
-		e := out.Close()
-		PanicError(e)
-	}()
+func HttpDownloadFile(url string) io.Reader {
 
 	// Get the data
 	resp, err := http.Get(url)
-	if err != nil {
-		return 0, err
-	}
-	defer func() {
-		e := resp.Body.Close()
-		PanicError(e)
-	}()
+	PanicError(err)
 
-	// Write the body to file
-	size, err := io.Copy(out, resp.Body)
-	if err != nil {
-		return 0, err
-	}
-
-	return size, nil
+	return resp.Body
 }
