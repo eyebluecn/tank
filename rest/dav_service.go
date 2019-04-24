@@ -161,13 +161,8 @@ func (this *DavService) HandlePropfind(writer http.ResponseWriter, request *http
 	this.PanicError(err)
 
 	//寻找符合条件的matter.
-	var matter *Matter
 	//如果是空或者/就是请求根目录
-	if subPath == "" || subPath == "/" {
-		matter = NewRootMatter(user)
-	} else {
-		matter = this.matterDao.checkByUserUuidAndPath(user.Uuid, subPath)
-	}
+	matter := this.matterDao.CheckWithRootByPath(subPath, user)
 
 	var matters []*Matter
 	if depth == 0 {
@@ -208,14 +203,7 @@ func (this *DavService) HandleGetHeadPost(writer http.ResponseWriter, request *h
 
 	fmt.Printf("GET %s\n", subPath)
 
-	//寻找符合条件的matter.
-	var matter *Matter
-	//如果是空或者/就是请求根目录
-	if subPath == "" || subPath == "/" {
-		matter = NewRootMatter(user)
-	} else {
-		matter = this.matterDao.checkByUserUuidAndPath(user.Uuid, subPath)
-	}
+	matter := this.matterDao.CheckWithRootByPath(subPath, user)
 
 	//如果是文件夹，相当于是 Propfind
 	if matter.Dir {
@@ -237,14 +225,7 @@ func (this *DavService) HandlePut(writer http.ResponseWriter, request *http.Requ
 	dirPath := GetDirOfPath(subPath)
 
 	//寻找符合条件的matter.
-	var matter *Matter
-	//如果是空或者/就是请求根目录
-	if dirPath == "" || dirPath == "/" {
-		matter = NewRootMatter(user)
-	} else {
-		matter = this.matterDao.checkByUserUuidAndPath(user.Uuid, dirPath)
-	}
-
+	dirMatter := this.matterDao.CheckWithRootByPath(dirPath, user)
 
 	//如果存在，那么先删除再说。
 	srcMatter := this.matterDao.findByUserUuidAndPath(user.Uuid, subPath)
@@ -252,8 +233,7 @@ func (this *DavService) HandlePut(writer http.ResponseWriter, request *http.Requ
 		this.matterService.Delete(srcMatter)
 	}
 
-
-	this.matterService.Upload(request.Body, user, matter, filename, true)
+	this.matterService.Upload(request.Body, user, dirMatter, filename, true)
 
 }
 
@@ -263,13 +243,7 @@ func (this *DavService) HandleDelete(writer http.ResponseWriter, request *http.R
 	fmt.Printf("DELETE %s\n", subPath)
 
 	//寻找符合条件的matter.
-	var matter *Matter
-	//如果是空或者/就是请求根目录
-	if subPath == "" || subPath == "/" {
-		matter = NewRootMatter(user)
-	} else {
-		matter = this.matterDao.checkByUserUuidAndPath(user.Uuid, subPath)
-	}
+	matter := this.matterDao.CheckWithRootByPath(subPath, user)
 
 	this.matterService.Delete(matter)
 }
@@ -283,13 +257,7 @@ func (this *DavService) HandleMkcol(writer http.ResponseWriter, request *http.Re
 	dirPath := GetDirOfPath(subPath)
 
 	//寻找符合条件的matter.
-	var dirMatter *Matter
-	//如果是空或者/就是请求根目录
-	if dirPath == "" || dirPath == "/" {
-		dirMatter = NewRootMatter(user)
-	} else {
-		dirMatter = this.matterDao.checkByUserUuidAndPath(user.Uuid, dirPath)
-	}
+	dirMatter := this.matterDao.CheckWithRootByPath(dirPath, user)
 
 	this.matterService.CreateDirectory(dirMatter, thisDirName, user)
 
@@ -301,13 +269,7 @@ func (this *DavService) HandleOptions(w http.ResponseWriter, r *http.Request, us
 	fmt.Printf("OPTIONS %s\n", subPath)
 
 	//寻找符合条件的matter.
-	var matter *Matter
-	//如果是空或者/就是请求根目录
-	if subPath == "" || subPath == "/" {
-		matter = NewRootMatter(user)
-	} else {
-		matter = this.matterDao.checkByUserUuidAndPath(user.Uuid, subPath)
-	}
+	matter := this.matterDao.CheckWithRootByPath(subPath, user)
 
 	allow := "OPTIONS, LOCK, PUT, MKCOL"
 	if matter.Dir {
@@ -333,7 +295,8 @@ func (this *DavService) prepareMoveCopy(
 	destDirMatter *Matter,
 	srcDirPath string,
 	destinationDirPath string,
-	destinationName string) {
+	destinationName string,
+	overwrite bool) {
 
 	//解析出目标路径。
 	destinationStr := request.Header.Get("Destination")
@@ -376,7 +339,7 @@ func (this *DavService) prepareMoveCopy(
 	destinationDirPath = GetDirOfPath(destinationPath)
 	srcDirPath = GetDirOfPath(subPath)
 
-	overwrite := false
+	overwrite = false
 	if overwriteStr == "T" {
 		overwrite = true
 	}
@@ -387,36 +350,15 @@ func (this *DavService) prepareMoveCopy(
 	}
 
 	//源matter.
+	//寻找符合条件的matter.
+	srcMatter = this.matterDao.CheckWithRootByPath(subPath, user)
+
 	//如果是空或者/就是请求根目录
-	if subPath == "" || subPath == "/" {
+	if srcMatter.Uuid == MATTER_ROOT {
 		this.PanicBadRequest("你不能移动根目录！")
-	} else {
-		srcMatter = this.matterDao.checkByUserUuidAndPath(user.Uuid, subPath)
 	}
 
-	//目标matter
-	destMatter := this.matterDao.findByUserUuidAndPath(user.Uuid, destinationPath)
-
-	//目标文件夹matter
-	if destinationDirPath == "" || destinationDirPath == "/" {
-		destDirMatter = NewRootMatter(user)
-	} else {
-		destDirMatter = this.matterDao.checkByUserUuidAndPath(user.Uuid, destinationDirPath)
-	}
-
-	//如果目标matter存在了。
-	if destMatter != nil {
-
-		//如果目标matter还存在了。
-		if overwrite {
-			//要求覆盖。那么删除。
-			this.matterService.Delete(destMatter)
-		} else {
-			this.PanicBadRequest("%s已经存在，操作失败！", destinationName)
-		}
-	}
-
-	return srcMatter, destDirMatter, srcDirPath, destinationDirPath, destinationName
+	return srcMatter, destDirMatter, srcDirPath, destinationDirPath, destinationName, overwrite
 
 }
 
@@ -425,16 +367,16 @@ func (this *DavService) HandleMove(writer http.ResponseWriter, request *http.Req
 
 	fmt.Printf("MOVE %s\n", subPath)
 
-	srcMatter, destDirMatter, srcDirPath, destinationDirPath, destinationName := this.prepareMoveCopy(writer, request, user, subPath)
+	srcMatter, destDirMatter, srcDirPath, destinationDirPath, destinationName, overwrite := this.prepareMoveCopy(writer, request, user, subPath)
 	//移动到新目录中去。
 	if destinationDirPath == srcDirPath {
 		//文件夹没变化，相当于重命名。
 		this.matterService.Rename(srcMatter, destinationName, user)
 	} else {
-		this.matterService.Move(srcMatter, destDirMatter)
+		this.matterService.Move(srcMatter, destDirMatter, overwrite)
 	}
 
-	this.logger.Info("完成移动 %s => %s", subPath, destinationDirPath)
+	this.logger.Info("完成移动 %s => %s", subPath, destDirMatter.Path)
 }
 
 //复制文件/文件夹
@@ -442,12 +384,12 @@ func (this *DavService) HandleCopy(writer http.ResponseWriter, request *http.Req
 
 	fmt.Printf("COPY %s\n", subPath)
 
-	srcMatter, destDirMatter, _, destinationDirPath, destinationName := this.prepareMoveCopy(writer, request, user, subPath)
+	srcMatter, destDirMatter, _, _, destinationName, overwrite := this.prepareMoveCopy(writer, request, user, subPath)
 
 	//复制到新目录中去。
-	this.matterService.Copy(srcMatter, destDirMatter, destinationName)
+	this.matterService.Copy(srcMatter, destDirMatter, destinationName,overwrite)
 
-	this.logger.Info("完成复制 %s => %s", subPath, destinationDirPath)
+	this.logger.Info("完成复制 %s => %s", subPath, destDirMatter.Path)
 
 }
 

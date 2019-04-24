@@ -232,7 +232,7 @@ func (this *MatterController) Upload(writer http.ResponseWriter, request *http.R
 		fileName = fileName[pos+1:]
 	}
 
-	dirMatter := this.matterDao.CheckDirByUuid(puuid, user)
+	dirMatter := this.matterDao.CheckWithRootByUuid(puuid, user)
 
 	matter := this.matterService.Upload(file, user, dirMatter, fileName, privacy)
 
@@ -406,31 +406,20 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 	}
 
 	user := this.checkUser(writer, request)
-	if user.Role != USER_ROLE_ADMINISTRATOR {
-		userUuid = user.Uuid
-	}
-	if userUuid == "" {
+	if user.Role != USER_ROLE_ADMINISTRATOR || userUuid == "" {
 		userUuid = user.Uuid
 	}
 
 	user = this.userDao.CheckByUuid(userUuid)
 
 	//验证dest是否有问题
-	var destMatter *Matter
-	if destUuid == "" {
-		this.PanicBadRequest("destUuid参数必填")
-	} else {
-		if destUuid == MATTER_ROOT {
-			destMatter = NewRootMatter(user)
-		} else {
-			destMatter = this.matterService.Detail(destUuid)
-			if !destMatter.Dir {
-				this.PanicBadRequest("目标不是文件夹")
-			}
-			if user.Role != USER_ROLE_ADMINISTRATOR && destMatter.UserUuid != user.Uuid {
-				this.PanicUnauthorized("没有权限")
-			}
-		}
+	var destMatter = this.matterDao.CheckWithRootByUuid(destUuid, user)
+	if !destMatter.Dir {
+		this.PanicBadRequest("目标不是文件夹")
+	}
+
+	if user.Role != USER_ROLE_ADMINISTRATOR && destMatter.UserUuid != user.Uuid {
+		this.PanicUnauthorized("没有权限")
 	}
 
 	var srcMatters []*Matter
@@ -438,10 +427,6 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 	for _, uuid := range srcUuids {
 		//找出该文件或者文件夹
 		srcMatter := this.matterDao.CheckByUuid(uuid)
-
-		if user.Role != USER_ROLE_ADMINISTRATOR && srcMatter.UserUuid != user.Uuid {
-			this.PanicUnauthorized("没有权限")
-		}
 
 		if srcMatter.Puuid == destMatter.Uuid {
 			this.PanicBadRequest("没有进行移动，操作无效！")
@@ -459,24 +444,10 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 			panic("文件和目标文件夹的拥有者不是同一人")
 		}
 
-		//文件夹不能把自己移入到自己中，也不可以移入到自己的子文件夹下。
-		tmpMatter := destMatter
-		for tmpMatter != nil {
-			if uuid == tmpMatter.Uuid {
-				panic("文件夹不能把自己移入到自己中，也不可以移入到自己的子文件夹下。")
-			}
-			tmpMatter = tmpMatter.Parent
-		}
-
 		srcMatters = append(srcMatters, srcMatter)
 	}
 
-	for _, srcMatter := range srcMatters {
-
-		//TODO:移动物理目录并且加锁。
-		this.matterService.Move(srcMatter, destMatter)
-
-	}
+	this.matterService.MoveBatch(srcMatters, destMatter)
 
 	return this.Success(nil)
 }

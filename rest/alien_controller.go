@@ -279,7 +279,7 @@ func (this *AlienController) Upload(writer http.ResponseWriter, request *http.Re
 		panic("文件大小不正确")
 	}
 
-	dirMatter := this.matterDao.CheckDirByUuid(uploadToken.FolderUuid, user)
+	dirMatter := this.matterDao.CheckWithRootByUuid(uploadToken.FolderUuid, user)
 
 	matter := this.matterService.Upload(file, user, dirMatter, uploadToken.Filename, uploadToken.Privacy)
 
@@ -343,6 +343,12 @@ func (this *AlienController) CrawlDirect(writer http.ResponseWriter, request *ht
 
 	//文件名。
 	filename := request.FormValue("filename")
+	//文件公有或私有
+	privacyStr := request.FormValue("privacy")
+	//文件夹路径，以 / 开头。
+	dir := request.FormValue("dir")
+
+
 	if filename == "" {
 		panic("文件名必填")
 	} else if m, _ := regexp.MatchString(`[<>|*?/\\]`, filename); m {
@@ -354,8 +360,6 @@ func (this *AlienController) CrawlDirect(writer http.ResponseWriter, request *ht
 		panic("资源url必填，并且应该以http://或者https://开头")
 	}
 
-	//文件公有或私有
-	privacyStr := request.FormValue("privacy")
 	var privacy bool
 	if privacyStr == "" {
 		panic(`文件公有性必填`)
@@ -369,8 +373,6 @@ func (this *AlienController) CrawlDirect(writer http.ResponseWriter, request *ht
 		}
 	}
 
-	//文件夹路径，以 / 开头。
-	dir := request.FormValue("dir")
 	user := this.CheckRequestUser(writer, request)
 	dirUuid, dirRelativePath := this.matterService.GetDirUuid(user, dir)
 

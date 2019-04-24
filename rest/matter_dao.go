@@ -49,9 +49,12 @@ func (this *MatterDao) CheckByUuid(uuid string) *Matter {
 	return matter
 }
 
-
 //按照uuid查找一个文件夹，可能返回root对应的matter.
-func (this *MatterDao) CheckDirByUuid(uuid string, user *User) *Matter {
+func (this *MatterDao) CheckWithRootByUuid(uuid string, user *User) *Matter {
+
+	if uuid == "" {
+		this.PanicBadRequest("uuid cannot be nil.")
+	}
 
 	var matter *Matter
 	if uuid == MATTER_ROOT {
@@ -61,6 +64,25 @@ func (this *MatterDao) CheckDirByUuid(uuid string, user *User) *Matter {
 		matter = NewRootMatter(user)
 	} else {
 		matter = this.CheckByUuid(uuid)
+	}
+
+	return matter
+}
+
+//按照path查找一个matter，可能返回root对应的matter.
+func (this *MatterDao) CheckWithRootByPath(path string, user *User) *Matter {
+
+	var matter *Matter
+
+	if user == nil {
+		this.PanicBadRequest("user cannot be nil.")
+	}
+
+	//目标文件夹matter
+	if path == "" || path == "/" {
+		matter = NewRootMatter(user)
+	} else {
+		matter = this.checkByUserUuidAndPath(user.Uuid, path)
 	}
 
 	return matter
