@@ -72,6 +72,7 @@ func (this *MatterService) Delete(matter *Matter) {
 	}
 
 
+
 	//操作锁
 	this.userService.MatterLock(matter.UserUuid)
 	defer this.userService.MatterUnlock(matter.UserUuid)
