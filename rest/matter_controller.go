@@ -89,25 +89,6 @@ func (this *MatterController) Detail(writer http.ResponseWriter, request *http.R
 
 }
 
-//创建一个文件夹。
-func (this *MatterController) CreateDirectory(writer http.ResponseWriter, request *http.Request) *result.WebResult {
-
-	puuid := request.FormValue("puuid")
-
-	name := request.FormValue("name")
-
-	//管理员可以指定给某个用户创建文件夹。
-	userUuid := request.FormValue("userUuid")
-	user := this.checkUser(writer, request)
-	if user.Role != USER_ROLE_ADMINISTRATOR {
-		userUuid = user.Uuid
-	}
-	user = this.userDao.CheckByUuid(userUuid)
-
-	matter := this.matterService.CreateDirectory(puuid, name, user);
-	return this.Success(matter)
-}
-
 //按照分页的方式获取某个文件夹下文件和子文件夹的列表，通常情况下只有一页。
 func (this *MatterController) Page(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
@@ -188,6 +169,36 @@ func (this *MatterController) Page(writer http.ResponseWriter, request *http.Req
 
 	return this.Success(pager)
 }
+
+
+//创建一个文件夹。
+func (this *MatterController) CreateDirectory(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+
+	puuid := request.FormValue("puuid")
+	name := request.FormValue("name")
+	userUuid := request.FormValue("userUuid")
+
+
+	//管理员可以指定给某个用户创建文件夹。
+	user := this.checkUser(writer, request)
+	if user.Role != USER_ROLE_ADMINISTRATOR {
+		userUuid = user.Uuid
+	}
+	user = this.userDao.CheckByUuid(userUuid)
+
+	//找到父级matter
+	var dirMatter *Matter
+	if puuid == MATTER_ROOT {
+		dirMatter = NewRootMatter(user)
+	} else {
+		dirMatter = this.matterDao.CheckByUuid(puuid)
+	}
+
+	matter := this.matterService.CreateDirectory(dirMatter, name, user);
+	return this.Success(matter)
+}
+
+
 
 //上传文件
 func (this *MatterController) Upload(writer http.ResponseWriter, request *http.Request) *result.WebResult {
@@ -334,7 +345,6 @@ func (this *MatterController) DeleteBatch(writer http.ResponseWriter, request *h
 	return this.Success("删除成功！")
 }
 
-
 //重命名一个文件或一个文件夹
 func (this *MatterController) Rename(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
@@ -349,7 +359,6 @@ func (this *MatterController) Rename(writer http.ResponseWriter, request *http.R
 	if user.Role != USER_ROLE_ADMINISTRATOR && matter.UserUuid != user.Uuid {
 		this.PanicUnauthorized("没有权限")
 	}
-
 
 	this.matterService.Rename(matter, name, user)
 

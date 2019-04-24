@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 	"tank/rest/download"
+	"tank/rest/result"
 )
 
 //@Service
@@ -132,69 +133,80 @@ func (this *MatterService) Detail(uuid string) *Matter {
 	return matter
 }
 
-//创建文件夹 返回刚刚创建的这个文件夹
-func (this *MatterService) CreateDirectory(puuid string, name string, user *User) *Matter {
+
+//在dirMatter中创建文件夹 返回刚刚创建的这个文件夹
+func (this *MatterService) CreateDirectory(dirMatter *Matter, name string, user *User) *Matter {
+
+	this.userService.MatterLock(user.Uuid)
+	defer this.userService.MatterUnlock(user.Uuid)
+
+	//父级matter必须存在
+	if dirMatter == nil {
+		panic(result.BadRequest("dirMatter必须指定"))
+	}
+
+	//必须是文件夹
+	if !dirMatter.Dir {
+		panic(result.BadRequest("dirMatter必须是文件夹"))
+	}
+
+	if dirMatter.UserUuid != user.Uuid {
+
+		panic(result.BadRequest("dirMatter的userUuid和user不一致"))
+	}
 
 	name = strings.TrimSpace(name)
 	//验证参数。
 	if name == "" {
-		this.PanicBadRequest("name参数必填，并且不能全是空格")
+		panic(result.BadRequest("name参数必填，并且不能全是空格"))
 	}
-	if len(name) > 200 {
-		panic("name长度不能超过200")
+
+	if len(name) > MATTER_NAME_MAX_LENGTH {
+
+		panic(result.BadRequest("name长度不能超过%d", MATTER_NAME_MAX_LENGTH))
+
 	}
 
 	if m, _ := regexp.MatchString(`[<>|*?/\\]`, name); m {
-		this.PanicBadRequest(`名称中不能包含以下特殊符号：< > | * ? / \`)
+
+		panic(result.BadRequest(`名称中不能包含以下特殊符号：< > | * ? / \`))
 	}
 
-	if puuid == "" {
-		panic("puuid必填")
-	}
-
-	//判断同级文件夹中是否有同名的文件。
-	count := this.matterDao.CountByUserUuidAndPuuidAndDirAndName(user.Uuid, puuid, true, name)
+	//判断同级文件夹中是否有同名的文件夹
+	count := this.matterDao.CountByUserUuidAndPuuidAndDirAndName(user.Uuid, dirMatter.Uuid, true, name)
 
 	if count > 0 {
-		this.PanicBadRequest("【" + name + "】已经存在了，请使用其他名称。")
+
+		panic(result.BadRequest("%s 已经存在了，请使用其他名称。", name))
 	}
 
-	path := fmt.Sprintf("/%s", name)
-	if puuid != MATTER_ROOT {
-		//验证目标文件夹存在。
-		this.matterDao.CheckByUuidAndUserUuid(puuid, user.Uuid)
+	parts := strings.Split(dirMatter.Path,"/")
+	this.logger.Info("%s的层数：%d",dirMatter.Name,len(parts))
 
-		//获取上级的详情
-		pMatter := this.Detail(puuid)
-
-		//根据父目录拼接处子目录
-		path = fmt.Sprintf("%s/%s", pMatter.Path, name)
-
-		//文件夹最多只能有32层。
-		count := 1
-		tmpMatter := pMatter
-		for tmpMatter != nil {
-			count++
-			tmpMatter = tmpMatter.Parent
-		}
-		if count >= 32 {
-			panic("文件夹最多32层")
-		}
+	if len(parts) >= 32{
+		panic(result.BadRequest("文件夹最多%d层", MATTER_NAME_MAX_DEPTH))
 	}
+
+	//绝对路径
+	absolutePath := GetUserFileRootDir(user.Username) + dirMatter.Path + "/" + name
+
+	//相对路径
+	relativePath := dirMatter.Path + "/" + name
 
 	//磁盘中创建文件夹。
-	dirPath := MakeDirAll(GetUserFileRootDir(user.Username) + path)
+	dirPath := MakeDirAll(absolutePath)
 	this.logger.Info("Create Directory: %s", dirPath)
 
 	//数据库中创建文件夹。
 	matter := &Matter{
-		Puuid:    puuid,
+		Puuid:    dirMatter.Uuid,
 		UserUuid: user.Uuid,
 		Username: user.Username,
 		Dir:      true,
 		Name:     name,
-		Path:     path,
+		Path:     relativePath,
 	}
+
 	matter = this.matterDao.Create(matter)
 
 	return matter

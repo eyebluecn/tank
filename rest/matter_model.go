@@ -3,8 +3,15 @@ package rest
 import "tank/rest/util"
 
 const (
+	//根目录的uuid
 	MATTER_ROOT  = "root"
+	//cache文件夹名称
 	MATTER_CACHE = "cache"
+	//matter名称最大长度
+	MATTER_NAME_MAX_LENGTH = 200
+	//matter文件夹最大深度
+	MATTER_NAME_MAX_DEPTH = 32
+
 )
 
 /**

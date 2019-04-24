@@ -282,15 +282,15 @@ func (this *DavService) HandleMkcol(writer http.ResponseWriter, request *http.Re
 	dirPath := GetDirOfPath(subPath)
 
 	//寻找符合条件的matter.
-	var matter *Matter
+	var dirMatter *Matter
 	//如果是空或者/就是请求根目录
 	if dirPath == "" || dirPath == "/" {
-		matter = NewRootMatter(user)
+		dirMatter = NewRootMatter(user)
 	} else {
-		matter = this.matterDao.checkByUserUuidAndPath(user.Uuid, dirPath)
+		dirMatter = this.matterDao.checkByUserUuidAndPath(user.Uuid, dirPath)
 	}
 
-	this.matterService.CreateDirectory(matter.Uuid, thisDirName, user)
+	this.matterService.CreateDirectory(dirMatter, thisDirName, user)
 
 }
 
