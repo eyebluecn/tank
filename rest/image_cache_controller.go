@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"tank/rest/result"
 )
 
 type ImageCacheController struct {
@@ -44,7 +45,7 @@ func (this *ImageCacheController) RegisterRoutes() map[string]func(writer http.R
 }
 
 //查看某个图片缓存的详情。
-func (this *ImageCacheController) Detail(writer http.ResponseWriter, request *http.Request) *WebResult {
+func (this *ImageCacheController) Detail(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	uuid := request.FormValue("uuid")
 	if uuid == "" {
@@ -66,7 +67,7 @@ func (this *ImageCacheController) Detail(writer http.ResponseWriter, request *ht
 }
 
 //按照分页的方式获取某个图片缓存夹下图片缓存和子图片缓存夹的列表，通常情况下只有一页。
-func (this *ImageCacheController) Page(writer http.ResponseWriter, request *http.Request) *WebResult {
+func (this *ImageCacheController) Page(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 	//如果是根目录，那么就传入root.
 	pageStr := request.FormValue("page")
 	pageSizeStr := request.FormValue("pageSize")
@@ -122,7 +123,7 @@ func (this *ImageCacheController) Page(writer http.ResponseWriter, request *http
 }
 
 //删除一个图片缓存
-func (this *ImageCacheController) Delete(writer http.ResponseWriter, request *http.Request) *WebResult {
+func (this *ImageCacheController) Delete(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	uuid := request.FormValue("uuid")
 	if uuid == "" {
@@ -143,7 +144,7 @@ func (this *ImageCacheController) Delete(writer http.ResponseWriter, request *ht
 }
 
 //删除一系列图片缓存。
-func (this *ImageCacheController) DeleteBatch(writer http.ResponseWriter, request *http.Request) *WebResult {
+func (this *ImageCacheController) DeleteBatch(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	uuids := request.FormValue("uuids")
 	if uuids == "" {

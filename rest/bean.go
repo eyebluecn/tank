@@ -3,6 +3,7 @@ package rest
 import (
 	"fmt"
 	"net/http"
+	"tank/rest/result"
 )
 
 type IBean interface {
@@ -42,22 +43,22 @@ func (this *Bean) PanicError(err error) {
 
 //请求参数有问题
 func (this *Bean) PanicBadRequest(format string, v ...interface{}) {
-	panic(CustomWebResult(CODE_WRAPPER_BAD_REQUEST, fmt.Sprintf(format, v...)))
+	panic(result.CustomWebResult(result.CODE_WRAPPER_BAD_REQUEST, fmt.Sprintf(format, v...)))
 }
 
 //没有权限
 func (this *Bean) PanicUnauthorized(format string, v ...interface{}) {
-	panic(CustomWebResult(CODE_WRAPPER_UNAUTHORIZED, fmt.Sprintf(format, v...)))
+	panic(result.CustomWebResult(result.CODE_WRAPPER_UNAUTHORIZED, fmt.Sprintf(format, v...)))
 }
 
 //没有找到
 func (this *Bean) PanicNotFound(format string, v ...interface{}) {
-	panic(CustomWebResult(CODE_WRAPPER_NOT_FOUND, fmt.Sprintf(format, v...)))
+	panic(result.CustomWebResult(result.CODE_WRAPPER_NOT_FOUND, fmt.Sprintf(format, v...)))
 }
 
 //服务器内部出问题
 func (this *Bean) PanicServer(format string, v ...interface{}) {
-	panic(CustomWebResult(CODE_WRAPPER_SERVER, fmt.Sprintf(format, v...)))
+	panic(result.CustomWebResult(result.CODE_WRAPPER_SERVER, fmt.Sprintf(format, v...)))
 }
 
 //能找到一个user就找到一个
@@ -94,7 +95,7 @@ func (this *Bean) findUser(writer http.ResponseWriter, request *http.Request) *U
 //获取当前登录的用户，找不到就返回登录错误
 func (this *Bean) checkUser(writer http.ResponseWriter, request *http.Request) *User {
 	if this.findUser(writer, request) == nil {
-		panic(ConstWebResult(CODE_WRAPPER_LOGIN))
+		panic(result.ConstWebResult(result.CODE_WRAPPER_LOGIN))
 	} else {
 		return this.findUser(writer, request)
 	}

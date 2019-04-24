@@ -1,4 +1,4 @@
-package rest
+package util
 
 import (
 	"os"

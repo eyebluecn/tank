@@ -2,6 +2,7 @@ package rest
 
 import (
 	"net/http"
+	"tank/rest/result"
 )
 
 type PreferenceController struct {
@@ -41,7 +42,7 @@ func (this *PreferenceController) RegisterRoutes() map[string]func(writer http.R
 }
 
 //查看某个偏好设置的详情。
-func (this *PreferenceController) Fetch(writer http.ResponseWriter, request *http.Request) *WebResult {
+func (this *PreferenceController) Fetch(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	preference := this.preferenceService.Fetch()
 
@@ -49,7 +50,7 @@ func (this *PreferenceController) Fetch(writer http.ResponseWriter, request *htt
 }
 
 //修改
-func (this *PreferenceController) Edit(writer http.ResponseWriter, request *http.Request) *WebResult {
+func (this *PreferenceController) Edit(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	//验证参数。
 	name := request.FormValue("name")
@@ -84,7 +85,7 @@ func (this *PreferenceController) Edit(writer http.ResponseWriter, request *http
 }
 
 //清扫系统，所有数据全部丢失。一定要非常慎点，非常慎点！只在系统初始化的时候点击！
-func (this *PreferenceController) SystemCleanup(writer http.ResponseWriter, request *http.Request) *WebResult {
+func (this *PreferenceController) SystemCleanup(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	user := this.checkUser(writer, request)
 	password := request.FormValue("password")

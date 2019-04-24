@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"tank/rest/result"
+	"tank/rest/util"
 	"time"
 )
 
@@ -70,26 +72,26 @@ func (this *Router) GlobalPanicHandler(writer http.ResponseWriter, request *http
 
 		LOGGER.Error("错误: %v", err)
 
-		var webResult *WebResult = nil
+		var webResult *result.WebResult = nil
 		if value, ok := err.(string); ok {
 			//一个字符串，默认是请求错误。
-			webResult = CustomWebResult(CODE_WRAPPER_BAD_REQUEST, value)
-		} else if value, ok := err.(*WebResult); ok {
+			webResult = result.CustomWebResult(result.CODE_WRAPPER_BAD_REQUEST, value)
+		} else if value, ok := err.(*result.WebResult); ok {
 			//一个WebResult对象
 			webResult = value
-		} else if value, ok := err.(*CodeWrapper); ok {
+		} else if value, ok := err.(*result.CodeWrapper); ok {
 			//一个WebResult对象
-			webResult = ConstWebResult(value)
+			webResult = result.ConstWebResult(value)
 		} else if value, ok := err.(error); ok {
 			//一个普通的错误对象
-			webResult = CustomWebResult(CODE_WRAPPER_UNKNOWN, value.Error())
+			webResult = result.CustomWebResult(result.CODE_WRAPPER_UNKNOWN, value.Error())
 		} else {
 			//其他不能识别的内容
-			webResult = ConstWebResult(CODE_WRAPPER_UNKNOWN)
+			webResult = result.ConstWebResult(result.CODE_WRAPPER_UNKNOWN)
 		}
 
 		//修改http code码
-		writer.WriteHeader(FetchHttpStatus(webResult.Code))
+		writer.WriteHeader(result.FetchHttpStatus(webResult.Code))
 
 		//输出的是json格式 返回的内容申明是json，utf-8
 		writer.Header().Set("Content-Type", "application/json;charset=UTF-8")
@@ -148,7 +150,7 @@ func (this *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 				}
 
 				if !canHandle {
-					panic(CustomWebResult(CODE_WRAPPER_NOT_FOUND, fmt.Sprintf("没有找到能够处理%s的方法", path)))
+					panic(result.CustomWebResult(result.CODE_WRAPPER_NOT_FOUND, fmt.Sprintf("没有找到能够处理%s的方法", path)))
 				}
 			}
 
@@ -162,7 +164,7 @@ func (this *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 			if handler, ok := this.installRouteMap[path]; ok {
 				handler(writer, request)
 			} else {
-				panic(ConstWebResult(CODE_WRAPPER_NOT_INSTALLED))
+				panic(result.ConstWebResult(result.CODE_WRAPPER_NOT_INSTALLED))
 			}
 		}
 
@@ -185,7 +187,7 @@ func (this *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 			}
 		}
 
-		writer.Header().Set("Content-Type", GetMimeType(GetExtension(filePath)))
+		writer.Header().Set("Content-Type", util.GetMimeType(util.GetExtension(filePath)))
 
 		diskFile, err := os.Open(filePath)
 		if err != nil {

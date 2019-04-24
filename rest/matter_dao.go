@@ -4,6 +4,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/nu7hatch/gouuid"
 	"os"
+	"tank/rest/result"
 	"time"
 )
 
@@ -292,7 +293,7 @@ func (this *MatterDao) findByUserUuidAndPath(userUuid string, path string) *Matt
 	db := CONTEXT.DB.Model(&Matter{}).Where(wp.Query, wp.Args...).First(matter)
 
 	if db.Error != nil {
-		if db.Error.Error() == DB_ERROR_NOT_FOUND {
+		if db.Error.Error() == result.DB_ERROR_NOT_FOUND {
 			return nil
 		} else {
 			this.PanicError(db.Error)

@@ -10,6 +10,9 @@ type UserService struct {
 	Bean
 	userDao    *UserDao
 	sessionDao *SessionDao
+
+	//操作文件的锁。
+	locker *CacheTable
 }
 
 //初始化方法
@@ -27,7 +30,44 @@ func (this *UserService) Init() {
 		this.sessionDao = b
 	}
 
+	//创建一个用于存储用户文件锁的缓存。
+	this.locker = NewCacheTable()
 }
+
+
+//对某个用户进行加锁。加锁阶段用户是不允许操作文件的。
+func (this *UserService) MatterLock(userUuid string) {
+	//如果已经是锁住的状态，直接报错
+
+	//去缓存中捞取
+	cacheItem, err := this.locker.Value(userUuid)
+	if err != nil {
+		this.logger.Error("获取缓存时出错了" + err.Error())
+	}
+
+	//当前被锁住了。
+	if cacheItem != nil && cacheItem.Data() != nil {
+		this.PanicBadRequest("当前正在进行文件操作，请稍后再试！")
+	}
+
+	//添加一把新锁，有效期为12小时
+	duration := 12 * time.Hour
+	this.locker.Add(userUuid, duration, true)
+}
+
+
+//对某个用户解锁，解锁后用户可以操作文件。
+func (this *UserService) MatterUnlock(userUuid string) {
+
+	exist := this.locker.Exists(userUuid)
+	if exist {
+		_, err := this.locker.Delete(userUuid)
+		this.PanicError(err)
+	} else {
+		this.logger.Error("%s已经不存在matter锁了，解锁错误。", userUuid)
+	}
+}
+
 
 //装载session信息，如果session没有了根据cookie去装填用户信息。
 //在所有的路由最初会调用这个方法

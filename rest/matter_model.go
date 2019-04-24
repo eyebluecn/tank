@@ -1,5 +1,7 @@
 package rest
 
+import "tank/rest/util"
+
 const (
 	MATTER_ROOT  = "root"
 	MATTER_CACHE = "cache"
@@ -36,7 +38,7 @@ func (this *Matter) AbsolutePath() string {
 
 // 获取该Matter的MimeType
 func (this *Matter) MimeType() string {
-	return GetMimeType(GetExtension(this.Name))
+	return util.GetMimeType(util.GetExtension(this.Name))
 }
 
 

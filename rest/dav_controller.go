@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"tank/rest/result"
 )
 
 /**
@@ -77,7 +78,7 @@ func (this *DavController) CheckCurrentUser(writer http.ResponseWriter, request 
 		//要求前端使用Basic的形式授权
 		writer.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
 
-		panic(ConstWebResult(CODE_WRAPPER_LOGIN))
+		panic(result.ConstWebResult(result.CODE_WRAPPER_LOGIN))
 
 	}
 

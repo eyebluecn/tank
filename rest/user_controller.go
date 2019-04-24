@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
+	"tank/rest/result"
 
 	"time"
 )
@@ -41,7 +42,7 @@ func (this *UserController) RegisterRoutes() map[string]func(writer http.Respons
 //参数：
 // @email:邮箱
 // @password:密码
-func (this *UserController) Login(writer http.ResponseWriter, request *http.Request) *WebResult {
+func (this *UserController) Login(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	email := request.FormValue("email")
 	password := request.FormValue("password")
@@ -55,6 +56,7 @@ func (this *UserController) Login(writer http.ResponseWriter, request *http.Requ
 	if user == nil {
 
 		this.PanicBadRequest("邮箱或密码错误")
+
 	} else {
 		if !MatchBcrypt(password, user.Password) {
 
@@ -93,7 +95,7 @@ func (this *UserController) Login(writer http.ResponseWriter, request *http.Requ
 }
 
 //创建一个用户
-func (this *UserController) Create(writer http.ResponseWriter, request *http.Request) *WebResult {
+func (this *UserController) Create(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	username := request.FormValue("username")
 	if m, _ := regexp.MatchString(`^[0-9a-zA-Z_]+$`, username); !m {
@@ -156,7 +158,7 @@ func (this *UserController) Create(writer http.ResponseWriter, request *http.Req
 }
 
 //编辑一个用户的资料。
-func (this *UserController) Edit(writer http.ResponseWriter, request *http.Request) *WebResult {
+func (this *UserController) Edit(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	avatarUrl := request.FormValue("avatarUrl")
 	uuid := request.FormValue("uuid")
@@ -199,7 +201,7 @@ func (this *UserController) Edit(writer http.ResponseWriter, request *http.Reque
 }
 
 //获取用户详情
-func (this *UserController) Detail(writer http.ResponseWriter, request *http.Request) *WebResult {
+func (this *UserController) Detail(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	uuid := request.FormValue("uuid")
 
@@ -210,7 +212,7 @@ func (this *UserController) Detail(writer http.ResponseWriter, request *http.Req
 }
 
 //退出登录
-func (this *UserController) Logout(writer http.ResponseWriter, request *http.Request) *WebResult {
+func (this *UserController) Logout(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	//session置为过期
 	sessionCookie, err := request.Cookie(COOKIE_AUTH_KEY)
@@ -246,7 +248,7 @@ func (this *UserController) Logout(writer http.ResponseWriter, request *http.Req
 }
 
 //获取用户列表 管理员的权限。
-func (this *UserController) Page(writer http.ResponseWriter, request *http.Request) *WebResult {
+func (this *UserController) Page(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	pageStr := request.FormValue("page")
 	pageSizeStr := request.FormValue("pageSize")
@@ -298,7 +300,7 @@ func (this *UserController) Page(writer http.ResponseWriter, request *http.Reque
 }
 
 //禁用用户
-func (this *UserController) Disable(writer http.ResponseWriter, request *http.Request) *WebResult {
+func (this *UserController) Disable(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	uuid := request.FormValue("uuid")
 
@@ -322,7 +324,7 @@ func (this *UserController) Disable(writer http.ResponseWriter, request *http.Re
 }
 
 //启用用户
-func (this *UserController) Enable(writer http.ResponseWriter, request *http.Request) *WebResult {
+func (this *UserController) Enable(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	uuid := request.FormValue("uuid")
 
@@ -345,7 +347,7 @@ func (this *UserController) Enable(writer http.ResponseWriter, request *http.Req
 }
 
 //用户修改密码
-func (this *UserController) ChangePassword(writer http.ResponseWriter, request *http.Request) *WebResult {
+func (this *UserController) ChangePassword(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	oldPassword := request.FormValue("oldPassword")
 	newPassword := request.FormValue("newPassword")
@@ -372,7 +374,7 @@ func (this *UserController) ChangePassword(writer http.ResponseWriter, request *
 }
 
 //管理员重置用户密码
-func (this *UserController) ResetPassword(writer http.ResponseWriter, request *http.Request) *WebResult {
+func (this *UserController) ResetPassword(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	userUuid := request.FormValue("userUuid")
 	password := request.FormValue("password")
