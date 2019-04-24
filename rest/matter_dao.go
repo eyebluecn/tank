@@ -31,21 +31,39 @@ func (this *MatterDao) FindByUuid(uuid string) *Matter {
 	var matter Matter
 	db := CONTEXT.DB.Where(&Matter{Base: Base{Uuid: uuid}}).First(&matter)
 	if db.Error != nil {
-		return nil
+		if db.Error.Error() == result.DB_ERROR_NOT_FOUND {
+			return nil
+		} else {
+			this.PanicError(db.Error)
+		}
 	}
 	return &matter
 }
 
 //按照Id查询文件
 func (this *MatterDao) CheckByUuid(uuid string) *Matter {
+	matter := this.FindByUuid(uuid)
+	if matter == nil {
+		this.PanicNotFound("%s 对应的matter不存在", uuid)
+	}
+	return matter
+}
 
-	// Read
-	var matter Matter
-	db := CONTEXT.DB.Where(&Matter{Base: Base{Uuid: uuid}}).First(&matter)
-	this.PanicError(db.Error)
 
-	return &matter
+//按照uuid查找一个文件夹，可能返回root对应的matter.
+func (this *MatterDao) CheckDirByUuid(uuid string, user *User) *Matter {
 
+	var matter *Matter
+	if uuid == MATTER_ROOT {
+		if user == nil {
+			this.PanicBadRequest("user cannot be nil.")
+		}
+		matter = NewRootMatter(user)
+	} else {
+		matter = this.CheckByUuid(uuid)
+	}
+
+	return matter
 }
 
 //按照名字查询文件夹

@@ -279,7 +279,9 @@ func (this *AlienController) Upload(writer http.ResponseWriter, request *http.Re
 		panic("文件大小不正确")
 	}
 
-	matter := this.matterService.Upload(file, user, uploadToken.FolderUuid, uploadToken.Filename, uploadToken.Privacy, true)
+	dirMatter := this.matterDao.CheckDirByUuid(uploadToken.FolderUuid, user)
+
+	matter := this.matterService.Upload(file, user, dirMatter, uploadToken.Filename, uploadToken.Privacy)
 
 	//更新这个uploadToken的信息.
 	uploadToken.ExpireTime = time.Now()

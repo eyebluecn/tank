@@ -170,14 +170,12 @@ func (this *MatterController) Page(writer http.ResponseWriter, request *http.Req
 	return this.Success(pager)
 }
 
-
 //创建一个文件夹。
 func (this *MatterController) CreateDirectory(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	puuid := request.FormValue("puuid")
 	name := request.FormValue("name")
 	userUuid := request.FormValue("userUuid")
-
 
 	//管理员可以指定给某个用户创建文件夹。
 	user := this.checkUser(writer, request)
@@ -197,8 +195,6 @@ func (this *MatterController) CreateDirectory(writer http.ResponseWriter, reques
 	matter := this.matterService.CreateDirectory(dirMatter, name, user);
 	return this.Success(matter)
 }
-
-
 
 //上传文件
 func (this *MatterController) Upload(writer http.ResponseWriter, request *http.Request) *result.WebResult {
@@ -236,7 +232,9 @@ func (this *MatterController) Upload(writer http.ResponseWriter, request *http.R
 		fileName = fileName[pos+1:]
 	}
 
-	matter := this.matterService.Upload(file, user, puuid, fileName, privacy, false)
+	dirMatter := this.matterDao.CheckDirByUuid(puuid, user)
+
+	matter := this.matterService.Upload(file, user, dirMatter, fileName, privacy)
 
 	return this.Success(matter)
 }

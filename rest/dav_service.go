@@ -252,7 +252,8 @@ func (this *DavService) HandlePut(writer http.ResponseWriter, request *http.Requ
 		this.matterService.Delete(srcMatter)
 	}
 
-	this.matterService.Upload(request.Body, user, matter.Uuid, filename, true, false)
+
+	this.matterService.Upload(request.Body, user, matter, filename, true)
 
 }
 

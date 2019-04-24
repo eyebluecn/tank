@@ -71,53 +71,43 @@ func (this *MatterService) Delete(matter *Matter) {
 		panic(result.BadRequest("matter不能为nil"))
 	}
 
-
-
 	//操作锁
 	this.userService.MatterLock(matter.UserUuid)
 	defer this.userService.MatterUnlock(matter.UserUuid)
 
-
-
 	this.matterDao.Delete(matter)
-
 }
-
 
 //开始上传文件
 //上传文件. alien表明文件是否是应用使用的文件。
-func (this *MatterService) Upload(file io.Reader, user *User, puuid string, filename string, privacy bool, alien bool) *Matter {
+func (this *MatterService) Upload(file io.Reader, user *User, dirMatter *Matter, filename string, privacy bool) *Matter {
+
+	if user == nil {
+		panic(result.BadRequest("user cannot be nil."))
+	}
+
+	//操作锁
+	this.userService.MatterLock(user.Uuid)
+	defer this.userService.MatterUnlock(user.Uuid)
+
+
+	//验证dirMatter
+	if dirMatter == nil {
+		panic(result.BadRequest("dirMatter cannot be nil."))
+	}
 
 	//文件名不能太长。
-	if len(filename) > 200 {
-		panic("文件名不能超过200")
+	if len(filename) > MATTER_NAME_MAX_LENGTH {
+		panic(result.BadRequest("文件名不能超过%s", MATTER_NAME_MAX_LENGTH))
 	}
 
 	//文件夹路径
-	var dirAbsolutePath string
-	var dirRelativePath string
-	if puuid == "" {
-		this.PanicBadRequest("puuid必填")
-	} else {
+	dirAbsolutePath := dirMatter.AbsolutePath()
+	dirRelativePath := dirMatter.Path
 
-		if puuid == MATTER_ROOT {
-			dirAbsolutePath = GetUserFileRootDir(user.Username)
-			dirRelativePath = ""
-		} else {
-			//验证puuid是否存在
-			dirMatter := this.matterDao.CheckByUuidAndUserUuid(puuid, user.Uuid)
-
-			dirAbsolutePath = GetUserFileRootDir(user.Username) + dirMatter.Path
-			dirRelativePath = dirMatter.Path
-
-		}
-	}
-
-	//查找文件夹下面是否有同名文件。
-	matters := this.matterDao.ListByUserUuidAndPuuidAndDirAndName(user.Uuid, puuid, false, filename)
-	//如果有同名的文件，那么我们直接覆盖同名文件。
-	for _, dbFile := range matters {
-		this.PanicBadRequest("该目录下%s已经存在了", dbFile.Name)
+	count := this.matterDao.CountByUserUuidAndPuuidAndDirAndName(user.Uuid, dirMatter.Uuid, false, filename)
+	if count > 0 {
+		panic(result.BadRequest("该目录下%s已经存在了", filename))
 	}
 
 	//获取文件应该存放在的物理路径的绝对路径和相对路径。
@@ -136,38 +126,118 @@ func (this *MatterService) Upload(file io.Reader, user *User, puuid string, file
 		this.PanicError(removeError)
 	}
 
-	distFile, err := os.OpenFile(fileAbsolutePath, os.O_WRONLY|os.O_CREATE, 0777)
+	destFile, err := os.OpenFile(fileAbsolutePath, os.O_WRONLY|os.O_CREATE, 0777)
 	this.PanicError(err)
 
 	defer func() {
-		err := distFile.Close()
+		err := destFile.Close()
 		this.PanicError(err)
 	}()
 
-	written, err := io.Copy(distFile, file)
+	fileSize, err := io.Copy(destFile, file)
 	this.PanicError(err)
 
-	this.logger.Info("上传文件%s大小为%v", filename, HumanFileSize(written))
+	this.logger.Info("上传文件 %s 大小为 %v ", filename, HumanFileSize(fileSize))
 
 	//判断用户自身上传大小的限制。
 	if user.SizeLimit >= 0 {
-		if written > user.SizeLimit {
-			this.PanicBadRequest("文件大小超出限制 " + HumanFileSize(user.SizeLimit) + ">" + HumanFileSize(written))
+		if fileSize > user.SizeLimit {
+			//删除上传过来的内容
+			err = os.Remove(fileAbsolutePath)
+			this.PanicError(err)
+
+			panic(result.BadRequest("文件大小超出限制 %s > %s ", HumanFileSize(user.SizeLimit), HumanFileSize(fileSize)))
 		}
 	}
 
 	//将文件信息存入数据库中。
 	matter := &Matter{
-		Puuid:    puuid,
+		Puuid:    dirMatter.Uuid,
 		UserUuid: user.Uuid,
 		Username: user.Username,
 		Dir:      false,
-		Alien:    alien,
 		Name:     filename,
 		Md5:      "",
-		Size:     written,
+		Size:     fileSize,
 		Privacy:  privacy,
 		Path:     fileRelativePath,
+	}
+	matter = this.matterDao.Create(matter)
+
+	return matter
+}
+
+//在dirMatter中创建文件夹 返回刚刚创建的这个文件夹
+func (this *MatterService) CreateDirectory(dirMatter *Matter, name string, user *User) *Matter {
+
+	//操作锁
+	this.userService.MatterLock(user.Uuid)
+	defer this.userService.MatterUnlock(user.Uuid)
+
+	//父级matter必须存在
+	if dirMatter == nil {
+		panic(result.BadRequest("dirMatter必须指定"))
+	}
+
+	//必须是文件夹
+	if !dirMatter.Dir {
+		panic(result.BadRequest("dirMatter必须是文件夹"))
+	}
+
+	if dirMatter.UserUuid != user.Uuid {
+
+		panic(result.BadRequest("dirMatter的userUuid和user不一致"))
+	}
+
+	name = strings.TrimSpace(name)
+	//验证参数。
+	if name == "" {
+		panic(result.BadRequest("name参数必填，并且不能全是空格"))
+	}
+
+	if len(name) > MATTER_NAME_MAX_LENGTH {
+
+		panic(result.BadRequest("name长度不能超过%d", MATTER_NAME_MAX_LENGTH))
+
+	}
+
+	if m, _ := regexp.MatchString(`[<>|*?/\\]`, name); m {
+		panic(result.BadRequest(`名称中不能包含以下特殊符号：< > | * ? / \`))
+	}
+
+	//判断同级文件夹中是否有同名的文件夹
+	count := this.matterDao.CountByUserUuidAndPuuidAndDirAndName(user.Uuid, dirMatter.Uuid, true, name)
+
+	if count > 0 {
+
+		panic(result.BadRequest("%s 已经存在了，请使用其他名称。", name))
+	}
+
+	parts := strings.Split(dirMatter.Path, "/")
+	this.logger.Info("%s的层数：%d", dirMatter.Name, len(parts))
+
+	if len(parts) >= 32 {
+		panic(result.BadRequest("文件夹最多%d层", MATTER_NAME_MAX_DEPTH))
+	}
+
+	//绝对路径
+	absolutePath := GetUserFileRootDir(user.Username) + dirMatter.Path + "/" + name
+
+	//相对路径
+	relativePath := dirMatter.Path + "/" + name
+
+	//磁盘中创建文件夹。
+	dirPath := MakeDirAll(absolutePath)
+	this.logger.Info("Create Directory: %s", dirPath)
+
+	//数据库中创建文件夹。
+	matter := &Matter{
+		Puuid:    dirMatter.Uuid,
+		UserUuid: user.Uuid,
+		Username: user.Username,
+		Dir:      true,
+		Name:     name,
+		Path:     relativePath,
 	}
 
 	matter = this.matterDao.Create(matter)
@@ -175,6 +245,65 @@ func (this *MatterService) Upload(file io.Reader, user *User, puuid string, file
 	return matter
 }
 
+
+//将一个srcMatter复制到另一个destMatter(必须为文件夹)下，名字叫做name
+func (this *MatterService) Copy(srcMatter *Matter, destDirMatter *Matter, name string) {
+
+	if !destDirMatter.Dir {
+		this.PanicBadRequest("目标必须为文件夹")
+	}
+
+	if srcMatter.Dir {
+
+		//如果源是文件夹
+
+		//在目标地址创建新文件夹。
+		newMatter := &Matter{
+			Puuid:    destDirMatter.Uuid,
+			UserUuid: srcMatter.UserUuid,
+			Username: srcMatter.Username,
+			Dir:      srcMatter.Dir,
+			Name:     name,
+			Md5:      "",
+			Size:     srcMatter.Size,
+			Privacy:  srcMatter.Privacy,
+			Path:     destDirMatter.Path + "/" + name,
+		}
+
+		newMatter = this.matterDao.Create(newMatter)
+
+		//复制子文件或文件夹
+		matters := this.matterDao.List(srcMatter.Uuid, srcMatter.UserUuid, nil)
+		for _, m := range matters {
+			this.Copy(m, newMatter, m.Name)
+		}
+
+	} else {
+		//如果源是普通文件
+		destAbsolutePath := destDirMatter.AbsolutePath() + "/" + name
+		srcAbsolutePath := srcMatter.AbsolutePath()
+
+		//物理文件进行复制
+		CopyFile(srcAbsolutePath, destAbsolutePath)
+
+		//创建新文件的数据库信息。
+		newMatter := &Matter{
+			Puuid:    destDirMatter.Uuid,
+			UserUuid: srcMatter.UserUuid,
+			Username: srcMatter.Username,
+			Dir:      srcMatter.Dir,
+			Name:     name,
+			Md5:      "",
+			Size:     srcMatter.Size,
+			Privacy:  srcMatter.Privacy,
+			Path:     destDirMatter.Path + "/" + name,
+		}
+
+		newMatter = this.matterDao.Create(newMatter)
+
+	}
+
+}
 
 
 //根据一个文件夹路径，找到最后一个文件夹的uuid，如果中途出错，返回err.
@@ -225,7 +354,6 @@ func (this *MatterService) GetDirUuid(user *User, dir string) (puuid string, dir
 				UserUuid: user.Uuid,
 				Username: user.Username,
 				Dir:      true,
-				Alien:    true,
 				Name:     name,
 				Path:     parentRelativePath + "/" + name,
 			}
@@ -239,83 +367,6 @@ func (this *MatterService) GetDirUuid(user *User, dir string) (puuid string, dir
 	return puuid, parentRelativePath
 }
 
-//在dirMatter中创建文件夹 返回刚刚创建的这个文件夹
-func (this *MatterService) CreateDirectory(dirMatter *Matter, name string, user *User) *Matter {
-
-	this.userService.MatterLock(user.Uuid)
-	defer this.userService.MatterUnlock(user.Uuid)
-
-	//父级matter必须存在
-	if dirMatter == nil {
-		panic(result.BadRequest("dirMatter必须指定"))
-	}
-
-	//必须是文件夹
-	if !dirMatter.Dir {
-		panic(result.BadRequest("dirMatter必须是文件夹"))
-	}
-
-	if dirMatter.UserUuid != user.Uuid {
-
-		panic(result.BadRequest("dirMatter的userUuid和user不一致"))
-	}
-
-	name = strings.TrimSpace(name)
-	//验证参数。
-	if name == "" {
-		panic(result.BadRequest("name参数必填，并且不能全是空格"))
-	}
-
-	if len(name) > MATTER_NAME_MAX_LENGTH {
-
-		panic(result.BadRequest("name长度不能超过%d", MATTER_NAME_MAX_LENGTH))
-
-	}
-
-	if m, _ := regexp.MatchString(`[<>|*?/\\]`, name); m {
-
-		panic(result.BadRequest(`名称中不能包含以下特殊符号：< > | * ? / \`))
-	}
-
-	//判断同级文件夹中是否有同名的文件夹
-	count := this.matterDao.CountByUserUuidAndPuuidAndDirAndName(user.Uuid, dirMatter.Uuid, true, name)
-
-	if count > 0 {
-
-		panic(result.BadRequest("%s 已经存在了，请使用其他名称。", name))
-	}
-
-	parts := strings.Split(dirMatter.Path, "/")
-	this.logger.Info("%s的层数：%d", dirMatter.Name, len(parts))
-
-	if len(parts) >= 32 {
-		panic(result.BadRequest("文件夹最多%d层", MATTER_NAME_MAX_DEPTH))
-	}
-
-	//绝对路径
-	absolutePath := GetUserFileRootDir(user.Username) + dirMatter.Path + "/" + name
-
-	//相对路径
-	relativePath := dirMatter.Path + "/" + name
-
-	//磁盘中创建文件夹。
-	dirPath := MakeDirAll(absolutePath)
-	this.logger.Info("Create Directory: %s", dirPath)
-
-	//数据库中创建文件夹。
-	matter := &Matter{
-		Puuid:    dirMatter.Uuid,
-		UserUuid: user.Uuid,
-		Username: user.Username,
-		Dir:      true,
-		Name:     name,
-		Path:     relativePath,
-	}
-
-	matter = this.matterDao.Create(matter)
-
-	return matter
-}
 
 //获取某个文件的详情，会把父级依次倒着装进去。如果中途出错，直接抛出异常。
 func (this *MatterService) Detail(uuid string) *Matter {
@@ -404,7 +455,6 @@ func (this *MatterService) Crawl(url string, filename string, user *User, puuid 
 		UserUuid: user.Uuid,
 		Username: user.Username,
 		Dir:      false,
-		Alien:    false,
 		Name:     filename,
 		Md5:      "",
 		Size:     size,
@@ -496,66 +546,6 @@ func (this *MatterService) Move(srcMatter *Matter, destMatter *Matter) {
 	return
 }
 
-//将一个srcMatter复制到另一个destMatter(必须为文件夹)下，名字叫做name
-func (this *MatterService) Copy(srcMatter *Matter, destDirMatter *Matter, name string) {
-
-	if !destDirMatter.Dir {
-		this.PanicBadRequest("目标必须为文件夹")
-	}
-
-	if srcMatter.Dir {
-
-		//如果源是文件夹
-
-		//在目标地址创建新文件夹。
-		newMatter := &Matter{
-			Puuid:    destDirMatter.Uuid,
-			UserUuid: srcMatter.UserUuid,
-			Username: srcMatter.Username,
-			Dir:      srcMatter.Dir,
-			Alien:    srcMatter.Alien,
-			Name:     name,
-			Md5:      "",
-			Size:     srcMatter.Size,
-			Privacy:  srcMatter.Privacy,
-			Path:     destDirMatter.Path + "/" + name,
-		}
-
-		newMatter = this.matterDao.Create(newMatter)
-
-		//复制子文件或文件夹
-		matters := this.matterDao.List(srcMatter.Uuid, srcMatter.UserUuid, nil)
-		for _, m := range matters {
-			this.Copy(m, newMatter, m.Name)
-		}
-
-	} else {
-		//如果源是普通文件
-		destAbsolutePath := destDirMatter.AbsolutePath() + "/" + name
-		srcAbsolutePath := srcMatter.AbsolutePath()
-
-		//物理文件进行复制
-		CopyFile(srcAbsolutePath, destAbsolutePath)
-
-		//创建新文件的数据库信息。
-		newMatter := &Matter{
-			Puuid:    destDirMatter.Uuid,
-			UserUuid: srcMatter.UserUuid,
-			Username: srcMatter.Username,
-			Dir:      srcMatter.Dir,
-			Alien:    srcMatter.Alien,
-			Name:     name,
-			Md5:      "",
-			Size:     srcMatter.Size,
-			Privacy:  srcMatter.Privacy,
-			Path:     destDirMatter.Path + "/" + name,
-		}
-
-		newMatter = this.matterDao.Create(newMatter)
-
-	}
-
-}
 
 //将一个matter 重命名为 name
 func (this *MatterService) Rename(matter *Matter, name string, user *User) {
