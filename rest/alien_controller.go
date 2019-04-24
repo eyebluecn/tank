@@ -199,12 +199,12 @@ func (this *AlienController) FetchUploadToken(writer http.ResponseWriter, reques
 	dir := request.FormValue("dir")
 
 	user := this.CheckRequestUser(writer, request)
-	dirUuid, _ := this.matterService.GetDirUuid(user, dir)
+	dirMatter := this.matterService.CreateDirectories(user, dir)
 
 	mm, _ := time.ParseDuration(fmt.Sprintf("%ds", expire))
 	uploadToken := &UploadToken{
 		UserUuid:   user.Uuid,
-		FolderUuid: dirUuid,
+		FolderUuid: dirMatter.Uuid,
 		MatterUuid: "",
 		ExpireTime: time.Now().Add(mm),
 		Filename:   filename,
@@ -348,7 +348,6 @@ func (this *AlienController) CrawlDirect(writer http.ResponseWriter, request *ht
 	//文件夹路径，以 / 开头。
 	dir := request.FormValue("dir")
 
-
 	if filename == "" {
 		panic("文件名必填")
 	} else if m, _ := regexp.MatchString(`[<>|*?/\\]`, filename); m {
@@ -374,9 +373,9 @@ func (this *AlienController) CrawlDirect(writer http.ResponseWriter, request *ht
 	}
 
 	user := this.CheckRequestUser(writer, request)
-	dirUuid, dirRelativePath := this.matterService.GetDirUuid(user, dir)
+	dirMatter := this.matterService.CreateDirectories(user, dir)
 
-	matter := this.matterService.Crawl(url, filename, user, dirUuid, dirRelativePath, privacy)
+	matter := this.matterService.Crawl(url, filename, user, dirMatter.Uuid, dirMatter.Path, privacy)
 
 	return this.Success(matter)
 }

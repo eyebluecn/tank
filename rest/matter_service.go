@@ -166,12 +166,8 @@ func (this *MatterService) Upload(file io.Reader, user *User, dirMatter *Matter,
 	return matter
 }
 
-//在dirMatter中创建文件夹 返回刚刚创建的这个文件夹
-func (this *MatterService) CreateDirectory(dirMatter *Matter, name string, user *User) *Matter {
-
-	//操作锁
-	this.userService.MatterLock(user.Uuid)
-	defer this.userService.MatterUnlock(user.Uuid)
+//内部创建文件，不带操作锁。
+func (this *MatterService) innerCreateDirectory(dirMatter *Matter, name string, user *User) *Matter {
 
 	//父级matter必须存在
 	if dirMatter == nil {
@@ -215,7 +211,7 @@ func (this *MatterService) CreateDirectory(dirMatter *Matter, name string, user 
 	parts := strings.Split(dirMatter.Path, "/")
 	this.logger.Info("%s的层数：%d", dirMatter.Name, len(parts))
 
-	if len(parts) >= 32 {
+	if len(parts) > 32 {
 		panic(result.BadRequest("文件夹最多%d层", MATTER_NAME_MAX_DEPTH))
 	}
 
@@ -240,6 +236,18 @@ func (this *MatterService) CreateDirectory(dirMatter *Matter, name string, user 
 	}
 
 	matter = this.matterDao.Create(matter)
+
+	return matter
+}
+
+//在dirMatter中创建文件夹 返回刚刚创建的这个文件夹
+func (this *MatterService) CreateDirectory(dirMatter *Matter, name string, user *User) *Matter {
+
+	//操作锁
+	this.userService.MatterLock(user.Uuid)
+	defer this.userService.MatterUnlock(user.Uuid)
+
+	matter := this.innerCreateDirectory(dirMatter, name, user)
 
 	return matter
 }
@@ -330,7 +338,6 @@ func (this *MatterService) Move(srcMatter *Matter, destDirMatter *Matter, overwr
 	if !destDirMatter.Dir {
 		this.PanicBadRequest("目标必须为文件夹")
 	}
-
 
 	//文件夹不能把自己移入到自己中，也不可以移入到自己的子文件夹下。
 	destDirMatter = this.WrapDetail(destDirMatter)
@@ -545,65 +552,48 @@ func (this *MatterService) Rename(matter *Matter, name string, user *User) {
 	return
 }
 
-//根据一个文件夹路径，找到最后一个文件夹的uuid，如果中途出错，返回err.
-func (this *MatterService) GetDirUuid(user *User, dir string) (puuid string, dirRelativePath string) {
+//根据一个文件夹路径，依次创建，找到最后一个文件夹的matter，如果中途出错，返回err.
+func (this *MatterService) CreateDirectories(user *User, dirPath string) *Matter {
 
-	if dir == "" {
+	if dirPath == "" {
 		panic(`文件夹不能为空`)
-	} else if dir[0:1] != "/" {
+	} else if dirPath[0:1] != "/" {
 		panic(`文件夹必须以/开头`)
-	} else if strings.Index(dir, "//") != -1 {
+	} else if strings.Index(dirPath, "//") != -1 {
 		panic(`文件夹不能出现连续的//`)
-	} else if m, _ := regexp.MatchString(`[<>|*?\\]`, dir); m {
+	} else if m, _ := regexp.MatchString(`[<>|*?\\]`, dirPath); m {
 		panic(`文件夹中不能包含以下特殊符号：< > | * ? \`)
 	}
 
-	if dir == "/" {
-		return MATTER_ROOT, ""
+	if dirPath == "/" {
+		return NewRootMatter(user)
 	}
 
-	if dir[len(dir)-1] == '/' {
-		dir = dir[:len(dir)-1]
+	//如果最后一个符号为/自动忽略
+	if dirPath[len(dirPath)-1] == '/' {
+		dirPath = dirPath[:len(dirPath)-1]
 	}
 
 	//递归找寻文件的上级目录uuid.
-	folders := strings.Split(dir, "/")
+	folders := strings.Split(dirPath, "/")
 
-	if len(folders) > 32 {
-		panic("文件夹最多32层。")
+	if len(folders) > MATTER_NAME_MAX_DEPTH {
+		panic(result.BadRequest("文件夹最多%d层。", MATTER_NAME_MAX_DEPTH))
 	}
 
-	puuid = MATTER_ROOT
-	parentRelativePath := "/"
+	var dirMatter *Matter
 	for k, name := range folders {
 
-		if len(name) > 200 {
-			panic("每级文件夹的最大长度为200")
-		}
-
+		//split的第一个元素为空字符串，忽略。
 		if k == 0 {
+			dirMatter = NewRootMatter(user)
 			continue
 		}
 
-		matter := this.matterDao.FindByUserUuidAndPuuidAndNameAndDirTrue(user.Uuid, puuid, name)
-		if matter == nil {
-			//创建一个文件夹。这里一般都是通过alien接口来创建的文件夹。
-			matter = &Matter{
-				Puuid:    puuid,
-				UserUuid: user.Uuid,
-				Username: user.Username,
-				Dir:      true,
-				Name:     name,
-				Path:     parentRelativePath + "/" + name,
-			}
-			matter = this.matterDao.Create(matter)
-		}
-
-		puuid = matter.Uuid
-		parentRelativePath = matter.Path
+		dirMatter = this.innerCreateDirectory(dirMatter, name, user)
 	}
 
-	return puuid, parentRelativePath
+	return dirMatter
 }
 
 //包装某个matter的详情。会把父级依次倒着装进去。如果中途出错，直接抛出异常。
