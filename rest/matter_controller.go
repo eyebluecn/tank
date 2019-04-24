@@ -307,7 +307,7 @@ func (this *MatterController) Delete(writer http.ResponseWriter, request *http.R
 		this.PanicUnauthorized("没有权限")
 	}
 
-	this.matterDao.Delete(matter)
+	this.matterService.Delete(matter)
 
 	return this.Success("删除成功！")
 }
@@ -338,7 +338,7 @@ func (this *MatterController) DeleteBatch(writer http.ResponseWriter, request *h
 			this.PanicUnauthorized("没有权限")
 		}
 
-		this.matterDao.Delete(matter)
+		this.matterService.Delete(matter)
 
 	}
 

@@ -249,7 +249,7 @@ func (this *DavService) HandlePut(writer http.ResponseWriter, request *http.Requ
 	//如果存在，那么先删除再说。
 	srcMatter := this.matterDao.findByUserUuidAndPath(user.Uuid, subPath)
 	if srcMatter != nil {
-		this.matterDao.Delete(srcMatter)
+		this.matterService.Delete(srcMatter)
 	}
 
 	this.matterService.Upload(request.Body, user, matter.Uuid, filename, true, false)
@@ -270,7 +270,7 @@ func (this *DavService) HandleDelete(writer http.ResponseWriter, request *http.R
 		matter = this.matterDao.checkByUserUuidAndPath(user.Uuid, subPath)
 	}
 
-	this.matterDao.Delete(matter)
+	this.matterService.Delete(matter)
 }
 
 //创建文件夹
@@ -409,7 +409,7 @@ func (this *DavService) prepareMoveCopy(
 		//如果目标matter还存在了。
 		if overwrite {
 			//要求覆盖。那么删除。
-			this.matterDao.Delete(destMatter)
+			this.matterService.Delete(destMatter)
 		} else {
 			this.PanicBadRequest("%s已经存在，操作失败！", destinationName)
 		}

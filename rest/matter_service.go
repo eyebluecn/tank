@@ -53,164 +53,35 @@ func (this *MatterService) Init() {
 
 }
 
-//根据一个文件夹路径，找到最后一个文件夹的uuid，如果中途出错，返回err.
-func (this *MatterService) GetDirUuid(user *User, dir string) (puuid string, dirRelativePath string) {
+//文件下载。支持分片下载
+func (this *MatterService) DownloadFile(
+	writer http.ResponseWriter,
+	request *http.Request,
+	filePath string,
+	filename string,
+	withContentDisposition bool) {
 
-	if dir == "" {
-		panic(`文件夹不能为空`)
-	} else if dir[0:1] != "/" {
-		panic(`文件夹必须以/开头`)
-	} else if strings.Index(dir, "//") != -1 {
-		panic(`文件夹不能出现连续的//`)
-	} else if m, _ := regexp.MatchString(`[<>|*?\\]`, dir); m {
-		panic(`文件夹中不能包含以下特殊符号：< > | * ? \`)
-	}
-
-	if dir == "/" {
-		return MATTER_ROOT, ""
-	}
-
-	if dir[len(dir)-1] == '/' {
-		dir = dir[:len(dir)-1]
-	}
-
-	//递归找寻文件的上级目录uuid.
-	folders := strings.Split(dir, "/")
-
-	if len(folders) > 32 {
-		panic("文件夹最多32层。")
-	}
-
-	puuid = MATTER_ROOT
-	parentRelativePath := "/"
-	for k, name := range folders {
-
-		if len(name) > 200 {
-			panic("每级文件夹的最大长度为200")
-		}
-
-		if k == 0 {
-			continue
-		}
-
-		matter := this.matterDao.FindByUserUuidAndPuuidAndNameAndDirTrue(user.Uuid, puuid, name)
-		if matter == nil {
-			//创建一个文件夹。这里一般都是通过alien接口来创建的文件夹。
-			matter = &Matter{
-				Puuid:    puuid,
-				UserUuid: user.Uuid,
-				Username: user.Username,
-				Dir:      true,
-				Alien:    true,
-				Name:     name,
-				Path:     parentRelativePath + "/" + name,
-			}
-			matter = this.matterDao.Create(matter)
-		}
-
-		puuid = matter.Uuid
-		parentRelativePath = matter.Path
-	}
-
-	return puuid, parentRelativePath
+	download.DownloadFile(writer, request, filePath, filename, withContentDisposition)
 }
 
-//获取某个文件的详情，会把父级依次倒着装进去。如果中途出错，直接抛出异常。
-func (this *MatterService) Detail(uuid string) *Matter {
+//删除文件
+func (this *MatterService) Delete(matter *Matter) {
 
-	matter := this.matterDao.CheckByUuid(uuid)
-
-	//组装file的内容，展示其父组件。
-	puuid := matter.Puuid
-	tmpMatter := matter
-	for puuid != MATTER_ROOT {
-		pFile := this.matterDao.CheckByUuid(puuid)
-		tmpMatter.Parent = pFile
-		tmpMatter = pFile
-		puuid = pFile.Puuid
+	if matter == nil {
+		panic(result.BadRequest("matter不能为nil"))
 	}
 
-	return matter
+
+	//操作锁
+	this.userService.MatterLock(matter.UserUuid)
+	defer this.userService.MatterUnlock(matter.UserUuid)
+
+
+
+	this.matterDao.Delete(matter)
+
 }
 
-
-//在dirMatter中创建文件夹 返回刚刚创建的这个文件夹
-func (this *MatterService) CreateDirectory(dirMatter *Matter, name string, user *User) *Matter {
-
-	this.userService.MatterLock(user.Uuid)
-	defer this.userService.MatterUnlock(user.Uuid)
-
-	//父级matter必须存在
-	if dirMatter == nil {
-		panic(result.BadRequest("dirMatter必须指定"))
-	}
-
-	//必须是文件夹
-	if !dirMatter.Dir {
-		panic(result.BadRequest("dirMatter必须是文件夹"))
-	}
-
-	if dirMatter.UserUuid != user.Uuid {
-
-		panic(result.BadRequest("dirMatter的userUuid和user不一致"))
-	}
-
-	name = strings.TrimSpace(name)
-	//验证参数。
-	if name == "" {
-		panic(result.BadRequest("name参数必填，并且不能全是空格"))
-	}
-
-	if len(name) > MATTER_NAME_MAX_LENGTH {
-
-		panic(result.BadRequest("name长度不能超过%d", MATTER_NAME_MAX_LENGTH))
-
-	}
-
-	if m, _ := regexp.MatchString(`[<>|*?/\\]`, name); m {
-
-		panic(result.BadRequest(`名称中不能包含以下特殊符号：< > | * ? / \`))
-	}
-
-	//判断同级文件夹中是否有同名的文件夹
-	count := this.matterDao.CountByUserUuidAndPuuidAndDirAndName(user.Uuid, dirMatter.Uuid, true, name)
-
-	if count > 0 {
-
-		panic(result.BadRequest("%s 已经存在了，请使用其他名称。", name))
-	}
-
-	parts := strings.Split(dirMatter.Path,"/")
-	this.logger.Info("%s的层数：%d",dirMatter.Name,len(parts))
-
-	if len(parts) >= 32{
-		panic(result.BadRequest("文件夹最多%d层", MATTER_NAME_MAX_DEPTH))
-	}
-
-	//绝对路径
-	absolutePath := GetUserFileRootDir(user.Username) + dirMatter.Path + "/" + name
-
-	//相对路径
-	relativePath := dirMatter.Path + "/" + name
-
-	//磁盘中创建文件夹。
-	dirPath := MakeDirAll(absolutePath)
-	this.logger.Info("Create Directory: %s", dirPath)
-
-	//数据库中创建文件夹。
-	matter := &Matter{
-		Puuid:    dirMatter.Uuid,
-		UserUuid: user.Uuid,
-		Username: user.Username,
-		Dir:      true,
-		Name:     name,
-		Path:     relativePath,
-	}
-
-	matter = this.matterDao.Create(matter)
-
-	return matter
-}
 
 //开始上传文件
 //上传文件. alien表明文件是否是应用使用的文件。
@@ -303,6 +174,166 @@ func (this *MatterService) Upload(file io.Reader, user *User, puuid string, file
 	return matter
 }
 
+
+
+//根据一个文件夹路径，找到最后一个文件夹的uuid，如果中途出错，返回err.
+func (this *MatterService) GetDirUuid(user *User, dir string) (puuid string, dirRelativePath string) {
+
+	if dir == "" {
+		panic(`文件夹不能为空`)
+	} else if dir[0:1] != "/" {
+		panic(`文件夹必须以/开头`)
+	} else if strings.Index(dir, "//") != -1 {
+		panic(`文件夹不能出现连续的//`)
+	} else if m, _ := regexp.MatchString(`[<>|*?\\]`, dir); m {
+		panic(`文件夹中不能包含以下特殊符号：< > | * ? \`)
+	}
+
+	if dir == "/" {
+		return MATTER_ROOT, ""
+	}
+
+	if dir[len(dir)-1] == '/' {
+		dir = dir[:len(dir)-1]
+	}
+
+	//递归找寻文件的上级目录uuid.
+	folders := strings.Split(dir, "/")
+
+	if len(folders) > 32 {
+		panic("文件夹最多32层。")
+	}
+
+	puuid = MATTER_ROOT
+	parentRelativePath := "/"
+	for k, name := range folders {
+
+		if len(name) > 200 {
+			panic("每级文件夹的最大长度为200")
+		}
+
+		if k == 0 {
+			continue
+		}
+
+		matter := this.matterDao.FindByUserUuidAndPuuidAndNameAndDirTrue(user.Uuid, puuid, name)
+		if matter == nil {
+			//创建一个文件夹。这里一般都是通过alien接口来创建的文件夹。
+			matter = &Matter{
+				Puuid:    puuid,
+				UserUuid: user.Uuid,
+				Username: user.Username,
+				Dir:      true,
+				Alien:    true,
+				Name:     name,
+				Path:     parentRelativePath + "/" + name,
+			}
+			matter = this.matterDao.Create(matter)
+		}
+
+		puuid = matter.Uuid
+		parentRelativePath = matter.Path
+	}
+
+	return puuid, parentRelativePath
+}
+
+//在dirMatter中创建文件夹 返回刚刚创建的这个文件夹
+func (this *MatterService) CreateDirectory(dirMatter *Matter, name string, user *User) *Matter {
+
+	this.userService.MatterLock(user.Uuid)
+	defer this.userService.MatterUnlock(user.Uuid)
+
+	//父级matter必须存在
+	if dirMatter == nil {
+		panic(result.BadRequest("dirMatter必须指定"))
+	}
+
+	//必须是文件夹
+	if !dirMatter.Dir {
+		panic(result.BadRequest("dirMatter必须是文件夹"))
+	}
+
+	if dirMatter.UserUuid != user.Uuid {
+
+		panic(result.BadRequest("dirMatter的userUuid和user不一致"))
+	}
+
+	name = strings.TrimSpace(name)
+	//验证参数。
+	if name == "" {
+		panic(result.BadRequest("name参数必填，并且不能全是空格"))
+	}
+
+	if len(name) > MATTER_NAME_MAX_LENGTH {
+
+		panic(result.BadRequest("name长度不能超过%d", MATTER_NAME_MAX_LENGTH))
+
+	}
+
+	if m, _ := regexp.MatchString(`[<>|*?/\\]`, name); m {
+
+		panic(result.BadRequest(`名称中不能包含以下特殊符号：< > | * ? / \`))
+	}
+
+	//判断同级文件夹中是否有同名的文件夹
+	count := this.matterDao.CountByUserUuidAndPuuidAndDirAndName(user.Uuid, dirMatter.Uuid, true, name)
+
+	if count > 0 {
+
+		panic(result.BadRequest("%s 已经存在了，请使用其他名称。", name))
+	}
+
+	parts := strings.Split(dirMatter.Path, "/")
+	this.logger.Info("%s的层数：%d", dirMatter.Name, len(parts))
+
+	if len(parts) >= 32 {
+		panic(result.BadRequest("文件夹最多%d层", MATTER_NAME_MAX_DEPTH))
+	}
+
+	//绝对路径
+	absolutePath := GetUserFileRootDir(user.Username) + dirMatter.Path + "/" + name
+
+	//相对路径
+	relativePath := dirMatter.Path + "/" + name
+
+	//磁盘中创建文件夹。
+	dirPath := MakeDirAll(absolutePath)
+	this.logger.Info("Create Directory: %s", dirPath)
+
+	//数据库中创建文件夹。
+	matter := &Matter{
+		Puuid:    dirMatter.Uuid,
+		UserUuid: user.Uuid,
+		Username: user.Username,
+		Dir:      true,
+		Name:     name,
+		Path:     relativePath,
+	}
+
+	matter = this.matterDao.Create(matter)
+
+	return matter
+}
+
+//获取某个文件的详情，会把父级依次倒着装进去。如果中途出错，直接抛出异常。
+func (this *MatterService) Detail(uuid string) *Matter {
+
+	matter := this.matterDao.CheckByUuid(uuid)
+
+	//组装file的内容，展示其父组件。
+	puuid := matter.Puuid
+	tmpMatter := matter
+	for puuid != MATTER_ROOT {
+		pFile := this.matterDao.CheckByUuid(puuid)
+		tmpMatter.Parent = pFile
+		tmpMatter = pFile
+		puuid = pFile.Puuid
+	}
+
+	return matter
+}
+
 // 从指定的url下载一个文件。参考：https://golangcode.com/download-a-file-from-a-url/
 func (this *MatterService) httpDownloadFile(filepath string, url string) (int64, error) {
 
@@ -363,7 +394,7 @@ func (this *MatterService) Crawl(url string, filename string, user *User, puuid 
 	matters := this.matterDao.ListByUserUuidAndPuuidAndDirAndName(user.Uuid, puuid, false, filename)
 	//如果有同名的文件，那么我们直接覆盖同名文件。
 	for _, dbFile := range matters {
-		this.matterDao.Delete(dbFile)
+		this.Delete(dbFile)
 	}
 
 	//将文件信息存入数据库中。
@@ -383,19 +414,6 @@ func (this *MatterService) Crawl(url string, filename string, user *User, puuid 
 	matter = this.matterDao.Create(matter)
 
 	return matter
-}
-
-//文件下载。具有进度功能。
-//下载功能参考：https://github.com/Masterminds/go-fileserver
-func (this *MatterService) DownloadFile(
-	writer http.ResponseWriter,
-	request *http.Request,
-	filePath string,
-	filename string,
-	withContentDisposition bool) {
-
-	download.DownloadFile(writer, request, filePath, filename, withContentDisposition)
-
 }
 
 //调整一个Matter的path值
