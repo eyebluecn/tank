@@ -179,7 +179,7 @@ func (this *MatterService) AtomicUpload(file io.Reader, user *User, dirMatter *M
 }
 
 //内部创建文件，不带操作锁。
-func (this *MatterService) innerCreateDirectory(dirMatter *Matter, name string, user *User) *Matter {
+func (this *MatterService) createDirectory(dirMatter *Matter, name string, user *User) *Matter {
 
 	//父级matter必须存在
 	if dirMatter == nil {
@@ -259,7 +259,7 @@ func (this *MatterService) AtomicCreateDirectory(dirMatter *Matter, name string,
 	this.userService.MatterLock(user.Uuid)
 	defer this.userService.MatterUnlock(user.Uuid)
 
-	matter := this.innerCreateDirectory(dirMatter, name, user)
+	matter := this.createDirectory(dirMatter, name, user)
 
 	return matter
 }
@@ -283,7 +283,7 @@ func (this *MatterService) handleOverwrite(userUuid string, destinationPath stri
 }
 
 //将一个srcMatter放置到另一个destMatter(必须为文件夹)下 不关注 overwrite 和 lock.
-func (this *MatterService) innerMove(srcMatter *Matter, destDirMatter *Matter) {
+func (this *MatterService) move(srcMatter *Matter, destDirMatter *Matter) {
 
 	if srcMatter == nil {
 		panic(result.BadRequest("srcMatter cannot be nil."))
@@ -366,7 +366,7 @@ func (this *MatterService) AtomicMove(srcMatter *Matter, destDirMatter *Matter, 
 	this.handleOverwrite(srcMatter.UserUuid, destinationPath, overwrite)
 
 	//做move操作。
-	this.innerMove(srcMatter, destDirMatter)
+	this.move(srcMatter, destDirMatter)
 }
 
 //将一个srcMatter放置到另一个destMatter(必须为文件夹)下
@@ -402,13 +402,13 @@ func (this *MatterService) AtomicMoveBatch(srcMatters []*Matter, destDirMatter *
 	}
 
 	for _, srcMatter := range srcMatters {
-		this.innerMove(srcMatter, destDirMatter)
+		this.move(srcMatter, destDirMatter)
 	}
 
 }
 
 //内部移动一个文件(提供给Copy调用)，无需关心overwrite问题。
-func (this *MatterService) innerCopy(srcMatter *Matter, destDirMatter *Matter, name string) {
+func (this *MatterService) copy(srcMatter *Matter, destDirMatter *Matter, name string) {
 
 	if srcMatter.Dir {
 
@@ -432,7 +432,7 @@ func (this *MatterService) innerCopy(srcMatter *Matter, destDirMatter *Matter, n
 		//复制子文件或文件夹
 		matters := this.matterDao.List(srcMatter.Uuid, srcMatter.UserUuid, nil)
 		for _, m := range matters {
-			this.innerCopy(m, newMatter, m.Name)
+			this.copy(m, newMatter, m.Name)
 		}
 
 	} else {
@@ -479,7 +479,7 @@ func (this *MatterService) AtomicCopy(srcMatter *Matter, destDirMatter *Matter, 
 	destinationPath := destDirMatter.Path + "/" + name
 	this.handleOverwrite(srcMatter.UserUuid, destinationPath, overwrite)
 
-	this.innerCopy(srcMatter, destDirMatter, name)
+	this.copy(srcMatter, destDirMatter, name)
 }
 
 //将一个matter 重命名为 name
@@ -602,7 +602,7 @@ func (this *MatterService) CreateDirectories(user *User, dirPath string) *Matter
 			continue
 		}
 
-		dirMatter = this.innerCreateDirectory(dirMatter, name, user)
+		dirMatter = this.createDirectory(dirMatter, name, user)
 	}
 
 	return dirMatter
@@ -641,13 +641,16 @@ func (this *MatterService) AtomicCrawl(url string, filename string, user *User, 
 		panic(result.BadRequest("user cannot be nil."))
 	}
 
+	//操作锁
+	this.userService.MatterLock(user.Uuid)
+	defer this.userService.MatterUnlock(user.Uuid)
+
+
+
 	if url == "" || (!strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://")) {
 		panic("资源url必填，并且应该以http://或者https://开头")
 	}
 
-	//操作锁
-	this.userService.MatterLock(user.Uuid)
-	defer this.userService.MatterUnlock(user.Uuid)
 
 	//从指定的url下载一个文件。参考：https://golangcode.com/download-a-file-from-a-url/
 	resp, err := http.Get(url)

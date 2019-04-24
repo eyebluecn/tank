@@ -362,15 +362,3 @@ func DownloadFile(
 	}
 
 }
-
-
-
-// 从指定的url下载一个文件。参考：https://golangcode.com/download-a-file-from-a-url/
-func HttpDownloadFile(url string) io.Reader {
-
-	// Get the data
-	resp, err := http.Get(url)
-	PanicError(err)
-
-	return resp.Body
-}
