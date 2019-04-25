@@ -11,7 +11,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"tank/code/result"
+	"tank/code/tool/result"
 	"tank/code/tool/util"
 	"time"
 )
@@ -205,14 +205,11 @@ func SumRangesSize(ranges []HttpRange) (size int64) {
 	return
 }
 
-
 func PanicError(err error) {
 	if err != nil {
 		panic(err)
 	}
 }
-
-
 
 //文件下载。具有进度功能。
 //下载功能参考：https://github.com/Masterminds/go-fileserver
@@ -230,7 +227,6 @@ func DownloadFile(
 		e := diskFile.Close()
 		PanicError(e)
 	}()
-
 
 	//根据参数添加content-disposition。该Header会让浏览器自动下载，而不是预览。
 	if withContentDisposition {

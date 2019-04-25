@@ -2,7 +2,7 @@ package code
 
 import (
 	"github.com/nu7hatch/gouuid"
-	"tank/code/result"
+	result2 "tank/code/tool/result"
 	"time"
 )
 
@@ -18,7 +18,7 @@ func (this *PreferenceDao) Fetch() *Preference {
 	db := CONTEXT.DB.First(preference)
 	if db.Error != nil {
 
-		if db.Error.Error() == result.DB_ERROR_NOT_FOUND {
+		if db.Error.Error() == result2.DB_ERROR_NOT_FOUND {
 			preference.Name = "蓝眼云盘"
 			preference.ShowAlien = true
 			this.Create(preference)

@@ -10,8 +10,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"tank/code/result"
 	"tank/code/tool/dav/xml"
+	result2 "tank/code/tool/result"
 )
 
 // Proppatch describes a property update instruction as defined in RFC 4918.
@@ -239,20 +239,20 @@ func ReadPropfind(reader io.Reader) (propfind *Propfind) {
 			err = errInvalidPropfind
 		}
 
-		panic(result.BadRequest(err.Error()))
+		panic(result2.BadRequest(err.Error()))
 	}
 
  	if propfind.Allprop == nil && propfind.Include != nil {
-		panic(result.BadRequest(errInvalidPropfind.Error()))
+		panic(result2.BadRequest(errInvalidPropfind.Error()))
 	}
 	if propfind.Allprop != nil && (propfind.Prop != nil || propfind.Propname != nil) {
-		panic(result.BadRequest(errInvalidPropfind.Error()))
+		panic(result2.BadRequest(errInvalidPropfind.Error()))
 	}
 	if propfind.Prop != nil && propfind.Propname != nil {
-		panic(result.BadRequest(errInvalidPropfind.Error()))
+		panic(result2.BadRequest(errInvalidPropfind.Error()))
 	}
 	if propfind.Propname == nil && propfind.Allprop == nil && propfind.Prop == nil {
-		panic(result.BadRequest(errInvalidPropfind.Error()))
+		panic(result2.BadRequest(errInvalidPropfind.Error()))
 	}
 
 	return propfind

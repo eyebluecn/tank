@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strconv"
 	"tank/code/config"
-	"tank/code/result"
+	result2 "tank/code/tool/result"
 	"tank/code/tool/util"
 	"time"
 )
@@ -43,25 +43,25 @@ func (this *UserController) RegisterRoutes() map[string]func(writer http.Respons
 //参数：
 // @email:邮箱
 // @password:密码
-func (this *UserController) Login(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+func (this *UserController) Login(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
 
 	email := request.FormValue("email")
 	password := request.FormValue("password")
 
 	if "" == email || "" == password {
 
-		panic(result.BadRequest("请输入邮箱和密码"))
+		panic(result2.BadRequest("请输入邮箱和密码"))
 	}
 
 	user := this.userDao.FindByEmail(email)
 	if user == nil {
 
-		panic(result.BadRequest("邮箱或密码错误"))
+		panic(result2.BadRequest("邮箱或密码错误"))
 
 	} else {
 		if !util.MatchBcrypt(password, user.Password) {
 
-			panic(result.BadRequest("邮箱或密码错误"))
+			panic(result2.BadRequest("邮箱或密码错误"))
 		}
 	}
 
@@ -96,7 +96,7 @@ func (this *UserController) Login(writer http.ResponseWriter, request *http.Requ
 }
 
 //创建一个用户
-func (this *UserController) Create(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+func (this *UserController) Create(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
 
 	username := request.FormValue("username")
 	if m, _ := regexp.MatchString(`^[0-9a-zA-Z_]+$`, username); !m {
@@ -159,7 +159,7 @@ func (this *UserController) Create(writer http.ResponseWriter, request *http.Req
 }
 
 //编辑一个用户的资料。
-func (this *UserController) Edit(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+func (this *UserController) Edit(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
 
 	avatarUrl := request.FormValue("avatarUrl")
 	uuid := request.FormValue("uuid")
@@ -187,7 +187,7 @@ func (this *UserController) Edit(writer http.ResponseWriter, request *http.Reque
 		user.SizeLimit = sizeLimit
 	} else {
 		if currentUser.Uuid != uuid {
-			panic(result.Unauthorized("没有权限"))
+			panic(result2.Unauthorized("没有权限"))
 		}
 	}
 
@@ -202,7 +202,7 @@ func (this *UserController) Edit(writer http.ResponseWriter, request *http.Reque
 }
 
 //获取用户详情
-func (this *UserController) Detail(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+func (this *UserController) Detail(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
 
 	uuid := request.FormValue("uuid")
 
@@ -213,7 +213,7 @@ func (this *UserController) Detail(writer http.ResponseWriter, request *http.Req
 }
 
 //退出登录
-func (this *UserController) Logout(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+func (this *UserController) Logout(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
 
 	//session置为过期
 	sessionCookie, err := request.Cookie(config.COOKIE_AUTH_KEY)
@@ -249,7 +249,7 @@ func (this *UserController) Logout(writer http.ResponseWriter, request *http.Req
 }
 
 //获取用户列表 管理员的权限。
-func (this *UserController) Page(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+func (this *UserController) Page(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
 
 	pageStr := request.FormValue("page")
 	pageSizeStr := request.FormValue("pageSize")
@@ -301,7 +301,7 @@ func (this *UserController) Page(writer http.ResponseWriter, request *http.Reque
 }
 
 //禁用用户
-func (this *UserController) Disable(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+func (this *UserController) Disable(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
 
 	uuid := request.FormValue("uuid")
 
@@ -309,11 +309,11 @@ func (this *UserController) Disable(writer http.ResponseWriter, request *http.Re
 
 	loginUser := this.checkUser(writer, request)
 	if uuid == loginUser.Uuid {
-		panic(result.BadRequest("你不能操作自己的状态。"))
+		panic(result2.BadRequest("你不能操作自己的状态。"))
 	}
 
 	if user.Status == USER_STATUS_DISABLED {
-		panic(result.BadRequest("用户已经被禁用，操作无效。"))
+		panic(result2.BadRequest("用户已经被禁用，操作无效。"))
 	}
 
 	user.Status = USER_STATUS_DISABLED
@@ -325,18 +325,18 @@ func (this *UserController) Disable(writer http.ResponseWriter, request *http.Re
 }
 
 //启用用户
-func (this *UserController) Enable(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+func (this *UserController) Enable(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
 
 	uuid := request.FormValue("uuid")
 
 	user := this.userDao.CheckByUuid(uuid)
 	loginUser := this.checkUser(writer, request)
 	if uuid == loginUser.Uuid {
-		panic(result.BadRequest("你不能操作自己的状态。"))
+		panic(result2.BadRequest("你不能操作自己的状态。"))
 	}
 
 	if user.Status == USER_STATUS_OK {
-		panic(result.BadRequest("用户已经是正常状态，操作无效。"))
+		panic(result2.BadRequest("用户已经是正常状态，操作无效。"))
 	}
 
 	user.Status = USER_STATUS_OK
@@ -348,12 +348,12 @@ func (this *UserController) Enable(writer http.ResponseWriter, request *http.Req
 }
 
 //用户修改密码
-func (this *UserController) ChangePassword(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+func (this *UserController) ChangePassword(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
 
 	oldPassword := request.FormValue("oldPassword")
 	newPassword := request.FormValue("newPassword")
 	if oldPassword == "" || newPassword == "" {
-		panic(result.BadRequest("旧密码和新密码都不能为空"))
+		panic(result2.BadRequest("旧密码和新密码都不能为空"))
 	}
 
 	user := this.checkUser(writer, request)
@@ -364,7 +364,7 @@ func (this *UserController) ChangePassword(writer http.ResponseWriter, request *
 	}
 
 	if !util.MatchBcrypt(oldPassword, user.Password) {
-		panic(result.BadRequest("旧密码不正确！"))
+		panic(result2.BadRequest("旧密码不正确！"))
 	}
 
 	user.Password = util.GetBcrypt(newPassword)
@@ -375,21 +375,21 @@ func (this *UserController) ChangePassword(writer http.ResponseWriter, request *
 }
 
 //管理员重置用户密码
-func (this *UserController) ResetPassword(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+func (this *UserController) ResetPassword(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
 
 	userUuid := request.FormValue("userUuid")
 	password := request.FormValue("password")
 	if userUuid == "" {
-		panic(result.BadRequest("用户不能为空"))
+		panic(result2.BadRequest("用户不能为空"))
 	}
 	if password == "" {
-		panic(result.BadRequest("密码不能为空"))
+		panic(result2.BadRequest("密码不能为空"))
 	}
 
 	currentUser := this.checkUser(writer, request)
 
 	if currentUser.Role != USER_ROLE_ADMINISTRATOR {
-		panic(result.Unauthorized("没有权限"))
+		panic(result2.Unauthorized("没有权限"))
 	}
 
 	user := this.userDao.CheckByUuid(userUuid)

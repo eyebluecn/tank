@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"tank/code/config"
 	"tank/code/logger"
-	"tank/code/result"
+	result2 "tank/code/tool/result"
 	"tank/code/tool/util"
 )
 
@@ -78,7 +78,7 @@ func (this *Bean) findUser(writer http.ResponseWriter, request *http.Request) *U
 //获取当前登录的用户，找不到就返回登录错误
 func (this *Bean) checkUser(writer http.ResponseWriter, request *http.Request) *User {
 	if this.findUser(writer, request) == nil {
-		panic(result.ConstWebResult(result.CODE_WRAPPER_LOGIN))
+		panic(result2.ConstWebResult(result2.CODE_WRAPPER_LOGIN))
 	} else {
 		return this.findUser(writer, request)
 	}

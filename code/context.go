@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"github.com/jinzhu/gorm"
 	"reflect"
-	"tank/code/cache"
 	"tank/code/config"
 	"tank/code/logger"
+	cache2 "tank/code/tool/cache"
 )
 
 //全局唯一的上下文(在main函数中初始化)
@@ -17,7 +17,7 @@ type Context struct {
 	//数据库连接
 	DB *gorm.DB
 	//session缓存
-	SessionCache *cache.CacheTable
+	SessionCache *cache2.CacheTable
 	//各类的Bean Map。这里面是包含ControllerMap中所有元素
 	BeanMap map[string]IBean
 	//只包含了Controller的map
@@ -30,7 +30,7 @@ type Context struct {
 func (this *Context) Init() {
 
 	//创建一个用于存储session的缓存。
-	this.SessionCache = cache.NewCacheTable()
+	this.SessionCache = cache2.NewCacheTable()
 
 	//初始化Map
 	this.BeanMap = make(map[string]IBean)

@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"tank/code/result"
+	result2 "tank/code/tool/result"
 )
 
 type MatterController struct {
@@ -68,11 +68,11 @@ func (this *MatterController) RegisterRoutes() map[string]func(writer http.Respo
 }
 
 //查看某个文件的详情。
-func (this *MatterController) Detail(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+func (this *MatterController) Detail(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
 
 	uuid := request.FormValue("uuid")
 	if uuid == "" {
-		panic(result.BadRequest("文件的uuid必填"))
+		panic(result2.BadRequest("文件的uuid必填"))
 	}
 
 	matter := this.matterService.Detail(uuid)
@@ -90,7 +90,7 @@ func (this *MatterController) Detail(writer http.ResponseWriter, request *http.R
 }
 
 //按照分页的方式获取某个文件夹下文件和子文件夹的列表，通常情况下只有一页。
-func (this *MatterController) Page(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+func (this *MatterController) Page(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
 
 	//如果是根目录，那么就传入root.
 	pageStr := request.FormValue("page")
@@ -171,7 +171,7 @@ func (this *MatterController) Page(writer http.ResponseWriter, request *http.Req
 }
 
 //创建一个文件夹。
-func (this *MatterController) CreateDirectory(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+func (this *MatterController) CreateDirectory(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
 
 	puuid := request.FormValue("puuid")
 	name := request.FormValue("name")
@@ -197,7 +197,7 @@ func (this *MatterController) CreateDirectory(writer http.ResponseWriter, reques
 }
 
 //上传文件
-func (this *MatterController) Upload(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+func (this *MatterController) Upload(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
 
 	userUuid := request.FormValue("userUuid")
 	puuid := request.FormValue("puuid")
@@ -240,7 +240,7 @@ func (this *MatterController) Upload(writer http.ResponseWriter, request *http.R
 }
 
 //从一个Url中去爬取资源
-func (this *MatterController) Crawl(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+func (this *MatterController) Crawl(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
 
 	userUuid := request.FormValue("userUuid")
 	puuid := request.FormValue("puuid")
@@ -280,11 +280,11 @@ func (this *MatterController) Crawl(writer http.ResponseWriter, request *http.Re
 }
 
 //删除一个文件
-func (this *MatterController) Delete(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+func (this *MatterController) Delete(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
 
 	uuid := request.FormValue("uuid")
 	if uuid == "" {
-		panic(result.BadRequest("文件的uuid必填"))
+		panic(result2.BadRequest("文件的uuid必填"))
 	}
 
 	matter := this.matterDao.CheckByUuid(uuid)
@@ -292,7 +292,7 @@ func (this *MatterController) Delete(writer http.ResponseWriter, request *http.R
 	//判断文件的所属人是否正确
 	user := this.checkUser(writer, request)
 	if user.Role != USER_ROLE_ADMINISTRATOR && matter.UserUuid != user.Uuid {
-		panic(result.Unauthorized("没有权限"))
+		panic(result2.Unauthorized("没有权限"))
 	}
 
 	this.matterService.AtomicDelete(matter)
@@ -301,11 +301,11 @@ func (this *MatterController) Delete(writer http.ResponseWriter, request *http.R
 }
 
 //删除一系列文件。
-func (this *MatterController) DeleteBatch(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+func (this *MatterController) DeleteBatch(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
 
 	uuids := request.FormValue("uuids")
 	if uuids == "" {
-		panic(result.BadRequest("文件的uuids必填"))
+		panic(result2.BadRequest("文件的uuids必填"))
 	}
 
 	uuidArray := strings.Split(uuids, ",")
@@ -323,7 +323,7 @@ func (this *MatterController) DeleteBatch(writer http.ResponseWriter, request *h
 		//判断文件的所属人是否正确
 		user := this.checkUser(writer, request)
 		if user.Role != USER_ROLE_ADMINISTRATOR && matter.UserUuid != user.Uuid {
-			panic(result.Unauthorized("没有权限"))
+			panic(result2.Unauthorized("没有权限"))
 		}
 
 		this.matterService.AtomicDelete(matter)
@@ -334,7 +334,7 @@ func (this *MatterController) DeleteBatch(writer http.ResponseWriter, request *h
 }
 
 //重命名一个文件或一个文件夹
-func (this *MatterController) Rename(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+func (this *MatterController) Rename(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
 
 	uuid := request.FormValue("uuid")
 	name := request.FormValue("name")
@@ -345,7 +345,7 @@ func (this *MatterController) Rename(writer http.ResponseWriter, request *http.R
 	matter := this.matterDao.CheckByUuid(uuid)
 
 	if user.Role != USER_ROLE_ADMINISTRATOR && matter.UserUuid != user.Uuid {
-		panic(result.Unauthorized("没有权限"))
+		panic(result2.Unauthorized("没有权限"))
 	}
 
 	this.matterService.AtomicRename(matter, name, user)
@@ -354,7 +354,7 @@ func (this *MatterController) Rename(writer http.ResponseWriter, request *http.R
 }
 
 //改变一个文件的公私有属性
-func (this *MatterController) ChangePrivacy(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+func (this *MatterController) ChangePrivacy(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
 	uuid := request.FormValue("uuid")
 	privacyStr := request.FormValue("privacy")
 	privacy := false
@@ -371,7 +371,7 @@ func (this *MatterController) ChangePrivacy(writer http.ResponseWriter, request 
 	//权限验证
 	user := this.checkUser(writer, request)
 	if user.Role != USER_ROLE_ADMINISTRATOR && matter.UserUuid != user.Uuid {
-		panic(result.Unauthorized("没有权限"))
+		panic(result2.Unauthorized("没有权限"))
 	}
 
 	matter.Privacy = privacy
@@ -381,7 +381,7 @@ func (this *MatterController) ChangePrivacy(writer http.ResponseWriter, request 
 }
 
 //将一个文件夹或者文件移入到另一个文件夹下。
-func (this *MatterController) Move(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+func (this *MatterController) Move(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
 
 	srcUuidsStr := request.FormValue("srcUuids")
 	destUuid := request.FormValue("destUuid")
@@ -390,7 +390,7 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 	var srcUuids []string
 	//验证参数。
 	if srcUuidsStr == "" {
-		panic(result.BadRequest("srcUuids参数必填"))
+		panic(result2.BadRequest("srcUuids参数必填"))
 	} else {
 		srcUuids = strings.Split(srcUuidsStr, ",")
 	}
@@ -405,11 +405,11 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 	//验证dest是否有问题
 	var destMatter = this.matterDao.CheckWithRootByUuid(destUuid, user)
 	if !destMatter.Dir {
-		panic(result.BadRequest("目标不是文件夹"))
+		panic(result2.BadRequest("目标不是文件夹"))
 	}
 
 	if user.Role != USER_ROLE_ADMINISTRATOR && destMatter.UserUuid != user.Uuid {
-		panic(result.Unauthorized("没有权限"))
+		panic(result2.Unauthorized("没有权限"))
 	}
 
 	var srcMatters []*Matter
@@ -419,14 +419,14 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 		srcMatter := this.matterDao.CheckByUuid(uuid)
 
 		if srcMatter.Puuid == destMatter.Uuid {
-			panic(result.BadRequest("没有进行移动，操作无效！"))
+			panic(result2.BadRequest("没有进行移动，操作无效！"))
 		}
 
 		//判断同级文件夹中是否有同名的文件
 		count := this.matterDao.CountByUserUuidAndPuuidAndDirAndName(user.Uuid, destMatter.Uuid, srcMatter.Dir, srcMatter.Name)
 
 		if count > 0 {
-			panic(result.BadRequest("【" + srcMatter.Name + "】在目标文件夹已经存在了，操作失败。"))
+			panic(result2.BadRequest("【" + srcMatter.Name + "】在目标文件夹已经存在了，操作失败。"))
 		}
 
 		//判断和目标文件夹是否是同一个主人。

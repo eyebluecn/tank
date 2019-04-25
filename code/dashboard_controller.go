@@ -3,7 +3,7 @@ package code
 import (
 	"net/http"
 	"strconv"
-	"tank/code/result"
+	result2 "tank/code/tool/result"
 )
 
 type DashboardController struct {
@@ -42,14 +42,14 @@ func (this *DashboardController) RegisterRoutes() map[string]func(writer http.Re
 }
 
 //过去七天分时调用量
-func (this *DashboardController) InvokeList(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+func (this *DashboardController) InvokeList(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
 
 	return this.Success("")
 
 }
 
 //按照分页的方式获取某个图片缓存夹下图片缓存和子图片缓存夹的列表，通常情况下只有一页。
-func (this *DashboardController) Page(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+func (this *DashboardController) Page(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
 
 	//如果是根目录，那么就传入root.
 	pageStr := request.FormValue("page")
@@ -97,7 +97,7 @@ func (this *DashboardController) Page(writer http.ResponseWriter, request *http.
 }
 
 
-func (this *DashboardController) ActiveIpTop10(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+func (this *DashboardController) ActiveIpTop10(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
 	list := this.dashboardDao.ActiveIpTop10()
 	return this.Success(list)
 }

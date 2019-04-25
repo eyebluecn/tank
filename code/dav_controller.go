@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
-	"tank/code/result"
+	result2 "tank/code/tool/result"
 	"tank/code/tool/util"
 )
 
@@ -79,16 +79,16 @@ func (this *DavController) CheckCurrentUser(writer http.ResponseWriter, request 
 		//要求前端使用Basic的形式授权
 		writer.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
 
-		panic(result.ConstWebResult(result.CODE_WRAPPER_LOGIN))
+		panic(result2.ConstWebResult(result2.CODE_WRAPPER_LOGIN))
 
 	}
 
 	user := this.userDao.FindByUsername(username)
 	if user == nil {
-		panic(result.BadRequest("邮箱或密码错误"))
+		panic(result2.BadRequest("邮箱或密码错误"))
 	} else {
 		if !util.MatchBcrypt(password, user.Password) {
-			panic(result.BadRequest("邮箱或密码错误"))
+			panic(result2.BadRequest("邮箱或密码错误"))
 		}
 	}
 

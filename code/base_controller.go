@@ -5,7 +5,7 @@ import (
 	"github.com/json-iterator/go"
 	"go/types"
 	"net/http"
-	"tank/code/result"
+	result2 "tank/code/tool/result"
 )
 
 type IController interface {
@@ -50,13 +50,13 @@ func (this *BaseController) HandleRoutes(writer http.ResponseWriter, request *ht
 }
 
 //需要进行登录验证的wrap包装
-func (this *BaseController) Wrap(f func(writer http.ResponseWriter, request *http.Request) *result.WebResult, qualifiedRole string) func(w http.ResponseWriter, r *http.Request) {
+func (this *BaseController) Wrap(f func(writer http.ResponseWriter, request *http.Request) *result2.WebResult, qualifiedRole string) func(w http.ResponseWriter, r *http.Request) {
 
 	return func(writer http.ResponseWriter, request *http.Request) {
 
 		//writer和request赋值给自己。
 
-		var webResult *result.WebResult = nil
+		var webResult *result2.WebResult = nil
 
 		//只有游客接口不需要登录
 		if qualifiedRole != USER_ROLE_GUEST {
@@ -64,10 +64,10 @@ func (this *BaseController) Wrap(f func(writer http.ResponseWriter, request *htt
 
 			if user.Status == USER_STATUS_DISABLED {
 				//判断用户是否被禁用。
-				webResult = result.ConstWebResult(result.CODE_WRAPPER_USER_DISABLED)
+				webResult = result2.ConstWebResult(result2.CODE_WRAPPER_USER_DISABLED)
 			} else {
 				if qualifiedRole == USER_ROLE_ADMINISTRATOR && user.Role != USER_ROLE_ADMINISTRATOR {
-					webResult = result.ConstWebResult(result.CODE_WRAPPER_UNAUTHORIZED)
+					webResult = result2.ConstWebResult(result2.CODE_WRAPPER_UNAUTHORIZED)
 				} else {
 					webResult = f(writer, request)
 				}
@@ -87,7 +87,7 @@ func (this *BaseController) Wrap(f func(writer http.ResponseWriter, request *htt
 
 			this.PanicError(err)
 
-			writer.WriteHeader(result.FetchHttpStatus(webResult.Code))
+			writer.WriteHeader(result2.FetchHttpStatus(webResult.Code))
 
 			_, err = fmt.Fprintf(writer, string(b))
 			this.PanicError(err)
@@ -100,20 +100,20 @@ func (this *BaseController) Wrap(f func(writer http.ResponseWriter, request *htt
 }
 
 //返回成功的结果。支持放置三种类型 1.字符串 2. WebResult对象 3.空指针 4.任意类型
-func (this *BaseController) Success(data interface{}) *result.WebResult {
-	var webResult *result.WebResult = nil
+func (this *BaseController) Success(data interface{}) *result2.WebResult {
+	var webResult *result2.WebResult = nil
 	if value, ok := data.(string); ok {
 		//返回一句普通的消息
-		webResult = &result.WebResult{Code: result.CODE_WRAPPER_OK.Code, Msg: value}
-	} else if value, ok := data.(*result.WebResult); ok {
+		webResult = &result2.WebResult{Code: result2.CODE_WRAPPER_OK.Code, Msg: value}
+	} else if value, ok := data.(*result2.WebResult); ok {
 		//返回一个webResult对象
 		webResult = value
 	} else if _, ok := data.(types.Nil); ok {
 		//返回一个空指针
-		webResult = result.ConstWebResult(result.CODE_WRAPPER_OK)
+		webResult = result2.ConstWebResult(result2.CODE_WRAPPER_OK)
 	} else {
 		//返回的类型不明确。
-		webResult = &result.WebResult{Code: result.CODE_WRAPPER_OK.Code, Data: data}
+		webResult = &result2.WebResult{Code: result2.CODE_WRAPPER_OK.Code, Data: data}
 	}
 	return webResult
 }

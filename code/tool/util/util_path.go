@@ -9,7 +9,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"strings"
-	"tank/code/result"
+	result2 "tank/code/tool/result"
 )
 
 //判断文件或文件夹是否已经存在
@@ -126,13 +126,13 @@ func GetFilenameOfPath(fullPath string) string {
 func DeleteEmptyDir(dirPath string) bool {
 	dir, err := ioutil.ReadDir(dirPath)
 	if err != nil {
-		panic(result.BadRequest("尝试读取目录%s时出错 %s", dirPath, err.Error()))
+		panic(result2.BadRequest("尝试读取目录%s时出错 %s", dirPath, err.Error()))
 	}
 	if len(dir) == 0 {
 		//空文件夹
 		err = os.Remove(dirPath)
 		if err != nil {
-			panic(result.BadRequest("删除磁盘上的文件夹%s出错 %s", dirPath, err.Error()))
+			panic(result2.BadRequest("删除磁盘上的文件夹%s出错 %s", dirPath, err.Error()))
 		}
 		return true
 	}

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
-	"tank/code/result"
+	result2 "tank/code/tool/result"
 	"tank/code/tool/util"
 
 	"time"
@@ -139,7 +139,7 @@ func (this *AlienController) CheckRequestUser(writer http.ResponseWriter, reques
 }
 
 //系统中的用户x要获取一个UploadToken，用于提供给x信任的用户上传文件。
-func (this *AlienController) FetchUploadToken(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+func (this *AlienController) FetchUploadToken(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
 
 	//文件名。
 	filename := request.FormValue("filename")
@@ -221,7 +221,7 @@ func (this *AlienController) FetchUploadToken(writer http.ResponseWriter, reques
 }
 
 //系统中的用户x 拿着某个文件的uuid来确认是否其信任的用户已经上传好了。
-func (this *AlienController) Confirm(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+func (this *AlienController) Confirm(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
 
 	matterUuid := request.FormValue("matterUuid")
 	if matterUuid == "" {
@@ -239,7 +239,7 @@ func (this *AlienController) Confirm(writer http.ResponseWriter, request *http.R
 }
 
 //系统中的用户x 信任的用户上传文件。这个接口需要支持跨域。
-func (this *AlienController) Upload(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+func (this *AlienController) Upload(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
 	//允许跨域请求。
 	this.allowCORS(writer)
 	if request.Method == "OPTIONS" {
@@ -292,7 +292,7 @@ func (this *AlienController) Upload(writer http.ResponseWriter, request *http.Re
 }
 
 //给一个指定的url，从该url中去拉取文件回来。此处采用uploadToken的模式。
-func (this *AlienController) CrawlToken(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+func (this *AlienController) CrawlToken(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
 	//允许跨域请求。
 	this.allowCORS(writer)
 	if request.Method == "OPTIONS" {
@@ -329,7 +329,7 @@ func (this *AlienController) CrawlToken(writer http.ResponseWriter, request *htt
 }
 
 //通过一个url直接上传，无需借助uploadToken.
-func (this *AlienController) CrawlDirect(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+func (this *AlienController) CrawlDirect(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
 
 	//文件名。
 	filename := request.FormValue("filename")
@@ -367,7 +367,7 @@ func (this *AlienController) CrawlDirect(writer http.ResponseWriter, request *ht
 }
 
 //系统中的用户x要获取一个DownloadToken，用于提供给x信任的用户下载文件。
-func (this *AlienController) FetchDownloadToken(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+func (this *AlienController) FetchDownloadToken(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
 
 	matterUuid := request.FormValue("matterUuid")
 	if matterUuid == "" {

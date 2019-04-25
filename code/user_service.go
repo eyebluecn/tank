@@ -2,9 +2,9 @@ package code
 
 import (
 	"net/http"
-	"tank/code/cache"
 	"tank/code/config"
-	"tank/code/result"
+	cache2 "tank/code/tool/cache"
+	result2 "tank/code/tool/result"
 	"time"
 )
 
@@ -15,7 +15,7 @@ type UserService struct {
 	sessionDao *SessionDao
 
 	//操作文件的锁。
-	locker *cache.CacheTable
+	locker *cache2.CacheTable
 }
 
 //初始化方法
@@ -34,7 +34,7 @@ func (this *UserService) Init() {
 	}
 
 	//创建一个用于存储用户文件锁的缓存。
-	this.locker = cache.NewCacheTable()
+	this.locker = cache2.NewCacheTable()
 }
 
 
@@ -50,7 +50,7 @@ func (this *UserService) MatterLock(userUuid string) {
 
 	//当前被锁住了。
 	if cacheItem != nil && cacheItem.Data() != nil {
-		panic(result.BadRequest("当前正在进行文件操作，请稍后再试！"))
+		panic(result2.BadRequest("当前正在进行文件操作，请稍后再试！"))
 	}
 
 	//添加一把新锁，有效期为12小时
