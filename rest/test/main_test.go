@@ -1,10 +1,11 @@
-package main
+package test
 
 import (
 	"fmt"
 	"strings"
 	"testing"
 )
+
 
 func TestHello(t *testing.T) {
 

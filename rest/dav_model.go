@@ -18,17 +18,6 @@ type LiveProp struct {
 	dir    bool
 }
 
-
-// SlashClean is equivalent to but slightly more efficient than
-// path.Clean("/" + name).
-func SlashClean(name string) string {
-	if name == "" || name[0] != '/' {
-		name = "/" + name
-	}
-	return path.Clean(name)
-}
-
-
 //所有的动态属性定义及其值的获取方式
 var LivePropMap = map[xml.Name]LiveProp{
 	{Space: "DAV:", Local: "resourcetype"}: {
@@ -43,7 +32,7 @@ var LivePropMap = map[xml.Name]LiveProp{
 	},
 	{Space: "DAV:", Local: "displayname"}: {
 		findFn: func(user *User, matter *Matter) string {
-			if SlashClean(matter.Name) == "/" {
+			if path.Clean("/"+matter.Name) == "/" {
 				return ""
 			} else {
 				return dav.EscapeXML(matter.Name)
@@ -131,5 +120,4 @@ var LivePropMap = map[xml.Name]LiveProp{
 		},
 		dir: true,
 	},
-
 }
