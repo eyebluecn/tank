@@ -10,8 +10,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"tank/code/dav/xml"
 	"tank/code/result"
+	"tank/code/tool/dav/xml"
 )
 
 // Proppatch describes a property update instruction as defined in RFC 4918.
@@ -135,7 +135,7 @@ var (
 
 // http://www.webdav.org/specs/rfc4918.html#ELEMENT_lockinfo
 type LockInfo struct {
-	XMLName   xml.Name `xml:"lockinfo"`
+	XMLName   xml.Name  `xml:"lockinfo"`
 	Exclusive *struct{} `xml:"lockscope>exclusive"`
 	Shared    *struct{} `xml:"lockscope>shared"`
 	Write     *struct{} `xml:"locktype>write"`
@@ -217,7 +217,7 @@ func (pn *PropfindProps) UnmarshalXML(d *xml.Decoder, start xml.StartElement) er
 // http://www.webdav.org/specs/rfc4918.html#ELEMENT_propfind
 // <!ELEMENT propfind ( propname | (allprop, include?) | prop ) >
 type Propfind struct {
-	XMLName  xml.Name     `xml:"DAV: propfind"`
+	XMLName  xml.Name      `xml:"DAV: propfind"`
 	Allprop  *struct{}     `xml:"DAV: allprop"`
 	Propname *struct{}     `xml:"DAV: propname"`
 	Prop     PropfindProps `xml:"DAV: prop"`
@@ -290,7 +290,7 @@ type IxmlProperty struct {
 // See MultiStatusWriter for the "D:" namespace prefix.
 type XmlError struct {
 	XMLName  xml.Name `xml:"D:error"`
-	InnerXML []byte    `xml:",innerxml"`
+	InnerXML []byte   `xml:",innerxml"`
 }
 
 // http://www.webdav.org/specs/rfc4918.html#ELEMENT_propstat
@@ -343,7 +343,7 @@ func (ps SubPropstat) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 // http://www.webdav.org/specs/rfc4918.html#ELEMENT_response
 // See MultiStatusWriter for the "D:" namespace prefix.
 type Response struct {
-	XMLName             xml.Name     `xml:"D:response"`
+	XMLName             xml.Name      `xml:"D:response"`
 	Href                []string      `xml:"D:href"`
 	Propstat            []SubPropstat `xml:"D:propstat"`
 	Status              string        `xml:"D:status,omitempty"`
@@ -542,7 +542,7 @@ type SetRemove struct {
 
 // http://www.webdav.org/specs/rfc4918.html#ELEMENT_propertyupdate
 type PropertyUpdate struct {
-	XMLName   xml.Name   `xml:"DAV: propertyupdate"`
+	XMLName   xml.Name    `xml:"DAV: propertyupdate"`
 	Lang      string      `xml:"xml:lang,attr,omitempty"`
 	SetRemove []SetRemove `xml:",any"`
 }

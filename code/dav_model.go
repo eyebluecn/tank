@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"path"
 	"strconv"
-	"tank/code/dav"
-	"tank/code/dav/xml"
+	dav2 "tank/code/tool/dav"
+	xml2 "tank/code/tool/dav/xml"
 )
 
 //访问前缀，这个是特殊入口
@@ -19,7 +19,7 @@ type LiveProp struct {
 }
 
 //所有的动态属性定义及其值的获取方式
-var LivePropMap = map[xml.Name]LiveProp{
+var LivePropMap = map[xml2.Name]LiveProp{
 	{Space: "DAV:", Local: "resourcetype"}: {
 		findFn: func(user *User, matter *Matter) string {
 			if matter.Dir {
@@ -35,7 +35,7 @@ var LivePropMap = map[xml.Name]LiveProp{
 			if path.Clean("/"+matter.Name) == "/" {
 				return ""
 			} else {
-				return dav.EscapeXML(matter.Name)
+				return dav2.EscapeXML(matter.Name)
 			}
 		},
 		dir: true,
@@ -72,7 +72,7 @@ var LivePropMap = map[xml.Name]LiveProp{
 			if matter.Dir {
 				return ""
 			} else {
-				return dav.EscapeXML(matter.Name)
+				return dav2.EscapeXML(matter.Name)
 			}
 		},
 		dir: false,
