@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"runtime"
 	"sync"
 	"time"
 )
@@ -28,14 +29,25 @@ type Logger struct {
 //处理日志的统一方法。
 func (this *Logger) log(prefix string, format string, v ...interface{}) {
 
-	//控制台中打印日志
-	var consoleFormat = fmt.Sprintf("%s%s %s\r\n", prefix, ConvertTimeToTimeString(time.Now()), format)
-	fmt.Printf(consoleFormat, v...)
+	content := fmt.Sprintf(format+"\r\n", v...)
+
+	//控制台中打印日志，记录行号。
+	_, file, line, ok := runtime.Caller(2)
+	if !ok {
+		file = "???"
+		line = 0
+	}
+
+	var consoleFormat = fmt.Sprintf("%s%s %s:%d %s", prefix, ConvertTimeToTimeString(time.Now()), GetFilenameOfPath(file), line, content)
+	fmt.Printf(consoleFormat)
 
 	this.goLogger.SetPrefix(prefix)
+
 	//每一行我们加上换行符
-	var fileFormat = fmt.Sprintf("%s\r\n", format)
-	this.goLogger.Printf(fileFormat, v...)
+	err := this.goLogger.Output(3, content)
+	if err != nil {
+		fmt.Printf("occur error while logging %s \r\n", err.Error())
+	}
 }
 
 //处理日志的统一方法。
