@@ -3,7 +3,7 @@ package code
 import (
 	"net/http"
 	"strconv"
-	result2 "tank/code/tool/result"
+	"tank/code/tool/result"
 )
 
 type FootprintController struct {
@@ -43,11 +43,11 @@ func (this *FootprintController) RegisterRoutes() map[string]func(writer http.Re
 }
 
 //查看详情。
-func (this *FootprintController) Detail(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
+func (this *FootprintController) Detail(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	uuid := request.FormValue("uuid")
 	if uuid == "" {
-		panic(result2.BadRequest("图片缓存的uuid必填"))
+		panic(result.BadRequest("图片缓存的uuid必填"))
 	}
 
 	footprint := this.footprintService.Detail(uuid)
@@ -65,7 +65,7 @@ func (this *FootprintController) Detail(writer http.ResponseWriter, request *htt
 }
 
 //按照分页的方式查询
-func (this *FootprintController) Page(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
+func (this *FootprintController) Page(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	//如果是根目录，那么就传入root.
 	pageStr := request.FormValue("page")
@@ -109,11 +109,11 @@ func (this *FootprintController) Page(writer http.ResponseWriter, request *http.
 }
 
 //删除一条记录
-func (this *FootprintController) Delete(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
+func (this *FootprintController) Delete(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	uuid := request.FormValue("uuid")
 	if uuid == "" {
-		panic(result2.BadRequest("uuid必填"))
+		panic(result.BadRequest("uuid必填"))
 	}
 
 	footprint := this.footprintDao.FindByUuid(uuid)

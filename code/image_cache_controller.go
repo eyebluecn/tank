@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	result2 "tank/code/tool/result"
+	"tank/code/tool/result"
 )
 
 type ImageCacheController struct {
@@ -45,11 +45,11 @@ func (this *ImageCacheController) RegisterRoutes() map[string]func(writer http.R
 }
 
 //查看某个图片缓存的详情。
-func (this *ImageCacheController) Detail(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
+func (this *ImageCacheController) Detail(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	uuid := request.FormValue("uuid")
 	if uuid == "" {
-		panic(result2.BadRequest("图片缓存的uuid必填"))
+		panic(result.BadRequest("图片缓存的uuid必填"))
 	}
 
 	imageCache := this.imageCacheService.Detail(uuid)
@@ -67,7 +67,7 @@ func (this *ImageCacheController) Detail(writer http.ResponseWriter, request *ht
 }
 
 //按照分页的方式获取某个图片缓存夹下图片缓存和子图片缓存夹的列表，通常情况下只有一页。
-func (this *ImageCacheController) Page(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
+func (this *ImageCacheController) Page(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 	//如果是根目录，那么就传入root.
 	pageStr := request.FormValue("page")
 	pageSizeStr := request.FormValue("pageSize")
@@ -123,11 +123,11 @@ func (this *ImageCacheController) Page(writer http.ResponseWriter, request *http
 }
 
 //删除一个图片缓存
-func (this *ImageCacheController) Delete(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
+func (this *ImageCacheController) Delete(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	uuid := request.FormValue("uuid")
 	if uuid == "" {
-		panic(result2.BadRequest("图片缓存的uuid必填"))
+		panic(result.BadRequest("图片缓存的uuid必填"))
 	}
 
 	imageCache := this.imageCacheDao.FindByUuid(uuid)
@@ -136,7 +136,7 @@ func (this *ImageCacheController) Delete(writer http.ResponseWriter, request *ht
 	user := this.checkUser(writer, request)
 	if user.Role != USER_ROLE_ADMINISTRATOR && imageCache.UserUuid != user.Uuid {
 
-		panic(result2.Unauthorized("没有权限"))
+		panic(result.Unauthorized("没有权限"))
 	}
 
 	this.imageCacheDao.Delete(imageCache)
@@ -145,11 +145,11 @@ func (this *ImageCacheController) Delete(writer http.ResponseWriter, request *ht
 }
 
 //删除一系列图片缓存。
-func (this *ImageCacheController) DeleteBatch(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
+func (this *ImageCacheController) DeleteBatch(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	uuids := request.FormValue("uuids")
 	if uuids == "" {
-		panic(result2.BadRequest("图片缓存的uuids必填"))
+		panic(result.BadRequest("图片缓存的uuids必填"))
 	}
 
 	uuidArray := strings.Split(uuids, ",")
@@ -161,7 +161,7 @@ func (this *ImageCacheController) DeleteBatch(writer http.ResponseWriter, reques
 		//判断图片缓存的所属人是否正确
 		user := this.checkUser(writer, request)
 		if user.Role != USER_ROLE_ADMINISTRATOR && imageCache.UserUuid != user.Uuid {
-			panic(result2.Unauthorized("没有权限"))
+			panic(result.Unauthorized("没有权限"))
 		}
 
 		this.imageCacheDao.Delete(imageCache)

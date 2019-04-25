@@ -12,7 +12,7 @@ import (
 	"regexp"
 	"strconv"
 	"tank/code/config"
-	result2 "tank/code/tool/result"
+	"tank/code/tool/result"
 	"tank/code/tool/util"
 	"time"
 )
@@ -130,7 +130,7 @@ func (this *InstallController) getCreateSQLFromFile(tableName string) string {
 	filePath := homePath + "/db/" + tableName + ".sql"
 	exists, err := util.PathExists(filePath)
 	if err != nil {
-		panic(result2.Server("从安装目录判断建表语句文件是否存在时出错！"))
+		panic(result.Server("从安装目录判断建表语句文件是否存在时出错！"))
 	}
 
 	//2. 从GOPATH下面去找，因为可能是开发环境
@@ -142,11 +142,11 @@ func (this *InstallController) getCreateSQLFromFile(tableName string) string {
 		filePath = build.Default.GOPATH + "/src/tank/build/db/" + tableName + ".sql"
 		exists, err = util.PathExists(filePath)
 		if err != nil {
-			panic(result2.Server("从GOPATH判断建表语句文件是否存在时出错！"))
+			panic(result.Server("从GOPATH判断建表语句文件是否存在时出错！"))
 		}
 
 		if !exists {
-			panic(result2.Server("%s 或 %s 均不存在，请检查你的安装情况。", filePath1, filePath))
+			panic(result.Server("%s 或 %s 均不存在，请检查你的安装情况。", filePath1, filePath))
 		}
 	}
 
@@ -219,17 +219,17 @@ func (this *InstallController) validateTableMetaList(tableInfoList []*InstallTab
 					strs = append(strs, v.DBName)
 				}
 
-				panic(result2.BadRequest(fmt.Sprintf("%s 表的以下字段缺失：%v", tableInfo.Name, strs)))
+				panic(result.BadRequest(fmt.Sprintf("%s 表的以下字段缺失：%v", tableInfo.Name, strs)))
 			}
 		} else {
-			panic(result2.BadRequest(tableInfo.Name + "表不存在"))
+			panic(result.BadRequest(tableInfo.Name + "表不存在"))
 		}
 	}
 
 }
 
 //验证数据库连接
-func (this *InstallController) Verify(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
+func (this *InstallController) Verify(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	db := this.openDbConnection(writer, request)
 	defer this.closeDbConnection(db)
@@ -242,7 +242,7 @@ func (this *InstallController) Verify(writer http.ResponseWriter, request *http.
 }
 
 //获取需要安装的数据库表
-func (this *InstallController) TableInfoList(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
+func (this *InstallController) TableInfoList(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	db := this.openDbConnection(writer, request)
 	defer this.closeDbConnection(db)
@@ -251,7 +251,7 @@ func (this *InstallController) TableInfoList(writer http.ResponseWriter, request
 }
 
 //创建缺失数据库和表
-func (this *InstallController) CreateTable(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
+func (this *InstallController) CreateTable(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	var tableNames = []IBase{&Dashboard{}, &DownloadToken{}, &Footprint{}, &ImageCache{}, &Matter{}, &Preference{}, &Session{}, &UploadToken{}, &User{}}
 	var installTableInfos []*InstallTableInfo
@@ -280,7 +280,7 @@ func (this *InstallController) CreateTable(writer http.ResponseWriter, request *
 }
 
 //获取管理员列表(10条记录)
-func (this *InstallController) AdminList(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
+func (this *InstallController) AdminList(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	db := this.openDbConnection(writer, request)
 	defer this.closeDbConnection(db)
@@ -298,7 +298,7 @@ func (this *InstallController) AdminList(writer http.ResponseWriter, request *ht
 }
 
 //创建管理员
-func (this *InstallController) CreateAdmin(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
+func (this *InstallController) CreateAdmin(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	db := this.openDbConnection(writer, request)
 	defer this.closeDbConnection(db)
@@ -309,15 +309,15 @@ func (this *InstallController) CreateAdmin(writer http.ResponseWriter, request *
 
 	//验证超级管理员的信息
 	if m, _ := regexp.MatchString(`^[0-9a-zA-Z_]+$`, adminUsername); !m {
-		panic(result2.BadRequest(`超级管理员用户名必填，且只能包含字母，数字和'_''`))
+		panic(result.BadRequest(`超级管理员用户名必填，且只能包含字母，数字和'_''`))
 	}
 
 	if len(adminPassword) < 6 {
-		panic(result2.BadRequest(`超级管理员密码长度至少为6位`))
+		panic(result.BadRequest(`超级管理员密码长度至少为6位`))
 	}
 
 	if adminEmail == "" {
-		panic(result2.BadRequest(`超级管理员邮箱必填`))
+		panic(result.BadRequest(`超级管理员邮箱必填`))
 	}
 
 	//检查是否有重复。
@@ -325,14 +325,14 @@ func (this *InstallController) CreateAdmin(writer http.ResponseWriter, request *
 	db1 := db.Model(&User{}).Where("email = ?", adminEmail).Count(&count1)
 	this.PanicError(db1.Error)
 	if count1 > 0 {
-		panic(result2.BadRequest(`该邮箱已存在`))
+		panic(result.BadRequest(`该邮箱已存在`))
 	}
 
 	var count2 int64
 	db2 := db.Model(&User{}).Where("username = ?", adminUsername).Count(&count2)
 	this.PanicError(db2.Error)
 	if count2 > 0 {
-		panic(result2.BadRequest(`该用户名已存在`))
+		panic(result.BadRequest(`该用户名已存在`))
 	}
 
 	user := &User{}
@@ -359,7 +359,7 @@ func (this *InstallController) CreateAdmin(writer http.ResponseWriter, request *
 }
 
 //(如果数据库中本身存在管理员了)验证管理员
-func (this *InstallController) ValidateAdmin(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
+func (this *InstallController) ValidateAdmin(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	db := this.openDbConnection(writer, request)
 	defer this.closeDbConnection(db)
@@ -369,24 +369,24 @@ func (this *InstallController) ValidateAdmin(writer http.ResponseWriter, request
 
 	//验证超级管理员的信息
 	if adminEmail == "" {
-		panic(result2.BadRequest(`超级管理员邮箱必填`))
+		panic(result.BadRequest(`超级管理员邮箱必填`))
 	}
 	if len(adminPassword) < 6 {
-		panic(result2.BadRequest(`超级管理员密码长度至少为6位`))
+		panic(result.BadRequest(`超级管理员密码长度至少为6位`))
 	}
 
 	var existEmailUser = &User{}
 	db = db.Where(&User{Email: adminEmail}).First(existEmailUser)
 	if db.Error != nil {
-		panic(result2.BadRequest(fmt.Sprintf("%s对应的用户不存在", adminEmail)))
+		panic(result.BadRequest(fmt.Sprintf("%s对应的用户不存在", adminEmail)))
 	}
 
 	if !util.MatchBcrypt(adminPassword, existEmailUser.Password) {
-		panic(result2.BadRequest("邮箱或密码错误"))
+		panic(result.BadRequest("邮箱或密码错误"))
 	}
 
 	if existEmailUser.Role != USER_ROLE_ADMINISTRATOR {
-		panic(result2.BadRequest("该账号不是管理员"))
+		panic(result.BadRequest("该账号不是管理员"))
 	}
 
 	return this.Success("OK")
@@ -394,7 +394,7 @@ func (this *InstallController) ValidateAdmin(writer http.ResponseWriter, request
 }
 
 //完成系统安装
-func (this *InstallController) Finish(writer http.ResponseWriter, request *http.Request) *result2.WebResult {
+func (this *InstallController) Finish(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	mysqlPortStr := request.FormValue("mysqlPort")
 	mysqlHost := request.FormValue("mysqlHost")
@@ -422,7 +422,7 @@ func (this *InstallController) Finish(writer http.ResponseWriter, request *http.
 	db1 := db.Model(&User{}).Where("role = ?", USER_ROLE_ADMINISTRATOR).Count(&count1)
 	this.PanicError(db1.Error)
 	if count1 == 0 {
-		panic(result2.BadRequest(`请至少配置一名管理员`))
+		panic(result.BadRequest(`请至少配置一名管理员`))
 	}
 
 	var configItem = &config.ConfigItem{
