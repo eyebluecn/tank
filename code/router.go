@@ -10,7 +10,7 @@ import (
 	"tank/code/config"
 	"tank/code/logger"
 	"tank/code/result"
-	"tank/code/tool"
+	"tank/code/util"
 	"time"
 )
 
@@ -108,7 +108,7 @@ func (this *Router) GlobalPanicHandler(writer http.ResponseWriter, request *http
 		}
 
 		//错误情况记录。
-		go tool.SafeMethod(func() {
+		go util.SafeMethod(func() {
 			this.footprintService.Trace(writer, request, time.Now().Sub(startTime), false)
 		})
 	}
@@ -157,7 +157,7 @@ func (this *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 			}
 
 			//正常的访问记录会落到这里。
-			go tool.SafeMethod(func() {
+			go util.SafeMethod(func() {
 				this.footprintService.Trace(writer, request, time.Now().Sub(startTime), true)
 			})
 
@@ -172,7 +172,7 @@ func (this *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 
 	} else {
 		//当作静态资源处理。默认从当前文件下面的static文件夹中取东西。
-		dir := tool.GetHtmlPath()
+		dir := util.GetHtmlPath()
 
 		requestURI := request.RequestURI
 		if requestURI == "" || request.RequestURI == "/" {
@@ -180,16 +180,16 @@ func (this *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 		}
 
 		filePath := dir + requestURI
-		exists, _ := tool.PathExists(filePath)
+		exists, _ := util.PathExists(filePath)
 		if !exists {
 			filePath = dir + "/index.html"
-			exists, _ = tool.PathExists(filePath)
+			exists, _ = util.PathExists(filePath)
 			if !exists {
 				panic(fmt.Sprintf("404 not found:%s", filePath))
 			}
 		}
 
-		writer.Header().Set("Content-Type", tool.GetMimeType(tool.GetExtension(filePath)))
+		writer.Header().Set("Content-Type", util.GetMimeType(util.GetExtension(filePath)))
 
 		diskFile, err := os.Open(filePath)
 		if err != nil {

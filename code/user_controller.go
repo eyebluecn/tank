@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"tank/code/config"
 	"tank/code/result"
-	"tank/code/tool"
+	"tank/code/util"
 
 	"time"
 )
@@ -60,7 +60,7 @@ func (this *UserController) Login(writer http.ResponseWriter, request *http.Requ
 		panic(result.BadRequest("邮箱或密码错误"))
 
 	} else {
-		if !tool.MatchBcrypt(password, user.Password) {
+		if !util.MatchBcrypt(password, user.Password) {
 
 			panic(result.BadRequest("邮箱或密码错误"))
 		}
@@ -73,7 +73,7 @@ func (this *UserController) Login(writer http.ResponseWriter, request *http.Requ
 	//持久化用户的session.
 	session := &Session{
 		UserUuid:   user.Uuid,
-		Ip:         tool.GetIpAddress(request),
+		Ip:         util.GetIpAddress(request),
 		ExpireTime: expiration,
 	}
 	session.UpdateTime = time.Now()
@@ -90,7 +90,7 @@ func (this *UserController) Login(writer http.ResponseWriter, request *http.Requ
 
 	//更新用户上次登录时间和ip
 	user.LastTime = time.Now()
-	user.LastIp = tool.GetIpAddress(request)
+	user.LastIp = util.GetIpAddress(request)
 	this.userDao.Save(user)
 
 	return this.Success(user)
@@ -144,7 +144,7 @@ func (this *UserController) Create(writer http.ResponseWriter, request *http.Req
 	user := &User{
 		Role:      GetRole(role),
 		Username:  username,
-		Password:  tool.GetBcrypt(password),
+		Password:  util.GetBcrypt(password),
 		Email:     email,
 		Phone:     phone,
 		Gender:    gender,
@@ -364,11 +364,11 @@ func (this *UserController) ChangePassword(writer http.ResponseWriter, request *
 		return this.Success(user)
 	}
 
-	if !tool.MatchBcrypt(oldPassword, user.Password) {
+	if !util.MatchBcrypt(oldPassword, user.Password) {
 		panic(result.BadRequest("旧密码不正确！"))
 	}
 
-	user.Password = tool.GetBcrypt(newPassword)
+	user.Password = util.GetBcrypt(newPassword)
 
 	user = this.userDao.Save(user)
 
@@ -395,7 +395,7 @@ func (this *UserController) ResetPassword(writer http.ResponseWriter, request *h
 
 	user := this.userDao.CheckByUuid(userUuid)
 
-	user.Password = tool.GetBcrypt(password)
+	user.Password = util.GetBcrypt(password)
 
 	user = this.userDao.Save(user)
 

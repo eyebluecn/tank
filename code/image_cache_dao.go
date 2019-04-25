@@ -6,7 +6,7 @@ import (
 	"github.com/nu7hatch/gouuid"
 	"os"
 	"path/filepath"
-	"tank/code/tool"
+	"tank/code/util"
 	"time"
 )
 
@@ -152,7 +152,7 @@ func (this *ImageCacheDao) deleteFileAndDir(imageCache *ImageCache) {
 	}
 
 	//如果这一层文件夹是空的，那么删除文件夹本身。
-	tool.DeleteEmptyDirRecursive(dirPath)
+	util.DeleteEmptyDirRecursive(dirPath)
 
 }
 

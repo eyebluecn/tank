@@ -6,7 +6,7 @@ import (
 	"os"
 	"tank/code/config"
 	"tank/code/result"
-	"tank/code/tool"
+	"tank/code/util"
 	"time"
 )
 
@@ -285,7 +285,7 @@ func (this *MatterDao) Delete(matter *Matter) {
 		this.PanicError(db.Error)
 
 		//从磁盘中删除该文件夹。
-		tool.DeleteEmptyDir(matter.AbsolutePath())
+		util.DeleteEmptyDir(matter.AbsolutePath())
 
 	} else {
 

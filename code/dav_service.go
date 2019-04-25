@@ -10,7 +10,7 @@ import (
 	"tank/code/dav"
 	"tank/code/dav/xml"
 	"tank/code/result"
-	"tank/code/tool"
+	"tank/code/util"
 )
 
 /**
@@ -224,8 +224,8 @@ func (this *DavService) HandlePut(writer http.ResponseWriter, request *http.Requ
 
 	fmt.Printf("PUT %s\n", subPath)
 
-	filename := tool.GetFilenameOfPath(subPath)
-	dirPath := tool.GetDirOfPath(subPath)
+	filename := util.GetFilenameOfPath(subPath)
+	dirPath := util.GetDirOfPath(subPath)
 
 	//寻找符合条件的matter.
 	dirMatter := this.matterDao.CheckWithRootByPath(dirPath, user)
@@ -256,8 +256,8 @@ func (this *DavService) HandleMkcol(writer http.ResponseWriter, request *http.Re
 
 	fmt.Printf("MKCOL %s\n", subPath)
 
-	thisDirName := tool.GetFilenameOfPath(subPath)
-	dirPath := tool.GetDirOfPath(subPath)
+	thisDirName := util.GetFilenameOfPath(subPath)
+	dirPath := util.GetDirOfPath(subPath)
 
 	//寻找符合条件的matter.
 	dirMatter := this.matterDao.CheckWithRootByPath(dirPath, user)
@@ -341,9 +341,9 @@ func (this *DavService) prepareMoveCopy(
 		panic(result.BadRequest("目标前缀必须为：%s", WEBDAV_PREFFIX))
 	}
 
-	destinationName = tool.GetFilenameOfPath(destinationPath)
-	destinationDirPath = tool.GetDirOfPath(destinationPath)
-	srcDirPath = tool.GetDirOfPath(subPath)
+	destinationName = util.GetFilenameOfPath(destinationPath)
+	destinationDirPath = util.GetDirOfPath(destinationPath)
+	srcDirPath = util.GetDirOfPath(subPath)
 
 	overwrite = false
 	if overwriteStr == "T" {

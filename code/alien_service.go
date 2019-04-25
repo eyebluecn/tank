@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"tank/code/result"
-	"tank/code/tool"
+	"tank/code/util"
 	"time"
 )
 
@@ -134,7 +134,7 @@ func (this *AlienService) PreviewOrDownload(
 	}
 
 	//文件下载次数加一，为了加快访问速度，异步进行
-	go tool.SafeMethod(func() {
+	go util.SafeMethod(func() {
 		this.matterDao.TimesIncrement(uuid)
 	})
 

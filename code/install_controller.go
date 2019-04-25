@@ -13,7 +13,7 @@ import (
 	"strconv"
 	"tank/code/config"
 	"tank/code/result"
-	"tank/code/tool"
+	"tank/code/util"
 	"time"
 )
 
@@ -97,7 +97,7 @@ func (this *InstallController) openDbConnection(writer http.ResponseWriter, requ
 		mysqlPort = tmp
 	}
 
-	mysqlUrl := tool.GetMysqlUrl(mysqlPort, mysqlHost, mysqlSchema, mysqlUsername, mysqlPassword)
+	mysqlUrl := util.GetMysqlUrl(mysqlPort, mysqlHost, mysqlSchema, mysqlUsername, mysqlPassword)
 
 	this.logger.Info("连接MySQL %s", mysqlUrl)
 
@@ -126,9 +126,9 @@ func (this *InstallController) closeDbConnection(db *gorm.DB) {
 func (this *InstallController) getCreateSQLFromFile(tableName string) string {
 
 	//1. 从当前安装目录db下去寻找建表文件。
-	homePath := tool.GetHomePath()
+	homePath := util.GetHomePath()
 	filePath := homePath + "/db/" + tableName + ".sql"
-	exists, err := tool.PathExists(filePath)
+	exists, err := util.PathExists(filePath)
 	if err != nil {
 		panic(result.Server("从安装目录判断建表语句文件是否存在时出错！"))
 	}
@@ -140,7 +140,7 @@ func (this *InstallController) getCreateSQLFromFile(tableName string) string {
 
 		filePath1 := filePath
 		filePath = build.Default.GOPATH + "/src/tank/build/db/" + tableName + ".sql"
-		exists, err = tool.PathExists(filePath)
+		exists, err = util.PathExists(filePath)
 		if err != nil {
 			panic(result.Server("从GOPATH判断建表语句文件是否存在时出错！"))
 		}
@@ -344,7 +344,7 @@ func (this *InstallController) CreateAdmin(writer http.ResponseWriter, request *
 	user.Sort = time.Now().UnixNano() / 1e6
 	user.Role = USER_ROLE_ADMINISTRATOR
 	user.Username = adminUsername
-	user.Password = tool.GetBcrypt(adminPassword)
+	user.Password = util.GetBcrypt(adminPassword)
 	user.Email = adminEmail
 	user.Phone = ""
 	user.Gender = USER_GENDER_UNKNOWN
@@ -381,7 +381,7 @@ func (this *InstallController) ValidateAdmin(writer http.ResponseWriter, request
 		panic(result.BadRequest(fmt.Sprintf("%s对应的用户不存在", adminEmail)))
 	}
 
-	if !tool.MatchBcrypt(adminPassword, existEmailUser.Password) {
+	if !util.MatchBcrypt(adminPassword, existEmailUser.Password) {
 		panic(result.BadRequest("邮箱或密码错误"))
 	}
 
@@ -447,7 +447,7 @@ func (this *InstallController) Finish(writer http.ResponseWriter, request *http.
 	jsonStr, _ := jsoniter.ConfigCompatibleWithStandardLibrary.MarshalIndent(configItem, "", " ")
 
 	//写入到配置文件中（不能使用os.O_APPEND 否则会追加）
-	filePath := tool.GetConfPath() + "/tank.json"
+	filePath := util.GetConfPath() + "/tank.json"
 	f, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE, 0777)
 	this.PanicError(err)
 	_, err = f.Write(jsonStr)

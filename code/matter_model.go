@@ -3,7 +3,7 @@ package code
 import (
 	"fmt"
 	"tank/code/config"
-	"tank/code/tool"
+	"tank/code/util"
 )
 
 const (
@@ -48,7 +48,7 @@ func (this *Matter) AbsolutePath() string {
 
 // 获取该Matter的MimeType
 func (this *Matter) MimeType() string {
-	return tool.GetMimeType(tool.GetExtension(this.Name))
+	return util.GetMimeType(util.GetExtension(this.Name))
 }
 
 

@@ -6,7 +6,7 @@ import (
 	"os"
 	"runtime"
 	"sync"
-	"tank/code/tool"
+	"tank/code/util"
 	"time"
 )
 
@@ -39,7 +39,7 @@ func (this *Logger) log(prefix string, format string, v ...interface{}) {
 		line = 0
 	}
 
-	var consoleFormat = fmt.Sprintf("%s%s %s:%d %s", prefix, tool.ConvertTimeToTimeString(time.Now()), tool.GetFilenameOfPath(file), line, content)
+	var consoleFormat = fmt.Sprintf("%s%s %s:%d %s", prefix, util.ConvertTimeToTimeString(time.Now()), util.GetFilenameOfPath(file), line, content)
 	fmt.Printf(consoleFormat)
 
 	this.goLogger.SetPrefix(prefix)
@@ -78,12 +78,12 @@ func (this *Logger) Init() {
 	this.openFile()
 
 	//日志需要自我备份，自我维护。明天第一秒触发
-	nextTime := tool.FirstSecondOfDay(tool.Tomorrow())
+	nextTime := util.FirstSecondOfDay(util.Tomorrow())
 	duration := nextTime.Sub(time.Now())
 
-	this.Info("下一次日志维护时间%s 距当前 %ds ", tool.ConvertTimeToDateTimeString(nextTime), duration/time.Second)
+	this.Info("下一次日志维护时间%s 距当前 %ds ", util.ConvertTimeToDateTimeString(nextTime), duration/time.Second)
 	this.maintainTimer = time.AfterFunc(duration, func() {
-		go tool.SafeMethod(this.maintain)
+		go util.SafeMethod(this.maintain)
 	})
 
 }
@@ -100,7 +100,7 @@ func (this *Logger) maintain() {
 	this.closeFile()
 
 	//日志归类到昨天
-	destPath := tool.GetLogPath() + "/tank-" + tool.Yesterday().Local().Format("2006-01-02") + ".log"
+	destPath := util.GetLogPath() + "/tank-" + util.Yesterday().Local().Format("2006-01-02") + ".log"
 
 	//直接重命名文件
 	err := os.Rename(this.fileName(), destPath)
@@ -113,17 +113,17 @@ func (this *Logger) maintain() {
 
 	//准备好下次维护日志的时间。
 	now := time.Now()
-	nextTime := tool.FirstSecondOfDay(tool.Tomorrow())
+	nextTime := util.FirstSecondOfDay(util.Tomorrow())
 	duration := nextTime.Sub(now)
-	this.Info("下次维护时间：%s ", tool.ConvertTimeToDateTimeString(nextTime))
+	this.Info("下次维护时间：%s ", util.ConvertTimeToDateTimeString(nextTime))
 	this.maintainTimer = time.AfterFunc(duration, func() {
-		go tool.SafeMethod(this.maintain)
+		go util.SafeMethod(this.maintain)
 	})
 }
 
 //日志名称
 func (this *Logger) fileName() string {
-	return tool.GetLogPath() + "/tank.log"
+	return util.GetLogPath() + "/tank.log"
 }
 
 //打开日志文件

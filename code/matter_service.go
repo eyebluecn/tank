@@ -8,7 +8,7 @@ import (
 	"strings"
 	"tank/code/download"
 	"tank/code/result"
-	"tank/code/tool"
+	"tank/code/util"
 )
 
 /**
@@ -113,10 +113,10 @@ func (this *MatterService) Upload(file io.Reader, user *User, dirMatter *Matter,
 	fileRelativePath := dirRelativePath + "/" + filename
 
 	//创建父文件夹
-	tool.MakeDirAll(dirAbsolutePath)
+	util.MakeDirAll(dirAbsolutePath)
 
 	//如果文件已经存在了，那么直接覆盖。
-	exist, err := tool.PathExists(fileAbsolutePath)
+	exist, err := util.PathExists(fileAbsolutePath)
 	this.PanicError(err)
 	if exist {
 		this.logger.Error("%s已经存在，将其删除", fileAbsolutePath)
@@ -135,7 +135,7 @@ func (this *MatterService) Upload(file io.Reader, user *User, dirMatter *Matter,
 	fileSize, err := io.Copy(destFile, file)
 	this.PanicError(err)
 
-	this.logger.Info("上传文件 %s 大小为 %v ", filename, tool.HumanFileSize(fileSize))
+	this.logger.Info("上传文件 %s 大小为 %v ", filename, util.HumanFileSize(fileSize))
 
 	//判断用户自身上传大小的限制。
 	if user.SizeLimit >= 0 {
@@ -144,7 +144,7 @@ func (this *MatterService) Upload(file io.Reader, user *User, dirMatter *Matter,
 			err = os.Remove(fileAbsolutePath)
 			this.PanicError(err)
 
-			panic(result.BadRequest("文件大小超出限制 %s > %s ", tool.HumanFileSize(user.SizeLimit), tool.HumanFileSize(fileSize)))
+			panic(result.BadRequest("文件大小超出限制 %s > %s ", util.HumanFileSize(user.SizeLimit), util.HumanFileSize(fileSize)))
 		}
 	}
 
@@ -235,7 +235,7 @@ func (this *MatterService) createDirectory(dirMatter *Matter, name string, user 
 	relativePath := dirMatter.Path + "/" + name
 
 	//磁盘中创建文件夹。
-	dirPath := tool.MakeDirAll(absolutePath)
+	dirPath := util.MakeDirAll(absolutePath)
 	this.logger.Info("Create Directory: %s", dirPath)
 
 	//数据库中创建文件夹。
@@ -446,7 +446,7 @@ func (this *MatterService) copy(srcMatter *Matter, destDirMatter *Matter, name s
 		srcAbsolutePath := srcMatter.AbsolutePath()
 
 		//物理文件进行复制
-		tool.CopyFile(srcAbsolutePath, destAbsolutePath)
+		util.CopyFile(srcAbsolutePath, destAbsolutePath)
 
 		//创建新文件的数据库信息。
 		newMatter := &Matter{
@@ -524,8 +524,8 @@ func (this *MatterService) AtomicRename(matter *Matter, name string, user *User)
 		//如果源是文件夹
 
 		oldAbsolutePath := matter.AbsolutePath()
-		absoluteDirPath := tool.GetDirOfPath(oldAbsolutePath)
-		relativeDirPath := tool.GetDirOfPath(matter.Path)
+		absoluteDirPath := util.GetDirOfPath(oldAbsolutePath)
+		relativeDirPath := util.GetDirOfPath(matter.Path)
 		newAbsolutePath := absoluteDirPath + "/" + name
 
 		//物理文件一口气移动
@@ -547,8 +547,8 @@ func (this *MatterService) AtomicRename(matter *Matter, name string, user *User)
 		//如果源是普通文件
 
 		oldAbsolutePath := matter.AbsolutePath()
-		absoluteDirPath := tool.GetDirOfPath(oldAbsolutePath)
-		relativeDirPath := tool.GetDirOfPath(matter.Path)
+		absoluteDirPath := util.GetDirOfPath(oldAbsolutePath)
+		relativeDirPath := util.GetDirOfPath(matter.Path)
 		newAbsolutePath := absoluteDirPath + "/" + name
 
 		//物理文件进行移动

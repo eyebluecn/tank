@@ -4,7 +4,7 @@ import (
 	"github.com/json-iterator/go"
 	"io/ioutil"
 	"tank/code/logger"
-	"tank/code/tool"
+	"tank/code/util"
 	"time"
 	"unsafe"
 )
@@ -133,7 +133,7 @@ func (this *Config) Init() {
 func (this *Config) ReadFromConfigFile() {
 
 	//读取配置文件
-	filePath := tool.GetConfPath() + "/tank.json"
+	filePath := util.GetConfPath() + "/tank.json"
 	content, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		logger.LOGGER.Warn("无法找到配置文件：%s 即将进入安装过程！", filePath)
@@ -158,18 +158,18 @@ func (this *Config) ReadFromConfigFile() {
 
 		//使用配置项中的文件路径
 		if this.Item.MatterPath == "" {
-			this.MatterPath = tool.GetHomePath() + "/matter"
+			this.MatterPath = util.GetHomePath() + "/matter"
 		} else {
 			this.MatterPath = this.Item.MatterPath
 		}
-		tool.MakeDirAll(CONFIG.MatterPath)
+		util.MakeDirAll(CONFIG.MatterPath)
 
 		//使用配置项中的端口
 		if this.Item.ServerPort != 0 {
 			this.ServerPort = this.Item.ServerPort
 		}
 
-		this.MysqlUrl = tool.GetMysqlUrl(this.Item.MysqlPort, this.Item.MysqlHost, this.Item.MysqlSchema, this.Item.MysqlUsername, this.Item.MysqlPassword)
+		this.MysqlUrl = util.GetMysqlUrl(this.Item.MysqlPort, this.Item.MysqlHost, this.Item.MysqlSchema, this.Item.MysqlUsername, this.Item.MysqlPassword)
 		this.Installed = true
 
 		logger.LOGGER.Info("使用配置文件：%s", filePath)

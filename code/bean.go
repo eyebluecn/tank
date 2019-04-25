@@ -5,7 +5,7 @@ import (
 	"tank/code/config"
 	"tank/code/logger"
 	"tank/code/result"
-	"tank/code/tool"
+	"tank/code/util"
 )
 
 type IBean interface {
@@ -48,7 +48,7 @@ func (this *Bean) findUser(writer http.ResponseWriter, request *http.Request) *U
 
 	//验证用户是否已经登录。
 	//登录身份有效期以数据库中记录的为准
-	sessionId := tool.GetSessionUuidFromRequest(request, config.COOKIE_AUTH_KEY)
+	sessionId := util.GetSessionUuidFromRequest(request, config.COOKIE_AUTH_KEY)
 	if sessionId == "" {
 		return nil
 	}

@@ -3,7 +3,7 @@ package code
 import (
 	"net/http"
 	"tank/code/result"
-	"tank/code/tool"
+	"tank/code/util"
 )
 
 type PreferenceController struct {
@@ -91,7 +91,7 @@ func (this *PreferenceController) SystemCleanup(writer http.ResponseWriter, requ
 	user := this.checkUser(writer, request)
 	password := request.FormValue("password")
 
-	if !tool.MatchBcrypt(password, user.Password) {
+	if !util.MatchBcrypt(password, user.Password) {
 		panic(result.BadRequest("密码错误，不能执行！"))
 	}
 

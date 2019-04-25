@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"tank/code/config"
-	"tank/code/tool"
+	"tank/code/util"
 	"time"
 )
 
@@ -65,7 +65,7 @@ func (this *FootprintService) Trace(writer http.ResponseWriter, request *http.Re
 
 	//将文件信息存入数据库中。
 	footprint := &Footprint{
-		Ip:      tool.GetIpAddress(request),
+		Ip:      util.GetIpAddress(request),
 		Host:    request.Host,
 		Uri:     request.URL.Path,
 		Params:  paramsString,

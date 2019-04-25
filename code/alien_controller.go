@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strconv"
 	"tank/code/result"
-	"tank/code/tool"
+	"tank/code/util"
 	"time"
 )
 
@@ -130,7 +130,7 @@ func (this *AlienController) CheckRequestUser(writer http.ResponseWriter, reques
 	if user == nil {
 		panic(`邮箱或密码错误`)
 	} else {
-		if !tool.MatchBcrypt(password, user.Password) {
+		if !util.MatchBcrypt(password, user.Password) {
 			panic(`邮箱或密码错误`)
 		}
 	}
@@ -210,7 +210,7 @@ func (this *AlienController) FetchUploadToken(writer http.ResponseWriter, reques
 		Filename:   filename,
 		Privacy:    privacy,
 		Size:       size,
-		Ip:         tool.GetIpAddress(request),
+		Ip:         util.GetIpAddress(request),
 	}
 
 	uploadToken = this.uploadTokenDao.Create(uploadToken)
@@ -403,7 +403,7 @@ func (this *AlienController) FetchDownloadToken(writer http.ResponseWriter, requ
 		UserUuid:   user.Uuid,
 		MatterUuid: matterUuid,
 		ExpireTime: time.Now().Add(mm),
-		Ip:         tool.GetIpAddress(request),
+		Ip:         util.GetIpAddress(request),
 	}
 
 	downloadToken = this.downloadTokenDao.Create(downloadToken)
