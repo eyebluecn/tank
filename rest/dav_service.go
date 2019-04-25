@@ -1,13 +1,14 @@
 package rest
 
 import (
-	"encoding/xml"
+
 	"fmt"
 	"net/http"
 	"net/url"
 	"regexp"
 	"strings"
 	"tank/rest/dav"
+	"tank/rest/dav/xml"
 )
 
 /**

@@ -1,12 +1,12 @@
 package rest
 
 import (
-	"encoding/xml"
 	"fmt"
 	"net/http"
 	"path"
 	"strconv"
 	"tank/rest/dav"
+	"tank/rest/dav/xml"
 )
 
 //访问前缀，这个是特殊入口
