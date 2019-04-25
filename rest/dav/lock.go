@@ -415,31 +415,3 @@ func (b *byExpiry) Pop() interface{} {
 }
 
 const infiniteTimeout = -1
-
-// parseTimeout parses the Timeout HTTP header, as per section 10.7. If s is
-// empty, an infiniteTimeout is returned.
-func parseTimeout(s string) (time.Duration, error) {
-	if s == "" {
-		return infiniteTimeout, nil
-	}
-	if i := strings.IndexByte(s, ','); i >= 0 {
-		s = s[:i]
-	}
-	s = strings.TrimSpace(s)
-	if s == "Infinite" {
-		return infiniteTimeout, nil
-	}
-	const pre = "Second-"
-	if !strings.HasPrefix(s, pre) {
-		return 0, errInvalidTimeout
-	}
-	s = s[len(pre):]
-	if s == "" || s[0] < '0' || '9' < s[0] {
-		return 0, errInvalidTimeout
-	}
-	n, err := strconv.ParseInt(s, 10, 64)
-	if err != nil || 1<<32-1 < n {
-		return 0, errInvalidTimeout
-	}
-	return time.Duration(n) * time.Second, nil
-}

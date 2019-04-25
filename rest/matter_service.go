@@ -612,7 +612,7 @@ func (this *MatterService) CreateDirectories(user *User, dirPath string) *Matter
 func (this *MatterService) WrapDetail(matter *Matter) *Matter {
 
 	if matter == nil {
-		this.PanicBadRequest("matter cannot be nil.")
+		panic(result.BadRequest("matter cannot be nil."))
 	}
 
 	//组装file的内容，展示其父组件。

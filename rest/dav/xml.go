@@ -10,6 +10,7 @@ package dav
 import (
 	"bytes"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -35,6 +36,56 @@ import (
 	ixml "tank/rest/dav/internal/xml"
 )
 
+
+
+// http://www.webdav.org/specs/rfc4918.html#status.code.extensions.to.http11
+const (
+	StatusMulti               = 207
+	StatusUnprocessableEntity = 422
+	StatusLocked              = 423
+	StatusFailedDependency    = 424
+	StatusInsufficientStorage = 507
+)
+
+func StatusText(code int) string {
+	switch code {
+	case StatusMulti:
+		return "Multi-Status"
+	case StatusUnprocessableEntity:
+		return "Unprocessable Entity"
+	case StatusLocked:
+		return "Locked"
+	case StatusFailedDependency:
+		return "Failed Dependency"
+	case StatusInsufficientStorage:
+		return "Insufficient Storage"
+	}
+	return http.StatusText(code)
+}
+
+var (
+	errDestinationEqualsSource = errors.New("webdav: destination equals source")
+	errDirectoryNotEmpty       = errors.New("webdav: directory not empty")
+	errInvalidDepth            = errors.New("webdav: invalid depth")
+	errInvalidDestination      = errors.New("webdav: invalid destination")
+	errInvalidIfHeader         = errors.New("webdav: invalid If header")
+	errInvalidLockInfo         = errors.New("webdav: invalid lock info")
+	errInvalidLockToken        = errors.New("webdav: invalid lock token")
+	errInvalidPropfind         = errors.New("webdav: invalid propfind")
+	errInvalidProppatch        = errors.New("webdav: invalid proppatch")
+	errInvalidResponse         = errors.New("webdav: invalid response")
+	errInvalidTimeout          = errors.New("webdav: invalid timeout")
+	errNoFileSystem            = errors.New("webdav: no file system")
+	errNoLockSystem            = errors.New("webdav: no lock system")
+	errNotADirectory           = errors.New("webdav: not a directory")
+	errPrefixMismatch          = errors.New("webdav: prefix mismatch")
+	errRecursionTooDeep        = errors.New("webdav: recursion too deep")
+	errUnsupportedLockInfo     = errors.New("webdav: unsupported lock info")
+	errUnsupportedMethod       = errors.New("webdav: unsupported method")
+)
+
+
+
 // http://www.webdav.org/specs/rfc4918.html#ELEMENT_lockinfo
 type LockInfo struct {
 	XMLName   ixml.Name `xml:"lockinfo"`
@@ -49,26 +100,6 @@ type Owner struct {
 	InnerXML string `xml:",innerxml"`
 }
 
-func ReadLockInfo(r io.Reader) (li LockInfo, status int, err error) {
-	c := &CountingReader{reader: r}
-	if err = ixml.NewDecoder(c).Decode(&li); err != nil {
-		if err == io.EOF {
-			if c.n == 0 {
-				// An empty body means to refresh the lock.
-				// http://www.webdav.org/specs/rfc4918.html#refreshing-locks
-				return LockInfo{}, 0, nil
-			}
-			err = errInvalidLockInfo
-		}
-		return LockInfo{}, http.StatusBadRequest, err
-	}
-	// We only support exclusive (non-shared) write locks. In practice, these are
-	// the only types of locks that seem to matter.
-	if li.Exclusive == nil || li.Shared != nil || li.Write == nil {
-		return LockInfo{}, http.StatusNotImplemented, errUnsupportedLockInfo
-	}
-	return li, 0, nil
-}
 
 //这是一个带字节计数器的Reader，可以知道总共读取了多少个字节。
 type CountingReader struct {
