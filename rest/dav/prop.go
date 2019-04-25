@@ -6,12 +6,12 @@ package dav
 
 import (
 	"bytes"
-	"context"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"tank/rest/dav/xml"
+	"tank/rest/result"
 )
 
 // Proppatch describes a property update instruction as defined in RFC 4918.
@@ -97,26 +97,6 @@ func EscapeXML(s string) string {
 	}
 	return s
 }
-
-
-
-// ContentTyper is an optional interface for the os.FileInfo
-// objects returned by the FileSystem.
-//
-// If this interface is defined then it will be used to read the
-// content type from the object.
-//
-// If this interface is not defined the file will be opened and the
-// content type will be guessed from the initial contents of the file.
-type ContentTyper interface {
-	// ContentType returns the content type for the file.
-	//
-	// If this returns error ErrNotImplemented then the error will
-	// be ignored and the base implementation will be used
-	// instead.
-	ContentType(ctx context.Context) (string, error)
-}
-
 
 
 
@@ -245,33 +225,37 @@ type Propfind struct {
 }
 
 //从request中读出需要的属性。比如：getcontentlength 大小 creationdate 创建时间
-func ReadPropfind(reader io.Reader) (propfind Propfind, status int, err error) {
+func ReadPropfind(reader io.Reader) (propfind *Propfind) {
+	propfind = &Propfind{}
+
 	c := CountingReader{reader: reader}
-	if err = xml.NewDecoder(&c).Decode(&propfind); err != nil {
+	if err := xml.NewDecoder(&c).Decode(&propfind); err != nil {
 		if err == io.EOF {
 			if c.n == 0 {
 				// An empty body means to propfind allprop.
 				// http://www.webdav.org/specs/rfc4918.html#METHOD_PROPFIND
-				return Propfind{Allprop: new(struct{})}, 0, nil
+				return &Propfind{Allprop: new(struct{})}
 			}
 			err = errInvalidPropfind
 		}
-		return Propfind{}, http.StatusBadRequest, err
+
+		panic(result.BadRequest(err.Error()))
 	}
 
  	if propfind.Allprop == nil && propfind.Include != nil {
-		return Propfind{}, http.StatusBadRequest, errInvalidPropfind
+		panic(result.BadRequest(errInvalidPropfind.Error()))
 	}
 	if propfind.Allprop != nil && (propfind.Prop != nil || propfind.Propname != nil) {
-		return Propfind{}, http.StatusBadRequest, errInvalidPropfind
+		panic(result.BadRequest(errInvalidPropfind.Error()))
 	}
 	if propfind.Prop != nil && propfind.Propname != nil {
-		return Propfind{}, http.StatusBadRequest, errInvalidPropfind
+		panic(result.BadRequest(errInvalidPropfind.Error()))
 	}
 	if propfind.Propname == nil && propfind.Allprop == nil && propfind.Prop == nil {
-		return Propfind{}, http.StatusBadRequest, errInvalidPropfind
+		panic(result.BadRequest(errInvalidPropfind.Error()))
 	}
-	return propfind, 0, nil
+
+	return propfind
 }
 
 // Property represents a single DAV resource property as defined in RFC 4918.
@@ -395,16 +379,16 @@ type MultiStatusWriter struct {
 // first, valid response to be written, Write prepends the XML representation
 // of r with a multistatus tag. Callers must call close after the last response
 // has been written.
-func (this *MultiStatusWriter) Write(r *Response) error {
-	switch len(r.Href) {
+func (this *MultiStatusWriter) Write(response *Response) error {
+	switch len(response.Href) {
 	case 0:
 		return errInvalidResponse
 	case 1:
-		if len(r.Propstat) > 0 != (r.Status == "") {
+		if len(response.Propstat) > 0 != (response.Status == "") {
 			return errInvalidResponse
 		}
 	default:
-		if len(r.Propstat) > 0 || r.Status == "" {
+		if len(response.Propstat) > 0 || response.Status == "" {
 			return errInvalidResponse
 		}
 	}
@@ -412,7 +396,7 @@ func (this *MultiStatusWriter) Write(r *Response) error {
 	if err != nil {
 		return err
 	}
-	return this.Encoder.Encode(r)
+	return this.Encoder.Encode(response)
 }
 
 // writeHeader writes a XML multistatus start element on w's underlying

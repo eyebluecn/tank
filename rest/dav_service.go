@@ -11,11 +11,13 @@ import (
 	"tank/rest/dav/xml"
 )
 
+
 /**
  *
  * WebDav协议文档
  * https://tools.ietf.org/html/rfc4918
  * 主要参考 golang.org/x/net/webdav
+ * 测试机：http://www.webdav.org/neon/litmus/
  */
 //@Service
 type DavService struct {
@@ -129,7 +131,7 @@ func (this *DavService) AllPropXmlNames(matter *Matter) []xml.Name {
 }
 
 //从一个matter中获取其 []dav.Propstat
-func (this *DavService) Propstats(user *User, matter *Matter, propfind dav.Propfind) []dav.Propstat {
+func (this *DavService) Propstats(user *User, matter *Matter, propfind *dav.Propfind) []dav.Propstat {
 
 	propstats := make([]dav.Propstat, 0)
 	if propfind.Propname != nil {
@@ -158,8 +160,7 @@ func (this *DavService) HandlePropfind(writer http.ResponseWriter, request *http
 	depth := this.ParseDepth(request)
 
 	//读取请求参数。按照用户的参数请求返回内容。
-	propfind, _, err := dav.ReadPropfind(request.Body)
-	this.PanicError(err)
+	propfind := dav.ReadPropfind(request.Body)
 
 	//寻找符合条件的matter.
 	//如果是空或者/就是请求根目录
@@ -177,7 +178,7 @@ func (this *DavService) HandlePropfind(writer http.ResponseWriter, request *http
 	}
 
 	//准备一个输出结果的Writer
-	multiStatusWriter := dav.MultiStatusWriter{Writer: writer}
+	multiStatusWriter := &dav.MultiStatusWriter{Writer: writer}
 
 	for _, matter := range matters {
 
@@ -187,12 +188,12 @@ func (this *DavService) HandlePropfind(writer http.ResponseWriter, request *http
 		path := fmt.Sprintf("%s%s", WEBDAV_PREFFIX, matter.Path)
 		response := this.makePropstatResponse(path, propstats)
 
-		err = multiStatusWriter.Write(response)
+		err := multiStatusWriter.Write(response)
 		this.PanicError(err)
 	}
 
 	//闭合
-	err = multiStatusWriter.Close()
+	err := multiStatusWriter.Close()
 	this.PanicError(err)
 
 	fmt.Printf("%v %v \n", subPath, propfind.Prop)

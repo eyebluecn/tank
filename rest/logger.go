@@ -122,7 +122,8 @@ func (this *Logger) openFile() {
 		panic("日志文件无法正常打开: " + err.Error())
 	}
 
-	this.goLogger = log.New(f, "", log.Ltime)
+	this.goLogger = log.New(f, "", log.LstdFlags|log.Lshortfile)
+
 	this.file = f
 }
 

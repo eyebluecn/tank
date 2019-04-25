@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func TestReadPropfind(t *testing.T) {
+func TestXmlDecoder(t *testing.T) {
 
 	propfind := &dav.Propfind{}
 
@@ -46,7 +46,55 @@ func TestReadPropfind(t *testing.T) {
 
 	for k, v := range resultMap {
 		if !v {
-			t.Errorf("index = %s error", k)
+			t.Errorf(" %s error", k)
+		}
+	}
+
+	t.Logf("[%v] pass!", time.Now())
+
+}
+
+func TestXmlEncoder(t *testing.T) {
+
+	writer := &bytes.Buffer{}
+
+	response := &dav.Response{
+		XMLName: xml.Name{Space: "DAV:", Local: "response"},
+		Href:    []string{"/api/dav"},
+		Propstat: []dav.SubPropstat{
+			{
+				Prop: []dav.Property{
+					{
+						XMLName:  xml.Name{Space: "DAV:", Local: "resourcetype"},
+						InnerXML: []byte(`<D:collection xmlns:D="DAV:"/>`),
+					},
+					{
+						XMLName:  xml.Name{Space: "DAV:", Local: "getlastmodified"},
+						InnerXML: []byte(`Mon, 22 Apr 2019 06:38:36 GMT`),
+					},
+				},
+				Status: "HTTP/1.1 200 OK",
+			},
+		},
+	}
+
+	err := xml.NewEncoder(writer).Encode(response)
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	bs := writer.Bytes()
+
+	str := string(bs)
+
+	resultMap := make(map[string]bool)
+
+	resultMap["equal"] = str == `<D:response><D:href>/api/dav</D:href><D:propstat><D:prop><D:resourcetype><D:collection xmlns:D="DAV:"/></D:resourcetype><D:getlastmodified>Mon, 22 Apr 2019 06:38:36 GMT</D:getlastmodified></D:prop><D:status>HTTP/1.1 200 OK</D:status></D:propstat></D:response>`
+
+	for k, v := range resultMap {
+		if !v {
+			t.Errorf("%s error", k)
 		}
 	}
 
