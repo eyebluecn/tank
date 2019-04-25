@@ -1,7 +1,7 @@
 package code
 
 import (
-	"tank/code/util"
+	"tank/code/tool/util"
 	"time"
 )
 

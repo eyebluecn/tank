@@ -3,7 +3,7 @@ package code
 import (
 	"fmt"
 	"tank/code/config"
-	"tank/code/util"
+	"tank/code/tool/util"
 )
 
 const (

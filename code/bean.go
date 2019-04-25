@@ -5,7 +5,7 @@ import (
 	"tank/code/config"
 	"tank/code/logger"
 	"tank/code/result"
-	"tank/code/util"
+	"tank/code/tool/util"
 )
 
 type IBean interface {
@@ -45,6 +45,7 @@ func (this *Bean) PanicError(err error) {
 
 //能找到一个user就找到一个
 func (this *Bean) findUser(writer http.ResponseWriter, request *http.Request) *User {
+
 
 	//验证用户是否已经登录。
 	//登录身份有效期以数据库中记录的为准

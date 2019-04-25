@@ -3,7 +3,7 @@ package code
 import (
 	"net/http"
 	"tank/code/result"
-	"tank/code/util"
+	"tank/code/tool/util"
 )
 
 type PreferenceController struct {

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"sync"
-	"tank/code/util"
+	"tank/code/tool/util"
 	"time"
 )
 
@@ -388,7 +388,7 @@ func (table *CacheTable) MostAccessed(count int64) []*CacheItem {
 
 // 打印日志
 func (table *CacheTable) log(format string, v ...interface{}) {
-	//全局日志记录
+	//TODO: 全局日志记录
 	//LOGGER.Info(format, v...)
 }
 
