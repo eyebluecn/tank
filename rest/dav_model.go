@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"net/http"
+	"path"
 	"strconv"
 	"tank/rest/dav"
 )
@@ -16,6 +17,17 @@ type LiveProp struct {
 	findFn func(user *User, matter *Matter) string
 	dir    bool
 }
+
+
+// SlashClean is equivalent to but slightly more efficient than
+// path.Clean("/" + name).
+func SlashClean(name string) string {
+	if name == "" || name[0] != '/' {
+		name = "/" + name
+	}
+	return path.Clean(name)
+}
+
 
 //所有的动态属性定义及其值的获取方式
 var LivePropMap = map[xml.Name]LiveProp{
@@ -31,7 +43,7 @@ var LivePropMap = map[xml.Name]LiveProp{
 	},
 	{Space: "DAV:", Local: "displayname"}: {
 		findFn: func(user *User, matter *Matter) string {
-			if dav.SlashClean(matter.Name) == "/" {
+			if SlashClean(matter.Name) == "/" {
 				return ""
 			} else {
 				return dav.EscapeXML(matter.Name)
