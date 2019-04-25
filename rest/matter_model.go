@@ -1,6 +1,10 @@
 package rest
 
-import "tank/rest/util"
+import (
+	"fmt"
+	"tank/rest/config"
+	"tank/rest/tool"
+)
 
 const (
 	//根目录的uuid
@@ -34,7 +38,7 @@ type Matter struct {
 
 // set File's table name to be `profiles`
 func (Matter) TableName() string {
-	return TABLE_PREFIX + "matter"
+	return config.TABLE_PREFIX + "matter"
 }
 
 // 获取该Matter的绝对路径。path代表的是相对路径。
@@ -44,7 +48,7 @@ func (this *Matter) AbsolutePath() string {
 
 // 获取该Matter的MimeType
 func (this *Matter) MimeType() string {
-	return util.GetMimeType(util.GetExtension(this.Name))
+	return tool.GetMimeType(tool.GetExtension(this.Name))
 }
 
 
@@ -61,3 +65,20 @@ func NewRootMatter(user *User) *Matter {
 
 	return matter
 }
+
+//获取到用户文件的根目录。
+func GetUserFileRootDir(username string) (rootDirPath string) {
+
+	rootDirPath = fmt.Sprintf("%s/%s/%s", config.CONFIG.MatterPath, username, MATTER_ROOT)
+
+	return rootDirPath
+}
+
+//获取到用户缓存的根目录。
+func GetUserCacheRootDir(username string) (rootDirPath string) {
+
+	rootDirPath = fmt.Sprintf("%s/%s/%s", config.CONFIG.MatterPath, username, MATTER_CACHE)
+
+	return rootDirPath
+}
+

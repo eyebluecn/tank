@@ -1,5 +1,7 @@
 package rest
 
+import "tank/rest/config"
+
 /**
  * 系统的所有访问记录均记录在此
  */
@@ -16,5 +18,5 @@ type Footprint struct {
 
 // set File's table name to be `profiles`
 func (this *Footprint) TableName() string {
-	return TABLE_PREFIX + "footprint"
+	return config.TABLE_PREFIX + "footprint"
 }

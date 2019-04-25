@@ -1,5 +1,9 @@
 package rest
 
+import (
+	"tank/rest/config"
+)
+
 /**
  * 图片缓存，对于那些处理过的图片，统一管理在这里。
  */
@@ -19,7 +23,7 @@ type ImageCache struct {
 
 // set File's table name to be `profiles`
 func (this *ImageCache) TableName() string {
-	return TABLE_PREFIX + "image_cache"
+	return config.TABLE_PREFIX + "image_cache"
 }
 
 // 获取该ImageCache的绝对路径。path代表的是相对路径。

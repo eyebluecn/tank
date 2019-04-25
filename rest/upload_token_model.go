@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"tank/rest/config"
 	"time"
 )
 
@@ -17,5 +18,5 @@ type UploadToken struct {
 }
 
 func (this *UploadToken) TableName() string {
-	return TABLE_PREFIX + "upload_token"
+	return config.TABLE_PREFIX + "upload_token"
 }

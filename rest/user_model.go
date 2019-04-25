@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"tank/rest/config"
 	"time"
 )
 
@@ -44,7 +45,7 @@ type User struct {
 
 // set User's table name to be `profiles`
 func (this *User) TableName() string {
-	return TABLE_PREFIX + "user"
+	return config.TABLE_PREFIX + "user"
 }
 
 //通过一个字符串获取性别

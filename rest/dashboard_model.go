@@ -1,5 +1,7 @@
 package rest
 
+import "tank/rest/config"
+
 /**
  * 系统的所有访问记录均记录在此
  */
@@ -19,7 +21,7 @@ type Dashboard struct {
 
 // set File's table name to be `profiles`
 func (this *Dashboard) TableName() string {
-	return TABLE_PREFIX + "dashboard"
+	return config.TABLE_PREFIX + "dashboard"
 }
 
 /**

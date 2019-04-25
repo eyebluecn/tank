@@ -6,8 +6,8 @@ import (
 	"os"
 	"regexp"
 	"strings"
-	"tank/rest/download"
 	"tank/rest/result"
+	"tank/rest/tool"
 )
 
 /**
@@ -64,7 +64,7 @@ func (this *MatterService) DownloadFile(
 	filename string,
 	withContentDisposition bool) {
 
-	download.DownloadFile(writer, request, filePath, filename, withContentDisposition)
+	tool.DownloadFile(writer, request, filePath, filename, withContentDisposition)
 }
 
 //删除文件
@@ -112,10 +112,10 @@ func (this *MatterService) Upload(file io.Reader, user *User, dirMatter *Matter,
 	fileRelativePath := dirRelativePath + "/" + filename
 
 	//创建父文件夹
-	MakeDirAll(dirAbsolutePath)
+	tool.MakeDirAll(dirAbsolutePath)
 
 	//如果文件已经存在了，那么直接覆盖。
-	exist, err := PathExists(fileAbsolutePath)
+	exist, err := tool.PathExists(fileAbsolutePath)
 	this.PanicError(err)
 	if exist {
 		this.logger.Error("%s已经存在，将其删除", fileAbsolutePath)
@@ -134,7 +134,7 @@ func (this *MatterService) Upload(file io.Reader, user *User, dirMatter *Matter,
 	fileSize, err := io.Copy(destFile, file)
 	this.PanicError(err)
 
-	this.logger.Info("上传文件 %s 大小为 %v ", filename, HumanFileSize(fileSize))
+	this.logger.Info("上传文件 %s 大小为 %v ", filename, tool.HumanFileSize(fileSize))
 
 	//判断用户自身上传大小的限制。
 	if user.SizeLimit >= 0 {
@@ -143,7 +143,7 @@ func (this *MatterService) Upload(file io.Reader, user *User, dirMatter *Matter,
 			err = os.Remove(fileAbsolutePath)
 			this.PanicError(err)
 
-			panic(result.BadRequest("文件大小超出限制 %s > %s ", HumanFileSize(user.SizeLimit), HumanFileSize(fileSize)))
+			panic(result.BadRequest("文件大小超出限制 %s > %s ", tool.HumanFileSize(user.SizeLimit), tool.HumanFileSize(fileSize)))
 		}
 	}
 
@@ -234,7 +234,7 @@ func (this *MatterService) createDirectory(dirMatter *Matter, name string, user 
 	relativePath := dirMatter.Path + "/" + name
 
 	//磁盘中创建文件夹。
-	dirPath := MakeDirAll(absolutePath)
+	dirPath := tool.MakeDirAll(absolutePath)
 	this.logger.Info("Create Directory: %s", dirPath)
 
 	//数据库中创建文件夹。
@@ -347,6 +347,9 @@ func (this *MatterService) AtomicMove(srcMatter *Matter, destDirMatter *Matter, 
 	this.userService.MatterLock(srcMatter.UserUuid)
 	defer this.userService.MatterUnlock(srcMatter.UserUuid)
 
+	if destDirMatter == nil {
+		panic(result.BadRequest("destDirMatter cannot be nil."))
+	}
 	if !destDirMatter.Dir {
 		this.PanicBadRequest("目标必须为文件夹")
 	}
@@ -442,7 +445,7 @@ func (this *MatterService) copy(srcMatter *Matter, destDirMatter *Matter, name s
 		srcAbsolutePath := srcMatter.AbsolutePath()
 
 		//物理文件进行复制
-		CopyFile(srcAbsolutePath, destAbsolutePath)
+		tool.CopyFile(srcAbsolutePath, destAbsolutePath)
 
 		//创建新文件的数据库信息。
 		newMatter := &Matter{
@@ -520,8 +523,8 @@ func (this *MatterService) AtomicRename(matter *Matter, name string, user *User)
 		//如果源是文件夹
 
 		oldAbsolutePath := matter.AbsolutePath()
-		absoluteDirPath := GetDirOfPath(oldAbsolutePath)
-		relativeDirPath := GetDirOfPath(matter.Path)
+		absoluteDirPath := tool.GetDirOfPath(oldAbsolutePath)
+		relativeDirPath := tool.GetDirOfPath(matter.Path)
 		newAbsolutePath := absoluteDirPath + "/" + name
 
 		//物理文件一口气移动
@@ -543,8 +546,8 @@ func (this *MatterService) AtomicRename(matter *Matter, name string, user *User)
 		//如果源是普通文件
 
 		oldAbsolutePath := matter.AbsolutePath()
-		absoluteDirPath := GetDirOfPath(oldAbsolutePath)
-		relativeDirPath := GetDirOfPath(matter.Path)
+		absoluteDirPath := tool.GetDirOfPath(oldAbsolutePath)
+		relativeDirPath := tool.GetDirOfPath(matter.Path)
 		newAbsolutePath := absoluteDirPath + "/" + name
 
 		//物理文件进行移动
@@ -645,12 +648,9 @@ func (this *MatterService) AtomicCrawl(url string, filename string, user *User, 
 	this.userService.MatterLock(user.Uuid)
 	defer this.userService.MatterUnlock(user.Uuid)
 
-
-
 	if url == "" || (!strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://")) {
 		panic("资源url必填，并且应该以http://或者https://开头")
 	}
-
 
 	//从指定的url下载一个文件。参考：https://golangcode.com/download-a-file-from-a-url/
 	resp, err := http.Get(url)

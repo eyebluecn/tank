@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 	"tank/rest/result"
+	"tank/rest/tool"
 )
 
 /**
@@ -86,7 +87,7 @@ func (this *DavController) CheckCurrentUser(writer http.ResponseWriter, request 
 	if user == nil {
 		this.PanicBadRequest("邮箱或密码错误")
 	} else {
-		if !MatchBcrypt(password, user.Password) {
+		if !tool.MatchBcrypt(password, user.Password) {
 			this.PanicBadRequest("邮箱或密码错误")
 		}
 	}

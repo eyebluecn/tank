@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"tank/rest/tool"
 	"time"
 )
 
@@ -52,7 +53,7 @@ func (this *DashboardService) Init() {
 func (this *DashboardService) ConfigPost() {
 
 	//立即执行数据清洗任务
-	go SafeMethod(this.maintain)
+	go tool.SafeMethod(this.maintain)
 }
 
 //每日清洗离线数据表。
@@ -60,21 +61,21 @@ func (this *DashboardService) maintain() {
 
 	//准备好下次维护日志的时间。
 	now := time.Now()
-	nextTime := FirstMinuteOfDay(Tomorrow())
+	nextTime := tool.FirstMinuteOfDay(tool.Tomorrow())
 	duration := nextTime.Sub(now)
-	this.logger.Info("每日数据汇总，下次时间：%s ", ConvertTimeToDateTimeString(nextTime))
+	this.logger.Info("每日数据汇总，下次时间：%s ", tool.ConvertTimeToDateTimeString(nextTime))
 	this.maintainTimer = time.AfterFunc(duration, func() {
-		go SafeMethod(this.maintain)
+		go tool.SafeMethod(this.maintain)
 	})
 
 	//准备日期开始结尾
-	startTime := FirstSecondOfDay(Yesterday())
-	endTime := LastSecondOfDay(Yesterday())
-	dt := ConvertTimeToDateString(startTime)
+	startTime := tool.FirstSecondOfDay(tool.Yesterday())
+	endTime := tool.LastSecondOfDay(tool.Yesterday())
+	dt := tool.ConvertTimeToDateString(startTime)
 	longTimeAgo := time.Now()
 	longTimeAgo = longTimeAgo.AddDate(-20, 0, 0)
 
-	this.logger.Info("统计汇总表 %s -> %s", ConvertTimeToDateTimeString(startTime), ConvertTimeToDateTimeString(endTime))
+	this.logger.Info("统计汇总表 %s -> %s", tool.ConvertTimeToDateTimeString(startTime), tool.ConvertTimeToDateTimeString(endTime))
 
 	//判断昨天的记录是否已经生成，如果生成了就直接删除掉
 	dbDashboard := this.dashboardDao.FindByDt(dt)

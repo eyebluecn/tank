@@ -1,4 +1,4 @@
-package rest
+package tool
 
 import (
 	"errors"
@@ -384,9 +384,11 @@ func (table *CacheTable) MostAccessed(count int64) []*CacheItem {
 	return r
 }
 
+
 // 打印日志
 func (table *CacheTable) log(format string, v ...interface{}) {
-	LOGGER.Info(format, v...)
+	//全局日志记录
+	//LOGGER.Info(format, v...)
 }
 
 //新建一个缓存Table

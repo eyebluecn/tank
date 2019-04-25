@@ -1,16 +1,16 @@
 package rest
 
 import (
-
 	"fmt"
 	"net/http"
 	"net/url"
+	"path"
 	"regexp"
 	"strings"
 	"tank/rest/dav"
 	"tank/rest/dav/xml"
+	"tank/rest/tool"
 )
-
 
 /**
  *
@@ -223,8 +223,8 @@ func (this *DavService) HandlePut(writer http.ResponseWriter, request *http.Requ
 
 	fmt.Printf("PUT %s\n", subPath)
 
-	filename := GetFilenameOfPath(subPath)
-	dirPath := GetDirOfPath(subPath)
+	filename := tool.GetFilenameOfPath(subPath)
+	dirPath := tool.GetDirOfPath(subPath)
 
 	//寻找符合条件的matter.
 	dirMatter := this.matterDao.CheckWithRootByPath(dirPath, user)
@@ -255,8 +255,8 @@ func (this *DavService) HandleMkcol(writer http.ResponseWriter, request *http.Re
 
 	fmt.Printf("MKCOL %s\n", subPath)
 
-	thisDirName := GetFilenameOfPath(subPath)
-	dirPath := GetDirOfPath(subPath)
+	thisDirName := tool.GetFilenameOfPath(subPath)
+	dirPath := tool.GetDirOfPath(subPath)
 
 	//寻找符合条件的matter.
 	dirMatter := this.matterDao.CheckWithRootByPath(dirPath, user)
@@ -327,6 +327,9 @@ func (this *DavService) prepareMoveCopy(
 		fullDestinationPath = destinationUrl.Path
 	}
 
+	//去除 路径中的相对路径 比如 /a/b/../ => /a/
+	fullDestinationPath = path.Clean(fullDestinationPath)
+
 	//去除前缀
 	pattern := fmt.Sprintf(`^%s(.*)$`, WEBDAV_PREFFIX)
 	reg := regexp.MustCompile(pattern)
@@ -337,9 +340,9 @@ func (this *DavService) prepareMoveCopy(
 		this.PanicBadRequest("目标前缀必须为：%s", WEBDAV_PREFFIX)
 	}
 
-	destinationName = GetFilenameOfPath(destinationPath)
-	destinationDirPath = GetDirOfPath(destinationPath)
-	srcDirPath = GetDirOfPath(subPath)
+	destinationName = tool.GetFilenameOfPath(destinationPath)
+	destinationDirPath = tool.GetDirOfPath(destinationPath)
+	srcDirPath = tool.GetDirOfPath(subPath)
 
 	overwrite = false
 	if overwriteStr == "T" {
@@ -359,6 +362,9 @@ func (this *DavService) prepareMoveCopy(
 	if srcMatter.Uuid == MATTER_ROOT {
 		this.PanicBadRequest("你不能移动根目录！")
 	}
+
+	//寻找目标文件夹matter
+	destDirMatter = this.matterDao.CheckWithRootByPath(destinationDirPath, user)
 
 	return srcMatter, destDirMatter, srcDirPath, destinationDirPath, destinationName, overwrite
 
@@ -389,7 +395,7 @@ func (this *DavService) HandleCopy(writer http.ResponseWriter, request *http.Req
 	srcMatter, destDirMatter, _, _, destinationName, overwrite := this.prepareMoveCopy(writer, request, user, subPath)
 
 	//复制到新目录中去。
-	this.matterService.AtomicCopy(srcMatter, destDirMatter, destinationName,overwrite)
+	this.matterService.AtomicCopy(srcMatter, destDirMatter, destinationName, overwrite)
 
 	this.logger.Info("完成复制 %s => %s", subPath, destDirMatter.Path)
 

@@ -2,6 +2,8 @@ package rest
 
 import (
 	"net/http"
+	"tank/rest/config"
+	"tank/rest/tool"
 	"time"
 )
 
@@ -12,7 +14,7 @@ type UserService struct {
 	sessionDao *SessionDao
 
 	//操作文件的锁。
-	locker *CacheTable
+	locker *tool.CacheTable
 }
 
 //初始化方法
@@ -31,7 +33,7 @@ func (this *UserService) Init() {
 	}
 
 	//创建一个用于存储用户文件锁的缓存。
-	this.locker = NewCacheTable()
+	this.locker = tool.NewCacheTable()
 }
 
 
@@ -76,7 +78,7 @@ func (this *UserService) bootstrap(writer http.ResponseWriter, request *http.Req
 	//登录身份有效期以数据库中记录的为准
 
 	//验证用户是否已经登录。
-	sessionCookie, err := request.Cookie(COOKIE_AUTH_KEY)
+	sessionCookie, err := request.Cookie(config.COOKIE_AUTH_KEY)
 	if err != nil {
 		return
 	}

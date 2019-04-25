@@ -1,5 +1,7 @@
 package rest
 
+import "tank/rest/config"
+
 type Preference struct {
 	Base
 	Name        string `json:"name" gorm:"type:varchar(45)"`
@@ -12,5 +14,5 @@ type Preference struct {
 
 // set File's table name to be `profiles`
 func (this *Preference) TableName() string {
-	return TABLE_PREFIX + "preference"
+	return config.TABLE_PREFIX + "preference"
 }

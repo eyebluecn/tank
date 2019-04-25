@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"tank/rest/config"
 	"time"
 )
 
@@ -13,5 +14,5 @@ type DownloadToken struct {
 }
 
 func (this *DownloadToken) TableName() string {
-	return TABLE_PREFIX + "download_token"
+	return config.TABLE_PREFIX + "download_token"
 }

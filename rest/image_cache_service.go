@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"tank/rest/util"
+	"tank/rest/tool"
 )
 
 //@Service
@@ -180,7 +180,7 @@ func (this *ImageCacheService) ResizeImage(request *http.Request, filePath strin
 func (this *ImageCacheService) cacheImage(writer http.ResponseWriter, request *http.Request, matter *Matter) *ImageCache {
 
 	//当前的文件是否是图片，只有图片才能处理。
-	extension := util.GetExtension(matter.Name)
+	extension := tool.GetExtension(matter.Name)
 	formats := map[string]imaging.Format{
 		".jpg":  imaging.JPEG,
 		".jpeg": imaging.JPEG,
@@ -204,13 +204,13 @@ func (this *ImageCacheService) cacheImage(writer http.ResponseWriter, request *h
 	//resize图片
 	dstImage := this.ResizeImage(request, matter.AbsolutePath())
 
-	cacheImageName := util.GetSimpleFileName(matter.Name) + "_" + mode + extension
-	cacheImageRelativePath := util.GetSimpleFileName(matter.Path) + "_" + mode + extension
-	cacheImageAbsolutePath := GetUserCacheRootDir(user.Username) + util.GetSimpleFileName(matter.Path) + "_" + mode + extension
+	cacheImageName := tool.GetSimpleFileName(matter.Name) + "_" + mode + extension
+	cacheImageRelativePath := tool.GetSimpleFileName(matter.Path) + "_" + mode + extension
+	cacheImageAbsolutePath := GetUserCacheRootDir(user.Username) + tool.GetSimpleFileName(matter.Path) + "_" + mode + extension
 
 	//创建目录。
 	dir := filepath.Dir(cacheImageAbsolutePath)
-	MakeDirAll(dir)
+	tool.MakeDirAll(dir)
 
 	fileWriter, err := os.Create(cacheImageAbsolutePath)
 	this.PanicError(err)

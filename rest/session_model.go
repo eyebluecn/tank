@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"tank/rest/config"
 	"time"
 )
 
@@ -13,5 +14,5 @@ type Session struct {
 
 // set User's table name to be `profiles`
 func (this *Session) TableName() string {
-	return TABLE_PREFIX + "session"
+	return config.TABLE_PREFIX + "session"
 }

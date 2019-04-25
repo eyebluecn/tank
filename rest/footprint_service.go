@@ -3,6 +3,8 @@ package rest
 import (
 	"encoding/json"
 	"net/http"
+	"tank/rest/config"
+	"tank/rest/tool"
 	"time"
 )
 
@@ -63,7 +65,7 @@ func (this *FootprintService) Trace(writer http.ResponseWriter, request *http.Re
 
 	//将文件信息存入数据库中。
 	footprint := &Footprint{
-		Ip:      GetIpAddress(request),
+		Ip:      tool.GetIpAddress(request),
 		Host:    request.Host,
 		Uri:     request.URL.Path,
 		Params:  paramsString,
@@ -72,7 +74,7 @@ func (this *FootprintService) Trace(writer http.ResponseWriter, request *http.Re
 	}
 
 	//有可能DB尚且没有配置 直接打印出内容，并且退出
-	if CONFIG.Installed {
+	if config.CONFIG.Installed {
 		user := this.findUser(writer, request)
 		userUuid := ""
 		if user != nil {

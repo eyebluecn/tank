@@ -4,7 +4,9 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/nu7hatch/gouuid"
 	"os"
+	"tank/rest/config"
 	"tank/rest/result"
+	"tank/rest/tool"
 	"time"
 )
 
@@ -283,7 +285,7 @@ func (this *MatterDao) Delete(matter *Matter) {
 		this.PanicError(db.Error)
 
 		//从磁盘中删除该文件夹。
-		DeleteEmptyDir(matter.AbsolutePath())
+		tool.DeleteEmptyDir(matter.AbsolutePath())
 
 	} else {
 
@@ -363,7 +365,7 @@ func (this *MatterDao) Cleanup() {
 	db := CONTEXT.DB.Where("uuid is not null").Delete(Matter{})
 	this.PanicError(db.Error)
 
-	err := os.RemoveAll(CONFIG.MatterPath)
+	err := os.RemoveAll(config.CONFIG.MatterPath)
 	this.PanicError(err)
 
 }

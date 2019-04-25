@@ -3,6 +3,7 @@ package rest
 import (
 	"math"
 	"reflect"
+	"tank/rest/config"
 	"time"
 )
 
@@ -39,7 +40,7 @@ func (this *Base) Map() map[string]interface{} {
 }
 
 func (this *Base) TableName() string {
-	return TABLE_PREFIX + "base"
+	return config.TABLE_PREFIX + "base"
 }
 
 //分页类

@@ -3,7 +3,9 @@ package rest
 import (
 	"fmt"
 	"net/http"
+	"tank/rest/config"
 	"tank/rest/result"
+	"tank/rest/tool"
 )
 
 type IBean interface {
@@ -18,11 +20,11 @@ type IBean interface {
 }
 
 type Bean struct {
-	logger *Logger
+	logger *tool.Logger
 }
 
 func (this *Bean) Init() {
-	this.logger = LOGGER
+	this.logger = tool.LOGGER
 }
 
 func (this *Bean) ConfigPost() {
@@ -66,7 +68,7 @@ func (this *Bean) findUser(writer http.ResponseWriter, request *http.Request) *U
 
 	//验证用户是否已经登录。
 	//登录身份有效期以数据库中记录的为准
-	sessionId := GetSessionUuidFromRequest(request)
+	sessionId := tool.GetSessionUuidFromRequest(request, config.COOKIE_AUTH_KEY)
 	if sessionId == "" {
 		return nil
 	}

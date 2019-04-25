@@ -1,4 +1,4 @@
-package rest
+package tool
 
 import (
 	"net/http"
@@ -33,14 +33,14 @@ func GetHostFromRequest(r *http.Request) string {
 }
 
 //根据一个请求，获取authenticationId
-func GetSessionUuidFromRequest(request *http.Request) string {
+func GetSessionUuidFromRequest(request *http.Request, cookieAuthKey string) string {
 
 	//验证用户是否已经登录。
-	sessionCookie, err := request.Cookie(COOKIE_AUTH_KEY)
+	sessionCookie, err := request.Cookie(cookieAuthKey)
 	var sessionId string
 	if err != nil {
 		//从入参中捞取
-		sessionId = request.FormValue(COOKIE_AUTH_KEY)
+		sessionId = request.FormValue(cookieAuthKey)
 	} else {
 		sessionId = sessionCookie.Value
 	}

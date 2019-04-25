@@ -1,4 +1,4 @@
-package rest
+package tool
 
 import (
 	"fmt"
@@ -213,22 +213,6 @@ func GetLogPath() string {
 	}
 
 	return filePath
-}
-
-//获取到用户文件的根目录。
-func GetUserFileRootDir(username string) (rootDirPath string) {
-
-	rootDirPath = fmt.Sprintf("%s/%s/%s", CONFIG.MatterPath, username, MATTER_ROOT)
-
-	return rootDirPath
-}
-
-//获取到用户缓存的根目录。
-func GetUserCacheRootDir(username string) (rootDirPath string) {
-
-	rootDirPath = fmt.Sprintf("%s/%s/%s", CONFIG.MatterPath, username, MATTER_CACHE)
-
-	return rootDirPath
 }
 
 

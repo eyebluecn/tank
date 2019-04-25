@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/jinzhu/gorm"
 	"reflect"
+	"tank/rest/config"
+	"tank/rest/tool"
 )
 
 //全局唯一的上下文(在main函数中初始化)
@@ -14,7 +16,7 @@ type Context struct {
 	//数据库连接
 	DB *gorm.DB
 	//session缓存
-	SessionCache *CacheTable
+	SessionCache *tool.CacheTable
 	//各类的Bean Map。这里面是包含ControllerMap中所有元素
 	BeanMap map[string]IBean
 	//只包含了Controller的map
@@ -27,7 +29,7 @@ type Context struct {
 func (this *Context) Init() {
 
 	//创建一个用于存储session的缓存。
-	this.SessionCache = NewCacheTable()
+	this.SessionCache = tool.NewCacheTable()
 
 	//初始化Map
 	this.BeanMap = make(map[string]IBean)
@@ -50,10 +52,10 @@ func (this *Context) Init() {
 func (this *Context) OpenDb() {
 
 	var err error = nil
-	this.DB, err = gorm.Open("mysql", CONFIG.MysqlUrl)
+	this.DB, err = gorm.Open("mysql", config.CONFIG.MysqlUrl)
 
 	if err != nil {
-		LOGGER.Panic("failed to connect mysql database")
+		tool.LOGGER.Panic("failed to connect mysql database")
 	}
 
 	//是否打开sql日志(在调试阶段可以打开，以方便查看执行的SQL)
@@ -80,7 +82,7 @@ func (this *Context) registerBean(bean IBean) {
 
 		err := fmt.Sprintf("【%s】已经被注册了，跳过。", typeName)
 		if _, ok := this.BeanMap[typeName]; ok {
-			LOGGER.Error(fmt.Sprintf(err))
+			tool.LOGGER.Error(fmt.Sprintf(err))
 		} else {
 			this.BeanMap[typeName] = element
 
@@ -92,7 +94,7 @@ func (this *Context) registerBean(bean IBean) {
 		}
 
 	} else {
-		LOGGER.Panic("注册的【%s】不是Bean类型。", typeName)
+		tool.LOGGER.Panic("注册的【%s】不是Bean类型。", typeName)
 	}
 
 }
@@ -162,7 +164,7 @@ func (this *Context) GetBean(bean IBean) IBean {
 	if val, ok := this.BeanMap[typeName]; ok {
 		return val
 	} else {
-		LOGGER.Panic("【%s】没有注册。", typeName)
+		tool.LOGGER.Panic("【%s】没有注册。", typeName)
 		return nil
 	}
 }
@@ -179,7 +181,7 @@ func (this *Context) initBeans() {
 //系统如果安装好了就调用这个方法。
 func (this *Context) InstallOk() {
 
-	if CONFIG.Installed {
+	if config.CONFIG.Installed {
 		this.OpenDb()
 
 		for _, bean := range this.BeanMap {

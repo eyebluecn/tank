@@ -7,8 +7,9 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"tank/rest/config"
 	"tank/rest/result"
-	"tank/rest/util"
+	"tank/rest/tool"
 	"time"
 )
 
@@ -70,7 +71,7 @@ func NewRouter() *Router {
 func (this *Router) GlobalPanicHandler(writer http.ResponseWriter, request *http.Request, startTime time.Time) {
 	if err := recover(); err != nil {
 
-		LOGGER.Error("错误: %v", err)
+		tool.LOGGER.Error("错误: %v", err)
 
 		var webResult *result.WebResult = nil
 		if value, ok := err.(string); ok {
@@ -106,7 +107,7 @@ func (this *Router) GlobalPanicHandler(writer http.ResponseWriter, request *http
 		}
 
 		//错误情况记录。
-		go SafeMethod(func() {
+		go tool.SafeMethod(func() {
 			this.footprintService.Trace(writer, request, time.Now().Sub(startTime), false)
 		})
 	}
@@ -130,7 +131,7 @@ func (this *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 		writer.Header().Set("Expires", "0")
 
 
-		if CONFIG.Installed {
+		if config.CONFIG.Installed {
 			//已安装的模式
 
 			//统一处理用户的身份信息。
@@ -155,7 +156,7 @@ func (this *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 			}
 
 			//正常的访问记录会落到这里。
-			go SafeMethod(func() {
+			go tool.SafeMethod(func() {
 				this.footprintService.Trace(writer, request, time.Now().Sub(startTime), true)
 			})
 
@@ -170,7 +171,7 @@ func (this *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 
 	} else {
 		//当作静态资源处理。默认从当前文件下面的static文件夹中取东西。
-		dir := GetHtmlPath()
+		dir := tool.GetHtmlPath()
 
 		requestURI := request.RequestURI
 		if requestURI == "" || request.RequestURI == "/" {
@@ -178,16 +179,16 @@ func (this *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 		}
 
 		filePath := dir + requestURI
-		exists, _ := PathExists(filePath)
+		exists, _ := tool.PathExists(filePath)
 		if !exists {
 			filePath = dir + "/index.html"
-			exists, _ = PathExists(filePath)
+			exists, _ = tool.PathExists(filePath)
 			if !exists {
 				panic(fmt.Sprintf("404 not found:%s", filePath))
 			}
 		}
 
-		writer.Header().Set("Content-Type", util.GetMimeType(util.GetExtension(filePath)))
+		writer.Header().Set("Content-Type", tool.GetMimeType(tool.GetExtension(filePath)))
 
 		diskFile, err := os.Open(filePath)
 		if err != nil {

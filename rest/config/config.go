@@ -1,8 +1,9 @@
-package rest
+package config
 
 import (
 	"github.com/json-iterator/go"
 	"io/ioutil"
+	"tank/rest/tool"
 	"time"
 	"unsafe"
 )
@@ -64,7 +65,7 @@ type ConfigItem struct {
 func (this *ConfigItem) validate() bool {
 
 	if this.ServerPort == 0 {
-		LOGGER.Error("ServerPort 未配置")
+		tool.LOGGER.Error("ServerPort 未配置")
 		return false
 	} else {
 		//只要配置文件中有配置端口，就使用。
@@ -72,27 +73,27 @@ func (this *ConfigItem) validate() bool {
 	}
 
 	if this.MysqlUsername == "" {
-		LOGGER.Error("MysqlUsername 未配置")
+		tool.LOGGER.Error("MysqlUsername 未配置")
 		return false
 	}
 
 	if this.MysqlPassword == "" {
-		LOGGER.Error("MysqlPassword 未配置")
+		tool.LOGGER.Error("MysqlPassword 未配置")
 		return false
 	}
 
 	if this.MysqlHost == "" {
-		LOGGER.Error("MysqlHost 未配置")
+		tool.LOGGER.Error("MysqlHost 未配置")
 		return false
 	}
 
 	if this.MysqlPort == 0 {
-		LOGGER.Error("MysqlPort 未配置")
+		tool.LOGGER.Error("MysqlPort 未配置")
 		return false
 	}
 
 	if this.MysqlSchema == "" {
-		LOGGER.Error("MysqlSchema 未配置")
+		tool.LOGGER.Error("MysqlSchema 未配置")
 		return false
 	}
 
@@ -131,17 +132,17 @@ func (this *Config) Init() {
 func (this *Config) ReadFromConfigFile() {
 
 	//读取配置文件
-	filePath := GetConfPath() + "/tank.json"
+	filePath := tool.GetConfPath() + "/tank.json"
 	content, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		LOGGER.Warn("无法找到配置文件：%s 即将进入安装过程！", filePath)
+		tool.LOGGER.Warn("无法找到配置文件：%s 即将进入安装过程！", filePath)
 		this.Installed = false
 	} else {
 		this.Item = &ConfigItem{}
-		LOGGER.Warn("读取配置文件：%s", filePath)
+		tool.LOGGER.Warn("读取配置文件：%s", filePath)
 		err := jsoniter.ConfigCompatibleWithStandardLibrary.Unmarshal(content, this.Item)
 		if err != nil {
-			LOGGER.Error("配置文件格式错误！ 即将进入安装过程！")
+			tool.LOGGER.Error("配置文件格式错误！ 即将进入安装过程！")
 			this.Installed = false
 			return
 		}
@@ -149,29 +150,29 @@ func (this *Config) ReadFromConfigFile() {
 		//验证项是否齐全
 		itemValidate := this.Item.validate()
 		if !itemValidate {
-			LOGGER.Error("配置文件信息不齐全！ 即将进入安装过程！")
+			tool.LOGGER.Error("配置文件信息不齐全！ 即将进入安装过程！")
 			this.Installed = false
 			return
 		}
 
 		//使用配置项中的文件路径
 		if this.Item.MatterPath == "" {
-			this.MatterPath = GetHomePath() + "/matter"
+			this.MatterPath = tool.GetHomePath() + "/matter"
 		} else {
 			this.MatterPath = this.Item.MatterPath
 		}
-		MakeDirAll(CONFIG.MatterPath)
+		tool.MakeDirAll(CONFIG.MatterPath)
 
 		//使用配置项中的端口
 		if this.Item.ServerPort != 0 {
 			this.ServerPort = this.Item.ServerPort
 		}
 
-		this.MysqlUrl = GetMysqlUrl(this.Item.MysqlPort, this.Item.MysqlHost, this.Item.MysqlSchema, this.Item.MysqlUsername, this.Item.MysqlPassword)
+		this.MysqlUrl = tool.GetMysqlUrl(this.Item.MysqlPort, this.Item.MysqlHost, this.Item.MysqlSchema, this.Item.MysqlUsername, this.Item.MysqlPassword)
 		this.Installed = true
 
-		LOGGER.Info("使用配置文件：%s", filePath)
-		LOGGER.Info("上传文件存放路径：%s", this.MatterPath)
+		tool.LOGGER.Info("使用配置文件：%s", filePath)
+		tool.LOGGER.Info("上传文件存放路径：%s", this.MatterPath)
 	}
 }
 

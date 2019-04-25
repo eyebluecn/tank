@@ -11,7 +11,9 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"tank/rest/config"
 	"tank/rest/result"
+	"tank/rest/tool"
 	"time"
 )
 
@@ -95,7 +97,7 @@ func (this *InstallController) openDbConnection(writer http.ResponseWriter, requ
 		mysqlPort = tmp
 	}
 
-	mysqlUrl := GetMysqlUrl(mysqlPort, mysqlHost, mysqlSchema, mysqlUsername, mysqlPassword)
+	mysqlUrl := tool.GetMysqlUrl(mysqlPort, mysqlHost, mysqlSchema, mysqlUsername, mysqlPassword)
 
 	this.logger.Info("连接MySQL %s", mysqlUrl)
 
@@ -124,9 +126,9 @@ func (this *InstallController) closeDbConnection(db *gorm.DB) {
 func (this *InstallController) getCreateSQLFromFile(tableName string) string {
 
 	//1. 从当前安装目录db下去寻找建表文件。
-	homePath := GetHomePath()
+	homePath := tool.GetHomePath()
 	filePath := homePath + "/db/" + tableName + ".sql"
-	exists, err := PathExists(filePath)
+	exists, err := tool.PathExists(filePath)
 	if err != nil {
 		this.PanicServer("从安装目录判断建表语句文件是否存在时出错！")
 	}
@@ -138,7 +140,7 @@ func (this *InstallController) getCreateSQLFromFile(tableName string) string {
 
 		filePath1 := filePath
 		filePath = build.Default.GOPATH + "/src/tank/build/db/" + tableName + ".sql"
-		exists, err = PathExists(filePath)
+		exists, err = tool.PathExists(filePath)
 		if err != nil {
 			this.PanicServer("从GOPATH判断建表语句文件是否存在时出错！")
 		}
@@ -342,7 +344,7 @@ func (this *InstallController) CreateAdmin(writer http.ResponseWriter, request *
 	user.Sort = time.Now().UnixNano() / 1e6
 	user.Role = USER_ROLE_ADMINISTRATOR
 	user.Username = adminUsername
-	user.Password = GetBcrypt(adminPassword)
+	user.Password = tool.GetBcrypt(adminPassword)
 	user.Email = adminEmail
 	user.Phone = ""
 	user.Gender = USER_GENDER_UNKNOWN
@@ -379,7 +381,7 @@ func (this *InstallController) ValidateAdmin(writer http.ResponseWriter, request
 		this.PanicBadRequest(fmt.Sprintf("%s对应的用户不存在", adminEmail))
 	}
 
-	if !MatchBcrypt(adminPassword, existEmailUser.Password) {
+	if !tool.MatchBcrypt(adminPassword, existEmailUser.Password) {
 		this.PanicBadRequest("邮箱或密码错误")
 	}
 
@@ -423,11 +425,11 @@ func (this *InstallController) Finish(writer http.ResponseWriter, request *http.
 		this.PanicBadRequest(`请至少配置一名管理员`)
 	}
 
-	var configItem = &ConfigItem{
+	var configItem = &config.ConfigItem{
 		//默认监听端口号
-		ServerPort: CONFIG.ServerPort,
+		ServerPort: config.CONFIG.ServerPort,
 		//上传的文件路径，要求不以/结尾。如果没有指定，默认在根目录下的matter文件夹中。eg: /var/www/matter
-		MatterPath: CONFIG.MatterPath,
+		MatterPath: config.CONFIG.MatterPath,
 		//mysql相关配置。
 		//数据库端口
 		MysqlPort: mysqlPort,
@@ -445,7 +447,7 @@ func (this *InstallController) Finish(writer http.ResponseWriter, request *http.
 	jsonStr, _ := jsoniter.ConfigCompatibleWithStandardLibrary.MarshalIndent(configItem, "", " ")
 
 	//写入到配置文件中（不能使用os.O_APPEND 否则会追加）
-	filePath := GetConfPath() + "/tank.json"
+	filePath := tool.GetConfPath() + "/tank.json"
 	f, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE, 0777)
 	this.PanicError(err)
 	_, err = f.Write(jsonStr)
@@ -454,7 +456,7 @@ func (this *InstallController) Finish(writer http.ResponseWriter, request *http.
 	this.PanicError(err)
 
 	//通知配置文件安装完毕。
-	CONFIG.InstallOk()
+	config.CONFIG.InstallOk()
 
 	//通知全局上下文，说系统安装好了
 	CONTEXT.InstallOk()

@@ -4,7 +4,9 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
+	"tank/rest/config"
 	"tank/rest/result"
+	"tank/rest/tool"
 
 	"time"
 )
@@ -58,7 +60,7 @@ func (this *UserController) Login(writer http.ResponseWriter, request *http.Requ
 		this.PanicBadRequest("邮箱或密码错误")
 
 	} else {
-		if !MatchBcrypt(password, user.Password) {
+		if !tool.MatchBcrypt(password, user.Password) {
 
 			this.PanicBadRequest("邮箱或密码错误")
 		}
@@ -71,7 +73,7 @@ func (this *UserController) Login(writer http.ResponseWriter, request *http.Requ
 	//持久化用户的session.
 	session := &Session{
 		UserUuid:   user.Uuid,
-		Ip:         GetIpAddress(request),
+		Ip:         tool.GetIpAddress(request),
 		ExpireTime: expiration,
 	}
 	session.UpdateTime = time.Now()
@@ -80,7 +82,7 @@ func (this *UserController) Login(writer http.ResponseWriter, request *http.Requ
 
 	//设置用户的cookie.
 	cookie := http.Cookie{
-		Name:    COOKIE_AUTH_KEY,
+		Name:    config.COOKIE_AUTH_KEY,
 		Path:    "/",
 		Value:   session.Uuid,
 		Expires: expiration}
@@ -88,7 +90,7 @@ func (this *UserController) Login(writer http.ResponseWriter, request *http.Requ
 
 	//更新用户上次登录时间和ip
 	user.LastTime = time.Now()
-	user.LastIp = GetIpAddress(request)
+	user.LastIp = tool.GetIpAddress(request)
 	this.userDao.Save(user)
 
 	return this.Success(user)
@@ -142,7 +144,7 @@ func (this *UserController) Create(writer http.ResponseWriter, request *http.Req
 	user := &User{
 		Role:      GetRole(role),
 		Username:  username,
-		Password:  GetBcrypt(password),
+		Password:  tool.GetBcrypt(password),
 		Email:     email,
 		Phone:     phone,
 		Gender:    gender,
@@ -215,7 +217,7 @@ func (this *UserController) Detail(writer http.ResponseWriter, request *http.Req
 func (this *UserController) Logout(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	//session置为过期
-	sessionCookie, err := request.Cookie(COOKIE_AUTH_KEY)
+	sessionCookie, err := request.Cookie(config.COOKIE_AUTH_KEY)
 	if err != nil {
 		return this.Success("已经退出登录了！")
 	}
@@ -238,7 +240,7 @@ func (this *UserController) Logout(writer http.ResponseWriter, request *http.Req
 	expiration := time.Now()
 	expiration = expiration.AddDate(-1, 0, 0)
 	cookie := http.Cookie{
-		Name:    COOKIE_AUTH_KEY,
+		Name:    config.COOKIE_AUTH_KEY,
 		Path:    "/",
 		Value:   sessionId,
 		Expires: expiration}
@@ -362,11 +364,11 @@ func (this *UserController) ChangePassword(writer http.ResponseWriter, request *
 		return this.Success(user)
 	}
 
-	if !MatchBcrypt(oldPassword, user.Password) {
+	if !tool.MatchBcrypt(oldPassword, user.Password) {
 		this.PanicBadRequest("旧密码不正确！")
 	}
 
-	user.Password = GetBcrypt(newPassword)
+	user.Password = tool.GetBcrypt(newPassword)
 
 	user = this.userDao.Save(user)
 
@@ -393,7 +395,7 @@ func (this *UserController) ResetPassword(writer http.ResponseWriter, request *h
 
 	user := this.userDao.CheckByUuid(userUuid)
 
-	user.Password = GetBcrypt(password)
+	user.Password = tool.GetBcrypt(password)
 
 	user = this.userDao.Save(user)
 
