@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"tank/rest/cache"
 	"tank/rest/config"
+	"tank/rest/result"
 	"time"
 )
 
@@ -49,7 +50,7 @@ func (this *UserService) MatterLock(userUuid string) {
 
 	//当前被锁住了。
 	if cacheItem != nil && cacheItem.Data() != nil {
-		this.PanicBadRequest("当前正在进行文件操作，请稍后再试！")
+		panic(result.BadRequest("当前正在进行文件操作，请稍后再试！"))
 	}
 
 	//添加一把新锁，有效期为12小时

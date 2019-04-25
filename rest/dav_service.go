@@ -9,6 +9,7 @@ import (
 	"strings"
 	"tank/rest/dav"
 	"tank/rest/dav/xml"
+	"tank/rest/result"
 	"tank/rest/tool"
 )
 
@@ -57,7 +58,7 @@ func (this *DavService) ParseDepth(request *http.Request) int {
 			return 1
 		}
 	} else {
-		this.PanicBadRequest("必须指定Header Depth")
+		panic(result.BadRequest("必须指定Header Depth"))
 	}
 	return depth
 }
@@ -106,7 +107,7 @@ func (this *DavService) PropstatsFromXmlNames(user *User, matter *Matter, xmlNam
 	}
 
 	if len(properties) == 0 {
-		this.PanicBadRequest("请求的属性项无法解析！")
+		panic(result.BadRequest("请求的属性项无法解析！"))
 	}
 
 	okPropstat := dav.Propstat{Status: http.StatusOK, Props: properties}
@@ -135,7 +136,7 @@ func (this *DavService) Propstats(user *User, matter *Matter, propfind *dav.Prop
 
 	propstats := make([]dav.Propstat, 0)
 	if propfind.Propname != nil {
-		this.PanicBadRequest("propfind.Propname != nil 尚未处理")
+		panic(result.BadRequest("propfind.Propname != nil 尚未处理"))
 	} else if propfind.Allprop != nil {
 
 		//TODO: 如果include中还有内容，那么包含进去。
@@ -312,7 +313,7 @@ func (this *DavService) prepareMoveCopy(
 	var destinationPath string
 
 	if destinationStr == "" {
-		this.PanicBadRequest("Header Destination必填")
+		panic(result.BadRequest("Header Destination必填"))
 	}
 
 	//如果是重命名，那么就不是http开头了。
@@ -322,7 +323,7 @@ func (this *DavService) prepareMoveCopy(
 		destinationUrl, err := url.Parse(destinationStr)
 		this.PanicError(err)
 		if destinationUrl.Host != request.Host {
-			this.PanicBadRequest("Destination Host不一致. %s  %s != %s", destinationStr, destinationUrl.Host, request.Host)
+			panic(result.BadRequest("Destination Host不一致. %s  %s != %s", destinationStr, destinationUrl.Host, request.Host))
 		}
 		fullDestinationPath = destinationUrl.Path
 	}
@@ -337,7 +338,7 @@ func (this *DavService) prepareMoveCopy(
 	if len(strs) == 2 {
 		destinationPath = strs[1]
 	} else {
-		this.PanicBadRequest("目标前缀必须为：%s", WEBDAV_PREFFIX)
+		panic(result.BadRequest("目标前缀必须为：%s", WEBDAV_PREFFIX))
 	}
 
 	destinationName = tool.GetFilenameOfPath(destinationPath)
@@ -360,7 +361,7 @@ func (this *DavService) prepareMoveCopy(
 
 	//如果是空或者/就是请求根目录
 	if srcMatter.Uuid == MATTER_ROOT {
-		this.PanicBadRequest("你不能移动根目录！")
+		panic(result.BadRequest("你不能移动根目录！"))
 	}
 
 	//寻找目标文件夹matter
@@ -404,19 +405,19 @@ func (this *DavService) HandleCopy(writer http.ResponseWriter, request *http.Req
 //加锁
 func (this *DavService) HandleLock(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
 
-	this.PanicBadRequest("不支持LOCK方法")
+	panic(result.BadRequest("不支持LOCK方法"))
 }
 
 //解锁
 func (this *DavService) HandleUnlock(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
 
-	this.PanicBadRequest("不支持UNLOCK方法")
+	panic(result.BadRequest("不支持UNLOCK方法"))
 }
 
 //修改文件属性
 func (this *DavService) HandleProppatch(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
 
-	this.PanicBadRequest("不支持PROPPATCH方法")
+	panic(result.BadRequest("不支持PROPPATCH方法"))
 }
 
 //处理所有的请求
@@ -480,7 +481,7 @@ func (this *DavService) HandleDav(writer http.ResponseWriter, request *http.Requ
 
 	} else {
 
-		this.PanicBadRequest("该方法还不支持。%s", method)
+		panic(result.BadRequest("该方法还不支持。%s", method))
 
 	}
 

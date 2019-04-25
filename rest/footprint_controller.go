@@ -47,7 +47,7 @@ func (this *FootprintController) Detail(writer http.ResponseWriter, request *htt
 
 	uuid := request.FormValue("uuid")
 	if uuid == "" {
-		this.PanicBadRequest("图片缓存的uuid必填")
+		panic(result.BadRequest("图片缓存的uuid必填"))
 	}
 
 	footprint := this.footprintService.Detail(uuid)
@@ -113,7 +113,7 @@ func (this *FootprintController) Delete(writer http.ResponseWriter, request *htt
 
 	uuid := request.FormValue("uuid")
 	if uuid == "" {
-		this.PanicBadRequest("uuid必填")
+		panic(result.BadRequest("uuid必填"))
 	}
 
 	footprint := this.footprintDao.FindByUuid(uuid)

@@ -72,7 +72,7 @@ func (this *MatterController) Detail(writer http.ResponseWriter, request *http.R
 
 	uuid := request.FormValue("uuid")
 	if uuid == "" {
-		this.PanicBadRequest("文件的uuid必填")
+		panic(result.BadRequest("文件的uuid必填"))
 	}
 
 	matter := this.matterService.Detail(uuid)
@@ -284,7 +284,7 @@ func (this *MatterController) Delete(writer http.ResponseWriter, request *http.R
 
 	uuid := request.FormValue("uuid")
 	if uuid == "" {
-		this.PanicBadRequest("文件的uuid必填")
+		panic(result.BadRequest("文件的uuid必填"))
 	}
 
 	matter := this.matterDao.CheckByUuid(uuid)
@@ -292,7 +292,7 @@ func (this *MatterController) Delete(writer http.ResponseWriter, request *http.R
 	//判断文件的所属人是否正确
 	user := this.checkUser(writer, request)
 	if user.Role != USER_ROLE_ADMINISTRATOR && matter.UserUuid != user.Uuid {
-		this.PanicUnauthorized("没有权限")
+		panic(result.Unauthorized("没有权限"))
 	}
 
 	this.matterService.AtomicDelete(matter)
@@ -305,7 +305,7 @@ func (this *MatterController) DeleteBatch(writer http.ResponseWriter, request *h
 
 	uuids := request.FormValue("uuids")
 	if uuids == "" {
-		this.PanicBadRequest("文件的uuids必填")
+		panic(result.BadRequest("文件的uuids必填"))
 	}
 
 	uuidArray := strings.Split(uuids, ",")
@@ -323,7 +323,7 @@ func (this *MatterController) DeleteBatch(writer http.ResponseWriter, request *h
 		//判断文件的所属人是否正确
 		user := this.checkUser(writer, request)
 		if user.Role != USER_ROLE_ADMINISTRATOR && matter.UserUuid != user.Uuid {
-			this.PanicUnauthorized("没有权限")
+			panic(result.Unauthorized("没有权限"))
 		}
 
 		this.matterService.AtomicDelete(matter)
@@ -345,7 +345,7 @@ func (this *MatterController) Rename(writer http.ResponseWriter, request *http.R
 	matter := this.matterDao.CheckByUuid(uuid)
 
 	if user.Role != USER_ROLE_ADMINISTRATOR && matter.UserUuid != user.Uuid {
-		this.PanicUnauthorized("没有权限")
+		panic(result.Unauthorized("没有权限"))
 	}
 
 	this.matterService.AtomicRename(matter, name, user)
@@ -371,7 +371,7 @@ func (this *MatterController) ChangePrivacy(writer http.ResponseWriter, request 
 	//权限验证
 	user := this.checkUser(writer, request)
 	if user.Role != USER_ROLE_ADMINISTRATOR && matter.UserUuid != user.Uuid {
-		this.PanicUnauthorized("没有权限")
+		panic(result.Unauthorized("没有权限"))
 	}
 
 	matter.Privacy = privacy
@@ -390,7 +390,7 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 	var srcUuids []string
 	//验证参数。
 	if srcUuidsStr == "" {
-		this.PanicBadRequest("srcUuids参数必填")
+		panic(result.BadRequest("srcUuids参数必填"))
 	} else {
 		srcUuids = strings.Split(srcUuidsStr, ",")
 	}
@@ -405,11 +405,11 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 	//验证dest是否有问题
 	var destMatter = this.matterDao.CheckWithRootByUuid(destUuid, user)
 	if !destMatter.Dir {
-		this.PanicBadRequest("目标不是文件夹")
+		panic(result.BadRequest("目标不是文件夹"))
 	}
 
 	if user.Role != USER_ROLE_ADMINISTRATOR && destMatter.UserUuid != user.Uuid {
-		this.PanicUnauthorized("没有权限")
+		panic(result.Unauthorized("没有权限"))
 	}
 
 	var srcMatters []*Matter
@@ -419,14 +419,14 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 		srcMatter := this.matterDao.CheckByUuid(uuid)
 
 		if srcMatter.Puuid == destMatter.Uuid {
-			this.PanicBadRequest("没有进行移动，操作无效！")
+			panic(result.BadRequest("没有进行移动，操作无效！"))
 		}
 
 		//判断同级文件夹中是否有同名的文件
 		count := this.matterDao.CountByUserUuidAndPuuidAndDirAndName(user.Uuid, destMatter.Uuid, srcMatter.Dir, srcMatter.Name)
 
 		if count > 0 {
-			this.PanicBadRequest("【" + srcMatter.Name + "】在目标文件夹已经存在了，操作失败。")
+			panic(result.BadRequest("【" + srcMatter.Name + "】在目标文件夹已经存在了，操作失败。"))
 		}
 
 		//判断和目标文件夹是否是同一个主人。

@@ -85,10 +85,10 @@ func (this *DavController) CheckCurrentUser(writer http.ResponseWriter, request 
 
 	user := this.userDao.FindByUsername(username)
 	if user == nil {
-		this.PanicBadRequest("邮箱或密码错误")
+		panic(result.BadRequest("邮箱或密码错误"))
 	} else {
 		if !tool.MatchBcrypt(password, user.Password) {
-			this.PanicBadRequest("邮箱或密码错误")
+			panic(result.BadRequest("邮箱或密码错误"))
 		}
 	}
 

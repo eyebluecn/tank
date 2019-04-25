@@ -92,7 +92,7 @@ func (this *PreferenceController) SystemCleanup(writer http.ResponseWriter, requ
 	password := request.FormValue("password")
 
 	if !tool.MatchBcrypt(password, user.Password) {
-		this.PanicBadRequest("密码错误，不能执行！")
+		panic(result.BadRequest("密码错误，不能执行！"))
 	}
 
 	for _, bean := range CONTEXT.BeanMap {

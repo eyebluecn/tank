@@ -97,6 +97,22 @@ func BadRequest(format string, v ...interface{}) *WebResult {
 	return CustomWebResult(CODE_WRAPPER_BAD_REQUEST, fmt.Sprintf(format, v...))
 }
 
+//没有权限
+func Unauthorized(format string, v ...interface{}) *WebResult {
+	return CustomWebResult(CODE_WRAPPER_UNAUTHORIZED, fmt.Sprintf(format, v...))
+}
+
+//没有找到
+func NotFound(format string, v ...interface{}) *WebResult {
+	return CustomWebResult(CODE_WRAPPER_NOT_FOUND, fmt.Sprintf(format, v...))
+
+}
+
+//服务器内部出问题
+func Server(format string, v ...interface{}) *WebResult {
+	return CustomWebResult(CODE_WRAPPER_SERVER, fmt.Sprintf(format, v...))
+}
+
 //所有的数据库错误情况
 var (
 	DB_ERROR_DUPLICATE_KEY  = "Error 1062: Duplicate entry"

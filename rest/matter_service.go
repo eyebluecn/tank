@@ -277,7 +277,7 @@ func (this *MatterService) handleOverwrite(userUuid string, destinationPath stri
 			//要求覆盖。那么删除。
 			this.matterDao.Delete(destMatter)
 		} else {
-			this.PanicBadRequest("%s已经存在，操作失败！", destMatter.Path)
+			panic(result.BadRequest("%s已经存在，操作失败！", destMatter.Path))
 		}
 	}
 
@@ -291,7 +291,7 @@ func (this *MatterService) move(srcMatter *Matter, destDirMatter *Matter) {
 	}
 
 	if !destDirMatter.Dir {
-		this.PanicBadRequest("目标必须为文件夹")
+		panic(result.BadRequest("目标必须为文件夹"))
 	}
 
 	if srcMatter.Dir {
@@ -352,7 +352,7 @@ func (this *MatterService) AtomicMove(srcMatter *Matter, destDirMatter *Matter, 
 		panic(result.BadRequest("destDirMatter cannot be nil."))
 	}
 	if !destDirMatter.Dir {
-		this.PanicBadRequest("目标必须为文件夹")
+		panic(result.BadRequest("目标必须为文件夹"))
 	}
 
 	//文件夹不能把自己移入到自己中，也不可以移入到自己的子文件夹下。
@@ -389,7 +389,7 @@ func (this *MatterService) AtomicMoveBatch(srcMatters []*Matter, destDirMatter *
 	}
 
 	if !destDirMatter.Dir {
-		this.PanicBadRequest("目标必须为文件夹")
+		panic(result.BadRequest("目标必须为文件夹"))
 	}
 
 	//文件夹不能把自己移入到自己中，也不可以移入到自己的子文件夹下。
@@ -477,7 +477,7 @@ func (this *MatterService) AtomicCopy(srcMatter *Matter, destDirMatter *Matter, 
 	defer this.userService.MatterUnlock(srcMatter.UserUuid)
 
 	if !destDirMatter.Dir {
-		this.PanicBadRequest("目标必须为文件夹")
+		panic(result.BadRequest("目标必须为文件夹"))
 	}
 
 	destinationPath := destDirMatter.Path + "/" + name
@@ -490,7 +490,7 @@ func (this *MatterService) AtomicCopy(srcMatter *Matter, destDirMatter *Matter, 
 func (this *MatterService) AtomicRename(matter *Matter, name string, user *User) {
 
 	if user == nil {
-		this.PanicBadRequest("user cannot be nil")
+		panic(result.BadRequest("user cannot be nil"))
 	}
 
 	//操作锁
@@ -499,10 +499,10 @@ func (this *MatterService) AtomicRename(matter *Matter, name string, user *User)
 
 	//验证参数。
 	if name == "" {
-		this.PanicBadRequest("name参数必填")
+		panic(result.BadRequest("name参数必填"))
 	}
 	if m, _ := regexp.MatchString(`[<>|*?/\\]`, name); m {
-		this.PanicBadRequest(`名称中不能包含以下特殊符号：< > | * ? / \`)
+		panic(result.BadRequest(`名称中不能包含以下特殊符号：< > | * ? / \`))
 	}
 
 	if len(name) > 200 {
@@ -510,14 +510,14 @@ func (this *MatterService) AtomicRename(matter *Matter, name string, user *User)
 	}
 
 	if name == matter.Name {
-		this.PanicBadRequest("新名称和旧名称一样，操作失败！")
+		panic(result.BadRequest("新名称和旧名称一样，操作失败！"))
 	}
 
 	//判断同级文件夹中是否有同名的文件
 	count := this.matterDao.CountByUserUuidAndPuuidAndDirAndName(user.Uuid, matter.Puuid, matter.Dir, name)
 
 	if count > 0 {
-		this.PanicBadRequest("【" + name + "】已经存在了，请使用其他名称。")
+		panic(result.BadRequest("【" + name + "】已经存在了，请使用其他名称。"))
 	}
 
 	if matter.Dir {
