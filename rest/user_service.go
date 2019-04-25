@@ -2,8 +2,8 @@ package rest
 
 import (
 	"net/http"
+	"tank/rest/cache"
 	"tank/rest/config"
-	"tank/rest/tool"
 	"time"
 )
 
@@ -14,7 +14,7 @@ type UserService struct {
 	sessionDao *SessionDao
 
 	//操作文件的锁。
-	locker *tool.CacheTable
+	locker *cache.CacheTable
 }
 
 //初始化方法
@@ -33,7 +33,7 @@ func (this *UserService) Init() {
 	}
 
 	//创建一个用于存储用户文件锁的缓存。
-	this.locker = tool.NewCacheTable()
+	this.locker = cache.NewCacheTable()
 }
 
 

@@ -6,6 +6,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"tank/rest/download"
 	"tank/rest/result"
 	"tank/rest/tool"
 )
@@ -64,7 +65,7 @@ func (this *MatterService) DownloadFile(
 	filename string,
 	withContentDisposition bool) {
 
-	tool.DownloadFile(writer, request, filePath, filename, withContentDisposition)
+	download.DownloadFile(writer, request, filePath, filename, withContentDisposition)
 }
 
 //删除文件

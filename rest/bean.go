@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"tank/rest/config"
+	"tank/rest/logger"
 	"tank/rest/result"
 	"tank/rest/tool"
 )
@@ -20,11 +21,11 @@ type IBean interface {
 }
 
 type Bean struct {
-	logger *tool.Logger
+	logger *logger.Logger
 }
 
 func (this *Bean) Init() {
-	this.logger = tool.LOGGER
+	this.logger = logger.LOGGER
 }
 
 func (this *Bean) ConfigPost() {

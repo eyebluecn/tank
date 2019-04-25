@@ -1,4 +1,4 @@
-package tool
+package download
 
 import (
 	"errors"
@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"tank/rest/result"
+	"tank/rest/tool"
 	"time"
 )
 
@@ -265,7 +266,7 @@ func DownloadFile(
 	var ctype string
 	if !haveType {
 		//使用mimeUtil来获取mime
-		ctype = GetFallbackMimeType(filename, "")
+		ctype = tool.GetFallbackMimeType(filename, "")
 		if ctype == "" {
 			// read a chunk to decide between utf-8 text and binary
 			var buf [sniffLen]byte

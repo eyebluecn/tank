@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 	"tank/rest/config"
+	"tank/rest/logger"
 	"tank/rest/result"
 	"tank/rest/tool"
 	"time"
@@ -71,7 +72,7 @@ func NewRouter() *Router {
 func (this *Router) GlobalPanicHandler(writer http.ResponseWriter, request *http.Request, startTime time.Time) {
 	if err := recover(); err != nil {
 
-		tool.LOGGER.Error("错误: %v", err)
+		logger.LOGGER.Error("错误: %v", err)
 
 		var webResult *result.WebResult = nil
 		if value, ok := err.(string); ok {

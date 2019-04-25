@@ -7,14 +7,14 @@ import (
 	"net/http"
 	"tank/rest"
 	"tank/rest/config"
-	"tank/rest/tool"
+	"tank/rest/logger"
 )
 
 func main() {
 
 	//日志第一优先级保障
-	tool.LOGGER.Init()
-	defer tool.LOGGER.Destroy()
+	logger.LOGGER.Init()
+	defer logger.LOGGER.Destroy()
 
 	//装载配置文件，这个决定了是否需要执行安装过程
 	config.CONFIG.Init()
@@ -25,7 +25,7 @@ func main() {
 
 	http.Handle("/", rest.CONTEXT.Router)
 
-	tool.LOGGER.Info("App started at http://localhost:%v", config.CONFIG.ServerPort)
+	logger.LOGGER.Info("App started at http://localhost:%v", config.CONFIG.ServerPort)
 
 	dotPort := fmt.Sprintf(":%v", config.CONFIG.ServerPort)
 	err1 := http.ListenAndServe(dotPort, nil)

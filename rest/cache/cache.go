@@ -1,10 +1,11 @@
-package tool
+package cache
 
 import (
 	"errors"
 	"fmt"
 	"sort"
 	"sync"
+	"tank/rest/tool"
 	"time"
 )
 
@@ -196,7 +197,7 @@ func (table *CacheTable) checkExpire() {
 	table.cleanupInterval = smallestDuration
 	if smallestDuration > 0 {
 		table.cleanupTimer = time.AfterFunc(smallestDuration, func() {
-			go SafeMethod(table.checkExpire)
+			go tool.SafeMethod(table.checkExpire)
 		})
 	}
 	table.Unlock()
