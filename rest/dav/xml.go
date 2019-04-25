@@ -14,7 +14,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"time"
 
 	// As of https://go-review.googlesource.com/#/c/12772/ which was submitted
 	// in July 2015, this package uses an internal fork of the standard
@@ -64,24 +63,8 @@ func StatusText(code int) string {
 }
 
 var (
-	errDestinationEqualsSource = errors.New("webdav: destination equals source")
-	errDirectoryNotEmpty       = errors.New("webdav: directory not empty")
-	errInvalidDepth            = errors.New("webdav: invalid depth")
-	errInvalidDestination      = errors.New("webdav: invalid destination")
-	errInvalidIfHeader         = errors.New("webdav: invalid If header")
-	errInvalidLockInfo         = errors.New("webdav: invalid lock info")
-	errInvalidLockToken        = errors.New("webdav: invalid lock token")
 	errInvalidPropfind         = errors.New("webdav: invalid propfind")
-	errInvalidProppatch        = errors.New("webdav: invalid proppatch")
 	errInvalidResponse         = errors.New("webdav: invalid response")
-	errInvalidTimeout          = errors.New("webdav: invalid timeout")
-	errNoFileSystem            = errors.New("webdav: no file system")
-	errNoLockSystem            = errors.New("webdav: no lock system")
-	errNotADirectory           = errors.New("webdav: not a directory")
-	errPrefixMismatch          = errors.New("webdav: prefix mismatch")
-	errRecursionTooDeep        = errors.New("webdav: recursion too deep")
-	errUnsupportedLockInfo     = errors.New("webdav: unsupported lock info")
-	errUnsupportedMethod       = errors.New("webdav: unsupported method")
 )
 
 
@@ -111,26 +94,6 @@ func (c *CountingReader) Read(p []byte) (int, error) {
 	n, err := c.reader.Read(p)
 	c.n += n
 	return n, err
-}
-
-func WriteLockInfo(w io.Writer, token string, ld LockDetails) (int, error) {
-	depth := "infinity"
-	if ld.ZeroDepth {
-		depth = "0"
-	}
-	timeout := ld.Duration / time.Second
-	return fmt.Fprintf(w, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"+
-		"<D:prop xmlns:D=\"DAV:\"><D:lockdiscovery><D:activelock>\n"+
-		"	<D:locktype><D:write/></D:locktype>\n"+
-		"	<D:lockscope><D:exclusive/></D:lockscope>\n"+
-		"	<D:depth>%s</D:depth>\n"+
-		"	<D:owner>%s</D:owner>\n"+
-		"	<D:timeout>Second-%d</D:timeout>\n"+
-		"	<D:locktoken><D:href>%s</D:href></D:locktoken>\n"+
-		"	<D:lockroot><D:href>%s</D:href></D:lockroot>\n"+
-		"</D:activelock></D:lockdiscovery></D:prop>",
-		depth, ld.OwnerXML, timeout, escape(token), escape(ld.Root),
-	)
 }
 
 func escape(s string) string {
@@ -525,29 +488,4 @@ type PropertyUpdate struct {
 	XMLName   ixml.Name   `xml:"DAV: propertyupdate"`
 	Lang      string      `xml:"xml:lang,attr,omitempty"`
 	SetRemove []SetRemove `xml:",any"`
-}
-
-func ReadProppatch(r io.Reader) (patches []Proppatch, status int, err error) {
-	var pu PropertyUpdate
-	if err = ixml.NewDecoder(r).Decode(&pu); err != nil {
-		return nil, http.StatusBadRequest, err
-	}
-	for _, op := range pu.SetRemove {
-		remove := false
-		switch op.XMLName {
-		case ixml.Name{Space: "DAV:", Local: "set"}:
-			// No-op.
-		case ixml.Name{Space: "DAV:", Local: "remove"}:
-			for _, p := range op.Prop {
-				if len(p.InnerXML) > 0 {
-					return nil, http.StatusBadRequest, errInvalidProppatch
-				}
-			}
-			remove = true
-		default:
-			return nil, http.StatusBadRequest, errInvalidProppatch
-		}
-		patches = append(patches, Proppatch{Remove: remove, Props: op.Prop})
-	}
-	return patches, 0, nil
 }
