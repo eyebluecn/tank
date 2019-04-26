@@ -185,7 +185,7 @@ func (this *Context) InstallOk() {
 		this.OpenDb()
 
 		for _, bean := range this.BeanMap {
-			bean.ConfigPost()
+			bean.Bootstrap()
 		}
 	}
 

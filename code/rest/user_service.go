@@ -71,7 +71,7 @@ func (this *UserService) MatterUnlock(userUuid string) {
 
 //装载session信息，如果session没有了根据cookie去装填用户信息。
 //在所有的路由最初会调用这个方法
-func (this *UserService) bootstrap(writer http.ResponseWriter, request *http.Request) {
+func (this *UserService) preHandle(writer http.ResponseWriter, request *http.Request) {
 
 	//登录身份有效期以数据库中记录的为准
 

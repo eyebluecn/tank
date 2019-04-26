@@ -14,7 +14,7 @@ type IBean interface {
 	//系统清理方法
 	Cleanup()
 	//所有配置都加载完成后调用的方法，包括数据库加载完毕
-	ConfigPost()
+	Bootstrap()
 	//快速的Panic方法
 	PanicError(err error)
 }
@@ -27,7 +27,7 @@ func (this *Bean) Init() {
 	this.logger = logger.LOGGER
 }
 
-func (this *Bean) ConfigPost() {
+func (this *Bean) Bootstrap() {
 
 }
 

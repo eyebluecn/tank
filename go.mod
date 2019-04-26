@@ -12,5 +12,6 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d
+	github.com/robfig/cron v0.0.0-20180505203441-b41be1df6967
 	golang.org/x/crypto v0.0.0-20190325154230-a5d413f7728c
 )

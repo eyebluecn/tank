@@ -2,6 +2,7 @@ package rest
 
 import (
 	"github.com/eyebluecn/tank/code/tool/util"
+	"github.com/robfig/cron"
 	"time"
 )
 
@@ -50,10 +51,32 @@ func (this *DashboardService) Init() {
 }
 
 //系统启动，数据库配置完毕后会调用该方法
-func (this *DashboardService) ConfigPost() {
+func (this *DashboardService) Bootstrap() {
 
 	//立即执行数据清洗任务
 	go util.SafeMethod(this.maintain)
+
+	//每天00:05执行数据清洗任务
+	i := 0
+	c := cron.New()
+
+	//AddFunc
+	spec := "*/5 * * * * ?"
+	err := c.AddFunc(spec, func() {
+		i++
+		this.logger.Info("cron running: %d", i)
+	})
+	this.PanicError(err)
+
+	//AddJob方法
+	//c.AddJob(spec, TestJob{})
+	//c.AddJob(spec, Test2Job{})
+
+	//启动计划任务
+	c.Start()
+
+	//关闭着计划任务, 但是不能关闭已经在执行中的任务.
+	defer c.Stop()
 }
 
 //每日清洗离线数据表。

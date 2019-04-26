@@ -135,7 +135,7 @@ func (this *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 			//已安装的模式
 
 			//统一处理用户的身份信息。
-			this.userService.bootstrap(writer, request)
+			this.userService.preHandle(writer, request)
 
 			if handler, ok := this.routeMap[path]; ok {
 				handler(writer, request)
