@@ -15,3 +15,6 @@ func  SafeMethod(f func()) {
 	//执行函数
 	f()
 }
+
+
+

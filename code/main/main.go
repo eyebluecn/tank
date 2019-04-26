@@ -5,9 +5,9 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"log"
 	"net/http"
-	"tank/code"
 	"tank/code/config"
 	"tank/code/logger"
+	"tank/code/rest"
 )
 
 func main() {
@@ -20,10 +20,10 @@ func main() {
 	config.CONFIG.Init()
 
 	//全局运行的上下文
-	code.CONTEXT.Init()
-	defer code.CONTEXT.Destroy()
+	rest.CONTEXT.Init()
+	defer rest.CONTEXT.Destroy()
 
-	http.Handle("/", code.CONTEXT.Router)
+	http.Handle("/", rest.CONTEXT.Router)
 
 	logger.LOGGER.Info("App started at http://localhost:%v", config.CONFIG.ServerPort)
 

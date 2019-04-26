@@ -11,7 +11,7 @@ import (
 
 //缓存项
 //主要借鉴了cache2go https://github.com/muesli/cache2go
-type CacheItem struct {
+type Item struct {
 	sync.RWMutex //读写锁
 	//缓存键
 	key interface{}
@@ -30,9 +30,9 @@ type CacheItem struct {
 }
 
 //新建一项缓存
-func NewCacheItem(key interface{}, duration time.Duration, data interface{}) *CacheItem {
+func NewItem(key interface{}, duration time.Duration, data interface{}) *Item {
 	t := time.Now()
-	return &CacheItem{
+	return &Item{
 		key:            key,
 		duration:       duration,
 		createTime:     t,
@@ -44,7 +44,7 @@ func NewCacheItem(key interface{}, duration time.Duration, data interface{}) *Ca
 }
 
 //手动获取一下，保持该项
-func (item *CacheItem) KeepAlive() {
+func (item *Item) KeepAlive() {
 	item.Lock()
 	defer item.Unlock()
 	item.accessTime = time.Now()
@@ -52,73 +52,73 @@ func (item *CacheItem) KeepAlive() {
 }
 
 //返回生命周期
-func (item *CacheItem) Duration() time.Duration {
+func (item *Item) Duration() time.Duration {
 	return item.duration
 }
 
 //返回访问时间。可能并发，加锁
-func (item *CacheItem) AccessTime() time.Time {
+func (item *Item) AccessTime() time.Time {
 	item.RLock()
 	defer item.RUnlock()
 	return item.accessTime
 }
 
 //返回创建时间
-func (item *CacheItem) CreateTime() time.Time {
+func (item *Item) CreateTime() time.Time {
 	return item.createTime
 }
 
 //返回访问时间。可能并发，加锁
-func (item *CacheItem) Count() int64 {
+func (item *Item) Count() int64 {
 	item.RLock()
 	defer item.RUnlock()
 	return item.count
 }
 
 //返回key值
-func (item *CacheItem) Key() interface{} {
+func (item *Item) Key() interface{} {
 	return item.key
 }
 
 //返回数据
-func (item *CacheItem) Data() interface{} {
+func (item *Item) Data() interface{} {
 	return item.data
 }
 
 //设置回调函数
-func (item *CacheItem) SetDeleteCallback(f func(interface{})) {
+func (item *Item) SetDeleteCallback(f func(interface{})) {
 	item.Lock()
 	defer item.Unlock()
 	item.deleteCallback = f
 }
 
 // 统一管理缓存项的表
-type CacheTable struct {
+type Table struct {
 	sync.RWMutex
 
 	//所有缓存项
-	items map[interface{}]*CacheItem
+	items map[interface{}]*Item
 	// 触发缓存清理的定时器
 	cleanupTimer *time.Timer
 	// 缓存清理周期
 	cleanupInterval time.Duration
 	// 获取一个不存在的缓存项时的回调函数
-	loadData func(key interface{}, args ...interface{}) *CacheItem
+	loadData func(key interface{}, args ...interface{}) *Item
 	// 向缓存表增加缓存项时的回调函数
-	addedCallback func(item *CacheItem)
+	addedCallback func(item *Item)
 	// 从缓存表删除一个缓存项时的回调函数
-	deleteCallback func(item *CacheItem)
+	deleteCallback func(item *Item)
 }
 
 // 返回缓存中存储有多少项
-func (table *CacheTable) Count() int {
+func (table *Table) Count() int {
 	table.RLock()
 	defer table.RUnlock()
 	return len(table.items)
 }
 
 // 遍历所有项
-func (table *CacheTable) Foreach(trans func(key interface{}, item *CacheItem)) {
+func (table *Table) Foreach(trans func(key interface{}, item *Item)) {
 	table.RLock()
 	defer table.RUnlock()
 
@@ -128,28 +128,28 @@ func (table *CacheTable) Foreach(trans func(key interface{}, item *CacheItem)) {
 }
 
 // SetDataLoader配置一个数据加载的回调，当尝试去请求一个不存在的key的时候调用
-func (table *CacheTable) SetDataLoader(f func(interface{}, ...interface{}) *CacheItem) {
+func (table *Table) SetDataLoader(f func(interface{}, ...interface{}) *Item) {
 	table.Lock()
 	defer table.Unlock()
 	table.loadData = f
 }
 
 // 添加时的回调函数
-func (table *CacheTable) SetAddedCallback(f func(*CacheItem)) {
+func (table *Table) SetAddedCallback(f func(*Item)) {
 	table.Lock()
 	defer table.Unlock()
 	table.addedCallback = f
 }
 
 // 删除时的回调函数
-func (table *CacheTable) SetDeleteCallback(f func(*CacheItem)) {
+func (table *Table) SetDeleteCallback(f func(*Item)) {
 	table.Lock()
 	defer table.Unlock()
 	table.deleteCallback = f
 }
 
 //终结检查，被自调整的时间触发
-func (table *CacheTable) checkExpire() {
+func (table *Table) checkExpire() {
 	table.Lock()
 	if table.cleanupTimer != nil {
 		table.cleanupTimer.Stop()
@@ -204,8 +204,8 @@ func (table *CacheTable) checkExpire() {
 }
 
 // 添加缓存项
-func (table *CacheTable) Add(key interface{}, duration time.Duration, data interface{}) *CacheItem {
-	item := NewCacheItem(key, duration, data)
+func (table *Table) Add(key interface{}, duration time.Duration, data interface{}) *Item {
+	item := NewItem(key, duration, data)
 
 	// 将缓存项放入表中
 	table.Lock()
@@ -231,7 +231,7 @@ func (table *CacheTable) Add(key interface{}, duration time.Duration, data inter
 }
 
 // 从缓存中删除项
-func (table *CacheTable) Delete(key interface{}) (*CacheItem, error) {
+func (table *Table) Delete(key interface{}) (*Item, error) {
 	table.RLock()
 	r, ok := table.items[key]
 	if !ok {
@@ -263,7 +263,7 @@ func (table *CacheTable) Delete(key interface{}) (*CacheItem, error) {
 }
 
 //单纯的检查某个键是否存在
-func (table *CacheTable) Exists(key interface{}) bool {
+func (table *Table) Exists(key interface{}) bool {
 	table.RLock()
 	defer table.RUnlock()
 	_, ok := table.items[key]
@@ -272,7 +272,7 @@ func (table *CacheTable) Exists(key interface{}) bool {
 }
 
 //如果存在，返回false. 如果不存在,就去添加一个键，并且返回true
-func (table *CacheTable) NotFoundAdd(key interface{}, lifeSpan time.Duration, data interface{}) bool {
+func (table *Table) NotFoundAdd(key interface{}, lifeSpan time.Duration, data interface{}) bool {
 	table.Lock()
 
 	if _, ok := table.items[key]; ok {
@@ -280,7 +280,7 @@ func (table *CacheTable) NotFoundAdd(key interface{}, lifeSpan time.Duration, da
 		return false
 	}
 
-	item := NewCacheItem(key, lifeSpan, data)
+	item := NewItem(key, lifeSpan, data)
 	table.log("Adding item with key %v and lifespan of %v to table", key, lifeSpan)
 	table.items[key] = item
 
@@ -302,7 +302,7 @@ func (table *CacheTable) NotFoundAdd(key interface{}, lifeSpan time.Duration, da
 }
 
 //从缓存中返回一个被标记的并保持活性的值。你可以传附件的参数到DataLoader回调函数
-func (table *CacheTable) Value(key interface{}, args ...interface{}) (*CacheItem, error) {
+func (table *Table) Value(key interface{}, args ...interface{}) (*Item, error) {
 	table.RLock()
 	r, ok := table.items[key]
 	loadData := table.loadData
@@ -330,13 +330,13 @@ func (table *CacheTable) Value(key interface{}, args ...interface{}) (*CacheItem
 }
 
 // 删除缓存表中的所有项目
-func (table *CacheTable) Truncate() {
+func (table *Table) Truncate() {
 	table.Lock()
 	defer table.Unlock()
 
 	table.log("Truncate table")
 
-	table.items = make(map[interface{}]*CacheItem)
+	table.items = make(map[interface{}]*Item)
 	table.cleanupInterval = 0
 	if table.cleanupTimer != nil {
 		table.cleanupTimer.Stop()
@@ -344,31 +344,31 @@ func (table *CacheTable) Truncate() {
 }
 
 //辅助table中排序，统计的
-type CacheItemPair struct {
+type ItemPair struct {
 	Key         interface{}
 	AccessCount int64
 }
 
-type CacheItemPairList []CacheItemPair
+type ItemPairList []ItemPair
 
-func (p CacheItemPairList) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
-func (p CacheItemPairList) Len() int           { return len(p) }
-func (p CacheItemPairList) Less(i, j int) bool { return p[i].AccessCount > p[j].AccessCount }
+func (p ItemPairList) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+func (p ItemPairList) Len() int           { return len(p) }
+func (p ItemPairList) Less(i, j int) bool { return p[i].AccessCount > p[j].AccessCount }
 
 // 返回缓存表中被访问最多的项目
-func (table *CacheTable) MostAccessed(count int64) []*CacheItem {
+func (table *Table) MostAccessed(count int64) []*Item {
 	table.RLock()
 	defer table.RUnlock()
 
-	p := make(CacheItemPairList, len(table.items))
+	p := make(ItemPairList, len(table.items))
 	i := 0
 	for k, v := range table.items {
-		p[i] = CacheItemPair{k, v.count}
+		p[i] = ItemPair{k, v.count}
 		i++
 	}
 	sort.Sort(p)
 
-	var r []*CacheItem
+	var r []*Item
 	c := int64(0)
 	for _, v := range p {
 		if c >= count {
@@ -387,14 +387,14 @@ func (table *CacheTable) MostAccessed(count int64) []*CacheItem {
 
 
 // 打印日志
-func (table *CacheTable) log(format string, v ...interface{}) {
+func (table *Table) log(format string, v ...interface{}) {
 	//TODO: 全局日志记录
 	//LOGGER.Info(format, v...)
 }
 
 //新建一个缓存Table
-func NewCacheTable() *CacheTable {
-	return &CacheTable{
-		items: make(map[interface{}]*CacheItem),
+func NewTable() *Table {
+	return &Table{
+		items: make(map[interface{}]*Item),
 	}
 }
