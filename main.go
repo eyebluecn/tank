@@ -1,4 +1,4 @@
-package main
+package tank
 
 import (
 	"fmt"
