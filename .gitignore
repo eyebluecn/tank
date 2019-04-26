@@ -1,5 +1,9 @@
 #idea file
 .idea
 
-dist
+# develop temp folder.
 tmp
+
+# build execute file
+tank
+

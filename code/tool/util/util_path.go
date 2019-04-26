@@ -40,6 +40,8 @@ func GetDevHomePath() string {
 		panic("cannot get dev home path.")
 	}
 
+	fmt.Println(file)
+
 	dir := GetDirOfPath(file)
 	dir = GetDirOfPath(dir)
 	dir = GetDirOfPath(dir)
@@ -56,6 +58,8 @@ func GetHomePath() string {
 		panic(err)
 	}
 	exPath := filepath.Dir(ex)
+
+	GetDevHomePath()
 
 	//如果exPath中包含了 /private/var/folders 我们认为是在Mac的开发环境中
 	macDev := strings.HasPrefix(exPath, "/private/var/folders")
