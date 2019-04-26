@@ -1,6 +1,6 @@
 package rest
 
-import "tank/code/tool/builder"
+import "github.com/eyebluecn/tank/code/tool/builder"
 
 type BaseDao struct {
 	Bean

@@ -1,9 +1,9 @@
 package rest
 
 import (
+	"github.com/eyebluecn/tank/code/tool/builder"
 	"github.com/jinzhu/gorm"
 	"github.com/nu7hatch/gouuid"
-	"tank/code/tool/builder"
 	"time"
 )
 
@@ -85,8 +85,8 @@ func (this *DashboardDao) ActiveIpTop10() []*DashboardIpTimes {
 
 	sortArray := []builder.OrderPair{
 		{
-			key:   "times",
-			value: "DESC",
+			Key:   "times",
+			Value: "DESC",
 		},
 	}
 	rows, err := CONTEXT.DB.Model(&Footprint{}).

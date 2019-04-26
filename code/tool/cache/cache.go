@@ -3,9 +3,9 @@ package cache
 import (
 	"errors"
 	"fmt"
+	"github.com/eyebluecn/tank/code/tool/util"
 	"sort"
 	"sync"
-	"tank/code/tool/util"
 	"time"
 )
 
@@ -384,7 +384,6 @@ func (table *Table) MostAccessed(count int64) []*Item {
 
 	return r
 }
-
 
 // 打印日志
 func (table *Table) log(format string, v ...interface{}) {

@@ -2,12 +2,12 @@ package rest
 
 import (
 	"fmt"
+	"github.com/eyebluecn/tank/code/tool/builder"
+	"github.com/eyebluecn/tank/code/tool/util"
 	"github.com/jinzhu/gorm"
 	"github.com/nu7hatch/gouuid"
 	"os"
 	"path/filepath"
-	"tank/code/tool/builder"
-	"tank/code/tool/util"
 	"time"
 )
 
@@ -200,11 +200,9 @@ func (this *ImageCacheDao) SizeBetweenTime(startTime time.Time, endTime time.Tim
 	return size
 }
 
-
 //执行清理操作
 func (this *ImageCacheDao) Cleanup() {
 	this.logger.Info("[ImageCacheDao]执行清理：清除数据库中所有ImageCache记录。")
 	db := CONTEXT.DB.Where("uuid is not null").Delete(ImageCache{})
 	this.PanicError(db.Error)
 }
-

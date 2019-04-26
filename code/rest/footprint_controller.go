@@ -1,10 +1,10 @@
 package rest
 
 import (
+	"github.com/eyebluecn/tank/code/tool/builder"
+	"github.com/eyebluecn/tank/code/tool/result"
 	"net/http"
 	"strconv"
-	"tank/code/tool/builder"
-	"tank/code/tool/result"
 )
 
 type FootprintController struct {
@@ -95,12 +95,12 @@ func (this *FootprintController) Page(writer http.ResponseWriter, request *http.
 
 	sortArray := []builder.OrderPair{
 		{
-			key:   "create_time",
-			value: orderCreateTime,
+			Key:   "create_time",
+			Value: orderCreateTime,
 		},
 		{
-			key:   "size",
-			value: orderSize,
+			Key:   "size",
+			Value: orderSize,
 		},
 	}
 

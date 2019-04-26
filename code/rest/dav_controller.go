@@ -3,12 +3,12 @@ package rest
 import (
 	"bytes"
 	"fmt"
+	"github.com/eyebluecn/tank/code/tool/result"
+	"github.com/eyebluecn/tank/code/tool/util"
 	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strings"
-	"tank/code/tool/result"
-	"tank/code/tool/util"
 )
 
 /**

@@ -2,15 +2,15 @@ package test
 
 import (
 	"bytes"
-	dav2 "tank/code/tool/dav"
-	xml2 "tank/code/tool/dav/xml"
+	"github.com/eyebluecn/tank/code/tool/dav"
+	"github.com/eyebluecn/tank/code/tool/dav/xml"
 	"testing"
 	"time"
 )
 
 func TestXmlDecoder(t *testing.T) {
 
-	propfind := &dav2.Propfind{}
+	propfind := &dav.Propfind{}
 
 	str := `
 		<?xml version="1.0" encoding="utf-8" ?>
@@ -26,7 +26,7 @@ func TestXmlDecoder(t *testing.T) {
 
 	reader := bytes.NewReader([]byte(str))
 
-	err := xml2.NewDecoder(reader).Decode(propfind)
+	err := xml.NewDecoder(reader).Decode(propfind)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -58,18 +58,18 @@ func TestXmlEncoder(t *testing.T) {
 
 	writer := &bytes.Buffer{}
 
-	response := &dav2.Response{
-		XMLName: xml2.Name{Space: "DAV:", Local: "response"},
+	response := &dav.Response{
+		XMLName: xml.Name{Space: "DAV:", Local: "response"},
 		Href:    []string{"/api/dav"},
-		Propstat: []dav2.SubPropstat{
+		Propstat: []dav.SubPropstat{
 			{
-				Prop: []dav2.Property{
+				Prop: []dav.Property{
 					{
-						XMLName:  xml2.Name{Space: "DAV:", Local: "resourcetype"},
+						XMLName:  xml.Name{Space: "DAV:", Local: "resourcetype"},
 						InnerXML: []byte(`<D:collection xmlns:D="DAV:"/>`),
 					},
 					{
-						XMLName:  xml2.Name{Space: "DAV:", Local: "getlastmodified"},
+						XMLName:  xml.Name{Space: "DAV:", Local: "getlastmodified"},
 						InnerXML: []byte(`Mon, 22 Apr 2019 06:38:36 GMT`),
 					},
 				},
@@ -78,7 +78,7 @@ func TestXmlEncoder(t *testing.T) {
 		},
 	}
 
-	err := xml2.NewEncoder(writer).Encode(response)
+	err := xml.NewEncoder(writer).Encode(response)
 
 	if err != nil {
 		t.Error(err.Error())

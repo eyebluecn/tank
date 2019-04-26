@@ -2,20 +2,19 @@ package rest
 
 import (
 	"fmt"
-	"tank/code/config"
-	"tank/code/tool/util"
+	"github.com/eyebluecn/tank/code/config"
+	"github.com/eyebluecn/tank/code/tool/util"
 )
 
 const (
 	//根目录的uuid
-	MATTER_ROOT  = "root"
+	MATTER_ROOT = "root"
 	//cache文件夹名称
 	MATTER_CACHE = "cache"
 	//matter名称最大长度
 	MATTER_NAME_MAX_LENGTH = 200
 	//matter文件夹最大深度
 	MATTER_NAME_MAX_DEPTH = 32
-
 )
 
 /**
@@ -51,7 +50,6 @@ func (this *Matter) MimeType() string {
 	return util.GetMimeType(util.GetExtension(this.Name))
 }
 
-
 //创建一个 ROOT 的matter，主要用于统一化处理移动复制等内容。
 func NewRootMatter(user *User) *Matter {
 	matter := &Matter{}
@@ -81,4 +79,3 @@ func GetUserCacheRootDir(username string) (rootDirPath string) {
 
 	return rootDirPath
 }
-

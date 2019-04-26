@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+	"github.com/eyebluecn/tank/code/tool/result"
 	"go/build"
 	"io"
 	"io/ioutil"
@@ -9,7 +10,6 @@ import (
 	"os/user"
 	"path/filepath"
 	"strings"
-	"tank/code/tool/result"
 )
 
 //判断文件或文件夹是否已经存在
@@ -43,14 +43,14 @@ func GetHomePath() string {
 	//如果exPath中包含了 /private/var/folders 我们认为是在Mac的开发环境中
 	macDev := strings.HasPrefix(exPath, "/private/var/folders")
 	if macDev {
-		exPath = GetGoPath() + "/src/tank/tmp"
+		exPath = GetGoPath() + "/src/github.com/eyebluecn/tank/tmp"
 	}
 
 	//如果exPath中包含了 \\AppData\\Local\\Temp 我们认为是在Win的开发环境中
 	systemUser, err := user.Current()
 	winDev := strings.HasPrefix(exPath, systemUser.HomeDir+"\\AppData\\Local\\Temp")
 	if winDev {
-		exPath = GetGoPath() + "/src/tank/tmp"
+		exPath = GetGoPath() + "/src/github.com/eyebluecn/tank/tmp"
 	}
 
 	return exPath

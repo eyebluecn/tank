@@ -1,14 +1,14 @@
 package rest
 
 import (
+	"github.com/eyebluecn/tank/code/tool/download"
+	"github.com/eyebluecn/tank/code/tool/result"
+	"github.com/eyebluecn/tank/code/tool/util"
 	"io"
 	"net/http"
 	"os"
 	"regexp"
 	"strings"
-	download2 "tank/code/tool/download"
-	"tank/code/tool/result"
-	"tank/code/tool/util"
 )
 
 /**
@@ -65,7 +65,7 @@ func (this *MatterService) DownloadFile(
 	filename string,
 	withContentDisposition bool) {
 
-	download2.DownloadFile(writer, request, filePath, filename, withContentDisposition)
+	download.DownloadFile(writer, request, filePath, filename, withContentDisposition)
 }
 
 //删除文件

@@ -1,7 +1,6 @@
 package rest
 
 import (
-
 	"github.com/nu7hatch/gouuid"
 	"time"
 )

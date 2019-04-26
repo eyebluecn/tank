@@ -2,15 +2,15 @@ package rest
 
 import (
 	"fmt"
+	"github.com/eyebluecn/tank/code/config"
+	"github.com/eyebluecn/tank/code/logger"
+	"github.com/eyebluecn/tank/code/tool/result"
+	"github.com/eyebluecn/tank/code/tool/util"
 	"github.com/json-iterator/go"
 	"io"
 	"net/http"
 	"os"
 	"strings"
-	"tank/code/config"
-	"tank/code/logger"
-	"tank/code/tool/result"
-	"tank/code/tool/util"
 	"time"
 )
 

@@ -1,7 +1,7 @@
 package rest
 
 import (
-	"tank/code/config"
+	"github.com/eyebluecn/tank/code/config"
 )
 
 /**

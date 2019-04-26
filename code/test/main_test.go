@@ -6,7 +6,6 @@ import (
 	"testing"
 )
 
-
 func TestHello(t *testing.T) {
 
 	split := strings.Split("good", "/")

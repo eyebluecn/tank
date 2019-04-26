@@ -1,9 +1,9 @@
 package rest
 
 import (
+	"github.com/eyebluecn/tank/code/tool/result"
+	"github.com/eyebluecn/tank/code/tool/util"
 	"net/http"
-	"tank/code/tool/result"
-	"tank/code/tool/util"
 )
 
 type PreferenceController struct {

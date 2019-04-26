@@ -2,6 +2,10 @@ package rest
 
 import (
 	"fmt"
+	"github.com/eyebluecn/tank/code/config"
+	"github.com/eyebluecn/tank/code/tool/builder"
+	"github.com/eyebluecn/tank/code/tool/result"
+	"github.com/eyebluecn/tank/code/tool/util"
 	"github.com/jinzhu/gorm"
 	"github.com/json-iterator/go"
 	"github.com/nu7hatch/gouuid"
@@ -11,10 +15,6 @@ import (
 	"os"
 	"regexp"
 	"strconv"
-	"tank/code/config"
-	"tank/code/tool/builder"
-	"tank/code/tool/result"
-	"tank/code/tool/util"
 	"time"
 )
 

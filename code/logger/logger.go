@@ -2,11 +2,11 @@ package logger
 
 import (
 	"fmt"
+	"github.com/eyebluecn/tank/code/tool/util"
 	"log"
 	"os"
 	"runtime"
 	"sync"
-	"tank/code/tool/util"
 	"time"
 )
 

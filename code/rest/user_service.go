@@ -1,10 +1,10 @@
 package rest
 
 import (
+	"github.com/eyebluecn/tank/code/config"
+	"github.com/eyebluecn/tank/code/tool/cache"
+	"github.com/eyebluecn/tank/code/tool/result"
 	"net/http"
-	"tank/code/config"
-	cache2 "tank/code/tool/cache"
-	"tank/code/tool/result"
 	"time"
 )
 
@@ -15,7 +15,7 @@ type UserService struct {
 	sessionDao *SessionDao
 
 	//操作文件的锁。
-	locker *cache2.Table
+	locker *cache.Table
 }
 
 //初始化方法
@@ -34,9 +34,8 @@ func (this *UserService) Init() {
 	}
 
 	//创建一个用于存储用户文件锁的缓存。
-	this.locker = cache2.NewTable()
+	this.locker = cache.NewTable()
 }
-
 
 //对某个用户进行加锁。加锁阶段用户是不允许操作文件的。
 func (this *UserService) MatterLock(userUuid string) {
@@ -58,7 +57,6 @@ func (this *UserService) MatterLock(userUuid string) {
 	this.locker.Add(userUuid, duration, true)
 }
 
-
 //对某个用户解锁，解锁后用户可以操作文件。
 func (this *UserService) MatterUnlock(userUuid string) {
 
@@ -70,7 +68,6 @@ func (this *UserService) MatterUnlock(userUuid string) {
 		this.logger.Error("%s已经不存在matter锁了，解锁错误。", userUuid)
 	}
 }
-
 
 //装载session信息，如果session没有了根据cookie去装填用户信息。
 //在所有的路由最初会调用这个方法

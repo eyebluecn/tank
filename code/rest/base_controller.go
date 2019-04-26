@@ -2,10 +2,10 @@ package rest
 
 import (
 	"fmt"
+	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/json-iterator/go"
 	"go/types"
 	"net/http"
-	"tank/code/tool/result"
 )
 
 type IController interface {

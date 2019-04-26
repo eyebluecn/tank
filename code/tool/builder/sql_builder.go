@@ -27,4 +27,3 @@ func (this *WherePair) Or(where *WherePair) *WherePair {
 	}
 
 }
-

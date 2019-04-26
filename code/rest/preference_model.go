@@ -1,6 +1,6 @@
 package rest
 
-import "tank/code/config"
+import "github.com/eyebluecn/tank/code/config"
 
 type Preference struct {
 	Base

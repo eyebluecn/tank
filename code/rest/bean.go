@@ -1,11 +1,11 @@
 package rest
 
 import (
+	"github.com/eyebluecn/tank/code/config"
+	"github.com/eyebluecn/tank/code/logger"
+	"github.com/eyebluecn/tank/code/tool/result"
+	"github.com/eyebluecn/tank/code/tool/util"
 	"net/http"
-	"tank/code/config"
-	"tank/code/logger"
-	"tank/code/tool/result"
-	"tank/code/tool/util"
 )
 
 type IBean interface {
@@ -38,14 +38,11 @@ func (this *Bean) Cleanup() {
 
 //处理错误的统一方法 可以省去if err!=nil 这段代码
 func (this *Bean) PanicError(err error) {
-	if err != nil {
-		panic(err)
-	}
+	util.PanicError(err)
 }
 
 //能找到一个user就找到一个
 func (this *Bean) findUser(writer http.ResponseWriter, request *http.Request) *User {
-
 
 	//验证用户是否已经登录。
 	//登录身份有效期以数据库中记录的为准

@@ -2,11 +2,11 @@ package rest
 
 import (
 	"fmt"
+	"github.com/eyebluecn/tank/code/config"
+	"github.com/eyebluecn/tank/code/logger"
+	cache2 "github.com/eyebluecn/tank/code/tool/cache"
 	"github.com/jinzhu/gorm"
 	"reflect"
-	"tank/code/config"
-	"tank/code/logger"
-	cache2 "tank/code/tool/cache"
 )
 
 //全局唯一的上下文(在main函数中初始化)
@@ -177,7 +177,6 @@ func (this *Context) initBeans() {
 		bean.Init()
 	}
 }
-
 
 //系统如果安装好了就调用这个方法。
 func (this *Context) InstallOk() {

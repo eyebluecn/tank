@@ -2,15 +2,15 @@ package rest
 
 import (
 	"fmt"
+	"github.com/eyebluecn/tank/code/tool/dav"
+	"github.com/eyebluecn/tank/code/tool/dav/xml"
+	"github.com/eyebluecn/tank/code/tool/result"
+	"github.com/eyebluecn/tank/code/tool/util"
 	"net/http"
 	"net/url"
 	"path"
 	"regexp"
 	"strings"
-	dav2 "tank/code/tool/dav"
-	xml2 "tank/code/tool/dav/xml"
-	"tank/code/tool/result"
-	"tank/code/tool/util"
 )
 
 /**
@@ -63,18 +63,18 @@ func (this *DavService) ParseDepth(request *http.Request) int {
 	return depth
 }
 
-func (this *DavService) makePropstatResponse(href string, pstats []dav2.Propstat) *dav2.Response {
-	resp := dav2.Response{
+func (this *DavService) makePropstatResponse(href string, pstats []dav.Propstat) *dav.Response {
+	resp := dav.Response{
 		Href:     []string{(&url.URL{Path: href}).EscapedPath()},
-		Propstat: make([]dav2.SubPropstat, 0, len(pstats)),
+		Propstat: make([]dav.SubPropstat, 0, len(pstats)),
 	}
 	for _, p := range pstats {
-		var xmlErr *dav2.XmlError
+		var xmlErr *dav.XmlError
 		if p.XMLError != "" {
-			xmlErr = &dav2.XmlError{InnerXML: []byte(p.XMLError)}
+			xmlErr = &dav.XmlError{InnerXML: []byte(p.XMLError)}
 		}
-		resp.Propstat = append(resp.Propstat, dav2.SubPropstat{
-			Status:              fmt.Sprintf("HTTP/1.1 %d %s", p.Status, dav2.StatusText(p.Status)),
+		resp.Propstat = append(resp.Propstat, dav.SubPropstat{
+			Status:              fmt.Sprintf("HTTP/1.1 %d %s", p.Status, dav.StatusText(p.Status)),
 			Prop:                p.Props,
 			ResponseDescription: p.ResponseDescription,
 			Error:               xmlErr,
@@ -84,11 +84,11 @@ func (this *DavService) makePropstatResponse(href string, pstats []dav2.Propstat
 }
 
 //从一个matter中获取其 []dav.Propstat
-func (this *DavService) PropstatsFromXmlNames(user *User, matter *Matter, xmlNames []xml2.Name) []dav2.Propstat {
+func (this *DavService) PropstatsFromXmlNames(user *User, matter *Matter, xmlNames []xml.Name) []dav.Propstat {
 
-	propstats := make([]dav2.Propstat, 0)
+	propstats := make([]dav.Propstat, 0)
 
-	var properties []dav2.Property
+	var properties []dav.Property
 
 	for _, xmlName := range xmlNames {
 		//TODO: deadprops尚未考虑
@@ -97,7 +97,7 @@ func (this *DavService) PropstatsFromXmlNames(user *User, matter *Matter, xmlNam
 		if liveProp := LivePropMap[xmlName]; liveProp.findFn != nil && (liveProp.dir || !matter.Dir) {
 			innerXML := liveProp.findFn(user, matter)
 
-			properties = append(properties, dav2.Property{
+			properties = append(properties, dav.Property{
 				XMLName:  xmlName,
 				InnerXML: []byte(innerXML),
 			})
@@ -110,7 +110,7 @@ func (this *DavService) PropstatsFromXmlNames(user *User, matter *Matter, xmlNam
 		panic(result.BadRequest("请求的属性项无法解析！"))
 	}
 
-	okPropstat := dav2.Propstat{Status: http.StatusOK, Props: properties}
+	okPropstat := dav.Propstat{Status: http.StatusOK, Props: properties}
 
 	propstats = append(propstats, okPropstat)
 
@@ -119,9 +119,9 @@ func (this *DavService) PropstatsFromXmlNames(user *User, matter *Matter, xmlNam
 }
 
 //从一个matter中获取所有的propsNames
-func (this *DavService) AllPropXmlNames(matter *Matter) []xml2.Name {
+func (this *DavService) AllPropXmlNames(matter *Matter) []xml.Name {
 
-	pnames := make([]xml2.Name, 0)
+	pnames := make([]xml.Name, 0)
 	for pn, prop := range LivePropMap {
 		if prop.findFn != nil && (prop.dir || !matter.Dir) {
 			pnames = append(pnames, pn)
@@ -132,9 +132,9 @@ func (this *DavService) AllPropXmlNames(matter *Matter) []xml2.Name {
 }
 
 //从一个matter中获取其 []dav.Propstat
-func (this *DavService) Propstats(user *User, matter *Matter, propfind *dav2.Propfind) []dav2.Propstat {
+func (this *DavService) Propstats(user *User, matter *Matter, propfind *dav.Propfind) []dav.Propstat {
 
-	propstats := make([]dav2.Propstat, 0)
+	propstats := make([]dav.Propstat, 0)
 	if propfind.Propname != nil {
 		panic(result.BadRequest("propfind.Propname != nil 尚未处理"))
 	} else if propfind.Allprop != nil {
@@ -161,7 +161,7 @@ func (this *DavService) HandlePropfind(writer http.ResponseWriter, request *http
 	depth := this.ParseDepth(request)
 
 	//读取请求参数。按照用户的参数请求返回内容。
-	propfind := dav2.ReadPropfind(request.Body)
+	propfind := dav.ReadPropfind(request.Body)
 
 	//寻找符合条件的matter.
 	//如果是空或者/就是请求根目录
@@ -179,7 +179,7 @@ func (this *DavService) HandlePropfind(writer http.ResponseWriter, request *http
 	}
 
 	//准备一个输出结果的Writer
-	multiStatusWriter := &dav2.MultiStatusWriter{Writer: writer}
+	multiStatusWriter := &dav.MultiStatusWriter{Writer: writer}
 
 	for _, matter := range matters {
 

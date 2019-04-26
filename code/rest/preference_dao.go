@@ -1,8 +1,8 @@
 package rest
 
 import (
+	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/nu7hatch/gouuid"
-	"tank/code/tool/result"
 	"time"
 )
 
@@ -54,7 +54,6 @@ func (this *PreferenceDao) Save(preference *Preference) *Preference {
 
 	return preference
 }
-
 
 //执行清理操作
 func (this *PreferenceDao) Cleanup() {

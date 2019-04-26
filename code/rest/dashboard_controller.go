@@ -1,10 +1,10 @@
 package rest
 
 import (
+	"github.com/eyebluecn/tank/code/tool/builder"
+	"github.com/eyebluecn/tank/code/tool/result"
 	"net/http"
 	"strconv"
-	"tank/code/tool/builder"
-	"tank/code/tool/result"
 )
 
 type DashboardController struct {
@@ -75,20 +75,20 @@ func (this *DashboardController) Page(writer http.ResponseWriter, request *http.
 
 	sortArray := []builder.OrderPair{
 		{
-			key:   "create_time",
-			value: orderCreateTime,
+			Key:   "create_time",
+			Value: orderCreateTime,
 		},
 		{
-			key:   "update_time",
-			value: orderUpdateTime,
+			Key:   "update_time",
+			Value: orderUpdateTime,
 		},
 		{
-			key:   "sort",
-			value: orderSort,
+			Key:   "sort",
+			Value: orderSort,
 		},
 		{
-			key:   "dt",
-			value: orderDt,
+			Key:   "dt",
+			Value: orderDt,
 		},
 	}
 
@@ -96,7 +96,6 @@ func (this *DashboardController) Page(writer http.ResponseWriter, request *http.
 
 	return this.Success(pager)
 }
-
 
 func (this *DashboardController) ActiveIpTop10(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 	list := this.dashboardDao.ActiveIpTop10()

@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
+	"github.com/eyebluecn/tank/code/config"
+	"github.com/eyebluecn/tank/code/logger"
+	"github.com/eyebluecn/tank/code/rest"
 	_ "github.com/go-sql-driver/mysql"
 	"log"
 	"net/http"
-	"tank/code/config"
-	"tank/code/logger"
-	"tank/code/rest"
 )
 
 func main() {

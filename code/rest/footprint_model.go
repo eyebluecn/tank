@@ -1,6 +1,6 @@
 package rest
 
-import "tank/code/config"
+import "github.com/eyebluecn/tank/code/config"
 
 /**
  * 系统的所有访问记录均记录在此

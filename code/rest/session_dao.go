@@ -1,7 +1,6 @@
 package rest
 
 import (
-
 	"github.com/nu7hatch/gouuid"
 	"time"
 )
@@ -46,7 +45,6 @@ func (this *SessionDao) Create(session *Session) *Session {
 	return session
 }
 
-
 //修改一个session
 func (this *SessionDao) Save(session *Session) *Session {
 
@@ -56,7 +54,6 @@ func (this *SessionDao) Save(session *Session) *Session {
 
 	return session
 }
-
 
 func (this *SessionDao) Delete(uuid string) {
 
@@ -68,7 +65,6 @@ func (this *SessionDao) Delete(uuid string) {
 	this.PanicError(db.Error)
 
 }
-
 
 //执行清理操作
 func (this *SessionDao) Cleanup() {

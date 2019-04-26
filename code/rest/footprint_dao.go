@@ -1,8 +1,8 @@
 package rest
 
 import (
+	"github.com/eyebluecn/tank/code/tool/builder"
 	"github.com/jinzhu/gorm"
-	"tank/code/tool/builder"
 
 	"github.com/nu7hatch/gouuid"
 	"time"
@@ -118,7 +118,6 @@ func (this *FootprintDao) AvgCostBetweenTime(startTime time.Time, endTime time.T
 	row.Scan(&cost)
 	return int64(cost)
 }
-
 
 //执行清理操作
 func (this *FootprintDao) Cleanup() {

@@ -3,6 +3,8 @@ package download
 import (
 	"errors"
 	"fmt"
+	"github.com/eyebluecn/tank/code/tool/result"
+	"github.com/eyebluecn/tank/code/tool/util"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -11,8 +13,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"tank/code/tool/result"
-	"tank/code/tool/util"
 	"time"
 )
 

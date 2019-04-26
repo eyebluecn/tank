@@ -2,11 +2,11 @@ package rest
 
 import (
 	"fmt"
+	"github.com/eyebluecn/tank/code/tool/dav"
+	"github.com/eyebluecn/tank/code/tool/dav/xml"
 	"net/http"
 	"path"
 	"strconv"
-	"tank/code/tool/dav"
-	"tank/code/tool/dav/xml"
 )
 
 //访问前缀，这个是特殊入口

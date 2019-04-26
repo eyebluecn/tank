@@ -8,10 +8,10 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/eyebluecn/tank/code/tool/dav/xml"
+	"github.com/eyebluecn/tank/code/tool/result"
 	"io"
 	"net/http"
-	"tank/code/tool/dav/xml"
-	"tank/code/tool/result"
 )
 
 // Proppatch describes a property update instruction as defined in RFC 4918.
@@ -47,7 +47,6 @@ type Propstat struct {
 	ResponseDescription string
 }
 
-
 // DeadPropsHolder holds the dead properties of a resource.
 //
 // Dead properties are those properties that are explicitly defined. In
@@ -77,7 +76,6 @@ type DeadPropsHolder interface {
 	Patch([]Proppatch) ([]Propstat, error)
 }
 
-
 func EscapeXML(s string) string {
 	for i := 0; i < len(s); i++ {
 		// As an optimization, if s contains only ASCII letters, digits or a
@@ -97,8 +95,6 @@ func EscapeXML(s string) string {
 	}
 	return s
 }
-
-
 
 // http://www.webdav.org/specs/rfc4918.html#status.code.extensions.to.http11
 const (
@@ -125,13 +121,10 @@ func StatusText(code int) string {
 	return http.StatusText(code)
 }
 
-
 var (
-	errInvalidPropfind         = errors.New("webdav: invalid propfind")
-	errInvalidResponse         = errors.New("webdav: invalid response")
+	errInvalidPropfind = errors.New("webdav: invalid propfind")
+	errInvalidResponse = errors.New("webdav: invalid response")
 )
-
-
 
 // http://www.webdav.org/specs/rfc4918.html#ELEMENT_lockinfo
 type LockInfo struct {
@@ -147,7 +140,6 @@ type Owner struct {
 	InnerXML string `xml:",innerxml"`
 }
 
-
 //这是一个带字节计数器的Reader，可以知道总共读取了多少个字节。
 type CountingReader struct {
 	n      int
@@ -159,7 +151,6 @@ func (c *CountingReader) Read(p []byte) (int, error) {
 	c.n += n
 	return n, err
 }
-
 
 // Next returns the next token, if any, in the XML stream of d.
 // RFC 4918 requires to ignore comments, processing instructions
@@ -242,7 +233,7 @@ func ReadPropfind(reader io.Reader) (propfind *Propfind) {
 		panic(result.BadRequest(err.Error()))
 	}
 
- 	if propfind.Allprop == nil && propfind.Include != nil {
+	if propfind.Allprop == nil && propfind.Include != nil {
 		panic(result.BadRequest(errInvalidPropfind.Error()))
 	}
 	if propfind.Allprop != nil && (propfind.Prop != nil || propfind.Propname != nil) {

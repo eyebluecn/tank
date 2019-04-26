@@ -1,10 +1,10 @@
 package config
 
 import (
+	"github.com/eyebluecn/tank/code/logger"
+	"github.com/eyebluecn/tank/code/tool/util"
 	"github.com/json-iterator/go"
 	"io/ioutil"
-	"tank/code/logger"
-	"tank/code/tool/util"
 	"time"
 	"unsafe"
 )
@@ -12,7 +12,6 @@ import (
 const (
 	//用户身份的cookie字段名
 	COOKIE_AUTH_KEY = "_ak"
-
 
 	//数据库表前缀 tank200表示当前应用版本是tank:2.0.x版，数据库结构发生变化必然是中型升级
 	TABLE_PREFIX = "tank20_"

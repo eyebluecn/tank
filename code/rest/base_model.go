@@ -1,14 +1,14 @@
 package rest
 
 import (
+	"github.com/eyebluecn/tank/code/config"
 	"math"
 	"reflect"
-	"tank/code/config"
 	"time"
 )
 
 const (
-	TRUE = "true"
+	TRUE  = "true"
 	FALSE = "false"
 )
 
