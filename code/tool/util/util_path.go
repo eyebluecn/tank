@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"runtime"
 	"strings"
 )
 
@@ -31,6 +32,22 @@ func GetGoPath() string {
 
 }
 
+//获取开发时的Home目录
+func GetDevHomePath() string {
+
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		panic("cannot get dev home path.")
+	}
+
+	dir := GetDirOfPath(file)
+	dir = GetDirOfPath(dir)
+	dir = GetDirOfPath(dir)
+	dir = GetDirOfPath(dir)
+
+	return dir
+}
+
 //获取该应用可执行文件的位置。
 //例如：C:\Users\lishuang\AppData\Local\Temp
 func GetHomePath() string {
@@ -43,14 +60,14 @@ func GetHomePath() string {
 	//如果exPath中包含了 /private/var/folders 我们认为是在Mac的开发环境中
 	macDev := strings.HasPrefix(exPath, "/private/var/folders")
 	if macDev {
-		exPath = GetGoPath() + "/src/github.com/eyebluecn/tank/tmp"
+		exPath = GetDevHomePath() + "/tmp"
 	}
 
 	//如果exPath中包含了 \\AppData\\Local\\Temp 我们认为是在Win的开发环境中
 	systemUser, err := user.Current()
 	winDev := strings.HasPrefix(exPath, systemUser.HomeDir+"\\AppData\\Local\\Temp")
 	if winDev {
-		exPath = GetGoPath() + "/src/github.com/eyebluecn/tank/tmp"
+		exPath = GetDevHomePath() + "/tmp"
 	}
 
 	return exPath
