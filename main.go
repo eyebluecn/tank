@@ -15,18 +15,18 @@ func main() {
 
 	//日志第一优先级保障
 	tankLogger := &support.TankLogger{}
+	core.LOGGER = tankLogger
 	tankLogger.Init()
 	defer tankLogger.Destroy()
-	core.LOGGER = tankLogger
 
 	//装载配置文件，这个决定了是否需要执行安装过程
 	config.CONFIG.Init()
 
 	//全局运行的上下文
 	tankContext := &rest.Context{}
+	core.CONTEXT = tankContext
 	tankContext.Init()
 	defer tankContext.Destroy()
-	core.CONTEXT = tankContext
 
 	http.Handle("/", core.CONTEXT)
 

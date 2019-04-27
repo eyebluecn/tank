@@ -195,7 +195,8 @@ func (this *Context) GetBean(bean core.IBean) core.IBean {
 //初始化每个Bean
 func (this *Context) initBeans() {
 
-	for _, bean := range this.BeanMap {
+	for key, bean := range this.BeanMap {
+		core.LOGGER.Info("init %s", key)
 		bean.Init()
 	}
 }
