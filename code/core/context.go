@@ -20,7 +20,7 @@ type Context interface {
 	GetSessionCache() *cache.Table
 
 	//获取全局的ControllerMap
-	GetControllerMap() map[string]IController
+	GetControllerMap() map[string]Controller
 
 	//系统安装成功
 	InstallOk()

@@ -12,8 +12,6 @@ const (
 	FALSE = "false"
 )
 
-type Time time.Time
-
 type IBase interface {
 	//返回其对应的数据库表名
 	TableName() string
