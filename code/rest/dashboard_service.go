@@ -60,7 +60,7 @@ func (this *DashboardService) Bootstrap() {
 	this.logger.Info("[cron job] 每日00:05清洗离线数据")
 
 	//立即执行一次数据清洗任务
-	go util.SafeMethod(this.etl)
+	go util.RunWithRecovery(this.etl)
 
 }
 

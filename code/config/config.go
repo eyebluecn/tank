@@ -1,7 +1,7 @@
 package config
 
 import (
-	"github.com/eyebluecn/tank/code/logger"
+	"github.com/eyebluecn/tank/code/tool/inter"
 	"github.com/eyebluecn/tank/code/tool/util"
 	"github.com/json-iterator/go"
 	"io/ioutil"
@@ -65,7 +65,7 @@ type ConfigItem struct {
 func (this *ConfigItem) validate() bool {
 
 	if this.ServerPort == 0 {
-		logger.LOGGER.Error("ServerPort 未配置")
+		inter.LOGGER.Error("ServerPort 未配置")
 		return false
 	} else {
 		//只要配置文件中有配置端口，就使用。
@@ -73,27 +73,27 @@ func (this *ConfigItem) validate() bool {
 	}
 
 	if this.MysqlUsername == "" {
-		logger.LOGGER.Error("MysqlUsername 未配置")
+		inter.LOGGER.Error("MysqlUsername 未配置")
 		return false
 	}
 
 	if this.MysqlPassword == "" {
-		logger.LOGGER.Error("MysqlPassword 未配置")
+		inter.LOGGER.Error("MysqlPassword 未配置")
 		return false
 	}
 
 	if this.MysqlHost == "" {
-		logger.LOGGER.Error("MysqlHost 未配置")
+		inter.LOGGER.Error("MysqlHost 未配置")
 		return false
 	}
 
 	if this.MysqlPort == 0 {
-		logger.LOGGER.Error("MysqlPort 未配置")
+		inter.LOGGER.Error("MysqlPort 未配置")
 		return false
 	}
 
 	if this.MysqlSchema == "" {
-		logger.LOGGER.Error("MysqlSchema 未配置")
+		inter.LOGGER.Error("MysqlSchema 未配置")
 		return false
 	}
 
@@ -135,14 +135,14 @@ func (this *Config) ReadFromConfigFile() {
 	filePath := util.GetConfPath() + "/tank.json"
 	content, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		logger.LOGGER.Warn("无法找到配置文件：%s 即将进入安装过程！", filePath)
+		inter.LOGGER.Warn("无法找到配置文件：%s 即将进入安装过程！", filePath)
 		this.Installed = false
 	} else {
 		this.Item = &ConfigItem{}
-		logger.LOGGER.Warn("读取配置文件：%s", filePath)
+		inter.LOGGER.Warn("读取配置文件：%s", filePath)
 		err := jsoniter.ConfigCompatibleWithStandardLibrary.Unmarshal(content, this.Item)
 		if err != nil {
-			logger.LOGGER.Error("配置文件格式错误！ 即将进入安装过程！")
+			inter.LOGGER.Error("配置文件格式错误！ 即将进入安装过程！")
 			this.Installed = false
 			return
 		}
@@ -150,7 +150,7 @@ func (this *Config) ReadFromConfigFile() {
 		//验证项是否齐全
 		itemValidate := this.Item.validate()
 		if !itemValidate {
-			logger.LOGGER.Error("配置文件信息不齐全！ 即将进入安装过程！")
+			inter.LOGGER.Error("配置文件信息不齐全！ 即将进入安装过程！")
 			this.Installed = false
 			return
 		}
@@ -171,8 +171,8 @@ func (this *Config) ReadFromConfigFile() {
 		this.MysqlUrl = util.GetMysqlUrl(this.Item.MysqlPort, this.Item.MysqlHost, this.Item.MysqlSchema, this.Item.MysqlUsername, this.Item.MysqlPassword)
 		this.Installed = true
 
-		logger.LOGGER.Info("使用配置文件：%s", filePath)
-		logger.LOGGER.Info("上传文件存放路径：%s", this.MatterPath)
+		inter.LOGGER.Info("使用配置文件：%s", filePath)
+		inter.LOGGER.Info("上传文件存放路径：%s", this.MatterPath)
 	}
 }
 

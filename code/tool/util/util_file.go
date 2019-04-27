@@ -40,8 +40,7 @@ func GetDevHomePath() string {
 		panic("cannot get dev home path.")
 	}
 
-	fmt.Println(file)
-
+	//$DevHomePath/code/tool/util/util_file.go
 	dir := GetDirOfPath(file)
 	dir = GetDirOfPath(dir)
 	dir = GetDirOfPath(dir)
@@ -69,9 +68,11 @@ func GetHomePath() string {
 
 	//如果exPath中包含了 \\AppData\\Local\\Temp 我们认为是在Win的开发环境中
 	systemUser, err := user.Current()
-	winDev := strings.HasPrefix(exPath, systemUser.HomeDir+"\\AppData\\Local\\Temp")
-	if winDev {
-		exPath = GetDevHomePath() + "/tmp"
+	if systemUser != nil {
+		winDev := strings.HasPrefix(exPath, systemUser.HomeDir+"\\AppData\\Local\\Temp")
+		if winDev {
+			exPath = GetDevHomePath() + "/tmp"
+		}
 	}
 
 	return exPath

@@ -197,7 +197,7 @@ func (table *Table) checkExpire() {
 	table.cleanupInterval = smallestDuration
 	if smallestDuration > 0 {
 		table.cleanupTimer = time.AfterFunc(smallestDuration, func() {
-			go util.SafeMethod(table.checkExpire)
+			go util.RunWithRecovery(table.checkExpire)
 		})
 	}
 	table.Unlock()

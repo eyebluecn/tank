@@ -2,7 +2,7 @@ package rest
 
 import (
 	"github.com/eyebluecn/tank/code/config"
-	"github.com/eyebluecn/tank/code/logger"
+	"github.com/eyebluecn/tank/code/tool/inter"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
 	"net/http"
@@ -20,11 +20,11 @@ type IBean interface {
 }
 
 type Bean struct {
-	logger *logger.Logger
+	logger inter.Logger
 }
 
 func (this *Bean) Init() {
-	this.logger = logger.LOGGER
+	this.logger = inter.LOGGER
 }
 
 func (this *Bean) Bootstrap() {
@@ -59,6 +59,7 @@ func (this *Bean) findUser(writer http.ResponseWriter, request *http.Request) *U
 	}
 
 	if cacheItem == nil || cacheItem.Data() == nil {
+
 		this.logger.Warn("cache item中已经不存在了 ")
 		return nil
 	}

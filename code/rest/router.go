@@ -3,7 +3,7 @@ package rest
 import (
 	"fmt"
 	"github.com/eyebluecn/tank/code/config"
-	"github.com/eyebluecn/tank/code/logger"
+	"github.com/eyebluecn/tank/code/tool/inter"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
 	"github.com/json-iterator/go"
@@ -72,7 +72,7 @@ func NewRouter() *Router {
 func (this *Router) GlobalPanicHandler(writer http.ResponseWriter, request *http.Request, startTime time.Time) {
 	if err := recover(); err != nil {
 
-		logger.LOGGER.Error("错误: %v", err)
+		inter.LOGGER.Error("错误: %v", err)
 
 		var webResult *result.WebResult = nil
 		if value, ok := err.(string); ok {
@@ -108,7 +108,7 @@ func (this *Router) GlobalPanicHandler(writer http.ResponseWriter, request *http
 		}
 
 		//错误情况记录。
-		go util.SafeMethod(func() {
+		go util.RunWithRecovery(func() {
 			this.footprintService.Trace(writer, request, time.Now().Sub(startTime), false)
 		})
 	}
@@ -156,7 +156,7 @@ func (this *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 			}
 
 			//正常的访问记录会落到这里。
-			go util.SafeMethod(func() {
+			go util.RunWithRecovery(func() {
 				this.footprintService.Trace(writer, request, time.Now().Sub(startTime), true)
 			})
 

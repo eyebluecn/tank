@@ -102,7 +102,7 @@ func (this *FootprintService) Bootstrap() {
 	this.logger.Info("[cron job] 每日00:10 删除8日之前的访问数据")
 
 	//立即执行一次数据清洗任务
-	go util.SafeMethod(this.cleanOldData)
+	go util.RunWithRecovery(this.cleanOldData)
 
 }
 
