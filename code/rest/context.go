@@ -21,7 +21,7 @@ type Context struct {
 	//各类的Bean Map。这里面是包含ControllerMap中所有元素
 	BeanMap map[string]core.IBean
 	//只包含了Controller的map
-	ControllerMap map[string]IController
+	ControllerMap map[string]core.IController
 	//处理所有路由请求
 	Router *Router
 }
@@ -34,7 +34,7 @@ func (this *Context) Init() {
 
 	//初始化Map
 	this.BeanMap = make(map[string]core.IBean)
-	this.ControllerMap = make(map[string]IController)
+	this.ControllerMap = make(map[string]core.IController)
 
 	//注册各类Beans.在这个方法里面顺便把Controller装入ControllerMap中去。
 	this.registerBeans()
@@ -88,7 +88,7 @@ func (this *Context) registerBean(bean core.IBean) {
 			this.BeanMap[typeName] = element
 
 			//看看是不是controller类型，如果是，那么单独放在ControllerMap中。
-			if controller, ok1 := bean.(IController); ok1 {
+			if controller, ok1 := bean.(core.IController); ok1 {
 				this.ControllerMap[typeName] = controller
 			}
 
