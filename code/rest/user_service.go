@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"github.com/eyebluecn/tank/code/config"
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/cache"
 	"github.com/eyebluecn/tank/code/tool/result"
@@ -72,12 +71,12 @@ func (this *UserService) MatterUnlock(userUuid string) {
 
 //装载session信息，如果session没有了根据cookie去装填用户信息。
 //在所有的路由最初会调用这个方法
-func (this *UserService) preHandle(writer http.ResponseWriter, request *http.Request) {
+func (this *UserService) PreHandle(writer http.ResponseWriter, request *http.Request) {
 
 	//登录身份有效期以数据库中记录的为准
 
 	//验证用户是否已经登录。
-	sessionCookie, err := request.Cookie(config.COOKIE_AUTH_KEY)
+	sessionCookie, err := request.Cookie(core.COOKIE_AUTH_KEY)
 	if err != nil {
 		return
 	}

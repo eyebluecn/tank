@@ -1,7 +1,7 @@
 package rest
 
 import (
-	"github.com/eyebluecn/tank/code/config"
+	"github.com/eyebluecn/tank/code/core"
 	"time"
 )
 
@@ -18,5 +18,5 @@ type UploadToken struct {
 }
 
 func (this *UploadToken) TableName() string {
-	return config.TABLE_PREFIX + "upload_token"
+	return core.TABLE_PREFIX + "upload_token"
 }

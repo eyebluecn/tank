@@ -1,23 +1,13 @@
-package config
+package support
 
 import (
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/util"
 	"github.com/json-iterator/go"
 	"io/ioutil"
+	"os"
 	"time"
 	"unsafe"
-)
-
-const (
-	//用户身份的cookie字段名
-	COOKIE_AUTH_KEY = "_ak"
-
-	//数据库表前缀 tank200表示当前应用版本是tank:2.0.x版，数据库结构发生变化必然是中型升级
-	TABLE_PREFIX = "tank20_"
-
-	//当前版本
-	VERSION = "2.0.0"
 )
 
 /*
@@ -26,10 +16,9 @@ create database tank;
 grant all privileges on tank.* to tank identified by 'tank123';
 flush privileges;
 */
-var CONFIG = &Config{}
 
 //依赖外部定义的变量。
-type Config struct {
+type TankConfig struct {
 	//默认监听端口号
 	ServerPort int
 	//网站是否已经完成安装
@@ -67,9 +56,6 @@ func (this *ConfigItem) validate() bool {
 	if this.ServerPort == 0 {
 		core.LOGGER.Error("ServerPort 未配置")
 		return false
-	} else {
-		//只要配置文件中有配置端口，就使用。
-		CONFIG.ServerPort = this.ServerPort
 	}
 
 	if this.MysqlUsername == "" {
@@ -102,7 +88,7 @@ func (this *ConfigItem) validate() bool {
 }
 
 //验证配置文件是否完好
-func (this *Config) Init() {
+func (this *TankConfig) Init() {
 
 	//JSON初始化
 	jsoniter.RegisterTypeDecoderFunc("time.Time", func(ptr unsafe.Pointer, iter *jsoniter.Iterator) {
@@ -129,7 +115,7 @@ func (this *Config) Init() {
 }
 
 //系统如果安装好了就调用这个方法。
-func (this *Config) ReadFromConfigFile() {
+func (this *TankConfig) ReadFromConfigFile() {
 
 	//读取配置文件
 	filePath := util.GetConfPath() + "/tank.json"
@@ -161,7 +147,7 @@ func (this *Config) ReadFromConfigFile() {
 		} else {
 			this.MatterPath = this.Item.MatterPath
 		}
-		util.MakeDirAll(CONFIG.MatterPath)
+		util.MakeDirAll(this.MatterPath)
 
 		//使用配置项中的端口
 		if this.Item.ServerPort != 0 {
@@ -176,8 +162,59 @@ func (this *Config) ReadFromConfigFile() {
 	}
 }
 
-//系统如果安装好了就调用这个方法。
-func (this *Config) InstallOk() {
+//是否已经安装
+func (this *TankConfig) IsInstalled() bool {
+	return this.Installed
+}
+
+//启动端口
+func (this *TankConfig) GetServerPort() int {
+	return this.ServerPort
+}
+
+//获取mysql链接
+func (this *TankConfig) GetMysqlUrl() string {
+	return this.MysqlUrl
+}
+
+//文件存放路径
+func (this *TankConfig) GetMatterPath() string {
+	return this.MatterPath
+}
+
+//完成安装过程，主要是要将配置写入到文件中
+func (this *TankConfig) FinishInstall(mysqlPort int, mysqlHost string, mysqlSchema string, mysqlUsername string, mysqlPassword string) {
+
+	var configItem = &ConfigItem{
+		//默认监听端口号
+		ServerPort: core.CONFIG.GetServerPort(),
+		//上传的文件路径，要求不以/结尾。如果没有指定，默认在根目录下的matter文件夹中。eg: /var/www/matter
+		MatterPath: core.CONFIG.GetMatterPath(),
+		//mysql相关配置。
+		//数据库端口
+		MysqlPort: mysqlPort,
+		//数据库Host
+		MysqlHost: mysqlHost,
+		//数据库名字
+		MysqlSchema: mysqlSchema,
+		//用户名
+		MysqlUsername: mysqlUsername,
+		//密码
+		MysqlPassword: mysqlPassword,
+	}
+
+	//用json的方式输出返回值。为了让格式更好看。
+	jsonStr, _ := jsoniter.ConfigCompatibleWithStandardLibrary.MarshalIndent(configItem, "", " ")
+
+	//写入到配置文件中（不能使用os.O_APPEND 否则会追加）
+	filePath := util.GetConfPath() + "/tank.json"
+	f, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE, 0777)
+	util.PanicError(err)
+	_, err = f.Write(jsonStr)
+	util.PanicError(err)
+	err = f.Close()
+	util.PanicError(err)
 
 	this.ReadFromConfigFile()
+
 }

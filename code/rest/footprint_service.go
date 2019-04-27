@@ -2,7 +2,7 @@ package rest
 
 import (
 	"encoding/json"
-	"github.com/eyebluecn/tank/code/config"
+
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/util"
 	"github.com/robfig/cron"
@@ -76,7 +76,7 @@ func (this *FootprintService) Trace(writer http.ResponseWriter, request *http.Re
 	}
 
 	//有可能DB尚且没有配置 直接打印出内容，并且退出
-	if config.CONFIG.Installed {
+	if core.CONFIG.IsInstalled() {
 		user := this.findUser(writer, request)
 		userUuid := ""
 		if user != nil {

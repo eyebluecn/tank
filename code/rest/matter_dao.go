@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"github.com/eyebluecn/tank/code/config"
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/builder"
 	"github.com/eyebluecn/tank/code/tool/result"
@@ -367,7 +366,7 @@ func (this *MatterDao) Cleanup() {
 	db := core.CONTEXT.GetDB().Where("uuid is not null").Delete(Matter{})
 	this.PanicError(db.Error)
 
-	err := os.RemoveAll(config.CONFIG.MatterPath)
+	err := os.RemoveAll(core.CONFIG.GetMatterPath())
 	this.PanicError(err)
 
 }

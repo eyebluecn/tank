@@ -1,7 +1,7 @@
 package rest
 
 import (
-	"github.com/eyebluecn/tank/code/config"
+	"github.com/eyebluecn/tank/code/core"
 	"time"
 )
 
@@ -14,5 +14,5 @@ type Session struct {
 
 // set User's table name to be `profiles`
 func (this *Session) TableName() string {
-	return config.TABLE_PREFIX + "session"
+	return core.TABLE_PREFIX + "session"
 }

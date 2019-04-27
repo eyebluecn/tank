@@ -1,6 +1,6 @@
 package rest
 
-import "github.com/eyebluecn/tank/code/config"
+import "github.com/eyebluecn/tank/code/core"
 
 /**
  * 系统的所有访问记录均记录在此
@@ -21,7 +21,7 @@ type Dashboard struct {
 
 // set File's table name to be `profiles`
 func (this *Dashboard) TableName() string {
-	return config.TABLE_PREFIX + "dashboard"
+	return core.TABLE_PREFIX + "dashboard"
 }
 
 /**

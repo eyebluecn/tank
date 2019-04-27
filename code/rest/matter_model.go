@@ -2,7 +2,8 @@ package rest
 
 import (
 	"fmt"
-	"github.com/eyebluecn/tank/code/config"
+	"github.com/eyebluecn/tank/code/core"
+
 	"github.com/eyebluecn/tank/code/tool/util"
 )
 
@@ -37,7 +38,7 @@ type Matter struct {
 
 // set File's table name to be `profiles`
 func (Matter) TableName() string {
-	return config.TABLE_PREFIX + "matter"
+	return core.TABLE_PREFIX + "matter"
 }
 
 // 获取该Matter的绝对路径。path代表的是相对路径。
@@ -67,7 +68,7 @@ func NewRootMatter(user *User) *Matter {
 //获取到用户文件的根目录。
 func GetUserFileRootDir(username string) (rootDirPath string) {
 
-	rootDirPath = fmt.Sprintf("%s/%s/%s", config.CONFIG.MatterPath, username, MATTER_ROOT)
+	rootDirPath = fmt.Sprintf("%s/%s/%s", core.CONFIG.GetMatterPath(), username, MATTER_ROOT)
 
 	return rootDirPath
 }
@@ -75,7 +76,7 @@ func GetUserFileRootDir(username string) (rootDirPath string) {
 //获取到用户缓存的根目录。
 func GetUserCacheRootDir(username string) (rootDirPath string) {
 
-	rootDirPath = fmt.Sprintf("%s/%s/%s", config.CONFIG.MatterPath, username, MATTER_CACHE)
+	rootDirPath = fmt.Sprintf("%s/%s/%s", core.CONFIG.GetMatterPath(), username, MATTER_CACHE)
 
 	return rootDirPath
 }

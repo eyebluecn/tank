@@ -1,7 +1,7 @@
 package rest
 
 import (
-	"github.com/eyebluecn/tank/code/config"
+	"github.com/eyebluecn/tank/code/core"
 	"math"
 	"reflect"
 	"time"
@@ -40,7 +40,7 @@ func (this *Base) Map() map[string]interface{} {
 }
 
 func (this *Base) TableName() string {
-	return config.TABLE_PREFIX + "base"
+	return core.TABLE_PREFIX + "base"
 }
 
 //分页类

@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"github.com/eyebluecn/tank/code/config"
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
@@ -35,7 +34,7 @@ func (this *Bean) findUser(writer http.ResponseWriter, request *http.Request) *U
 
 	//验证用户是否已经登录。
 	//登录身份有效期以数据库中记录的为准
-	sessionId := util.GetSessionUuidFromRequest(request, config.COOKIE_AUTH_KEY)
+	sessionId := util.GetSessionUuidFromRequest(request, core.COOKIE_AUTH_KEY)
 	if sessionId == "" {
 		return nil
 	}

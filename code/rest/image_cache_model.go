@@ -1,7 +1,7 @@
 package rest
 
 import (
-	"github.com/eyebluecn/tank/code/config"
+	"github.com/eyebluecn/tank/code/core"
 )
 
 /**
@@ -23,7 +23,7 @@ type ImageCache struct {
 
 // set File's table name to be `profiles`
 func (this *ImageCache) TableName() string {
-	return config.TABLE_PREFIX + "image_cache"
+	return core.TABLE_PREFIX + "image_cache"
 }
 
 // 获取该ImageCache的绝对路径。path代表的是相对路径。

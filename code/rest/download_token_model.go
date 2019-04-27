@@ -1,7 +1,7 @@
 package rest
 
 import (
-	"github.com/eyebluecn/tank/code/config"
+	"github.com/eyebluecn/tank/code/core"
 	"time"
 )
 
@@ -14,5 +14,5 @@ type DownloadToken struct {
 }
 
 func (this *DownloadToken) TableName() string {
-	return config.TABLE_PREFIX + "download_token"
+	return core.TABLE_PREFIX + "download_token"
 }

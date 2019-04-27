@@ -1,6 +1,6 @@
 package rest
 
-import "github.com/eyebluecn/tank/code/config"
+import "github.com/eyebluecn/tank/code/core"
 
 /**
  * 系统的所有访问记录均记录在此
@@ -18,5 +18,5 @@ type Footprint struct {
 
 // set File's table name to be `profiles`
 func (this *Footprint) TableName() string {
-	return config.TABLE_PREFIX + "footprint"
+	return core.TABLE_PREFIX + "footprint"
 }

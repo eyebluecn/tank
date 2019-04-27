@@ -1,7 +1,7 @@
 package rest
 
 import (
-	"github.com/eyebluecn/tank/code/config"
+	"github.com/eyebluecn/tank/code/core"
 	"time"
 )
 
@@ -45,7 +45,7 @@ type User struct {
 
 // set User's table name to be `profiles`
 func (this *User) TableName() string {
-	return config.TABLE_PREFIX + "user"
+	return core.TABLE_PREFIX + "user"
 }
 
 //通过一个字符串获取性别

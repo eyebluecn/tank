@@ -7,6 +7,9 @@ import (
 )
 
 type Context interface {
+	//具备响应http请求的能力
+	http.Handler
+
 	//获取数据库链接
 	GetDB() *gorm.DB
 
@@ -18,9 +21,6 @@ type Context interface {
 
 	//获取全局的ControllerMap
 	GetControllerMap() map[string]IController
-
-	//响应http的能力
-	ServeHTTP(writer http.ResponseWriter, request *http.Request)
 
 	//系统安装成功
 	InstallOk()

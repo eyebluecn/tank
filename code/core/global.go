@@ -6,5 +6,8 @@ package core
 //全局唯一的日志对象(在main函数中初始化)
 var LOGGER Logger
 
+//全局唯一配置
+var CONFIG Config
+
 //全局唯一的上下文(在main函数中初始化)
 var CONTEXT Context

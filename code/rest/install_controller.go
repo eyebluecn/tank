@@ -2,18 +2,16 @@ package rest
 
 import (
 	"fmt"
-	"github.com/eyebluecn/tank/code/config"
+
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/builder"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
 	"github.com/jinzhu/gorm"
-	"github.com/json-iterator/go"
 	"github.com/nu7hatch/gouuid"
 	"go/build"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"regexp"
 	"strconv"
 	"time"
@@ -427,38 +425,8 @@ func (this *InstallController) Finish(writer http.ResponseWriter, request *http.
 		panic(result.BadRequest(`请至少配置一名管理员`))
 	}
 
-	var configItem = &config.ConfigItem{
-		//默认监听端口号
-		ServerPort: config.CONFIG.ServerPort,
-		//上传的文件路径，要求不以/结尾。如果没有指定，默认在根目录下的matter文件夹中。eg: /var/www/matter
-		MatterPath: config.CONFIG.MatterPath,
-		//mysql相关配置。
-		//数据库端口
-		MysqlPort: mysqlPort,
-		//数据库Host
-		MysqlHost: mysqlHost,
-		//数据库名字
-		MysqlSchema: mysqlSchema,
-		//用户名
-		MysqlUsername: mysqlUsername,
-		//密码
-		MysqlPassword: mysqlPassword,
-	}
-
-	//用json的方式输出返回值。为了让格式更好看。
-	jsonStr, _ := jsoniter.ConfigCompatibleWithStandardLibrary.MarshalIndent(configItem, "", " ")
-
-	//写入到配置文件中（不能使用os.O_APPEND 否则会追加）
-	filePath := util.GetConfPath() + "/tank.json"
-	f, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE, 0777)
-	this.PanicError(err)
-	_, err = f.Write(jsonStr)
-	this.PanicError(err)
-	err = f.Close()
-	this.PanicError(err)
-
 	//通知配置文件安装完毕。
-	config.CONFIG.InstallOk()
+	core.CONFIG.FinishInstall(mysqlPort, mysqlHost, mysqlSchema, mysqlUsername, mysqlPassword)
 
 	//通知全局上下文，说系统安装好了
 	core.CONTEXT.InstallOk()

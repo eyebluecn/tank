@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"github.com/eyebluecn/tank/code/config"
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/builder"
 	"github.com/eyebluecn/tank/code/tool/result"
@@ -83,7 +82,7 @@ func (this *UserController) Login(writer http.ResponseWriter, request *http.Requ
 
 	//设置用户的cookie.
 	cookie := http.Cookie{
-		Name:    config.COOKIE_AUTH_KEY,
+		Name:    core.COOKIE_AUTH_KEY,
 		Path:    "/",
 		Value:   session.Uuid,
 		Expires: expiration}
@@ -218,7 +217,7 @@ func (this *UserController) Detail(writer http.ResponseWriter, request *http.Req
 func (this *UserController) Logout(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	//session置为过期
-	sessionCookie, err := request.Cookie(config.COOKIE_AUTH_KEY)
+	sessionCookie, err := request.Cookie(core.COOKIE_AUTH_KEY)
 	if err != nil {
 		return this.Success("已经退出登录了！")
 	}
@@ -241,7 +240,7 @@ func (this *UserController) Logout(writer http.ResponseWriter, request *http.Req
 	expiration := time.Now()
 	expiration = expiration.AddDate(-1, 0, 0)
 	cookie := http.Cookie{
-		Name:    config.COOKIE_AUTH_KEY,
+		Name:    core.COOKIE_AUTH_KEY,
 		Path:    "/",
 		Value:   sessionId,
 		Expires: expiration}

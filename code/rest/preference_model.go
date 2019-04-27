@@ -1,6 +1,6 @@
 package rest
 
-import "github.com/eyebluecn/tank/code/config"
+import "github.com/eyebluecn/tank/code/core"
 
 type Preference struct {
 	Base
@@ -14,5 +14,5 @@ type Preference struct {
 
 // set File's table name to be `profiles`
 func (this *Preference) TableName() string {
-	return config.TABLE_PREFIX + "preference"
+	return core.TABLE_PREFIX + "preference"
 }

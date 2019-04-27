@@ -1,9 +1,10 @@
-package rest
+package support
 
 import (
 	"fmt"
-	"github.com/eyebluecn/tank/code/config"
+
 	"github.com/eyebluecn/tank/code/core"
+	"github.com/eyebluecn/tank/code/rest"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
 	"github.com/json-iterator/go"
@@ -15,36 +16,36 @@ import (
 )
 
 //用于处理所有前来的请求
-type Router struct {
-	installController *InstallController
-	footprintService  *FootprintService
-	userService       *UserService
+type TankRouter struct {
+	installController *rest.InstallController
+	footprintService  *rest.FootprintService
+	userService       *rest.UserService
 	routeMap          map[string]func(writer http.ResponseWriter, request *http.Request)
 	installRouteMap   map[string]func(writer http.ResponseWriter, request *http.Request)
 }
 
 //构造方法
-func NewRouter() *Router {
-	router := &Router{
+func NewRouter() *TankRouter {
+	router := &TankRouter{
 		routeMap:        make(map[string]func(writer http.ResponseWriter, request *http.Request)),
 		installRouteMap: make(map[string]func(writer http.ResponseWriter, request *http.Request)),
 	}
 
 	//installController.
 	b := core.CONTEXT.GetBean(router.installController)
-	if b, ok := b.(*InstallController); ok {
+	if b, ok := b.(*rest.InstallController); ok {
 		router.installController = b
 	}
 
 	//装载userService.
 	b = core.CONTEXT.GetBean(router.userService)
-	if b, ok := b.(*UserService); ok {
+	if b, ok := b.(*rest.UserService); ok {
 		router.userService = b
 	}
 
 	//装载footprintService
 	b = core.CONTEXT.GetBean(router.footprintService)
-	if b, ok := b.(*FootprintService); ok {
+	if b, ok := b.(*rest.FootprintService); ok {
 		router.footprintService = b
 	}
 
@@ -69,7 +70,7 @@ func NewRouter() *Router {
 }
 
 //全局的异常捕获
-func (this *Router) GlobalPanicHandler(writer http.ResponseWriter, request *http.Request, startTime time.Time) {
+func (this *TankRouter) GlobalPanicHandler(writer http.ResponseWriter, request *http.Request, startTime time.Time) {
 	if err := recover(); err != nil {
 
 		core.LOGGER.Error("错误: %v", err)
@@ -115,7 +116,7 @@ func (this *Router) GlobalPanicHandler(writer http.ResponseWriter, request *http
 }
 
 //让Router具有处理请求的功能。
-func (this *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+func (this *TankRouter) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 
 	startTime := time.Now()
 
@@ -131,11 +132,11 @@ func (this *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 		writer.Header().Set("Cache-Control", "no-cache")
 		writer.Header().Set("Expires", "0")
 
-		if config.CONFIG.Installed {
+		if core.CONFIG.IsInstalled() {
 			//已安装的模式
 
 			//统一处理用户的身份信息。
-			this.userService.preHandle(writer, request)
+			this.userService.PreHandle(writer, request)
 
 			if handler, ok := this.routeMap[path]; ok {
 				handler(writer, request)

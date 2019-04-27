@@ -2,9 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/eyebluecn/tank/code/config"
 	"github.com/eyebluecn/tank/code/core"
-	"github.com/eyebluecn/tank/code/rest"
 	"github.com/eyebluecn/tank/code/support"
 	_ "github.com/go-sql-driver/mysql"
 	"log"
@@ -13,26 +11,28 @@ import (
 
 func main() {
 
-	//日志第一优先级保障
+	//第一步。日志
 	tankLogger := &support.TankLogger{}
 	core.LOGGER = tankLogger
 	tankLogger.Init()
 	defer tankLogger.Destroy()
 
-	//装载配置文件，这个决定了是否需要执行安装过程
-	config.CONFIG.Init()
+	//第二步。配置
+	tankConfig := &support.TankConfig{}
+	core.CONFIG = tankConfig
+	tankConfig.Init()
 
-	//全局运行的上下文
-	tankContext := &rest.Context{}
+	//第三步。全局运行的上下文
+	tankContext := &support.TankContext{}
 	core.CONTEXT = tankContext
 	tankContext.Init()
 	defer tankContext.Destroy()
 
+	//第四步。启动http服务
 	http.Handle("/", core.CONTEXT)
+	core.LOGGER.Info("App started at http://localhost:%v", core.CONFIG.GetServerPort())
 
-	core.LOGGER.Info("App started at http://localhost:%v", config.CONFIG.ServerPort)
-
-	dotPort := fmt.Sprintf(":%v", config.CONFIG.ServerPort)
+	dotPort := fmt.Sprintf(":%v", core.CONFIG.GetServerPort())
 	err1 := http.ListenAndServe(dotPort, nil)
 	if err1 != nil {
 		log.Fatal("ListenAndServe: ", err1)
