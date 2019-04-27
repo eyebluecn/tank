@@ -1,4 +1,4 @@
-package inter
+package core
 
 //日志系统必须高保
 //全局唯一的日志对象(在main函数中初始化)

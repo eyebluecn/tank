@@ -3,7 +3,7 @@ package rest
 import (
 	"fmt"
 	"github.com/eyebluecn/tank/code/config"
-	"github.com/eyebluecn/tank/code/tool/inter"
+	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
 	"github.com/json-iterator/go"
@@ -72,7 +72,7 @@ func NewRouter() *Router {
 func (this *Router) GlobalPanicHandler(writer http.ResponseWriter, request *http.Request, startTime time.Time) {
 	if err := recover(); err != nil {
 
-		inter.LOGGER.Error("错误: %v", err)
+		core.LOGGER.Error("错误: %v", err)
 
 		var webResult *result.WebResult = nil
 		if value, ok := err.(string); ok {

@@ -2,7 +2,7 @@ package rest
 
 import (
 	"github.com/eyebluecn/tank/code/config"
-	"github.com/eyebluecn/tank/code/tool/inter"
+	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
 	"net/http"
@@ -20,11 +20,11 @@ type IBean interface {
 }
 
 type Bean struct {
-	logger inter.Logger
+	logger core.Logger
 }
 
 func (this *Bean) Init() {
-	this.logger = inter.LOGGER
+	this.logger = core.LOGGER
 }
 
 func (this *Bean) Bootstrap() {

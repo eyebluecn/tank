@@ -3,8 +3,8 @@ package rest
 import (
 	"fmt"
 	"github.com/eyebluecn/tank/code/config"
+	"github.com/eyebluecn/tank/code/core"
 	cache2 "github.com/eyebluecn/tank/code/tool/cache"
-	"github.com/eyebluecn/tank/code/tool/inter"
 	"github.com/jinzhu/gorm"
 	"reflect"
 )
@@ -56,7 +56,7 @@ func (this *Context) OpenDb() {
 	this.DB, err = gorm.Open("mysql", config.CONFIG.MysqlUrl)
 
 	if err != nil {
-		inter.LOGGER.Panic("failed to connect mysql database")
+		core.LOGGER.Panic("failed to connect mysql database")
 	}
 
 	//是否打开sql日志(在调试阶段可以打开，以方便查看执行的SQL)
@@ -68,7 +68,7 @@ func (this *Context) CloseDb() {
 	if this.DB != nil {
 		err := this.DB.Close()
 		if err != nil {
-			inter.LOGGER.Error("关闭数据库连接出错 %s", err.Error())
+			core.LOGGER.Error("关闭数据库连接出错 %s", err.Error())
 		}
 	}
 }
@@ -83,7 +83,7 @@ func (this *Context) registerBean(bean IBean) {
 
 		err := fmt.Sprintf("【%s】已经被注册了，跳过。", typeName)
 		if _, ok := this.BeanMap[typeName]; ok {
-			inter.LOGGER.Error(fmt.Sprintf(err))
+			core.LOGGER.Error(fmt.Sprintf(err))
 		} else {
 			this.BeanMap[typeName] = element
 
@@ -95,7 +95,7 @@ func (this *Context) registerBean(bean IBean) {
 		}
 
 	} else {
-		inter.LOGGER.Panic("注册的【%s】不是Bean类型。", typeName)
+		core.LOGGER.Panic("注册的【%s】不是Bean类型。", typeName)
 	}
 
 }
@@ -165,7 +165,7 @@ func (this *Context) GetBean(bean IBean) IBean {
 	if val, ok := this.BeanMap[typeName]; ok {
 		return val
 	} else {
-		inter.LOGGER.Panic("【%s】没有注册。", typeName)
+		core.LOGGER.Panic("【%s】没有注册。", typeName)
 		return nil
 	}
 }
