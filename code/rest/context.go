@@ -15,7 +15,7 @@ var CONTEXT = &Context{}
 //上下文，管理数据库连接，管理所有路由请求，管理所有的单例component.
 type Context struct {
 	//数据库连接
-	DB *gorm.DB
+	db *gorm.DB
 	//session缓存
 	SessionCache *cache.Table
 	//各类的Bean Map。这里面是包含ControllerMap中所有元素
@@ -50,23 +50,28 @@ func (this *Context) Init() {
 
 }
 
+//获取数据库对象
+func (this *Context) GetDB() *gorm.DB {
+	return this.db
+}
+
 func (this *Context) OpenDb() {
 
 	var err error = nil
-	this.DB, err = gorm.Open("mysql", config.CONFIG.MysqlUrl)
+	this.db, err = gorm.Open("mysql", config.CONFIG.MysqlUrl)
 
 	if err != nil {
 		core.LOGGER.Panic("failed to connect mysql database")
 	}
 
 	//是否打开sql日志(在调试阶段可以打开，以方便查看执行的SQL)
-	this.DB.LogMode(false)
+	this.db.LogMode(false)
 }
 
 func (this *Context) CloseDb() {
 
-	if this.DB != nil {
-		err := this.DB.Close()
+	if this.db != nil {
+		err := this.db.Close()
 		if err != nil {
 			core.LOGGER.Error("关闭数据库连接出错 %s", err.Error())
 		}

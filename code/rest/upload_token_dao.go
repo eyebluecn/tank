@@ -14,7 +14,7 @@ func (this *UploadTokenDao) FindByUuid(uuid string) *UploadToken {
 
 	// Read
 	var uploadToken = &UploadToken{}
-	db := CONTEXT.DB.Where(&UploadToken{Base: Base{Uuid: uuid}}).First(uploadToken)
+	db := CONTEXT.GetDB().Where(&UploadToken{Base: Base{Uuid: uuid}}).First(uploadToken)
 	if db.Error != nil {
 		return nil
 	}
@@ -32,7 +32,7 @@ func (this *UploadTokenDao) Create(uploadToken *UploadToken) *UploadToken {
 	uploadToken.CreateTime = time.Now()
 	uploadToken.UpdateTime = time.Now()
 	uploadToken.Sort = time.Now().UnixNano() / 1e6
-	db := CONTEXT.DB.Create(uploadToken)
+	db := CONTEXT.GetDB().Create(uploadToken)
 	this.PanicError(db.Error)
 
 	return uploadToken
@@ -42,7 +42,7 @@ func (this *UploadTokenDao) Create(uploadToken *UploadToken) *UploadToken {
 func (this *UploadTokenDao) Save(uploadToken *UploadToken) *UploadToken {
 
 	uploadToken.UpdateTime = time.Now()
-	db := CONTEXT.DB.Save(uploadToken)
+	db := CONTEXT.GetDB().Save(uploadToken)
 	this.PanicError(db.Error)
 
 	return uploadToken

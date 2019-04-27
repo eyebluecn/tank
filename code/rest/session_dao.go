@@ -14,7 +14,7 @@ func (this *SessionDao) FindByUuid(uuid string) *Session {
 
 	// Read
 	var session = &Session{}
-	db := CONTEXT.DB.Where(&Session{Base: Base{Uuid: uuid}}).First(session)
+	db := CONTEXT.GetDB().Where(&Session{Base: Base{Uuid: uuid}}).First(session)
 	if db.Error != nil {
 		return nil
 	}
@@ -26,7 +26,7 @@ func (this *SessionDao) CheckByUuid(uuid string) *Session {
 
 	// Read
 	var session = &Session{}
-	db := CONTEXT.DB.Where(&Session{Base: Base{Uuid: uuid}}).First(session)
+	db := CONTEXT.GetDB().Where(&Session{Base: Base{Uuid: uuid}}).First(session)
 	this.PanicError(db.Error)
 	return session
 }
@@ -39,7 +39,7 @@ func (this *SessionDao) Create(session *Session) *Session {
 	session.CreateTime = time.Now()
 	session.UpdateTime = time.Now()
 	session.Sort = time.Now().UnixNano() / 1e6
-	db := CONTEXT.DB.Create(session)
+	db := CONTEXT.GetDB().Create(session)
 	this.PanicError(db.Error)
 
 	return session
@@ -49,7 +49,7 @@ func (this *SessionDao) Create(session *Session) *Session {
 func (this *SessionDao) Save(session *Session) *Session {
 
 	session.UpdateTime = time.Now()
-	db := CONTEXT.DB.Save(session)
+	db := CONTEXT.GetDB().Save(session)
 	this.PanicError(db.Error)
 
 	return session
@@ -60,7 +60,7 @@ func (this *SessionDao) Delete(uuid string) {
 	session := this.CheckByUuid(uuid)
 
 	session.ExpireTime = time.Now()
-	db := CONTEXT.DB.Delete(session)
+	db := CONTEXT.GetDB().Delete(session)
 
 	this.PanicError(db.Error)
 
@@ -69,6 +69,6 @@ func (this *SessionDao) Delete(uuid string) {
 //执行清理操作
 func (this *SessionDao) Cleanup() {
 	this.logger.Info("[SessionDao]执行清理：清除数据库中所有Session记录。")
-	db := CONTEXT.DB.Where("uuid is not null").Delete(Session{})
+	db := CONTEXT.GetDB().Where("uuid is not null").Delete(Session{})
 	this.PanicError(db.Error)
 }

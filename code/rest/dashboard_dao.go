@@ -19,7 +19,7 @@ func (this *DashboardDao) Create(dashboard *Dashboard) *Dashboard {
 	dashboard.CreateTime = time.Now()
 	dashboard.UpdateTime = time.Now()
 	dashboard.Sort = time.Now().UnixNano() / 1e6
-	db := CONTEXT.DB.Create(dashboard)
+	db := CONTEXT.GetDB().Create(dashboard)
 	this.PanicError(db.Error)
 
 	return dashboard
@@ -29,7 +29,7 @@ func (this *DashboardDao) Create(dashboard *Dashboard) *Dashboard {
 func (this *DashboardDao) Save(dashboard *Dashboard) *Dashboard {
 
 	dashboard.UpdateTime = time.Now()
-	db := CONTEXT.DB.Save(dashboard)
+	db := CONTEXT.GetDB().Save(dashboard)
 	this.PanicError(db.Error)
 
 	return dashboard
@@ -38,7 +38,7 @@ func (this *DashboardDao) Save(dashboard *Dashboard) *Dashboard {
 //删除一条记录
 func (this *DashboardDao) Delete(dashboard *Dashboard) {
 
-	db := CONTEXT.DB.Delete(&dashboard)
+	db := CONTEXT.GetDB().Delete(&dashboard)
 	this.PanicError(db.Error)
 }
 
@@ -47,7 +47,7 @@ func (this *DashboardDao) FindByDt(dt string) *Dashboard {
 
 	// Read
 	var dashboard Dashboard
-	db := CONTEXT.DB.Where(&Dashboard{Dt: dt}).First(&dashboard)
+	db := CONTEXT.GetDB().Where(&Dashboard{Dt: dt}).First(&dashboard)
 	if db.Error != nil {
 		return nil
 	}
@@ -64,7 +64,7 @@ func (this *DashboardDao) Page(page int, pageSize int, dt string, sortArray []bu
 	}
 
 	var conditionDB *gorm.DB
-	conditionDB = CONTEXT.DB.Model(&Dashboard{}).Where(wp.Query, wp.Args...)
+	conditionDB = CONTEXT.GetDB().Model(&Dashboard{}).Where(wp.Query, wp.Args...)
 
 	count := 0
 	db := conditionDB.Count(&count)
@@ -89,7 +89,7 @@ func (this *DashboardDao) ActiveIpTop10() []*DashboardIpTimes {
 			Value: "DESC",
 		},
 	}
-	rows, err := CONTEXT.DB.Model(&Footprint{}).
+	rows, err := CONTEXT.GetDB().Model(&Footprint{}).
 		Select("ip,COUNT(uuid) as times").
 		Group("ip").
 		Order(this.GetSortString(sortArray)).
@@ -99,8 +99,8 @@ func (this *DashboardDao) ActiveIpTop10() []*DashboardIpTimes {
 
 	this.PanicError(err)
 	for rows.Next() {
-		var ip string;
-		var times int64 = 0;
+		var ip string
+		var times int64 = 0
 		rows.Scan(&ip, &times)
 		item := &DashboardIpTimes{
 			Ip:    ip,
@@ -115,6 +115,6 @@ func (this *DashboardDao) ActiveIpTop10() []*DashboardIpTimes {
 //执行清理操作
 func (this *DashboardDao) Cleanup() {
 	this.logger.Info("[DashboardDao]执行清理：清除数据库中所有Dashboard记录。")
-	db := CONTEXT.DB.Where("uuid is not null").Delete(Dashboard{})
+	db := CONTEXT.GetDB().Where("uuid is not null").Delete(Dashboard{})
 	this.PanicError(db.Error)
 }

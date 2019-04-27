@@ -15,7 +15,7 @@ func (this *PreferenceDao) Fetch() *Preference {
 
 	// Read
 	var preference = &Preference{}
-	db := CONTEXT.DB.First(preference)
+	db := CONTEXT.GetDB().First(preference)
 	if db.Error != nil {
 
 		if db.Error.Error() == result.DB_ERROR_NOT_FOUND {
@@ -39,7 +39,7 @@ func (this *PreferenceDao) Create(preference *Preference) *Preference {
 	preference.CreateTime = time.Now()
 	preference.UpdateTime = time.Now()
 	preference.Sort = time.Now().UnixNano() / 1e6
-	db := CONTEXT.DB.Create(preference)
+	db := CONTEXT.GetDB().Create(preference)
 	this.PanicError(db.Error)
 
 	return preference
@@ -49,7 +49,7 @@ func (this *PreferenceDao) Create(preference *Preference) *Preference {
 func (this *PreferenceDao) Save(preference *Preference) *Preference {
 
 	preference.UpdateTime = time.Now()
-	db := CONTEXT.DB.Save(preference)
+	db := CONTEXT.GetDB().Save(preference)
 	this.PanicError(db.Error)
 
 	return preference
@@ -59,6 +59,6 @@ func (this *PreferenceDao) Save(preference *Preference) *Preference {
 func (this *PreferenceDao) Cleanup() {
 
 	this.logger.Info("[PreferenceDao]执行清理：清除数据库中所有Preference记录。")
-	db := CONTEXT.DB.Where("uuid is not null").Delete(Preference{})
+	db := CONTEXT.GetDB().Where("uuid is not null").Delete(Preference{})
 	this.PanicError(db.Error)
 }

@@ -20,7 +20,7 @@ func (this *ImageCacheDao) FindByUuid(uuid string) *ImageCache {
 
 	// Read
 	var imageCache ImageCache
-	db := CONTEXT.DB.Where(&ImageCache{Base: Base{Uuid: uuid}}).First(&imageCache)
+	db := CONTEXT.GetDB().Where(&ImageCache{Base: Base{Uuid: uuid}}).First(&imageCache)
 	if db.Error != nil {
 		return nil
 	}
@@ -32,7 +32,7 @@ func (this *ImageCacheDao) CheckByUuid(uuid string) *ImageCache {
 
 	// Read
 	var imageCache ImageCache
-	db := CONTEXT.DB.Where(&ImageCache{Base: Base{Uuid: uuid}}).First(&imageCache)
+	db := CONTEXT.GetDB().Where(&ImageCache{Base: Base{Uuid: uuid}}).First(&imageCache)
 	this.PanicError(db.Error)
 
 	return &imageCache
@@ -53,7 +53,7 @@ func (this *ImageCacheDao) FindByMatterUuidAndMode(matterUuid string, mode strin
 	}
 
 	var imageCache = &ImageCache{}
-	db := CONTEXT.DB.Model(&ImageCache{}).Where(wp.Query, wp.Args...).First(imageCache)
+	db := CONTEXT.GetDB().Model(&ImageCache{}).Where(wp.Query, wp.Args...).First(imageCache)
 
 	if db.Error != nil {
 		return nil
@@ -67,7 +67,7 @@ func (this *ImageCacheDao) CheckByUuidAndUserUuid(uuid string, userUuid string) 
 
 	// Read
 	var imageCache = &ImageCache{}
-	db := CONTEXT.DB.Where(&ImageCache{Base: Base{Uuid: uuid}, UserUuid: userUuid}).First(imageCache)
+	db := CONTEXT.GetDB().Where(&ImageCache{Base: Base{Uuid: uuid}, UserUuid: userUuid}).First(imageCache)
 	this.PanicError(db.Error)
 
 	return imageCache
@@ -79,7 +79,7 @@ func (this *ImageCacheDao) ListByUserUuidAndPuuidAndDirAndName(userUuid string) 
 
 	var imageCaches []*ImageCache
 
-	db := CONTEXT.DB.
+	db := CONTEXT.GetDB().
 		Where(ImageCache{UserUuid: userUuid}).
 		Find(&imageCaches)
 	this.PanicError(db.Error)
@@ -101,7 +101,7 @@ func (this *ImageCacheDao) Page(page int, pageSize int, userUuid string, matterU
 	}
 
 	var conditionDB *gorm.DB
-	conditionDB = CONTEXT.DB.Model(&ImageCache{}).Where(wp.Query, wp.Args...)
+	conditionDB = CONTEXT.GetDB().Model(&ImageCache{}).Where(wp.Query, wp.Args...)
 
 	count := 0
 	db := conditionDB.Count(&count)
@@ -123,7 +123,7 @@ func (this *ImageCacheDao) Create(imageCache *ImageCache) *ImageCache {
 	imageCache.CreateTime = time.Now()
 	imageCache.UpdateTime = time.Now()
 	imageCache.Sort = time.Now().UnixNano() / 1e6
-	db := CONTEXT.DB.Create(imageCache)
+	db := CONTEXT.GetDB().Create(imageCache)
 	this.PanicError(db.Error)
 
 	return imageCache
@@ -133,7 +133,7 @@ func (this *ImageCacheDao) Create(imageCache *ImageCache) *ImageCache {
 func (this *ImageCacheDao) Save(imageCache *ImageCache) *ImageCache {
 
 	imageCache.UpdateTime = time.Now()
-	db := CONTEXT.DB.Save(imageCache)
+	db := CONTEXT.GetDB().Save(imageCache)
 	this.PanicError(db.Error)
 
 	return imageCache
@@ -160,7 +160,7 @@ func (this *ImageCacheDao) deleteFileAndDir(imageCache *ImageCache) {
 //删除一个文件，数据库中删除，物理磁盘上删除。
 func (this *ImageCacheDao) Delete(imageCache *ImageCache) {
 
-	db := CONTEXT.DB.Delete(&imageCache)
+	db := CONTEXT.GetDB().Delete(&imageCache)
 	this.PanicError(db.Error)
 
 	this.deleteFileAndDir(imageCache)
@@ -176,11 +176,11 @@ func (this *ImageCacheDao) DeleteByMatterUuid(matterUuid string) {
 
 	//查询出即将删除的图片缓存
 	var imageCaches []*ImageCache
-	db := CONTEXT.DB.Where(wp.Query, wp.Args).Find(&imageCaches)
+	db := CONTEXT.GetDB().Where(wp.Query, wp.Args).Find(&imageCaches)
 	this.PanicError(db.Error)
 
 	//删除文件记录
-	db = CONTEXT.DB.Where(wp.Query, wp.Args).Delete(ImageCache{})
+	db = CONTEXT.GetDB().Where(wp.Query, wp.Args).Delete(ImageCache{})
 	this.PanicError(db.Error)
 
 	//删除文件实体
@@ -193,7 +193,7 @@ func (this *ImageCacheDao) DeleteByMatterUuid(matterUuid string) {
 //获取一段时间中文件总大小
 func (this *ImageCacheDao) SizeBetweenTime(startTime time.Time, endTime time.Time) int64 {
 	var size int64
-	db := CONTEXT.DB.Model(&ImageCache{}).Where("create_time >= ? AND create_time <= ?", startTime, endTime).Select("SUM(size)")
+	db := CONTEXT.GetDB().Model(&ImageCache{}).Where("create_time >= ? AND create_time <= ?", startTime, endTime).Select("SUM(size)")
 	this.PanicError(db.Error)
 	row := db.Row()
 	row.Scan(&size)
@@ -203,6 +203,6 @@ func (this *ImageCacheDao) SizeBetweenTime(startTime time.Time, endTime time.Tim
 //执行清理操作
 func (this *ImageCacheDao) Cleanup() {
 	this.logger.Info("[ImageCacheDao]执行清理：清除数据库中所有ImageCache记录。")
-	db := CONTEXT.DB.Where("uuid is not null").Delete(ImageCache{})
+	db := CONTEXT.GetDB().Where("uuid is not null").Delete(ImageCache{})
 	this.PanicError(db.Error)
 }
