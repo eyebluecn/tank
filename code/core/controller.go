@@ -3,7 +3,7 @@ package core
 import "net/http"
 
 type IController interface {
-	IBean
+	Bean
 	//注册自己固定的路由。
 	RegisterRoutes() map[string]func(writer http.ResponseWriter, request *http.Request)
 	//处理一些特殊的路由。

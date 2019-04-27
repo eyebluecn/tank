@@ -11,7 +11,7 @@ import (
 
 //@Service
 type AlienService struct {
-	Bean
+	BaseBean
 	matterDao         *MatterDao
 	matterService     *MatterService
 	userDao           *UserDao
@@ -23,7 +23,7 @@ type AlienService struct {
 
 //初始化方法
 func (this *AlienService) Init() {
-	this.Bean.Init()
+	this.BaseBean.Init()
 
 	//手动装填本实例的Bean. 这里必须要用中间变量方可。
 	b := core.CONTEXT.GetBean(this.matterDao)

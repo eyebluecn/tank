@@ -18,7 +18,7 @@ type TankContext struct {
 	//session缓存
 	SessionCache *cache.Table
 	//各类的Bean Map。这里面是包含ControllerMap中所有元素
-	BeanMap map[string]core.IBean
+	BeanMap map[string]core.Bean
 	//只包含了Controller的map
 	ControllerMap map[string]core.IController
 	//处理所有路由请求
@@ -32,7 +32,7 @@ func (this *TankContext) Init() {
 	this.SessionCache = cache.NewTable()
 
 	//初始化Map
-	this.BeanMap = make(map[string]core.IBean)
+	this.BeanMap = make(map[string]core.Bean)
 	this.ControllerMap = make(map[string]core.IController)
 
 	//注册各类Beans.在这个方法里面顺便把Controller装入ControllerMap中去。
@@ -97,12 +97,12 @@ func (this *TankContext) CloseDb() {
 }
 
 //注册一个Bean
-func (this *TankContext) registerBean(bean core.IBean) {
+func (this *TankContext) registerBean(bean core.Bean) {
 
 	typeOf := reflect.TypeOf(bean)
 	typeName := typeOf.String()
 
-	if element, ok := bean.(core.IBean); ok {
+	if element, ok := bean.(core.Bean); ok {
 
 		err := fmt.Sprintf("【%s】已经被注册了，跳过。", typeName)
 		if _, ok := this.BeanMap[typeName]; ok {
@@ -180,7 +180,7 @@ func (this *TankContext) registerBeans() {
 }
 
 //从Map中获取某个Bean.
-func (this *TankContext) GetBean(bean core.IBean) core.IBean {
+func (this *TankContext) GetBean(bean core.Bean) core.Bean {
 
 	typeOf := reflect.TypeOf(bean)
 	typeName := typeOf.String()

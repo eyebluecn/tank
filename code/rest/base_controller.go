@@ -10,14 +10,14 @@ import (
 )
 
 type BaseController struct {
-	Bean
+	BaseBean
 	userDao    *UserDao
 	sessionDao *SessionDao
 }
 
 func (this *BaseController) Init() {
 
-	this.Bean.Init()
+	this.BaseBean.Init()
 
 	//手动装填本实例的Bean.
 	b := core.CONTEXT.GetBean(this.userDao)

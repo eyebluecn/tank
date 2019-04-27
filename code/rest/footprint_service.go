@@ -12,14 +12,14 @@ import (
 
 //@Service
 type FootprintService struct {
-	Bean
+	BaseBean
 	footprintDao *FootprintDao
 	userDao      *UserDao
 }
 
 //初始化方法
 func (this *FootprintService) Init() {
-	this.Bean.Init()
+	this.BaseBean.Init()
 
 	//手动装填本实例的Bean. 这里必须要用中间变量方可。
 	b := core.CONTEXT.GetBean(this.footprintDao)

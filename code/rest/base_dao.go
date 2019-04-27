@@ -3,7 +3,7 @@ package rest
 import "github.com/eyebluecn/tank/code/tool/builder"
 
 type BaseDao struct {
-	Bean
+	BaseBean
 }
 
 //根据一个sortMap，获取到order字符串

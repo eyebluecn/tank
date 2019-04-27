@@ -3,7 +3,7 @@ package core
 /**
  * 系统中的Bean接口，即系统中单例模式
  */
-type IBean interface {
+type Bean interface {
 	//初始化方法
 	Init()
 	//系统清理方法

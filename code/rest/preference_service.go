@@ -4,14 +4,14 @@ import "github.com/eyebluecn/tank/code/core"
 
 //@Service
 type PreferenceService struct {
-	Bean
+	BaseBean
 	preferenceDao *PreferenceDao
 	preference    *Preference
 }
 
 //初始化方法
 func (this *PreferenceService) Init() {
-	this.Bean.Init()
+	this.BaseBean.Init()
 
 	//手动装填本实例的Bean. 这里必须要用中间变量方可。
 	b := core.CONTEXT.GetBean(this.preferenceDao)

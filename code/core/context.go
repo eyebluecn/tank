@@ -14,7 +14,7 @@ type Context interface {
 	GetDB() *gorm.DB
 
 	//获取一个Bean
-	GetBean(bean IBean) IBean
+	GetBean(bean Bean) Bean
 
 	//获取全局的Session缓存
 	GetSessionCache() *cache.Table

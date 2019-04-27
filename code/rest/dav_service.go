@@ -23,14 +23,14 @@ import (
  */
 //@Service
 type DavService struct {
-	Bean
+	BaseBean
 	matterDao     *MatterDao
 	matterService *MatterService
 }
 
 //初始化方法
 func (this *DavService) Init() {
-	this.Bean.Init()
+	this.BaseBean.Init()
 
 	//手动装填本实例的Bean. 这里必须要用中间变量方可。
 	b := core.CONTEXT.GetBean(this.matterDao)

@@ -15,7 +15,7 @@ import (
 
 //@Service
 type ImageCacheService struct {
-	Bean
+	BaseBean
 	imageCacheDao *ImageCacheDao
 	userDao       *UserDao
 	matterDao     *MatterDao
@@ -23,7 +23,7 @@ type ImageCacheService struct {
 
 //初始化方法
 func (this *ImageCacheService) Init() {
-	this.Bean.Init()
+	this.BaseBean.Init()
 
 	//手动装填本实例的Bean. 这里必须要用中间变量方可。
 	b := core.CONTEXT.GetBean(this.imageCacheDao)
