@@ -2,6 +2,7 @@ package rest
 
 import (
 	"github.com/eyebluecn/tank/code/config"
+	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/cache"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"net/http"
@@ -23,12 +24,12 @@ func (this *UserService) Init() {
 	this.Bean.Init()
 
 	//手动装填本实例的Bean. 这里必须要用中间变量方可。
-	b := CONTEXT.GetBean(this.userDao)
+	b := core.CONTEXT.GetBean(this.userDao)
 	if b, ok := b.(*UserDao); ok {
 		this.userDao = b
 	}
 
-	b = CONTEXT.GetBean(this.sessionDao)
+	b = core.CONTEXT.GetBean(this.sessionDao)
 	if b, ok := b.(*SessionDao); ok {
 		this.sessionDao = b
 	}
@@ -84,7 +85,7 @@ func (this *UserService) preHandle(writer http.ResponseWriter, request *http.Req
 	sessionId := sessionCookie.Value
 
 	//去缓存中捞取
-	cacheItem, err := CONTEXT.SessionCache.Value(sessionId)
+	cacheItem, err := core.CONTEXT.GetSessionCache().Value(sessionId)
 	if err != nil {
 		this.logger.Error("获取缓存时出错了" + err.Error())
 	}
@@ -100,7 +101,7 @@ func (this *UserService) preHandle(writer http.ResponseWriter, request *http.Req
 				user := this.userDao.FindByUuid(session.UserUuid)
 				if user != nil {
 					//将用户装填进缓存中
-					CONTEXT.SessionCache.Add(sessionCookie.Value, duration, user)
+					core.CONTEXT.GetSessionCache().Add(sessionCookie.Value, duration, user)
 				} else {
 					this.logger.Error("没有找到对应的user " + session.UserUuid)
 				}

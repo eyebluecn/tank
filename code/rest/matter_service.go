@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/download"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
@@ -30,27 +31,27 @@ func (this *MatterService) Init() {
 	this.Bean.Init()
 
 	//手动装填本实例的Bean. 这里必须要用中间变量方可。
-	b := CONTEXT.GetBean(this.matterDao)
+	b := core.CONTEXT.GetBean(this.matterDao)
 	if b, ok := b.(*MatterDao); ok {
 		this.matterDao = b
 	}
 
-	b = CONTEXT.GetBean(this.userDao)
+	b = core.CONTEXT.GetBean(this.userDao)
 	if b, ok := b.(*UserDao); ok {
 		this.userDao = b
 	}
 
-	b = CONTEXT.GetBean(this.userService)
+	b = core.CONTEXT.GetBean(this.userService)
 	if b, ok := b.(*UserService); ok {
 		this.userService = b
 	}
 
-	b = CONTEXT.GetBean(this.imageCacheDao)
+	b = core.CONTEXT.GetBean(this.imageCacheDao)
 	if b, ok := b.(*ImageCacheDao); ok {
 		this.imageCacheDao = b
 	}
 
-	b = CONTEXT.GetBean(this.imageCacheService)
+	b = core.CONTEXT.GetBean(this.imageCacheService)
 	if b, ok := b.(*ImageCacheService); ok {
 		this.imageCacheService = b
 	}

@@ -3,6 +3,7 @@ package rest
 import (
 	"encoding/json"
 	"github.com/eyebluecn/tank/code/config"
+	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/util"
 	"github.com/robfig/cron"
 	"net/http"
@@ -21,12 +22,12 @@ func (this *FootprintService) Init() {
 	this.Bean.Init()
 
 	//手动装填本实例的Bean. 这里必须要用中间变量方可。
-	b := CONTEXT.GetBean(this.footprintDao)
+	b := core.CONTEXT.GetBean(this.footprintDao)
 	if b, ok := b.(*FootprintDao); ok {
 		this.footprintDao = b
 	}
 
-	b = CONTEXT.GetBean(this.userDao)
+	b = core.CONTEXT.GetBean(this.userDao)
 	if b, ok := b.(*UserDao); ok {
 		this.userDao = b
 	}

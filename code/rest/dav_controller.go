@@ -3,6 +3,7 @@ package rest
 import (
 	"bytes"
 	"fmt"
+	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
 	"io/ioutil"
@@ -35,37 +36,37 @@ func (this *DavController) Init() {
 	this.BaseController.Init()
 
 	//手动装填本实例的Bean.
-	b := CONTEXT.GetBean(this.uploadTokenDao)
+	b := core.CONTEXT.GetBean(this.uploadTokenDao)
 	if c, ok := b.(*UploadTokenDao); ok {
 		this.uploadTokenDao = c
 	}
 
-	b = CONTEXT.GetBean(this.downloadTokenDao)
+	b = core.CONTEXT.GetBean(this.downloadTokenDao)
 	if c, ok := b.(*DownloadTokenDao); ok {
 		this.downloadTokenDao = c
 	}
 
-	b = CONTEXT.GetBean(this.matterDao)
+	b = core.CONTEXT.GetBean(this.matterDao)
 	if c, ok := b.(*MatterDao); ok {
 		this.matterDao = c
 	}
 
-	b = CONTEXT.GetBean(this.matterService)
+	b = core.CONTEXT.GetBean(this.matterService)
 	if c, ok := b.(*MatterService); ok {
 		this.matterService = c
 	}
 
-	b = CONTEXT.GetBean(this.imageCacheDao)
+	b = core.CONTEXT.GetBean(this.imageCacheDao)
 	if c, ok := b.(*ImageCacheDao); ok {
 		this.imageCacheDao = c
 	}
 
-	b = CONTEXT.GetBean(this.imageCacheService)
+	b = core.CONTEXT.GetBean(this.imageCacheService)
 	if c, ok := b.(*ImageCacheService); ok {
 		this.imageCacheService = c
 	}
 
-	b = CONTEXT.GetBean(this.davService)
+	b = core.CONTEXT.GetBean(this.davService)
 	if c, ok := b.(*DavService); ok {
 		this.davService = c
 	}

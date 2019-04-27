@@ -41,7 +41,7 @@ func (this *Bean) findUser(writer http.ResponseWriter, request *http.Request) *U
 	}
 
 	//去缓存中捞取看看
-	cacheItem, err := CONTEXT.SessionCache.Value(sessionId)
+	cacheItem, err := core.CONTEXT.GetSessionCache().Value(sessionId)
 	if err != nil {
 		this.logger.Warn("获取缓存时出错了" + err.Error())
 		return nil

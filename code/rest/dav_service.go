@@ -2,6 +2,7 @@ package rest
 
 import (
 	"fmt"
+	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/dav"
 	"github.com/eyebluecn/tank/code/tool/dav/xml"
 	"github.com/eyebluecn/tank/code/tool/result"
@@ -32,12 +33,12 @@ func (this *DavService) Init() {
 	this.Bean.Init()
 
 	//手动装填本实例的Bean. 这里必须要用中间变量方可。
-	b := CONTEXT.GetBean(this.matterDao)
+	b := core.CONTEXT.GetBean(this.matterDao)
 	if b, ok := b.(*MatterDao); ok {
 		this.matterDao = b
 	}
 
-	b = CONTEXT.GetBean(this.matterService)
+	b = core.CONTEXT.GetBean(this.matterService)
 	if b, ok := b.(*MatterService); ok {
 		this.matterService = b
 	}

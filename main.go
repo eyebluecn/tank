@@ -23,10 +23,12 @@ func main() {
 	config.CONFIG.Init()
 
 	//全局运行的上下文
-	rest.CONTEXT.Init()
-	defer rest.CONTEXT.Destroy()
+	tankContext := &rest.Context{}
+	tankContext.Init()
+	defer tankContext.Destroy()
+	core.CONTEXT = tankContext
 
-	http.Handle("/", rest.CONTEXT.Router)
+	http.Handle("/", core.CONTEXT)
 
 	core.LOGGER.Info("App started at http://localhost:%v", config.CONFIG.ServerPort)
 

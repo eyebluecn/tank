@@ -2,6 +2,7 @@ package rest
 
 import (
 	"github.com/eyebluecn/tank/code/config"
+	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/builder"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
@@ -231,7 +232,7 @@ func (this *UserController) Logout(writer http.ResponseWriter, request *http.Req
 	}
 
 	//删掉session缓存
-	_, err = CONTEXT.SessionCache.Delete(sessionId)
+	_, err = core.CONTEXT.GetSessionCache().Delete(sessionId)
 	if err != nil {
 		this.logger.Error("删除用户session缓存时出错")
 	}

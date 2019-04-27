@@ -2,6 +2,7 @@ package rest
 
 import (
 	"fmt"
+	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/json-iterator/go"
 	"go/types"
@@ -19,12 +20,12 @@ func (this *BaseController) Init() {
 	this.Bean.Init()
 
 	//手动装填本实例的Bean.
-	b := CONTEXT.GetBean(this.userDao)
+	b := core.CONTEXT.GetBean(this.userDao)
 	if b, ok := b.(*UserDao); ok {
 		this.userDao = b
 	}
 
-	b = CONTEXT.GetBean(this.sessionDao)
+	b = core.CONTEXT.GetBean(this.sessionDao)
 	if b, ok := b.(*SessionDao); ok {
 		this.sessionDao = b
 	}

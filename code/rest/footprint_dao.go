@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/builder"
 	"github.com/jinzhu/gorm"
 
@@ -17,7 +18,7 @@ func (this *FootprintDao) FindByUuid(uuid string) *Footprint {
 
 	// Read
 	var footprint Footprint
-	db := CONTEXT.GetDB().Where(&Footprint{Base: Base{Uuid: uuid}}).First(&footprint)
+	db := core.CONTEXT.GetDB().Where(&Footprint{Base: Base{Uuid: uuid}}).First(&footprint)
 	if db.Error != nil {
 		return nil
 	}
@@ -29,7 +30,7 @@ func (this *FootprintDao) CheckByUuid(uuid string) *Footprint {
 
 	// Read
 	var footprint Footprint
-	db := CONTEXT.GetDB().Where(&Footprint{Base: Base{Uuid: uuid}}).First(&footprint)
+	db := core.CONTEXT.GetDB().Where(&Footprint{Base: Base{Uuid: uuid}}).First(&footprint)
 	this.PanicError(db.Error)
 
 	return &footprint
@@ -46,7 +47,7 @@ func (this *FootprintDao) Page(page int, pageSize int, userUuid string, sortArra
 	}
 
 	var conditionDB *gorm.DB
-	conditionDB = CONTEXT.GetDB().Model(&Footprint{}).Where(wp.Query, wp.Args...)
+	conditionDB = core.CONTEXT.GetDB().Model(&Footprint{}).Where(wp.Query, wp.Args...)
 
 	count := 0
 	db := conditionDB.Count(&count)
@@ -68,7 +69,7 @@ func (this *FootprintDao) Create(footprint *Footprint) *Footprint {
 	footprint.CreateTime = time.Now()
 	footprint.UpdateTime = time.Now()
 	footprint.Sort = time.Now().UnixNano() / 1e6
-	db := CONTEXT.GetDB().Create(footprint)
+	db := core.CONTEXT.GetDB().Create(footprint)
 	this.PanicError(db.Error)
 
 	return footprint
@@ -78,7 +79,7 @@ func (this *FootprintDao) Create(footprint *Footprint) *Footprint {
 func (this *FootprintDao) Save(footprint *Footprint) *Footprint {
 
 	footprint.UpdateTime = time.Now()
-	db := CONTEXT.GetDB().Save(footprint)
+	db := core.CONTEXT.GetDB().Save(footprint)
 	this.PanicError(db.Error)
 
 	return footprint
@@ -87,14 +88,14 @@ func (this *FootprintDao) Save(footprint *Footprint) *Footprint {
 //删除一条记录
 func (this *FootprintDao) Delete(footprint *Footprint) {
 
-	db := CONTEXT.GetDB().Delete(&footprint)
+	db := core.CONTEXT.GetDB().Delete(&footprint)
 	this.PanicError(db.Error)
 }
 
 //获取一段时间中，总的数量
 func (this *FootprintDao) CountBetweenTime(startTime time.Time, endTime time.Time) int64 {
 	var count int64
-	db := CONTEXT.GetDB().Model(&Footprint{}).Where("create_time >= ? AND create_time <= ?", startTime, endTime).Count(&count)
+	db := core.CONTEXT.GetDB().Model(&Footprint{}).Where("create_time >= ? AND create_time <= ?", startTime, endTime).Count(&count)
 	this.PanicError(db.Error)
 	return count
 }
@@ -102,7 +103,7 @@ func (this *FootprintDao) CountBetweenTime(startTime time.Time, endTime time.Tim
 //获取一段时间中UV的数量
 func (this *FootprintDao) UvBetweenTime(startTime time.Time, endTime time.Time) int64 {
 	var count int64
-	db := CONTEXT.GetDB().Model(&Footprint{}).Where("create_time >= ? AND create_time <= ?", startTime, endTime).Select("COUNT(DISTINCT(ip))")
+	db := core.CONTEXT.GetDB().Model(&Footprint{}).Where("create_time >= ? AND create_time <= ?", startTime, endTime).Select("COUNT(DISTINCT(ip))")
 	this.PanicError(db.Error)
 	row := db.Row()
 	row.Scan(&count)
@@ -112,7 +113,7 @@ func (this *FootprintDao) UvBetweenTime(startTime time.Time, endTime time.Time) 
 //获取一段时间中平均耗时
 func (this *FootprintDao) AvgCostBetweenTime(startTime time.Time, endTime time.Time) int64 {
 	var cost float64
-	db := CONTEXT.GetDB().Model(&Footprint{}).Where("create_time >= ? AND create_time <= ?", startTime, endTime).Select("AVG(cost)")
+	db := core.CONTEXT.GetDB().Model(&Footprint{}).Where("create_time >= ? AND create_time <= ?", startTime, endTime).Select("AVG(cost)")
 	this.PanicError(db.Error)
 	row := db.Row()
 	row.Scan(&cost)
@@ -121,13 +122,13 @@ func (this *FootprintDao) AvgCostBetweenTime(startTime time.Time, endTime time.T
 
 //删除某个时刻之前的记录
 func (this *FootprintDao) DeleteByCreateTimeBefore(createTime time.Time) {
-	db := CONTEXT.GetDB().Where("create_time < ?", createTime).Delete(Footprint{})
+	db := core.CONTEXT.GetDB().Where("create_time < ?", createTime).Delete(Footprint{})
 	this.PanicError(db.Error)
 }
 
 //执行清理操作
 func (this *FootprintDao) Cleanup() {
 	this.logger.Info("[FootprintDao]执行清理：清除数据库中所有Footprint记录。")
-	db := CONTEXT.GetDB().Where("uuid is not null").Delete(Footprint{})
+	db := core.CONTEXT.GetDB().Where("uuid is not null").Delete(Footprint{})
 	this.PanicError(db.Error)
 }

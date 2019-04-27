@@ -31,25 +31,25 @@ func NewRouter() *Router {
 	}
 
 	//installController.
-	b := CONTEXT.GetBean(router.installController)
+	b := core.CONTEXT.GetBean(router.installController)
 	if b, ok := b.(*InstallController); ok {
 		router.installController = b
 	}
 
 	//装载userService.
-	b = CONTEXT.GetBean(router.userService)
+	b = core.CONTEXT.GetBean(router.userService)
 	if b, ok := b.(*UserService); ok {
 		router.userService = b
 	}
 
 	//装载footprintService
-	b = CONTEXT.GetBean(router.footprintService)
+	b = core.CONTEXT.GetBean(router.footprintService)
 	if b, ok := b.(*FootprintService); ok {
 		router.footprintService = b
 	}
 
 	//将Controller中的路由规则装载进来，InstallController中的除外
-	for _, controller := range CONTEXT.ControllerMap {
+	for _, controller := range core.CONTEXT.GetControllerMap() {
 
 		if controller == router.installController {
 			routes := controller.RegisterRoutes()
@@ -142,7 +142,7 @@ func (this *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 			} else {
 				//直接将请求扔给每个controller，看看他们能不能处理，如果都不能处理，那就抛出找不到的错误
 				canHandle := false
-				for _, controller := range CONTEXT.ControllerMap {
+				for _, controller := range core.CONTEXT.GetControllerMap() {
 					if handler, exist := controller.HandleRoutes(writer, request); exist {
 						canHandle = true
 						handler(writer, request)

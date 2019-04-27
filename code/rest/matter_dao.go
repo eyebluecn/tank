@@ -2,6 +2,7 @@ package rest
 
 import (
 	"github.com/eyebluecn/tank/code/config"
+	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/builder"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
@@ -21,7 +22,7 @@ func (this *MatterDao) Init() {
 	this.BaseDao.Init()
 
 	//手动装填本实例的Bean. 这里必须要用中间变量方可。
-	b := CONTEXT.GetBean(this.imageCacheDao)
+	b := core.CONTEXT.GetBean(this.imageCacheDao)
 	if b, ok := b.(*ImageCacheDao); ok {
 		this.imageCacheDao = b
 	}
@@ -32,7 +33,7 @@ func (this *MatterDao) FindByUuid(uuid string) *Matter {
 
 	// Read
 	var matter Matter
-	db := CONTEXT.GetDB().Where(&Matter{Base: Base{Uuid: uuid}}).First(&matter)
+	db := core.CONTEXT.GetDB().Where(&Matter{Base: Base{Uuid: uuid}}).First(&matter)
 	if db.Error != nil {
 		if db.Error.Error() == result.DB_ERROR_NOT_FOUND {
 			return nil
@@ -111,7 +112,7 @@ func (this *MatterDao) FindByUserUuidAndPuuidAndNameAndDirTrue(userUuid string, 
 	wp = wp.And(&builder.WherePair{Query: "dir = ?", Args: []interface{}{1}})
 
 	var matter = &Matter{}
-	db := CONTEXT.GetDB().Model(&Matter{}).Where(wp.Query, wp.Args...).First(matter)
+	db := core.CONTEXT.GetDB().Model(&Matter{}).Where(wp.Query, wp.Args...).First(matter)
 
 	if db.Error != nil {
 		return nil
@@ -125,7 +126,7 @@ func (this *MatterDao) CheckByUuidAndUserUuid(uuid string, userUuid string) *Mat
 
 	// Read
 	var matter = &Matter{}
-	db := CONTEXT.GetDB().Where(&Matter{Base: Base{Uuid: uuid}, UserUuid: userUuid}).First(matter)
+	db := core.CONTEXT.GetDB().Where(&Matter{Base: Base{Uuid: uuid}, UserUuid: userUuid}).First(matter)
 	this.PanicError(db.Error)
 
 	return matter
@@ -154,7 +155,7 @@ func (this *MatterDao) CountByUserUuidAndPuuidAndDirAndName(userUuid string, puu
 
 	wp = wp.And(&builder.WherePair{Query: "dir = ?", Args: []interface{}{dir}})
 
-	db := CONTEXT.GetDB().
+	db := core.CONTEXT.GetDB().
 		Model(&matter).
 		Where(wp.Query, wp.Args...).
 		Count(&count)
@@ -168,7 +169,7 @@ func (this *MatterDao) ListByUserUuidAndPuuidAndDirAndName(userUuid string, puui
 
 	var matters []*Matter
 
-	db := CONTEXT.GetDB().
+	db := core.CONTEXT.GetDB().
 		Where(Matter{UserUuid: userUuid, Puuid: puuid, Dir: dir, Name: name}).
 		Find(&matters)
 	this.PanicError(db.Error)
@@ -180,7 +181,7 @@ func (this *MatterDao) ListByUserUuidAndPuuidAndDirAndName(userUuid string, puui
 func (this *MatterDao) List(puuid string, userUuid string, sortArray []builder.OrderPair) []*Matter {
 	var matters []*Matter
 
-	db := CONTEXT.GetDB().Where(Matter{UserUuid: userUuid, Puuid: puuid}).Order(this.GetSortString(sortArray)).Find(&matters)
+	db := core.CONTEXT.GetDB().Where(Matter{UserUuid: userUuid, Puuid: puuid}).Order(this.GetSortString(sortArray)).Find(&matters)
 	this.PanicError(db.Error)
 
 	return matters
@@ -223,9 +224,9 @@ func (this *MatterDao) Page(page int, pageSize int, puuid string, userUuid strin
 			orWp = orWp.Or(&builder.WherePair{Query: "name LIKE ?", Args: []interface{}{"%." + v}})
 		}
 
-		conditionDB = CONTEXT.GetDB().Model(&Matter{}).Where(wp.Query, wp.Args...).Where(orWp.Query, orWp.Args...)
+		conditionDB = core.CONTEXT.GetDB().Model(&Matter{}).Where(wp.Query, wp.Args...).Where(orWp.Query, orWp.Args...)
 	} else {
-		conditionDB = CONTEXT.GetDB().Model(&Matter{}).Where(wp.Query, wp.Args...)
+		conditionDB = core.CONTEXT.GetDB().Model(&Matter{}).Where(wp.Query, wp.Args...)
 	}
 
 	count := 0
@@ -248,7 +249,7 @@ func (this *MatterDao) Create(matter *Matter) *Matter {
 	matter.CreateTime = time.Now()
 	matter.UpdateTime = time.Now()
 	matter.Sort = time.Now().UnixNano() / 1e6
-	db := CONTEXT.GetDB().Create(matter)
+	db := core.CONTEXT.GetDB().Create(matter)
 	this.PanicError(db.Error)
 
 	return matter
@@ -258,7 +259,7 @@ func (this *MatterDao) Create(matter *Matter) *Matter {
 func (this *MatterDao) Save(matter *Matter) *Matter {
 
 	matter.UpdateTime = time.Now()
-	db := CONTEXT.GetDB().Save(matter)
+	db := core.CONTEXT.GetDB().Save(matter)
 	this.PanicError(db.Error)
 
 	return matter
@@ -266,7 +267,7 @@ func (this *MatterDao) Save(matter *Matter) *Matter {
 
 //计数器加一
 func (this *MatterDao) TimesIncrement(matterUuid string) {
-	db := CONTEXT.GetDB().Model(&Matter{}).Where("uuid = ?", matterUuid).Update("times", gorm.Expr("times + 1"))
+	db := core.CONTEXT.GetDB().Model(&Matter{}).Where("uuid = ?", matterUuid).Update("times", gorm.Expr("times + 1"))
 	this.PanicError(db.Error)
 }
 
@@ -282,7 +283,7 @@ func (this *MatterDao) Delete(matter *Matter) {
 		}
 
 		//删除数据库中文件夹本身
-		db := CONTEXT.GetDB().Delete(&matter)
+		db := core.CONTEXT.GetDB().Delete(&matter)
 		this.PanicError(db.Error)
 
 		//从磁盘中删除该文件夹。
@@ -291,7 +292,7 @@ func (this *MatterDao) Delete(matter *Matter) {
 	} else {
 
 		//删除数据库中文件记录
-		db := CONTEXT.GetDB().Delete(&matter)
+		db := core.CONTEXT.GetDB().Delete(&matter)
 		this.PanicError(db.Error)
 
 		//删除对应的缓存图片。
@@ -311,7 +312,7 @@ func (this *MatterDao) Delete(matter *Matter) {
 //获取一段时间中，总的数量
 func (this *MatterDao) CountBetweenTime(startTime time.Time, endTime time.Time) int64 {
 	var count int64
-	db := CONTEXT.GetDB().Model(&Matter{}).Where("create_time >= ? AND create_time <= ?", startTime, endTime).Count(&count)
+	db := core.CONTEXT.GetDB().Model(&Matter{}).Where("create_time >= ? AND create_time <= ?", startTime, endTime).Count(&count)
 	this.PanicError(db.Error)
 	return count
 }
@@ -319,7 +320,7 @@ func (this *MatterDao) CountBetweenTime(startTime time.Time, endTime time.Time) 
 //获取一段时间中文件总大小
 func (this *MatterDao) SizeBetweenTime(startTime time.Time, endTime time.Time) int64 {
 	var size int64
-	db := CONTEXT.GetDB().Model(&Matter{}).Where("create_time >= ? AND create_time <= ?", startTime, endTime).Select("SUM(size)")
+	db := core.CONTEXT.GetDB().Model(&Matter{}).Where("create_time >= ? AND create_time <= ?", startTime, endTime).Select("SUM(size)")
 	this.PanicError(db.Error)
 	row := db.Row()
 	err := row.Scan(&size)
@@ -333,7 +334,7 @@ func (this *MatterDao) findByUserUuidAndPath(userUuid string, path string) *Matt
 	var wp = &builder.WherePair{Query: "user_uuid = ? AND path = ?", Args: []interface{}{userUuid, path}}
 
 	var matter = &Matter{}
-	db := CONTEXT.GetDB().Model(&Matter{}).Where(wp.Query, wp.Args...).First(matter)
+	db := core.CONTEXT.GetDB().Model(&Matter{}).Where(wp.Query, wp.Args...).First(matter)
 
 	if db.Error != nil {
 		if db.Error.Error() == result.DB_ERROR_NOT_FOUND {
@@ -363,7 +364,7 @@ func (this *MatterDao) checkByUserUuidAndPath(userUuid string, path string) *Mat
 //执行清理操作
 func (this *MatterDao) Cleanup() {
 	this.logger.Info("[MatterDao]执行清理：清除数据库中所有Matter记录。删除磁盘中所有Matter文件。")
-	db := CONTEXT.GetDB().Where("uuid is not null").Delete(Matter{})
+	db := core.CONTEXT.GetDB().Where("uuid is not null").Delete(Matter{})
 	this.PanicError(db.Error)
 
 	err := os.RemoveAll(config.CONFIG.MatterPath)

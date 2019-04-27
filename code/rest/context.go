@@ -6,11 +6,9 @@ import (
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/cache"
 	"github.com/jinzhu/gorm"
+	"net/http"
 	"reflect"
 )
-
-//全局唯一的上下文(在main函数中初始化)
-var CONTEXT = &Context{}
 
 //上下文，管理数据库连接，管理所有路由请求，管理所有的单例component.
 type Context struct {
@@ -53,6 +51,25 @@ func (this *Context) Init() {
 //获取数据库对象
 func (this *Context) GetDB() *gorm.DB {
 	return this.db
+}
+
+func (this *Context) GetSessionCache() *cache.Table {
+	return this.SessionCache
+}
+
+func (this *Context) GetControllerMap() map[string]core.IController {
+	return this.ControllerMap
+}
+
+func (this *Context) Cleanup() {
+	for _, bean := range this.BeanMap {
+		bean.Cleanup()
+	}
+}
+
+//响应http的能力
+func (this *Context) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	this.Router.ServeHTTP(writer, request)
 }
 
 func (this *Context) OpenDb() {

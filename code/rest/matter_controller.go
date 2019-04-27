@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/builder"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"net/http"
@@ -22,26 +23,26 @@ func (this *MatterController) Init() {
 	this.BaseController.Init()
 
 	//手动装填本实例的Bean. 这里必须要用中间变量方可。
-	b := CONTEXT.GetBean(this.matterDao)
+	b := core.CONTEXT.GetBean(this.matterDao)
 	if b, ok := b.(*MatterDao); ok {
 		this.matterDao = b
 	}
 
-	b = CONTEXT.GetBean(this.matterService)
+	b = core.CONTEXT.GetBean(this.matterService)
 	if b, ok := b.(*MatterService); ok {
 		this.matterService = b
 	}
 
-	b = CONTEXT.GetBean(this.downloadTokenDao)
+	b = core.CONTEXT.GetBean(this.downloadTokenDao)
 	if b, ok := b.(*DownloadTokenDao); ok {
 		this.downloadTokenDao = b
 	}
 
-	b = CONTEXT.GetBean(this.imageCacheDao)
+	b = core.CONTEXT.GetBean(this.imageCacheDao)
 	if b, ok := b.(*ImageCacheDao); ok {
 		this.imageCacheDao = b
 	}
-	b = CONTEXT.GetBean(this.imageCacheService)
+	b = core.CONTEXT.GetBean(this.imageCacheService)
 	if b, ok := b.(*ImageCacheService); ok {
 		this.imageCacheService = b
 	}
@@ -193,7 +194,7 @@ func (this *MatterController) CreateDirectory(writer http.ResponseWriter, reques
 		dirMatter = this.matterDao.CheckByUuid(puuid)
 	}
 
-	matter := this.matterService.AtomicCreateDirectory(dirMatter, name, user);
+	matter := this.matterService.AtomicCreateDirectory(dirMatter, name, user)
 	return this.Success(matter)
 }
 

@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/builder"
 	"github.com/nu7hatch/gouuid"
 	"time"
@@ -24,7 +25,7 @@ func (this *UserDao) Create(user *User) *User {
 	user.LastTime = time.Now()
 	user.Sort = time.Now().UnixNano() / 1e6
 
-	db := CONTEXT.GetDB().Create(user)
+	db := core.CONTEXT.GetDB().Create(user)
 	this.PanicError(db.Error)
 
 	return user
@@ -35,7 +36,7 @@ func (this *UserDao) FindByUuid(uuid string) *User {
 
 	// Read
 	var user *User = &User{}
-	db := CONTEXT.GetDB().Where(&User{Base: Base{Uuid: uuid}}).First(user)
+	db := core.CONTEXT.GetDB().Where(&User{Base: Base{Uuid: uuid}}).First(user)
 	if db.Error != nil {
 		return nil
 	}
@@ -51,7 +52,7 @@ func (this *UserDao) CheckByUuid(uuid string) *User {
 
 	// Read
 	var user = &User{}
-	db := CONTEXT.GetDB().Where(&User{Base: Base{Uuid: uuid}}).First(user)
+	db := core.CONTEXT.GetDB().Where(&User{Base: Base{Uuid: uuid}}).First(user)
 	this.PanicError(db.Error)
 	return user
 }
@@ -60,7 +61,7 @@ func (this *UserDao) CheckByUuid(uuid string) *User {
 func (this *UserDao) FindByUsername(username string) *User {
 
 	var user = &User{}
-	db := CONTEXT.GetDB().Where(&User{Username: username}).First(user)
+	db := core.CONTEXT.GetDB().Where(&User{Username: username}).First(user)
 	if db.Error != nil {
 		return nil
 	}
@@ -71,7 +72,7 @@ func (this *UserDao) FindByUsername(username string) *User {
 func (this *UserDao) FindByEmail(email string) *User {
 
 	var user *User = &User{}
-	db := CONTEXT.GetDB().Where(&User{Email: email}).First(user)
+	db := core.CONTEXT.GetDB().Where(&User{Email: email}).First(user)
 	if db.Error != nil {
 		return nil
 	}
@@ -100,15 +101,15 @@ func (this *UserDao) Page(page int, pageSize int, username string, email string,
 	}
 
 	count := 0
-	db := CONTEXT.GetDB().Model(&User{}).Where(wp.Query, wp.Args...).Count(&count)
+	db := core.CONTEXT.GetDB().Model(&User{}).Where(wp.Query, wp.Args...).Count(&count)
 	this.PanicError(db.Error)
 
 	var users []*User
 	orderStr := this.GetSortString(sortArray)
 	if orderStr == "" {
-		db = CONTEXT.GetDB().Where(wp.Query, wp.Args...).Offset(page * pageSize).Limit(pageSize).Find(&users)
+		db = core.CONTEXT.GetDB().Where(wp.Query, wp.Args...).Offset(page * pageSize).Limit(pageSize).Find(&users)
 	} else {
-		db = CONTEXT.GetDB().Where(wp.Query, wp.Args...).Order(orderStr).Offset(page * pageSize).Limit(pageSize).Find(&users)
+		db = core.CONTEXT.GetDB().Where(wp.Query, wp.Args...).Order(orderStr).Offset(page * pageSize).Limit(pageSize).Find(&users)
 	}
 
 	this.PanicError(db.Error)
@@ -121,7 +122,7 @@ func (this *UserDao) Page(page int, pageSize int, username string, email string,
 //查询某个用户名是否已经有用户了
 func (this *UserDao) CountByUsername(username string) int {
 	var count int
-	db := CONTEXT.GetDB().
+	db := core.CONTEXT.GetDB().
 		Model(&User{}).
 		Where("username = ?", username).
 		Count(&count)
@@ -132,7 +133,7 @@ func (this *UserDao) CountByUsername(username string) int {
 //查询某个邮箱是否已经有用户了
 func (this *UserDao) CountByEmail(email string) int {
 	var count int
-	db := CONTEXT.GetDB().
+	db := core.CONTEXT.GetDB().
 		Model(&User{}).
 		Where("email = ?", email).
 		Count(&count)
@@ -144,7 +145,7 @@ func (this *UserDao) CountByEmail(email string) int {
 func (this *UserDao) Save(user *User) *User {
 
 	user.UpdateTime = time.Now()
-	db := CONTEXT.GetDB().
+	db := core.CONTEXT.GetDB().
 		Save(user)
 	this.PanicError(db.Error)
 	return user
@@ -153,6 +154,6 @@ func (this *UserDao) Save(user *User) *User {
 //执行清理操作
 func (this *UserDao) Cleanup() {
 	this.logger.Info("[UserDao]执行清理：清除数据库中所有User记录。")
-	db := CONTEXT.GetDB().Where("uuid is not null and role != ?", USER_ROLE_ADMINISTRATOR).Delete(User{})
+	db := core.CONTEXT.GetDB().Where("uuid is not null and role != ?", USER_ROLE_ADMINISTRATOR).Delete(User{})
 	this.PanicError(db.Error)
 }

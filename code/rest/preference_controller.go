@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
 	"net/http"
@@ -17,12 +18,12 @@ func (this *PreferenceController) Init() {
 	this.BaseController.Init()
 
 	//手动装填本实例的Bean. 这里必须要用中间变量方可。
-	b := CONTEXT.GetBean(this.preferenceDao)
+	b := core.CONTEXT.GetBean(this.preferenceDao)
 	if b, ok := b.(*PreferenceDao); ok {
 		this.preferenceDao = b
 	}
 
-	b = CONTEXT.GetBean(this.preferenceService)
+	b = core.CONTEXT.GetBean(this.preferenceService)
 	if b, ok := b.(*PreferenceService); ok {
 		this.preferenceService = b
 	}
@@ -95,9 +96,8 @@ func (this *PreferenceController) SystemCleanup(writer http.ResponseWriter, requ
 		panic(result.BadRequest("密码错误，不能执行！"))
 	}
 
-	for _, bean := range CONTEXT.BeanMap {
-		bean.Cleanup()
-	}
+	//清空系统
+	core.CONTEXT.Cleanup()
 
 	return this.Success("OK")
 }

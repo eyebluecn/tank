@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"github.com/eyebluecn/tank/code/core"
 	"github.com/nu7hatch/gouuid"
 	"time"
 )
@@ -14,7 +15,7 @@ func (this *SessionDao) FindByUuid(uuid string) *Session {
 
 	// Read
 	var session = &Session{}
-	db := CONTEXT.GetDB().Where(&Session{Base: Base{Uuid: uuid}}).First(session)
+	db := core.CONTEXT.GetDB().Where(&Session{Base: Base{Uuid: uuid}}).First(session)
 	if db.Error != nil {
 		return nil
 	}
@@ -26,7 +27,7 @@ func (this *SessionDao) CheckByUuid(uuid string) *Session {
 
 	// Read
 	var session = &Session{}
-	db := CONTEXT.GetDB().Where(&Session{Base: Base{Uuid: uuid}}).First(session)
+	db := core.CONTEXT.GetDB().Where(&Session{Base: Base{Uuid: uuid}}).First(session)
 	this.PanicError(db.Error)
 	return session
 }
@@ -39,7 +40,7 @@ func (this *SessionDao) Create(session *Session) *Session {
 	session.CreateTime = time.Now()
 	session.UpdateTime = time.Now()
 	session.Sort = time.Now().UnixNano() / 1e6
-	db := CONTEXT.GetDB().Create(session)
+	db := core.CONTEXT.GetDB().Create(session)
 	this.PanicError(db.Error)
 
 	return session
@@ -49,7 +50,7 @@ func (this *SessionDao) Create(session *Session) *Session {
 func (this *SessionDao) Save(session *Session) *Session {
 
 	session.UpdateTime = time.Now()
-	db := CONTEXT.GetDB().Save(session)
+	db := core.CONTEXT.GetDB().Save(session)
 	this.PanicError(db.Error)
 
 	return session
@@ -60,7 +61,7 @@ func (this *SessionDao) Delete(uuid string) {
 	session := this.CheckByUuid(uuid)
 
 	session.ExpireTime = time.Now()
-	db := CONTEXT.GetDB().Delete(session)
+	db := core.CONTEXT.GetDB().Delete(session)
 
 	this.PanicError(db.Error)
 
@@ -69,6 +70,6 @@ func (this *SessionDao) Delete(uuid string) {
 //执行清理操作
 func (this *SessionDao) Cleanup() {
 	this.logger.Info("[SessionDao]执行清理：清除数据库中所有Session记录。")
-	db := CONTEXT.GetDB().Where("uuid is not null").Delete(Session{})
+	db := core.CONTEXT.GetDB().Where("uuid is not null").Delete(Session{})
 	this.PanicError(db.Error)
 }

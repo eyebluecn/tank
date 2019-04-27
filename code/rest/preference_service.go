@@ -1,5 +1,7 @@
 package rest
 
+import "github.com/eyebluecn/tank/code/core"
+
 //@Service
 type PreferenceService struct {
 	Bean
@@ -12,7 +14,7 @@ func (this *PreferenceService) Init() {
 	this.Bean.Init()
 
 	//手动装填本实例的Bean. 这里必须要用中间变量方可。
-	b := CONTEXT.GetBean(this.preferenceDao)
+	b := core.CONTEXT.GetBean(this.preferenceDao)
 	if b, ok := b.(*PreferenceDao); ok {
 		this.preferenceDao = b
 	}

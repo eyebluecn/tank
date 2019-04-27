@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/builder"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"net/http"
@@ -18,12 +19,12 @@ func (this *DashboardController) Init() {
 	this.BaseController.Init()
 
 	//手动装填本实例的Bean. 这里必须要用中间变量方可。
-	b := CONTEXT.GetBean(this.dashboardDao)
+	b := core.CONTEXT.GetBean(this.dashboardDao)
 	if b, ok := b.(*DashboardDao); ok {
 		this.dashboardDao = b
 	}
 
-	b = CONTEXT.GetBean(this.dashboardService)
+	b = core.CONTEXT.GetBean(this.dashboardService)
 	if b, ok := b.(*DashboardService); ok {
 		this.dashboardService = b
 	}
