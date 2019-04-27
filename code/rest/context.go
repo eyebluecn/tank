@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/eyebluecn/tank/code/config"
 	"github.com/eyebluecn/tank/code/core"
-	cache2 "github.com/eyebluecn/tank/code/tool/cache"
+	"github.com/eyebluecn/tank/code/tool/cache"
 	"github.com/jinzhu/gorm"
 	"reflect"
 )
@@ -17,9 +17,9 @@ type Context struct {
 	//数据库连接
 	DB *gorm.DB
 	//session缓存
-	SessionCache *cache2.Table
+	SessionCache *cache.Table
 	//各类的Bean Map。这里面是包含ControllerMap中所有元素
-	BeanMap map[string]IBean
+	BeanMap map[string]core.IBean
 	//只包含了Controller的map
 	ControllerMap map[string]IController
 	//处理所有路由请求
@@ -30,10 +30,10 @@ type Context struct {
 func (this *Context) Init() {
 
 	//创建一个用于存储session的缓存。
-	this.SessionCache = cache2.NewTable()
+	this.SessionCache = cache.NewTable()
 
 	//初始化Map
-	this.BeanMap = make(map[string]IBean)
+	this.BeanMap = make(map[string]core.IBean)
 	this.ControllerMap = make(map[string]IController)
 
 	//注册各类Beans.在这个方法里面顺便把Controller装入ControllerMap中去。
@@ -74,12 +74,12 @@ func (this *Context) CloseDb() {
 }
 
 //注册一个Bean
-func (this *Context) registerBean(bean IBean) {
+func (this *Context) registerBean(bean core.IBean) {
 
 	typeOf := reflect.TypeOf(bean)
 	typeName := typeOf.String()
 
-	if element, ok := bean.(IBean); ok {
+	if element, ok := bean.(core.IBean); ok {
 
 		err := fmt.Sprintf("【%s】已经被注册了，跳过。", typeName)
 		if _, ok := this.BeanMap[typeName]; ok {
@@ -157,7 +157,7 @@ func (this *Context) registerBeans() {
 }
 
 //从Map中获取某个Bean.
-func (this *Context) GetBean(bean IBean) IBean {
+func (this *Context) GetBean(bean core.IBean) core.IBean {
 
 	typeOf := reflect.TypeOf(bean)
 	typeName := typeOf.String()
