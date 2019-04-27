@@ -119,6 +119,12 @@ func (this *FootprintDao) AvgCostBetweenTime(startTime time.Time, endTime time.T
 	return int64(cost)
 }
 
+//删除某个时刻之前的记录
+func (this *FootprintDao) DeleteByCreateTimeBefore(createTime time.Time) {
+	db := CONTEXT.DB.Where("create_time < ?", createTime).Delete(Footprint{})
+	this.PanicError(db.Error)
+}
+
 //执行清理操作
 func (this *FootprintDao) Cleanup() {
 	this.logger.Info("[FootprintDao]执行清理：清除数据库中所有Footprint记录。")

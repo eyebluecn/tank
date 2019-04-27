@@ -14,8 +14,6 @@ type DashboardService struct {
 	matterDao     *MatterDao
 	imageCacheDao *ImageCacheDao
 	userDao       *UserDao
-	//每天凌晨定时整理器
-	maintainTimer *time.Timer
 }
 
 //初始化方法
@@ -53,43 +51,23 @@ func (this *DashboardService) Init() {
 //系统启动，数据库配置完毕后会调用该方法
 func (this *DashboardService) Bootstrap() {
 
-	//立即执行数据清洗任务
-	go util.SafeMethod(this.maintain)
+	//每日00:05分清洗离线数据
+	expression := "0 5 0 * * ?"
+	cronJob := cron.New()
+	err := cronJob.AddFunc(expression, this.etl)
+	util.PanicError(err)
+	cronJob.Start()
+	this.logger.Info("[cron job] 每日00:05清洗离线数据")
 
-	//每天00:05执行数据清洗任务
-	i := 0
-	c := cron.New()
+	//立即执行一次数据清洗任务
+	go util.SafeMethod(this.etl)
 
-	//AddFunc
-	spec := "*/5 * * * * ?"
-	err := c.AddFunc(spec, func() {
-		i++
-		this.logger.Info("cron running: %d", i)
-	})
-	this.PanicError(err)
-
-	//AddJob方法
-	//c.AddJob(spec, TestJob{})
-	//c.AddJob(spec, Test2Job{})
-
-	//启动计划任务
-	c.Start()
-
-	//关闭着计划任务, 但是不能关闭已经在执行中的任务.
-	defer c.Stop()
 }
 
 //每日清洗离线数据表。
-func (this *DashboardService) maintain() {
+func (this *DashboardService) etl() {
 
-	//准备好下次维护日志的时间。
-	now := time.Now()
-	nextTime := util.FirstMinuteOfDay(util.Tomorrow())
-	duration := nextTime.Sub(now)
-	this.logger.Info("每日数据汇总，下次时间：%s ", util.ConvertTimeToDateTimeString(nextTime))
-	this.maintainTimer = time.AfterFunc(duration, func() {
-		go util.SafeMethod(this.maintain)
-	})
+	this.logger.Info("每日定时数据清洗")
 
 	//准备日期开始结尾
 	startTime := util.FirstSecondOfDay(util.Yesterday())
