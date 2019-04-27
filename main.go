@@ -30,9 +30,9 @@ func main() {
 
 	//第四步。启动http服务
 	http.Handle("/", core.CONTEXT)
-	core.LOGGER.Info("App started at http://localhost:%v", core.CONFIG.GetServerPort())
+	core.LOGGER.Info("App started at http://localhost:%v", core.CONFIG.ServerPort())
 
-	dotPort := fmt.Sprintf(":%v", core.CONFIG.GetServerPort())
+	dotPort := fmt.Sprintf(":%v", core.CONFIG.ServerPort())
 	err1 := http.ListenAndServe(dotPort, nil)
 	if err1 != nil {
 		log.Fatal("ListenAndServe: ", err1)

@@ -132,7 +132,7 @@ func (this *TankRouter) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 		writer.Header().Set("Cache-Control", "no-cache")
 		writer.Header().Set("Expires", "0")
 
-		if core.CONFIG.IsInstalled() {
+		if core.CONFIG.Installed() {
 			//已安装的模式
 
 			//统一处理用户的身份信息。

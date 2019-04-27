@@ -14,14 +14,14 @@ const (
 type Config interface {
 
 	//是否已经安装
-	IsInstalled() bool
+	Installed() bool
 	//启动端口
-	GetServerPort() int
+	ServerPort() int
 	//获取mysql链接
-	GetMysqlUrl() string
+	MysqlUrl() string
 
 	//文件存放路径
-	GetMatterPath() string
+	MatterPath() string
 	//完成安装过程，主要是要将配置写入到文件中
 	FinishInstall(mysqlPort int, mysqlHost string, mysqlSchema string, mysqlUsername string, mysqlPassword string)
 }

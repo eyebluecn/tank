@@ -20,15 +20,15 @@ flush privileges;
 //依赖外部定义的变量。
 type TankConfig struct {
 	//默认监听端口号
-	ServerPort int
+	serverPort int
 	//网站是否已经完成安装
-	Installed bool
+	installed bool
 	//上传的文件路径，要求不以/结尾。如果没有指定，默认在根目录下的matter文件夹中。eg: /var/www/matter
-	MatterPath string
+	matterPath string
 	//数据库连接信息。
-	MysqlUrl string
+	mysqlUrl string
 	//配置文件中的项
-	Item *ConfigItem
+	item *ConfigItem
 }
 
 //和tank.json文件中的键值一一对应。
@@ -108,7 +108,7 @@ func (this *TankConfig) Init() {
 	}, nil)
 
 	//默认从6010端口启动
-	this.ServerPort = 6010
+	this.serverPort = 6010
 
 	this.ReadFromConfigFile()
 
@@ -122,64 +122,64 @@ func (this *TankConfig) ReadFromConfigFile() {
 	content, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		core.LOGGER.Warn("无法找到配置文件：%s 即将进入安装过程！", filePath)
-		this.Installed = false
+		this.installed = false
 	} else {
-		this.Item = &ConfigItem{}
+		this.item = &ConfigItem{}
 		core.LOGGER.Warn("读取配置文件：%s", filePath)
-		err := jsoniter.ConfigCompatibleWithStandardLibrary.Unmarshal(content, this.Item)
+		err := jsoniter.ConfigCompatibleWithStandardLibrary.Unmarshal(content, this.item)
 		if err != nil {
 			core.LOGGER.Error("配置文件格式错误！ 即将进入安装过程！")
-			this.Installed = false
+			this.installed = false
 			return
 		}
 
 		//验证项是否齐全
-		itemValidate := this.Item.validate()
+		itemValidate := this.item.validate()
 		if !itemValidate {
 			core.LOGGER.Error("配置文件信息不齐全！ 即将进入安装过程！")
-			this.Installed = false
+			this.installed = false
 			return
 		}
 
 		//使用配置项中的文件路径
-		if this.Item.MatterPath == "" {
-			this.MatterPath = util.GetHomePath() + "/matter"
+		if this.item.MatterPath == "" {
+			this.matterPath = util.GetHomePath() + "/matter"
 		} else {
-			this.MatterPath = this.Item.MatterPath
+			this.matterPath = this.item.MatterPath
 		}
-		util.MakeDirAll(this.MatterPath)
+		util.MakeDirAll(this.matterPath)
 
 		//使用配置项中的端口
-		if this.Item.ServerPort != 0 {
-			this.ServerPort = this.Item.ServerPort
+		if this.item.ServerPort != 0 {
+			this.serverPort = this.item.ServerPort
 		}
 
-		this.MysqlUrl = util.GetMysqlUrl(this.Item.MysqlPort, this.Item.MysqlHost, this.Item.MysqlSchema, this.Item.MysqlUsername, this.Item.MysqlPassword)
-		this.Installed = true
+		this.mysqlUrl = util.GetMysqlUrl(this.item.MysqlPort, this.item.MysqlHost, this.item.MysqlSchema, this.item.MysqlUsername, this.item.MysqlPassword)
+		this.installed = true
 
 		core.LOGGER.Info("使用配置文件：%s", filePath)
-		core.LOGGER.Info("上传文件存放路径：%s", this.MatterPath)
+		core.LOGGER.Info("上传文件存放路径：%s", this.matterPath)
 	}
 }
 
 //是否已经安装
-func (this *TankConfig) IsInstalled() bool {
-	return this.Installed
+func (this *TankConfig) Installed() bool {
+	return this.installed
 }
 
 //启动端口
-func (this *TankConfig) GetServerPort() int {
-	return this.ServerPort
+func (this *TankConfig) ServerPort() int {
+	return this.serverPort
 }
 
 //获取mysql链接
-func (this *TankConfig) GetMysqlUrl() string {
-	return this.MysqlUrl
+func (this *TankConfig) MysqlUrl() string {
+	return this.mysqlUrl
 }
 
 //文件存放路径
-func (this *TankConfig) GetMatterPath() string {
-	return this.MatterPath
+func (this *TankConfig) MatterPath() string {
+	return this.matterPath
 }
 
 //完成安装过程，主要是要将配置写入到文件中
@@ -187,9 +187,9 @@ func (this *TankConfig) FinishInstall(mysqlPort int, mysqlHost string, mysqlSche
 
 	var configItem = &ConfigItem{
 		//默认监听端口号
-		ServerPort: core.CONFIG.GetServerPort(),
+		ServerPort: core.CONFIG.ServerPort(),
 		//上传的文件路径，要求不以/结尾。如果没有指定，默认在根目录下的matter文件夹中。eg: /var/www/matter
-		MatterPath: core.CONFIG.GetMatterPath(),
+		MatterPath: core.CONFIG.MatterPath(),
 		//mysql相关配置。
 		//数据库端口
 		MysqlPort: mysqlPort,

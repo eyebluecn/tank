@@ -366,7 +366,7 @@ func (this *MatterDao) Cleanup() {
 	db := core.CONTEXT.GetDB().Where("uuid is not null").Delete(Matter{})
 	this.PanicError(db.Error)
 
-	err := os.RemoveAll(core.CONFIG.GetMatterPath())
+	err := os.RemoveAll(core.CONFIG.MatterPath())
 	this.PanicError(err)
 
 }

@@ -76,7 +76,7 @@ func (this *TankContext) ServeHTTP(writer http.ResponseWriter, request *http.Req
 func (this *TankContext) OpenDb() {
 
 	var err error = nil
-	this.db, err = gorm.Open("mysql", core.CONFIG.GetMysqlUrl())
+	this.db, err = gorm.Open("mysql", core.CONFIG.MysqlUrl())
 
 	if err != nil {
 		core.LOGGER.Panic("failed to connect mysql database")
@@ -204,7 +204,7 @@ func (this *TankContext) initBeans() {
 //系统如果安装好了就调用这个方法。
 func (this *TankContext) InstallOk() {
 
-	if core.CONFIG.IsInstalled() {
+	if core.CONFIG.Installed() {
 		this.OpenDb()
 
 		for _, bean := range this.BeanMap {
