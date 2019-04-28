@@ -1,10 +1,8 @@
 package rest
 
 import (
-	"archive/zip"
 	"fmt"
 	"github.com/eyebluecn/tank/code/core"
-	"github.com/eyebluecn/tank/code/tool/builder"
 	"github.com/eyebluecn/tank/code/tool/download"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
@@ -12,7 +10,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -98,6 +95,7 @@ func (this *MatterService) AtomicDownloadDirectory(
 	this.logger.Info("文件夹 %s 大小为 %s", matter.Name, util.HumanFileSize(sumSize))
 
 	//TODO: 文件夹下载的大小限制
+
 	//准备zip放置的目录。
 	destZipDirPath := fmt.Sprintf("%s/%d", GetUserZipRootDir(matter.Username), time.Now().UnixNano()/1e6)
 	util.MakeDirAll(destZipDirPath)
@@ -106,98 +104,17 @@ func (this *MatterService) AtomicDownloadDirectory(
 
 	destZipPath := fmt.Sprintf("%s/%s", destZipDirPath, destZipName)
 
-	//destZipFile, err := os.Create(destZipPath)
-	//util.PanicError(err)
-	//
-	//defer func() {
-	//	err := destZipFile.Close()
-	//	util.PanicError(err)
-	//}()
-	//
-	//zipWriter := zip.NewWriter(destZipFile)
-	//defer func() {
-	//	err := zipWriter.Close()
-	//	util.PanicError(err)
-	//}()
-
-	//this.zipCompress(matter, GetUserFileRootDir(matter.Username), zipWriter)
-
 	util.Zip(matter.AbsolutePath(), destZipPath)
 
 	//下载
 	download.DownloadFile(writer, request, destZipPath, destZipName, true)
 
-	//TODO: 删除临时压缩文件
-
-}
-
-//zip压缩一个matter.
-func (this *MatterService) zipCompress(matter *Matter, prefix string, zipWriter *zip.Writer) {
-
-	if matter == nil {
-		panic(result.BadRequest("matter不能为nil"))
+	//删除临时压缩文件
+	err := os.Remove(destZipPath)
+	if err != nil {
+		this.logger.Error("删除磁盘上的文件出错 %s", err.Error())
 	}
-
-	fileInfo, err := os.Stat(matter.AbsolutePath())
-	this.PanicError(err)
-
-	fmt.Println("遍历文件： " + matter.AbsolutePath())
-
-	if matter.Dir {
-
-		//获取下一级的文件。
-		prefix = prefix + "/" + matter.Name
-
-		sortArray := []builder.OrderPair{
-			{
-				Key:   "path",
-				Value: "ASC",
-			},
-		}
-		matters := this.matterDao.List(matter.Uuid, matter.UserUuid, sortArray)
-
-		// 通过文件信息，创建 zip 的文件信息
-		fileHeader, err := zip.FileInfoHeader(fileInfo)
-		this.PanicError(err)
-
-		//写入头信息。目录无需写入内容。目录的头部要去掉斜杠，尾部要加上斜杠。
-		fileHeader.Name = strings.TrimPrefix(prefix+"/", string(filepath.Separator))
-
-		fmt.Println("文件夹头： " + fileHeader.Name)
-
-		// 写入文件信息，并返回一个 Write 结构
-		_, err = zipWriter.CreateHeader(fileHeader)
-		this.PanicError(err)
-
-		for _, subMatter := range matters {
-			this.zipCompress(subMatter, prefix, zipWriter)
-		}
-
-	} else {
-
-		fileHeader, err := zip.FileInfoHeader(fileInfo)
-		if err != nil {
-			panic(err)
-		}
-
-		//第一个斜杠不需要。
-		fileHeader.Name = strings.TrimPrefix(prefix+"/"+matter.Name, string(filepath.Separator))
-
-		fmt.Println("文件头部： " + fileHeader.Name)
-
-		writer, err := zipWriter.CreateHeader(fileHeader)
-		if err != nil {
-			panic(err)
-		}
-
-		file, err := os.Open(matter.AbsolutePath())
-		_, err = io.Copy(writer, file)
-		defer func() {
-			err := file.Close()
-			this.PanicError(err)
-		}()
-
-	}
+	util.DeleteEmptyDir(destZipDirPath)
 
 }
 

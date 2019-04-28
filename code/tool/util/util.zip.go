@@ -2,7 +2,6 @@ package util
 
 import (
 	"archive/zip"
-	"fmt"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"io"
 	"log"
@@ -41,7 +40,7 @@ func Zip(srcPath string, destPath string) {
 			return errBack
 		}
 
-		fmt.Println("遍历文件： " + path)
+		//fmt.Println("遍历文件： " + path)
 
 		// 通过文件信息，创建 zip 的文件信息
 		fileHeader, err := zip.FileInfoHeader(fileInfo)
@@ -60,7 +59,7 @@ func Zip(srcPath string, destPath string) {
 			prefix = prefix + "/" + fileInfo.Name()
 		}
 
-		fmt.Println("头部情况： " + fileHeader.Name)
+		//fmt.Println("头部情况： " + fileHeader.Name)
 
 		// 写入文件信息，并返回一个 Write 结构
 		writer, err := zipWriter.CreateHeader(fileHeader)
