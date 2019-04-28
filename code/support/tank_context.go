@@ -130,6 +130,11 @@ func (this *TankContext) registerBeans() {
 	this.registerBean(new(rest.AlienController))
 	this.registerBean(new(rest.AlienService))
 
+	//bridge
+	this.registerBean(new(rest.BridgeController))
+	this.registerBean(new(rest.BridgeDao))
+	this.registerBean(new(rest.BridgeService))
+
 	//dashboard
 	this.registerBean(new(rest.DashboardController))
 	this.registerBean(new(rest.DashboardDao))
@@ -164,6 +169,11 @@ func (this *TankContext) registerBeans() {
 	//session
 	this.registerBean(new(rest.SessionDao))
 	this.registerBean(new(rest.SessionService))
+
+	//share
+	this.registerBean(new(rest.ShareController))
+	this.registerBean(new(rest.ShareDao))
+	this.registerBean(new(rest.ShareService))
 
 	//uploadToken
 	this.registerBean(new(rest.UploadTokenDao))

@@ -2,7 +2,9 @@ package util
 
 import (
 	"fmt"
+	"math/rand"
 	"strconv"
+	"time"
 )
 
 //把一个大小转变成方便读的格式
@@ -39,4 +41,22 @@ func GetMysqlUrl(
 	mysqlUsername string,
 	mysqlPassword string) string {
 	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8&parseTime=True&loc=Local", mysqlUsername, mysqlPassword, mysqlHost, mysqlPort, mysqlSchema)
+}
+
+//获取四位随机数字
+func RandomNumber4() string {
+	return fmt.Sprintf("%04v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31()%10000)
+}
+
+//获取四位随机数字
+func RandomString4() string {
+
+	var letterRunes = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
+
+	b := make([]rune, 4)
+	for i := range b {
+		b[i] = letterRunes[rand.New(rand.NewSource(time.Now().UnixNano())).Intn(len(letterRunes))]
+	}
+
+	return string(b)
 }
