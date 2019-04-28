@@ -66,6 +66,9 @@ func (this *MatterController) RegisterRoutes() map[string]func(writer http.Respo
 	routeMap["/api/matter/detail"] = this.Wrap(this.Detail, USER_ROLE_USER)
 	routeMap["/api/matter/page"] = this.Wrap(this.Page, USER_ROLE_USER)
 
+	//本地文件映射
+	routeMap["/api/matter/mirror"] = this.Wrap(this.Mirror, USER_ROLE_USER)
+
 	return routeMap
 }
 
@@ -442,4 +445,28 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 	this.matterService.AtomicMoveBatch(srcMatters, destMatter)
 
 	return this.Success(nil)
+}
+
+//将本地文件映射到蓝眼云盘中去。
+func (this *MatterController) Mirror(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+
+	srcPath := request.FormValue("srcPath")
+	destPath := request.FormValue("destPath")
+	overwriteStr := request.FormValue("overwrite")
+
+	if srcPath == "" {
+		panic(result.BadRequest("srcPath必填"))
+	}
+
+	overwrite := false
+	if overwriteStr == TRUE {
+		overwrite = true
+	}
+
+	user := this.userDao.checkUser(writer, request)
+
+	this.matterService.AtomicMirror(srcPath, destPath, overwrite, user)
+
+	return this.Success(nil)
+
 }

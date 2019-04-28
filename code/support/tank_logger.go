@@ -116,8 +116,7 @@ func (this *TankLogger) maintain() {
 	this.Log("删除日志文件 %s", oldDestPath)
 
 	//删除文件
-	exists, err := util.PathExists(oldDestPath)
-	util.PanicError(err)
+	exists := util.PathExists(oldDestPath)
 	if exists {
 		err = os.Remove(oldDestPath)
 		if err != nil {

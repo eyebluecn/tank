@@ -128,10 +128,7 @@ func (this *InstallController) getCreateSQLFromFile(tableName string) string {
 	//1. 从当前安装目录db下去寻找建表文件。
 	homePath := util.GetHomePath()
 	filePath := homePath + "/db/" + tableName + ".sql"
-	exists, err := util.PathExists(filePath)
-	if err != nil {
-		panic(result.Server("从安装目录判断建表语句文件是否存在时出错！"))
-	}
+	exists := util.PathExists(filePath)
 
 	//2. 从GOPATH下面去找，因为可能是开发环境
 	if !exists {
@@ -140,10 +137,7 @@ func (this *InstallController) getCreateSQLFromFile(tableName string) string {
 
 		filePath1 := filePath
 		filePath = build.Default.GOPATH + "/src/tank/build/db/" + tableName + ".sql"
-		exists, err = util.PathExists(filePath)
-		if err != nil {
-			panic(result.Server("从GOPATH判断建表语句文件是否存在时出错！"))
-		}
+		exists = util.PathExists(filePath)
 
 		if !exists {
 			panic(result.Server("%s 或 %s 均不存在，请检查你的安装情况。", filePath1, filePath))

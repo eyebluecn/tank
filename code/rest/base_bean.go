@@ -59,6 +59,7 @@ func (this *BaseBean) findUser(writer http.ResponseWriter, request *http.Request
 	}
 
 	return nil
+
 }
 
 //获取当前登录的用户，找不到就返回登录错误

@@ -1,15 +1,21 @@
 package rest
 
 import (
+	"archive/zip"
+	"fmt"
 	"github.com/eyebluecn/tank/code/core"
+	"github.com/eyebluecn/tank/code/tool/builder"
 	"github.com/eyebluecn/tank/code/tool/download"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 )
 
 /**
@@ -69,6 +75,132 @@ func (this *MatterService) DownloadFile(
 	download.DownloadFile(writer, request, filePath, filename, withContentDisposition)
 }
 
+//下载文件夹
+func (this *MatterService) AtomicDownloadDirectory(
+	writer http.ResponseWriter,
+	request *http.Request,
+	matter *Matter) {
+
+	if matter == nil {
+		panic(result.BadRequest("matter不能为nil"))
+	}
+
+	if !matter.Dir {
+		panic(result.BadRequest("matter 只能是文件夹"))
+	}
+
+	//操作锁
+	this.userService.MatterLock(matter.UserUuid)
+	defer this.userService.MatterUnlock(matter.UserUuid)
+
+	//验证文件夹中文件总大小。
+	sumSize := this.matterDao.SumSizeByUserUuidAndPath(matter.UserUuid, matter.Path)
+	this.logger.Info("文件夹 %s 大小为 %s", matter.Name, util.HumanFileSize(sumSize))
+
+	//TODO: 文件夹下载的大小限制
+	//准备zip放置的目录。
+	destZipDirPath := fmt.Sprintf("%s/%d", GetUserZipRootDir(matter.Username), time.Now().UnixNano()/1e6)
+	util.MakeDirAll(destZipDirPath)
+
+	destZipName := fmt.Sprintf("%s.zip", matter.Name)
+
+	destZipPath := fmt.Sprintf("%s/%s", destZipDirPath, destZipName)
+
+	//destZipFile, err := os.Create(destZipPath)
+	//util.PanicError(err)
+	//
+	//defer func() {
+	//	err := destZipFile.Close()
+	//	util.PanicError(err)
+	//}()
+	//
+	//zipWriter := zip.NewWriter(destZipFile)
+	//defer func() {
+	//	err := zipWriter.Close()
+	//	util.PanicError(err)
+	//}()
+
+	//this.zipCompress(matter, GetUserFileRootDir(matter.Username), zipWriter)
+
+	util.Zip(matter.AbsolutePath(), destZipPath)
+
+	//下载
+	download.DownloadFile(writer, request, destZipPath, destZipName, true)
+
+	//TODO: 删除临时压缩文件
+
+}
+
+//zip压缩一个matter.
+func (this *MatterService) zipCompress(matter *Matter, prefix string, zipWriter *zip.Writer) {
+
+	if matter == nil {
+		panic(result.BadRequest("matter不能为nil"))
+	}
+
+	fileInfo, err := os.Stat(matter.AbsolutePath())
+	this.PanicError(err)
+
+	fmt.Println("遍历文件： " + matter.AbsolutePath())
+
+	if matter.Dir {
+
+		//获取下一级的文件。
+		prefix = prefix + "/" + matter.Name
+
+		sortArray := []builder.OrderPair{
+			{
+				Key:   "path",
+				Value: "ASC",
+			},
+		}
+		matters := this.matterDao.List(matter.Uuid, matter.UserUuid, sortArray)
+
+		// 通过文件信息，创建 zip 的文件信息
+		fileHeader, err := zip.FileInfoHeader(fileInfo)
+		this.PanicError(err)
+
+		//写入头信息。目录无需写入内容。目录的头部要去掉斜杠，尾部要加上斜杠。
+		fileHeader.Name = strings.TrimPrefix(prefix+"/", string(filepath.Separator))
+
+		fmt.Println("文件夹头： " + fileHeader.Name)
+
+		// 写入文件信息，并返回一个 Write 结构
+		_, err = zipWriter.CreateHeader(fileHeader)
+		this.PanicError(err)
+
+		for _, subMatter := range matters {
+			this.zipCompress(subMatter, prefix, zipWriter)
+		}
+
+	} else {
+
+		fileHeader, err := zip.FileInfoHeader(fileInfo)
+		if err != nil {
+			panic(err)
+		}
+
+		//第一个斜杠不需要。
+		fileHeader.Name = strings.TrimPrefix(prefix+"/"+matter.Name, string(filepath.Separator))
+
+		fmt.Println("文件头部： " + fileHeader.Name)
+
+		writer, err := zipWriter.CreateHeader(fileHeader)
+		if err != nil {
+			panic(err)
+		}
+
+		file, err := os.Open(matter.AbsolutePath())
+		_, err = io.Copy(writer, file)
+		defer func() {
+			err := file.Close()
+			this.PanicError(err)
+		}()
+
+	}
+
+}
+
 //删除文件
 func (this *MatterService) AtomicDelete(matter *Matter) {
 
@@ -117,8 +249,7 @@ func (this *MatterService) Upload(file io.Reader, user *User, dirMatter *Matter,
 	util.MakeDirAll(dirAbsolutePath)
 
 	//如果文件已经存在了，那么直接覆盖。
-	exist, err := util.PathExists(fileAbsolutePath)
-	this.PanicError(err)
+	exist := util.PathExists(fileAbsolutePath)
 	if exist {
 		this.logger.Error("%s已经存在，将其删除", fileAbsolutePath)
 		removeError := os.Remove(fileAbsolutePath)
@@ -214,12 +345,10 @@ func (this *MatterService) createDirectory(dirMatter *Matter, name string, user 
 		panic(result.BadRequest(`名称中不能包含以下特殊符号：< > | * ? / \`))
 	}
 
-	//判断同级文件夹中是否有同名的文件夹
-	count := this.matterDao.CountByUserUuidAndPuuidAndDirAndName(user.Uuid, dirMatter.Uuid, true, name)
-
-	if count > 0 {
-
-		panic(result.BadRequest("%s 已经存在了，请使用其他名称。", name))
+	//判断同级文件夹中是否有同名的文件夹。存在了直接返回即可。
+	matter := this.matterDao.FindByUserUuidAndPuuidAndDirAndName(user.Uuid, dirMatter.Uuid, true, name)
+	if matter != nil {
+		return matter
 	}
 
 	parts := strings.Split(dirMatter.Path, "/")
@@ -240,7 +369,7 @@ func (this *MatterService) createDirectory(dirMatter *Matter, name string, user 
 	this.logger.Info("Create Directory: %s", dirPath)
 
 	//数据库中创建文件夹。
-	matter := &Matter{
+	matter = &Matter{
 		Puuid:    dirMatter.Uuid,
 		UserUuid: user.Uuid,
 		Username: user.Username,
@@ -569,7 +698,96 @@ func (this *MatterService) AtomicRename(matter *Matter, name string, user *User)
 	return
 }
 
-//根据一个文件夹路径，依次创建，找到最后一个文件夹的matter，如果中途出错，返回err.
+//将本地文件映射到蓝眼云盘中去。
+func (this *MatterService) AtomicMirror(srcPath string, destPath string, overwrite bool, user *User) {
+
+	if user == nil {
+		panic(result.BadRequest("user cannot be nil"))
+	}
+
+	//操作锁
+	this.userService.MatterLock(user.Uuid)
+	defer this.userService.MatterUnlock(user.Uuid)
+
+	//验证参数。
+	if destPath == "" {
+		panic(result.BadRequest("dest 参数必填"))
+	}
+
+	destDirMatter := this.CreateDirectories(user, destPath)
+
+	this.mirror(srcPath, destDirMatter, overwrite, user)
+}
+
+//将本地文件/文件夹映射到蓝眼云盘中去。
+func (this *MatterService) mirror(srcPath string, destDirMatter *Matter, overwrite bool, user *User) {
+
+	if user == nil {
+		panic(result.BadRequest("user cannot be nil"))
+	}
+
+	fileStat, err := os.Stat(srcPath)
+	if err != nil {
+
+		if os.IsNotExist(err) {
+			panic(result.BadRequest("srcPath %s not exist", srcPath))
+		} else {
+
+			panic(result.BadRequest("srcPath err %s %s", srcPath, err.Error()))
+		}
+
+	}
+
+	this.logger.Info("mirror srcPath = %s destPath = %s", srcPath, destDirMatter.Path)
+
+	if fileStat.IsDir() {
+
+		//判断当前文件夹下，文件是否已经存在了。
+		srcDirMatter := this.matterDao.FindByUserUuidAndPuuidAndDirAndName(user.Uuid, destDirMatter.Uuid, true, fileStat.Name())
+
+		if srcDirMatter == nil {
+			srcDirMatter = this.createDirectory(destDirMatter, fileStat.Name(), user)
+		}
+
+		fileInfos, err := ioutil.ReadDir(srcPath)
+		this.PanicError(err)
+
+		//递归处理本文件夹下的文件或文件夹
+		for _, fileInfo := range fileInfos {
+
+			path := fmt.Sprintf("%s/%s", srcPath, fileInfo.Name())
+			this.mirror(path, srcDirMatter, overwrite, user)
+		}
+
+	} else {
+
+		//判断当前文件夹下，文件是否已经存在了。
+		matter := this.matterDao.FindByUserUuidAndPuuidAndDirAndName(user.Uuid, destDirMatter.Uuid, false, fileStat.Name())
+		if matter != nil {
+			//如果是覆盖，那么删除之前的文件
+			if overwrite {
+				this.matterDao.Delete(matter)
+			} else {
+				//直接完成。
+				return
+			}
+		}
+
+		//准备直接从本地上传了。
+		file, err := os.Open(srcPath)
+		this.PanicError(err)
+		defer func() {
+			err := file.Close()
+			this.PanicError(err)
+		}()
+
+		this.Upload(file, user, destDirMatter, fileStat.Name(), true)
+
+	}
+
+}
+
+//根据一个文件夹路径，依次创建，找到最后一个文件夹的matter，如果中途出错，返回err. 如果存在了那就直接返回即可。
 func (this *MatterService) CreateDirectories(user *User, dirPath string) *Matter {
 
 	if dirPath == "" {

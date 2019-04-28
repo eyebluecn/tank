@@ -107,8 +107,8 @@ func (this *TankConfig) Init() {
 		stream.WriteString(t.Local().Format("2006-01-02 15:04:05"))
 	}, nil)
 
-	//默认从6010端口启动
-	this.serverPort = 6010
+	//默认从core.DEFAULT_SERVER_PORT端口启动
+	this.serverPort = core.DEFAULT_SERVER_PORT
 
 	this.ReadFromConfigFile()
 

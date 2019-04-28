@@ -1,6 +1,7 @@
 package core
 
 type Logger interface {
+
 	//处理日志的统一方法。
 	Log(prefix string, format string, v ...interface{})
 

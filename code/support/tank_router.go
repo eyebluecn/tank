@@ -2,7 +2,6 @@ package support
 
 import (
 	"fmt"
-
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/rest"
 	"github.com/eyebluecn/tank/code/tool/result"
@@ -171,6 +170,7 @@ func (this *TankRouter) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 		}
 
 	} else {
+
 		//当作静态资源处理。默认从当前文件下面的static文件夹中取东西。
 		dir := util.GetHtmlPath()
 
@@ -180,10 +180,10 @@ func (this *TankRouter) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 		}
 
 		filePath := dir + requestURI
-		exists, _ := util.PathExists(filePath)
+		exists := util.PathExists(filePath)
 		if !exists {
 			filePath = dir + "/index.html"
-			exists, _ = util.PathExists(filePath)
+			exists = util.PathExists(filePath)
 			if !exists {
 				panic(fmt.Sprintf("404 not found:%s", filePath))
 			}

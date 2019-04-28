@@ -163,6 +163,40 @@ func (this *MatterDao) CountByUserUuidAndPuuidAndDirAndName(userUuid string, puu
 	return count
 }
 
+//统计某个用户的某个文件夹下的某个名字的文件(或文件夹)数量。
+func (this *MatterDao) FindByUserUuidAndPuuidAndDirAndName(userUuid string, puuid string, dir bool, name string) *Matter {
+
+	var matter = &Matter{}
+
+	var wp = &builder.WherePair{}
+
+	if puuid != "" {
+		wp = wp.And(&builder.WherePair{Query: "puuid = ?", Args: []interface{}{puuid}})
+	}
+
+	if userUuid != "" {
+		wp = wp.And(&builder.WherePair{Query: "user_uuid = ?", Args: []interface{}{userUuid}})
+	}
+
+	if name != "" {
+		wp = wp.And(&builder.WherePair{Query: "name = ?", Args: []interface{}{name}})
+	}
+
+	wp = wp.And(&builder.WherePair{Query: "dir = ?", Args: []interface{}{dir}})
+
+	db := core.CONTEXT.GetDB().Where(wp.Query, wp.Args...).First(matter)
+
+	if db.Error != nil {
+		if db.Error.Error() == result.DB_ERROR_NOT_FOUND {
+			return nil
+		} else {
+			this.PanicError(db.Error)
+		}
+	}
+
+	return matter
+}
+
 //获取某个用户的某个文件夹下的某个名字的文件(或文件夹)列表
 func (this *MatterDao) ListByUserUuidAndPuuidAndDirAndName(userUuid string, puuid string, dir bool, name string) []*Matter {
 
@@ -318,6 +352,8 @@ func (this *MatterDao) CountBetweenTime(startTime time.Time, endTime time.Time) 
 
 //获取一段时间中文件总大小
 func (this *MatterDao) SizeBetweenTime(startTime time.Time, endTime time.Time) int64 {
+
+	//TODO: 所有函数汇总的SQL均需要先count询问，再处理。
 	var size int64
 	db := core.CONTEXT.GetDB().Model(&Matter{}).Where("create_time >= ? AND create_time <= ?", startTime, endTime).Select("SUM(size)")
 	this.PanicError(db.Error)
@@ -358,6 +394,28 @@ func (this *MatterDao) checkByUserUuidAndPath(userUuid string, path string) *Mat
 	}
 
 	return matter
+}
+
+//获取一个文件夹中文件总大小
+func (this *MatterDao) SumSizeByUserUuidAndPath(userUuid string, path string) int64 {
+
+	var wp = &builder.WherePair{Query: "user_uuid = ? AND path like ?", Args: []interface{}{userUuid, path + "%"}}
+
+	var count int64
+	db := core.CONTEXT.GetDB().Model(&Matter{}).Where(wp.Query, wp.Args...).Count(&count)
+	if count == 0 {
+		return 0
+	}
+
+	var sumSize int64
+	db = core.CONTEXT.GetDB().Model(&Matter{}).Where(wp.Query, wp.Args...).Select("SUM(size)")
+	this.PanicError(db.Error)
+	row := db.Row()
+	err := row.Scan(&sumSize)
+	util.PanicError(err)
+
+	return sumSize
+
 }
 
 //执行清理操作

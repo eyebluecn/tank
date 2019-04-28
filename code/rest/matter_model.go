@@ -3,7 +3,6 @@ package rest
 import (
 	"fmt"
 	"github.com/eyebluecn/tank/code/core"
-
 	"github.com/eyebluecn/tank/code/tool/util"
 )
 
@@ -12,6 +11,8 @@ const (
 	MATTER_ROOT = "root"
 	//cache文件夹名称
 	MATTER_CACHE = "cache"
+	//压缩文件的临时目录
+	MATTER_ZIP = "zip"
 	//matter名称最大长度
 	MATTER_NAME_MAX_LENGTH = 200
 	//matter文件夹最大深度
@@ -77,6 +78,14 @@ func GetUserFileRootDir(username string) (rootDirPath string) {
 func GetUserCacheRootDir(username string) (rootDirPath string) {
 
 	rootDirPath = fmt.Sprintf("%s/%s/%s", core.CONFIG.MatterPath(), username, MATTER_CACHE)
+
+	return rootDirPath
+}
+
+//获取到用户压缩临时文件的根目录。
+func GetUserZipRootDir(username string) (rootDirPath string) {
+
+	rootDirPath = fmt.Sprintf("%s/%s/%s", core.CONFIG.MatterPath(), username, MATTER_ZIP)
 
 	return rootDirPath
 }

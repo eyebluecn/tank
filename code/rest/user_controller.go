@@ -42,28 +42,30 @@ func (this *UserController) RegisterRoutes() map[string]func(writer http.Respons
 
 //使用用户名和密码进行登录。
 //参数：
-// @email:邮箱
+// @username:用户名（也可以输入邮箱）
 // @password:密码
 func (this *UserController) Login(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
-	email := request.FormValue("email")
+	username := request.FormValue("username")
 	password := request.FormValue("password")
 
-	if "" == email || "" == password {
+	if "" == username || "" == password {
 
-		panic(result.BadRequest("请输入邮箱和密码"))
+		panic(result.BadRequest("请输入用户名和密码"))
 	}
 
-	user := this.userDao.FindByEmail(email)
+	user := this.userDao.FindByUsername(username)
 	if user == nil {
-
-		panic(result.BadRequest("邮箱或密码错误"))
-
-	} else {
-		if !util.MatchBcrypt(password, user.Password) {
-
-			panic(result.BadRequest("邮箱或密码错误"))
+		user = this.userDao.FindByEmail(username)
+		if user == nil {
+			panic(result.BadRequest("用户名或密码错误"))
 		}
+
+	}
+
+	if !util.MatchBcrypt(password, user.Password) {
+
+		panic(result.BadRequest("用户名或密码错误"))
 	}
 
 	//登录成功，设置Cookie。有效期30天。

@@ -50,3 +50,10 @@ func TestDayAgo(t *testing.T) {
 	fmt.Printf("%s\n", util.ConvertTimeToDateTimeString(thenDay))
 
 }
+
+//测试 打包
+func TestZip(t *testing.T) {
+
+	util.Zip("/Users/fusu/d/group/eyeblue/tank/tmp/matter/admin/root/morning", "/Users/fusu/d/group/eyeblue/tank/tmp/log/morning.zip")
+
+}

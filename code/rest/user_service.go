@@ -4,6 +4,8 @@ import (
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/cache"
 	"github.com/eyebluecn/tank/code/tool/result"
+	"github.com/eyebluecn/tank/code/tool/util"
+	uuid "github.com/nu7hatch/gouuid"
 	"net/http"
 	"time"
 )
@@ -76,35 +78,67 @@ func (this *UserService) PreHandle(writer http.ResponseWriter, request *http.Req
 	//登录身份有效期以数据库中记录的为准
 
 	//验证用户是否已经登录。
-	sessionCookie, err := request.Cookie(core.COOKIE_AUTH_KEY)
-	if err != nil {
-		return
+	sessionId := util.GetSessionUuidFromRequest(request, core.COOKIE_AUTH_KEY)
+
+	if sessionId != "" {
+
+		//去缓存中捞取
+		cacheItem, err := core.CONTEXT.GetSessionCache().Value(sessionId)
+		if err != nil {
+			this.logger.Error("获取缓存时出错了" + err.Error())
+		}
+
+		//缓存中没有，尝试去数据库捞取
+		if cacheItem == nil || cacheItem.Data() == nil {
+			session := this.sessionDao.FindByUuid(sessionId)
+			if session != nil {
+				duration := session.ExpireTime.Sub(time.Now())
+				if duration <= 0 {
+					this.logger.Error("登录信息已过期")
+				} else {
+					user := this.userDao.FindByUuid(session.UserUuid)
+					if user != nil {
+						//将用户装填进缓存中
+						core.CONTEXT.GetSessionCache().Add(sessionId, duration, user)
+					} else {
+						this.logger.Error("没有找到对应的user %s", session.UserUuid)
+					}
+				}
+			}
+		}
 	}
 
-	sessionId := sessionCookie.Value
-
-	//去缓存中捞取
+	//再尝试读取一次，这次从 USERNAME_KEY PASSWORD_KEY 中装填用户登录信息
 	cacheItem, err := core.CONTEXT.GetSessionCache().Value(sessionId)
 	if err != nil {
 		this.logger.Error("获取缓存时出错了" + err.Error())
 	}
 
-	//缓存中没有，尝试去数据库捞取
 	if cacheItem == nil || cacheItem.Data() == nil {
-		session := this.sessionDao.FindByUuid(sessionCookie.Value)
-		if session != nil {
-			duration := session.ExpireTime.Sub(time.Now())
-			if duration <= 0 {
-				this.logger.Error("登录信息已过期")
+		username := request.FormValue(core.USERNAME_KEY)
+		password := request.FormValue(core.PASSWORD_KEY)
+
+		if username != "" && password != "" {
+
+			user := this.userDao.FindByUsername(username)
+			if user == nil {
+				this.logger.Error("%s 用户名或密码错误", core.USERNAME_KEY)
 			} else {
-				user := this.userDao.FindByUuid(session.UserUuid)
-				if user != nil {
-					//将用户装填进缓存中
-					core.CONTEXT.GetSessionCache().Add(sessionCookie.Value, duration, user)
+
+				if !util.MatchBcrypt(password, user.Password) {
+					this.logger.Error("%s 用户名或密码错误", core.USERNAME_KEY)
 				} else {
-					this.logger.Error("没有找到对应的user " + session.UserUuid)
+					//装填一个临时的session用作后续使用。
+					this.logger.Info("准备装载一个临时的用作。")
+					timeUUID, _ := uuid.NewV4()
+					uuidStr := string(timeUUID.String())
+					request.Form[core.COOKIE_AUTH_KEY] = []string{uuidStr}
+
+					//将用户装填进缓存中
+					core.CONTEXT.GetSessionCache().Add(uuidStr, 10*time.Second, user)
 				}
 			}
+
 		}
 	}
 

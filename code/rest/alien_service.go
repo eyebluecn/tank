@@ -72,11 +72,6 @@ func (this *AlienService) PreviewOrDownload(
 
 	matter := this.matterDao.CheckByUuid(uuid)
 
-	//判断是否是文件夹
-	if matter.Dir {
-		panic("不支持下载文件夹")
-	}
-
 	if matter.Name != filename {
 		panic("文件信息错误")
 	}
@@ -117,21 +112,33 @@ func (this *AlienService) PreviewOrDownload(
 		}
 	}
 
-	//对图片处理。
-	needProcess, imageResizeM, imageResizeW, imageResizeH := this.imageCacheService.ResizeParams(request)
-	if needProcess {
+	//文件夹下载
+	if matter.Dir {
 
-		//如果是图片，那么能用缓存就用缓存
-		imageCache := this.imageCacheDao.FindByMatterUuidAndMode(matter.Uuid, fmt.Sprintf("%s_%d_%d", imageResizeM, imageResizeW, imageResizeH))
-		if imageCache == nil {
-			imageCache = this.imageCacheService.cacheImage(writer, request, matter)
-		}
+		this.logger.Info("准备下载文件夹 %s", matter.Name)
 
-		//直接使用缓存中的信息
-		this.matterService.DownloadFile(writer, request, GetUserCacheRootDir(imageCache.Username)+imageCache.Path, imageCache.Name, withContentDisposition)
+		//目标地点
+		this.matterService.AtomicDownloadDirectory(writer, request, matter)
 
 	} else {
-		this.matterService.DownloadFile(writer, request, matter.AbsolutePath(), matter.Name, withContentDisposition)
+
+		//对图片处理。
+		needProcess, imageResizeM, imageResizeW, imageResizeH := this.imageCacheService.ResizeParams(request)
+		if needProcess {
+
+			//如果是图片，那么能用缓存就用缓存
+			imageCache := this.imageCacheDao.FindByMatterUuidAndMode(matter.Uuid, fmt.Sprintf("%s_%d_%d", imageResizeM, imageResizeW, imageResizeH))
+			if imageCache == nil {
+				imageCache = this.imageCacheService.cacheImage(writer, request, matter)
+			}
+
+			//直接使用缓存中的信息
+			this.matterService.DownloadFile(writer, request, GetUserCacheRootDir(imageCache.Username)+imageCache.Path, imageCache.Name, withContentDisposition)
+
+		} else {
+			this.matterService.DownloadFile(writer, request, matter.AbsolutePath(), matter.Name, withContentDisposition)
+		}
+
 	}
 
 	//文件下载次数加一，为了加快访问速度，异步进行

@@ -36,11 +36,19 @@ func (this *PreferenceController) RegisterRoutes() map[string]func(writer http.R
 	routeMap := make(map[string]func(writer http.ResponseWriter, request *http.Request))
 
 	//每个Controller需要主动注册自己的路由。
+	routeMap["/api/preference/ping"] = this.Wrap(this.Ping, USER_ROLE_GUEST)
 	routeMap["/api/preference/fetch"] = this.Wrap(this.Fetch, USER_ROLE_GUEST)
 	routeMap["/api/preference/edit"] = this.Wrap(this.Edit, USER_ROLE_ADMINISTRATOR)
 	routeMap["/api/preference/system_cleanup"] = this.Wrap(this.SystemCleanup, USER_ROLE_ADMINISTRATOR)
 
 	return routeMap
+}
+
+//简单验证蓝眼云盘服务是否已经启动了。
+func (this *PreferenceController) Ping(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+
+	return this.Success(nil)
+
 }
 
 //查看某个偏好设置的详情。
