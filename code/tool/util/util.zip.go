@@ -34,6 +34,7 @@ func Zip(srcPath string, destPath string) {
 		}
 	}()
 
+	prefix := ""
 	// 下面来将文件写入 zipWriter ，因为有可能会有很多个目录及文件，所以递归处理
 	err = filepath.Walk(srcPath, func(path string, fileInfo os.FileInfo, errBack error) (err error) {
 		if errBack != nil {
@@ -49,11 +50,14 @@ func Zip(srcPath string, destPath string) {
 		}
 
 		// 替换文件信息中的文件名
-		fileHeader.Name = strings.TrimPrefix(path, string(filepath.Separator))
+		fileHeader.Name = strings.TrimPrefix(prefix+"/"+fileInfo.Name(), string(filepath.Separator))
 
 		// 目录加上/
 		if fileInfo.IsDir() {
 			fileHeader.Name += "/"
+
+			//前缀变化
+			prefix = prefix + "/" + fileInfo.Name()
 		}
 
 		fmt.Println("头部情况： " + fileHeader.Name)
