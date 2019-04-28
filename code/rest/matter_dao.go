@@ -221,7 +221,7 @@ func (this *MatterDao) List(puuid string, userUuid string, sortArray []builder.O
 }
 
 //获取某个文件夹下所有的文件和子文件
-func (this *MatterDao) Page(page int, pageSize int, puuid string, userUuid string, name string, dir string, alien string, extensions []string, sortArray []builder.OrderPair) *Pager {
+func (this *MatterDao) Page(page int, pageSize int, puuid string, userUuid string, name string, dir string, extensions []string, sortArray []builder.OrderPair) *Pager {
 
 	var wp = &builder.WherePair{}
 
@@ -241,12 +241,6 @@ func (this *MatterDao) Page(page int, pageSize int, puuid string, userUuid strin
 		wp = wp.And(&builder.WherePair{Query: "dir = ?", Args: []interface{}{1}})
 	} else if dir == FALSE {
 		wp = wp.And(&builder.WherePair{Query: "dir = ?", Args: []interface{}{0}})
-	}
-
-	if alien == TRUE {
-		wp = wp.And(&builder.WherePair{Query: "alien = ?", Args: []interface{}{1}})
-	} else if alien == FALSE {
-		wp = wp.And(&builder.WherePair{Query: "alien = ?", Args: []interface{}{0}})
 	}
 
 	var conditionDB *gorm.DB

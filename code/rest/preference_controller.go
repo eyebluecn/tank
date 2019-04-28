@@ -5,6 +5,7 @@ import (
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
 	"net/http"
+	"strconv"
 )
 
 type PreferenceController struct {
@@ -39,7 +40,7 @@ func (this *PreferenceController) RegisterRoutes() map[string]func(writer http.R
 	routeMap["/api/preference/ping"] = this.Wrap(this.Ping, USER_ROLE_GUEST)
 	routeMap["/api/preference/fetch"] = this.Wrap(this.Fetch, USER_ROLE_GUEST)
 	routeMap["/api/preference/edit"] = this.Wrap(this.Edit, USER_ROLE_ADMINISTRATOR)
-	routeMap["/api/preference/system_cleanup"] = this.Wrap(this.SystemCleanup, USER_ROLE_ADMINISTRATOR)
+	routeMap["/api/preference/system/cleanup"] = this.Wrap(this.SystemCleanup, USER_ROLE_ADMINISTRATOR)
 
 	return routeMap
 }
@@ -70,21 +71,27 @@ func (this *PreferenceController) Edit(writer http.ResponseWriter, request *http
 
 	logoUrl := request.FormValue("logoUrl")
 	faviconUrl := request.FormValue("faviconUrl")
-	footerLine1 := request.FormValue("footerLine1")
-	footerLine2 := request.FormValue("footerLine2")
-	showAlienStr := request.FormValue("showAlien")
+	copyright := request.FormValue("copyright")
+	record := request.FormValue("record")
+	downloadDirMaxSizeStr := request.FormValue("downloadDirMaxSize")
+
+	var downloadDirMaxSize int64 = 0
+	if downloadDirMaxSizeStr == "" {
+		panic("文件下载最大限制必填！")
+	} else {
+		intDownloadDirMaxSize, err := strconv.Atoi(downloadDirMaxSizeStr)
+		this.PanicError(err)
+
+		downloadDirMaxSize = int64(intDownloadDirMaxSize)
+	}
 
 	preference := this.preferenceDao.Fetch()
 	preference.Name = name
 	preference.LogoUrl = logoUrl
 	preference.FaviconUrl = faviconUrl
-	preference.FooterLine1 = footerLine1
-	preference.FooterLine2 = footerLine2
-	if showAlienStr == TRUE {
-		preference.ShowAlien = true
-	} else if showAlienStr == FALSE {
-		preference.ShowAlien = false
-	}
+	preference.Copyright = copyright
+	preference.Record = record
+	preference.DownloadDirMaxSize = downloadDirMaxSize
 
 	preference = this.preferenceDao.Save(preference)
 

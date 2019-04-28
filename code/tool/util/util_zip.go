@@ -10,6 +10,7 @@ import (
 	"strings"
 )
 
+//将srcPath压缩到destPath。
 func Zip(srcPath string, destPath string) {
 
 	if PathExists(destPath) {
@@ -40,8 +41,6 @@ func Zip(srcPath string, destPath string) {
 			return errBack
 		}
 
-		//fmt.Println("遍历文件： " + path)
-
 		// 通过文件信息，创建 zip 的文件信息
 		fileHeader, err := zip.FileInfoHeader(fileInfo)
 		if err != nil {
@@ -49,7 +48,7 @@ func Zip(srcPath string, destPath string) {
 		}
 
 		// 替换文件信息中的文件名
-		fileHeader.Name = strings.TrimPrefix(prefix+"/"+fileInfo.Name(), string(filepath.Separator))
+		fileHeader.Name = strings.TrimPrefix(prefix+"/"+fileInfo.Name(), "/")
 
 		// 目录加上/
 		if fileInfo.IsDir() {
@@ -58,8 +57,6 @@ func Zip(srcPath string, destPath string) {
 			//前缀变化
 			prefix = prefix + "/" + fileInfo.Name()
 		}
-
-		//fmt.Println("头部情况： " + fileHeader.Name)
 
 		// 写入文件信息，并返回一个 Write 结构
 		writer, err := zipWriter.CreateHeader(fileHeader)
@@ -88,9 +85,6 @@ func Zip(srcPath string, destPath string) {
 		if err != nil {
 			return
 		}
-
-		// 输出压缩的内容
-		//fmt.Printf("成功压缩文件： %s, 共写入了 %d 个字符的数据\n", path, n)
 
 		return nil
 	})

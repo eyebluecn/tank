@@ -21,7 +21,7 @@ func (this *PreferenceDao) Fetch() *Preference {
 
 		if db.Error.Error() == result.DB_ERROR_NOT_FOUND {
 			preference.Name = "蓝眼云盘"
-			preference.ShowAlien = true
+
 			this.Create(preference)
 			return preference
 		} else {

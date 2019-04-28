@@ -118,7 +118,7 @@ func (this *AlienService) PreviewOrDownload(
 		this.logger.Info("准备下载文件夹 %s", matter.Name)
 
 		//目标地点
-		this.matterService.AtomicDownloadDirectory(writer, request, matter)
+		this.matterService.DownloadDirectory(writer, request, matter)
 
 	} else {
 

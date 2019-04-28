@@ -27,6 +27,7 @@ type MatterService struct {
 	userService       *UserService
 	imageCacheDao     *ImageCacheDao
 	imageCacheService *ImageCacheService
+	preferenceService *PreferenceService
 }
 
 //初始化方法
@@ -59,6 +60,11 @@ func (this *MatterService) Init() {
 		this.imageCacheService = b
 	}
 
+	b = core.CONTEXT.GetBean(this.preferenceService)
+	if b, ok := b.(*PreferenceService); ok {
+		this.preferenceService = b
+	}
+
 }
 
 //文件下载。支持分片下载
@@ -73,7 +79,7 @@ func (this *MatterService) DownloadFile(
 }
 
 //下载文件夹
-func (this *MatterService) AtomicDownloadDirectory(
+func (this *MatterService) DownloadDirectory(
 	writer http.ResponseWriter,
 	request *http.Request,
 	matter *Matter) {
@@ -86,15 +92,17 @@ func (this *MatterService) AtomicDownloadDirectory(
 		panic(result.BadRequest("matter 只能是文件夹"))
 	}
 
-	//操作锁
-	this.userService.MatterLock(matter.UserUuid)
-	defer this.userService.MatterUnlock(matter.UserUuid)
-
 	//验证文件夹中文件总大小。
 	sumSize := this.matterDao.SumSizeByUserUuidAndPath(matter.UserUuid, matter.Path)
 	this.logger.Info("文件夹 %s 大小为 %s", matter.Name, util.HumanFileSize(sumSize))
 
-	//TODO: 文件夹下载的大小限制
+	//判断用户自身上传大小的限制
+	preference := this.preferenceService.Fetch()
+	if preference.DownloadDirMaxSize >= 0 {
+		if sumSize > preference.DownloadDirMaxSize {
+			panic(result.BadRequest("文件夹大小%s超出下载限制%s ", util.HumanFileSize(sumSize), util.HumanFileSize(preference.DownloadDirMaxSize)))
+		}
+	}
 
 	//准备zip放置的目录。
 	destZipDirPath := fmt.Sprintf("%s/%d", GetUserZipRootDir(matter.Username), time.Now().UnixNano()/1e6)
