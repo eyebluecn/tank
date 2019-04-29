@@ -79,6 +79,24 @@ func (this *TankRouter) GlobalPanicHandler(writer http.ResponseWriter, request *
 			file = "???"
 			line = 0
 		}
+
+		//全局未知异常
+		if strings.HasSuffix(file, "runtime/panic.go") {
+			_, file, line, ok = runtime.Caller(4)
+			if !ok {
+				file = "???"
+				line = 0
+			}
+		}
+		//全局方便的异常拦截
+		if strings.HasSuffix(file, "util/util_framework.go") {
+			_, file, line, ok = runtime.Caller(4)
+			if !ok {
+				file = "???"
+				line = 0
+			}
+		}
+
 		core.LOGGER.Error("panic on %s:%d %v", util.GetFilenameOfPath(file), line, err)
 
 		var webResult *result.WebResult = nil

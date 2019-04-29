@@ -54,9 +54,11 @@ func RandomString4() string {
 	//0和o，l和1难以区分，剔除掉
 	var letterRunes = []rune("abcdefghijkmnpqrstuvwxyz23456789")
 
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+
 	b := make([]rune, 4)
 	for i := range b {
-		b[i] = letterRunes[rand.New(rand.NewSource(time.Now().UnixNano())).Intn(len(letterRunes))]
+		b[i] = letterRunes[r.Intn(len(letterRunes))]
 	}
 
 	return string(b)

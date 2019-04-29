@@ -13,6 +13,9 @@ import (
 //将srcPath压缩到destPath。
 func Zip(srcPath string, destPath string) {
 
+	//统一处理\\成/
+	srcPath = strings.Replace(srcPath, "\\", "/", -1)
+
 	if PathExists(destPath) {
 		panic(result.BadRequest("%s 已经存在了", destPath))
 	}
@@ -34,12 +37,16 @@ func Zip(srcPath string, destPath string) {
 		}
 	}()
 
-	prefix := ""
+	//上一个文件夹路径
+	baseDirPath := GetDirOfPath(srcPath) + "/"
 	// 下面来将文件写入 zipWriter ，因为有可能会有很多个目录及文件，所以递归处理
 	err = filepath.Walk(srcPath, func(path string, fileInfo os.FileInfo, errBack error) (err error) {
 		if errBack != nil {
 			return errBack
 		}
+
+		//统一处理\\成/
+		path = strings.Replace(path, "\\", "/", -1)
 
 		// 通过文件信息，创建 zip 的文件信息
 		fileHeader, err := zip.FileInfoHeader(fileInfo)
@@ -48,14 +55,11 @@ func Zip(srcPath string, destPath string) {
 		}
 
 		// 替换文件信息中的文件名
-		fileHeader.Name = strings.TrimPrefix(prefix+"/"+fileInfo.Name(), "/")
+		fileHeader.Name = strings.TrimPrefix(path, baseDirPath)
 
-		// 目录加上/
+		// 目录前要加上/
 		if fileInfo.IsDir() {
 			fileHeader.Name += "/"
-
-			//前缀变化
-			prefix = prefix + "/" + fileInfo.Name()
 		}
 
 		// 写入文件信息，并返回一个 Write 结构

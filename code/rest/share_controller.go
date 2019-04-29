@@ -13,10 +13,11 @@ import (
 
 type ShareController struct {
 	BaseController
-	shareDao     *ShareDao
-	bridgeDao    *BridgeDao
-	matterDao    *MatterDao
-	shareService *ShareService
+	shareDao      *ShareDao
+	bridgeDao     *BridgeDao
+	matterDao     *MatterDao
+	matterService *MatterService
+	shareService  *ShareService
 }
 
 //初始化方法
@@ -37,6 +38,11 @@ func (this *ShareController) Init() {
 	b = core.CONTEXT.GetBean(this.matterDao)
 	if b, ok := b.(*MatterDao); ok {
 		this.matterDao = b
+	}
+
+	b = core.CONTEXT.GetBean(this.matterService)
+	if b, ok := b.(*MatterService); ok {
+		this.matterService = b
 	}
 
 	b = core.CONTEXT.GetBean(this.shareService)
@@ -132,9 +138,9 @@ func (this *ShareController) Create(writer http.ResponseWriter, request *http.Re
 
 	}
 
-	if len(uuidArray) > 1 {
+	if len(matters) > 1 {
 		shareType = SHARE_TYPE_MIX
-		name = name + "等"
+		name = matters[0].Name + "," + matters[1].Name + " 等"
 	}
 
 	//创建share记录
@@ -142,6 +148,7 @@ func (this *ShareController) Create(writer http.ResponseWriter, request *http.Re
 		Name:           name,
 		ShareType:      shareType,
 		UserUuid:       user.Uuid,
+		Username:       user.Username,
 		DownloadTimes:  0,
 		Code:           util.RandomString4(),
 		ExpireInfinity: expireInfinity,
@@ -302,23 +309,70 @@ func (this *ShareController) Browse(writer http.ResponseWriter, request *http.Re
 	share := this.CheckShare(writer, request)
 	bridges := this.bridgeDao.ListByShareUuid(share.Uuid)
 
-	//获取对应的 matter.
-	var matters []*Matter
-	if len(bridges) != 0 {
-		uuids := make([]string, 0)
-		for _, bridge := range bridges {
-			uuids = append(uuids, bridge.MatterUuid)
+	//当前查看的puuid。 puuid=root表示查看分享的根目录，其余表示查看某个文件夹下的文件。
+	puuid := request.FormValue("puuid")
+	rootUuid := request.FormValue("rootUuid")
+
+	if puuid == "" {
+		puuid = MATTER_ROOT
+	}
+	//分享的跟目录
+	if puuid == MATTER_ROOT {
+
+		//获取对应的 matter.
+		var matters []*Matter
+		if len(bridges) != 0 {
+			uuids := make([]string, 0)
+			for _, bridge := range bridges {
+				uuids = append(uuids, bridge.MatterUuid)
+			}
+
+			sortArray := []builder.OrderPair{
+				{
+					Key:   "dir",
+					Value: DIRECTION_DESC,
+				},
+			}
+			matters = this.matterDao.ListByUuids(uuids, sortArray)
+
+			share.Matters = matters
 		}
 
-		sortArray := []builder.OrderPair{
-			{
-				Key:   "dir",
-				Value: DIRECTION_DESC,
-			},
-		}
-		matters = this.matterDao.ListByUuids(uuids, sortArray)
+	} else {
 
-		share.Matters = matters
+		//如果当前查看的目录就是根目录，那么无需再验证
+		if puuid == rootUuid {
+			dirMatter := this.matterDao.CheckByUuid(puuid)
+			share.DirMatter = dirMatter
+		} else {
+			dirMatter := this.matterService.Detail(puuid)
+
+			//验证 shareRootMatter是否在被分享。
+			shareRootMatter := this.matterDao.CheckByUuid(rootUuid)
+			if !shareRootMatter.Dir {
+				panic(result.BadRequest("只有文件夹可以浏览！"))
+			}
+			this.bridgeDao.CheckByShareUuidAndMatterUuid(share.Uuid, shareRootMatter.Uuid)
+
+			//到rootUuid的地方掐断。
+			find := false
+			parentMatter := dirMatter.Parent
+			for parentMatter != nil {
+				if parentMatter.Uuid == rootUuid {
+					parentMatter.Parent = nil
+					find = true
+					break
+				}
+				parentMatter = parentMatter.Parent
+			}
+
+			if !find {
+				panic(result.BadRequest("rootUuid不是分享的根目录"))
+			}
+
+			share.DirMatter = dirMatter
+		}
+
 	}
 
 	return this.Success(share)

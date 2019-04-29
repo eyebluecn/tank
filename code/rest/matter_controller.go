@@ -50,6 +50,11 @@ func (this *MatterController) Init() {
 		this.shareDao = b
 	}
 
+	b = core.CONTEXT.GetBean(this.bridgeDao)
+	if b, ok := b.(*BridgeDao); ok {
+		this.bridgeDao = b
+	}
+
 	b = core.CONTEXT.GetBean(this.imageCacheService)
 	if b, ok := b.(*ImageCacheService); ok {
 		this.imageCacheService = b
@@ -132,7 +137,7 @@ func (this *MatterController) Page(writer http.ResponseWriter, request *http.Req
 			panic(result.BadRequest("puuid必填！"))
 		}
 		dirMatter := this.matterDao.CheckByUuid(puuid)
-		if dirMatter.Dir {
+		if !dirMatter.Dir {
 			panic(result.BadRequest("puuid 对应的不是文件夹"))
 		}
 
