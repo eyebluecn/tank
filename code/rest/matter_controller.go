@@ -15,6 +15,8 @@ type MatterController struct {
 	matterService     *MatterService
 	downloadTokenDao  *DownloadTokenDao
 	imageCacheDao     *ImageCacheDao
+	shareDao          *ShareDao
+	bridgeDao         *BridgeDao
 	imageCacheService *ImageCacheService
 }
 
@@ -42,6 +44,12 @@ func (this *MatterController) Init() {
 	if b, ok := b.(*ImageCacheDao); ok {
 		this.imageCacheDao = b
 	}
+
+	b = core.CONTEXT.GetBean(this.shareDao)
+	if b, ok := b.(*ShareDao); ok {
+		this.shareDao = b
+	}
+
 	b = core.CONTEXT.GetBean(this.imageCacheService)
 	if b, ok := b.(*ImageCacheService); ok {
 		this.imageCacheService = b
@@ -64,7 +72,7 @@ func (this *MatterController) RegisterRoutes() map[string]func(writer http.Respo
 	routeMap["/api/matter/change/privacy"] = this.Wrap(this.ChangePrivacy, USER_ROLE_USER)
 	routeMap["/api/matter/move"] = this.Wrap(this.Move, USER_ROLE_USER)
 	routeMap["/api/matter/detail"] = this.Wrap(this.Detail, USER_ROLE_USER)
-	routeMap["/api/matter/page"] = this.Wrap(this.Page, USER_ROLE_USER)
+	routeMap["/api/matter/page"] = this.Wrap(this.Page, USER_ROLE_GUEST)
 
 	//本地文件映射
 	routeMap["/api/matter/mirror"] = this.Wrap(this.Mirror, USER_ROLE_USER)
@@ -114,9 +122,54 @@ func (this *MatterController) Page(writer http.ResponseWriter, request *http.Req
 	orderName := request.FormValue("orderName")
 	extensionsStr := request.FormValue("extensions")
 
-	user := this.checkUser(writer, request)
-	if user.Role != USER_ROLE_ADMINISTRATOR {
-		userUuid = user.Uuid
+	//使用分享提取码的形式授权。
+	shareUuid := request.FormValue("shareUuid")
+	shareCode := request.FormValue("shareCode")
+	shareRootUuid := request.FormValue("shareRootUuid")
+	if shareUuid != "" {
+
+		if puuid == "" {
+			panic(result.BadRequest("puuid必填！"))
+		}
+		dirMatter := this.matterDao.CheckByUuid(puuid)
+		if dirMatter.Dir {
+			panic(result.BadRequest("puuid 对应的不是文件夹"))
+		}
+
+		share := this.shareDao.CheckByUuid(shareUuid)
+		//如果是自己的分享，可以不要提取码
+		user := this.findUser(writer, request)
+		if user == nil {
+			if share.Code != shareCode {
+				panic(result.Unauthorized("提取码错误！"))
+			}
+		} else {
+			if user.Uuid != share.UserUuid {
+				if share.Code != shareCode {
+					panic(result.Unauthorized("提取码错误！"))
+				}
+			}
+		}
+
+		//验证 shareRootMatter是否在被分享。
+		shareRootMatter := this.matterDao.CheckByUuid(shareRootUuid)
+		if !shareRootMatter.Dir {
+			panic(result.BadRequest("只有文件夹可以浏览！"))
+		}
+		this.bridgeDao.CheckByShareUuidAndMatterUuid(share.Uuid, shareRootMatter.Uuid)
+
+		//保证 puuid对应的matter是shareRootMatter的子文件夹。
+		child := strings.HasPrefix(dirMatter.Path, shareRootMatter.Path)
+		if !child {
+			panic(result.BadRequest("%s 不是 %s 的子文件夹！", puuid, shareRootUuid))
+		}
+
+	} else {
+		//非分享模式要求必须登录
+		user := this.checkUser(writer, request)
+		if user.Role != USER_ROLE_ADMINISTRATOR {
+			userUuid = user.Uuid
+		}
 	}
 
 	var page int
@@ -246,10 +299,10 @@ func (this *MatterController) Upload(writer http.ResponseWriter, request *http.R
 //从一个Url中去爬取资源
 func (this *MatterController) Crawl(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
-	userUuid := request.FormValue("userUuid")
-	puuid := request.FormValue("puuid")
 	url := request.FormValue("url")
-	privacyStr := request.FormValue("privacy")
+	destPath := request.FormValue("destPath")
+	userUuid := request.FormValue("userUuid")
+	filename := request.FormValue("filename")
 
 	user := this.checkUser(writer, request)
 	if user.Role != USER_ROLE_ADMINISTRATOR {
@@ -262,23 +315,17 @@ func (this *MatterController) Crawl(writer http.ResponseWriter, request *http.Re
 
 	user = this.userDao.CheckByUuid(userUuid)
 
-	dirMatter := this.matterDao.CheckWithRootByUuid(puuid, user)
-
-	privacy := false
-	if privacyStr == TRUE {
-		privacy = true
-	}
+	dirMatter := this.matterService.CreateDirectories(user, destPath)
 
 	if url == "" || (!strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://")) {
 		panic("资源url必填，并且应该以http://或者https://开头")
 	}
 
-	filename := request.FormValue("filename")
 	if filename == "" {
-		panic("文件名必传")
+		panic("filename 必填")
 	}
 
-	matter := this.matterService.AtomicCrawl(url, filename, user, dirMatter, privacy)
+	matter := this.matterService.AtomicCrawl(url, filename, user, dirMatter, true)
 
 	return this.Success(matter)
 }

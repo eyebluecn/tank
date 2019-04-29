@@ -2,7 +2,6 @@ package rest
 
 import (
 	"fmt"
-
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/builder"
 	"github.com/eyebluecn/tank/code/tool/result"
@@ -26,6 +25,7 @@ type InstallController struct {
 	matterService     *MatterService
 	imageCacheDao     *ImageCacheDao
 	imageCacheService *ImageCacheService
+	tableNames        []IBase
 }
 
 //初始化方法
@@ -61,6 +61,20 @@ func (this *InstallController) Init() {
 	b = core.CONTEXT.GetBean(this.imageCacheService)
 	if c, ok := b.(*ImageCacheService); ok {
 		this.imageCacheService = c
+	}
+
+	this.tableNames = []IBase{
+		&Dashboard{},
+		&Bridge{},
+		&DownloadToken{},
+		&Footprint{},
+		&ImageCache{},
+		&Matter{},
+		&Preference{},
+		&Session{},
+		&Share{},
+		&UploadToken{},
+		&User{},
 	}
 
 }
@@ -185,10 +199,9 @@ func (this *InstallController) getTableMeta(gormDb *gorm.DB, entity IBase) (bool
 //根据表名获取建表SQL语句
 func (this *InstallController) getTableMetaList(db *gorm.DB) []*InstallTableInfo {
 
-	var tableNames = []IBase{&Dashboard{}, &DownloadToken{}, &Footprint{}, &ImageCache{}, &Matter{}, &Preference{}, &Session{}, &UploadToken{}, &User{}}
 	var installTableInfos []*InstallTableInfo
 
-	for _, iBase := range tableNames {
+	for _, iBase := range this.tableNames {
 		exist, allFields, missingFields := this.getTableMeta(db, iBase)
 		installTableInfos = append(installTableInfos, &InstallTableInfo{
 			Name:          iBase.TableName(),
@@ -247,13 +260,12 @@ func (this *InstallController) TableInfoList(writer http.ResponseWriter, request
 //创建缺失数据库和表
 func (this *InstallController) CreateTable(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
-	var tableNames = []IBase{&Dashboard{}, &DownloadToken{}, &Footprint{}, &ImageCache{}, &Matter{}, &Preference{}, &Session{}, &UploadToken{}, &User{}}
 	var installTableInfos []*InstallTableInfo
 
 	db := this.openDbConnection(writer, request)
 	defer this.closeDbConnection(db)
 
-	for _, iBase := range tableNames {
+	for _, iBase := range this.tableNames {
 
 		//补全缺失字段或者创建数据库表
 		db1 := db.AutoMigrate(iBase)

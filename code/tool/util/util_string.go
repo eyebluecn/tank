@@ -51,7 +51,8 @@ func RandomNumber4() string {
 //获取四位随机数字
 func RandomString4() string {
 
-	var letterRunes = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
+	//0和o，l和1难以区分，剔除掉
+	var letterRunes = []rune("abcdefghijkmnpqrstuvwxyz23456789")
 
 	b := make([]rune, 4)
 	for i := range b {

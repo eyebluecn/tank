@@ -10,6 +10,9 @@ import (
 const (
 	TRUE  = "true"
 	FALSE = "false"
+
+	DIRECTION_ASC  = "ASC"
+	DIRECTION_DESC = "DESC"
 )
 
 type IBase interface {

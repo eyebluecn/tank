@@ -14,6 +14,7 @@ import (
 type MatterDao struct {
 	BaseDao
 	imageCacheDao *ImageCacheDao
+	bridgeDao     *BridgeDao
 }
 
 //初始化方法
@@ -25,6 +26,12 @@ func (this *MatterDao) Init() {
 	if b, ok := b.(*ImageCacheDao); ok {
 		this.imageCacheDao = b
 	}
+
+	b = core.CONTEXT.GetBean(this.bridgeDao)
+	if b, ok := b.(*BridgeDao); ok {
+		this.bridgeDao = b
+	}
+
 }
 
 //按照Id查询文件
@@ -220,6 +227,16 @@ func (this *MatterDao) List(puuid string, userUuid string, sortArray []builder.O
 	return matters
 }
 
+//根据uuid查找对应的Matters
+func (this *MatterDao) ListByUuids(puuids []string, sortArray []builder.OrderPair) []*Matter {
+	var matters []*Matter
+
+	db := core.CONTEXT.GetDB().Where(puuids).Order(this.GetSortString(sortArray)).Find(&matters)
+	this.PanicError(db.Error)
+
+	return matters
+}
+
 //获取某个文件夹下所有的文件和子文件
 func (this *MatterDao) Page(page int, pageSize int, puuid string, userUuid string, name string, dir string, extensions []string, sortArray []builder.OrderPair) *Pager {
 
@@ -324,6 +341,9 @@ func (this *MatterDao) Delete(matter *Matter) {
 
 		//删除对应的缓存图片。
 		this.imageCacheDao.DeleteByMatterUuid(matter.Uuid)
+
+		//删除所有的分享文件
+		this.bridgeDao.DeleteByMatterUuid(matter.Uuid)
 
 		//删除文件
 		err := os.Remove(matter.AbsolutePath())

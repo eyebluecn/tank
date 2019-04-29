@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"runtime"
 	"strings"
 	"time"
 )
@@ -72,7 +73,13 @@ func NewRouter() *TankRouter {
 func (this *TankRouter) GlobalPanicHandler(writer http.ResponseWriter, request *http.Request, startTime time.Time) {
 	if err := recover(); err != nil {
 
-		core.LOGGER.Error("错误: %v", err)
+		//控制台中打印日志，记录行号。
+		_, file, line, ok := runtime.Caller(2)
+		if !ok {
+			file = "???"
+			line = 0
+		}
+		core.LOGGER.Error("panic on %s:%d %v", util.GetFilenameOfPath(file), line, err)
 
 		var webResult *result.WebResult = nil
 		if value, ok := err.(string); ok {

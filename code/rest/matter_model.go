@@ -32,7 +32,7 @@ type Matter struct {
 	Md5      string  `json:"md5" gorm:"type:varchar(45)"`
 	Size     int64   `json:"size" gorm:"type:bigint(20) not null;default:0"`
 	Privacy  bool    `json:"privacy" gorm:"type:tinyint(1) not null;default:0"`
-	Path     string  `json:"path" gorm:"type:varchar(512)"`
+	Path     string  `json:"path" gorm:"type:varchar(1024)"`
 	Times    int64   `json:"times" gorm:"type:bigint(20) not null;default:0"`
 	Parent   *Matter `json:"parent" gorm:"-"`
 }

@@ -131,7 +131,6 @@ func (this *TankContext) registerBeans() {
 	this.registerBean(new(rest.AlienService))
 
 	//bridge
-	this.registerBean(new(rest.BridgeController))
 	this.registerBean(new(rest.BridgeDao))
 	this.registerBean(new(rest.BridgeService))
 

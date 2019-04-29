@@ -3,6 +3,7 @@ package rest
 import (
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/builder"
+	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/jinzhu/gorm"
 
 	"github.com/nu7hatch/gouuid"
@@ -31,6 +32,18 @@ func (this *BridgeDao) CheckByUuid(uuid string) *Bridge {
 	// Read
 	var bridge Bridge
 	db := core.CONTEXT.GetDB().Where(&Bridge{Base: Base{Uuid: uuid}}).First(&bridge)
+	this.PanicError(db.Error)
+
+	return &bridge
+
+}
+
+//按照shareUuid和matterUuid查找
+func (this *BridgeDao) CheckByShareUuidAndMatterUuid(shareUuid string, matterUuid string) *Bridge {
+
+	// Read
+	var bridge Bridge
+	db := core.CONTEXT.GetDB().Where("share_uuid = ? AND matter_uuid = ?", shareUuid, matterUuid).First(&bridge)
 	this.PanicError(db.Error)
 
 	return &bridge
@@ -90,6 +103,47 @@ func (this *BridgeDao) Delete(bridge *Bridge) {
 
 	db := core.CONTEXT.GetDB().Delete(&bridge)
 	this.PanicError(db.Error)
+}
+
+//删除一个matter对应的所有缓存
+func (this *BridgeDao) DeleteByMatterUuid(matterUuid string) {
+
+	var wp = &builder.WherePair{}
+
+	wp = wp.And(&builder.WherePair{Query: "matter_uuid = ?", Args: []interface{}{matterUuid}})
+
+	//删除文件记录
+	db := core.CONTEXT.GetDB().Where(wp.Query, wp.Args).Delete(Bridge{})
+	this.PanicError(db.Error)
+}
+
+//删除一个share对应的所有缓存
+func (this *BridgeDao) DeleteByShareUuid(shareUuid string) {
+
+	var wp = &builder.WherePair{}
+
+	wp = wp.And(&builder.WherePair{Query: "share_uuid = ?", Args: []interface{}{shareUuid}})
+
+	//删除文件记录
+	db := core.CONTEXT.GetDB().Where(wp.Query, wp.Args).Delete(Bridge{})
+	this.PanicError(db.Error)
+}
+
+//根据shareUuid获取关联的所有matter.
+func (this *BridgeDao) ListByShareUuid(shareUuid string) []*Bridge {
+
+	if shareUuid == "" {
+		panic(result.BadRequest("shareUuid cannot be nil"))
+	}
+
+	var bridges []*Bridge
+
+	db := core.CONTEXT.GetDB().
+		Where("share_uuid = ?", shareUuid).
+		Find(&bridges)
+	this.PanicError(db.Error)
+
+	return bridges
 }
 
 //执行清理操作

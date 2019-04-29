@@ -90,6 +90,7 @@ func (this *ShareDao) Delete(share *Share) {
 
 	db := core.CONTEXT.GetDB().Delete(&share)
 	this.PanicError(db.Error)
+
 }
 
 //执行清理操作

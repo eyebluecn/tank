@@ -54,16 +54,19 @@ func (this *ShareController) RegisterRoutes() map[string]func(writer http.Respon
 	//每个Controller需要主动注册自己的路由。
 	routeMap["/api/share/create"] = this.Wrap(this.Create, USER_ROLE_USER)
 	routeMap["/api/share/delete"] = this.Wrap(this.Delete, USER_ROLE_USER)
+	routeMap["/api/share/delete/batch"] = this.Wrap(this.DeleteBatch, USER_ROLE_USER)
 	routeMap["/api/share/detail"] = this.Wrap(this.Detail, USER_ROLE_USER)
 	routeMap["/api/share/page"] = this.Wrap(this.Page, USER_ROLE_USER)
+	routeMap["/api/share/browse"] = this.Wrap(this.Browse, USER_ROLE_GUEST)
 
 	return routeMap
 }
 
-//删除一条记录
+//创建一个分享
 func (this *ShareController) Create(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	matterUuids := request.FormValue("matterUuids")
+	expireInfinityStr := request.FormValue("expireInfinity")
 	expireTimeStr := request.FormValue("expireTime")
 
 	if matterUuids == "" {
@@ -71,47 +74,86 @@ func (this *ShareController) Create(writer http.ResponseWriter, request *http.Re
 	}
 
 	var expireTime time.Time
-	if expireTimeStr == "" {
-		panic(result.BadRequest("时间格式错误！"))
+	expireInfinity := false
+	if expireInfinityStr == TRUE {
+		expireInfinity = true
+		expireTime = time.Now()
 	} else {
-		expireTime = util.ConvertDateTimeStringToTime(expireTimeStr)
-	}
 
-	if expireTime.Before(time.Now()) {
-		panic(result.BadRequest("过期时间错误！"))
+		if expireTimeStr == "" {
+			panic(result.BadRequest("时间格式错误！"))
+		} else {
+			expireTime = util.ConvertDateTimeStringToTime(expireTimeStr)
+		}
+
+		if expireTime.Before(time.Now()) {
+			panic(result.BadRequest("过期时间错误！"))
+		}
+
 	}
 
 	uuidArray := strings.Split(matterUuids, ",")
 
 	if len(uuidArray) == 0 {
 		panic(result.BadRequest("请至少分享一个文件"))
+	} else if len(uuidArray) > SHARE_MAX_NUM {
+		panic(result.BadRequest("一次分享文件数不能超过 %d", SHARE_MAX_NUM))
 	}
 
+	var name string
+	shareType := SHARE_TYPE_MIX
 	user := this.checkUser(writer, request)
-	for _, uuid := range uuidArray {
+	var puuid string
+	var matters []*Matter
+	for key, uuid := range uuidArray {
 
 		matter := this.matterDao.CheckByUuid(uuid)
 
 		//判断文件的所属人是否正确
 		if matter.UserUuid != user.Uuid {
-			panic(result.Unauthorized("没有权限"))
+			panic(result.Unauthorized("不是你的文件，没有权限"))
 		}
+
+		matters = append(matters, matter)
+
+		if key == 0 {
+			puuid = matter.Puuid
+			name = matter.Name
+			if matter.Dir {
+				shareType = SHARE_TYPE_DIRECTORY
+			} else {
+				shareType = SHARE_TYPE_FILE
+			}
+		} else {
+			if matter.Puuid != puuid {
+				panic(result.Unauthorized("一次只能分享同一个文件夹中的内容"))
+			}
+		}
+
+	}
+
+	if len(uuidArray) > 1 {
+		shareType = SHARE_TYPE_MIX
+		name = name + "等"
 	}
 
 	//创建share记录
 	share := &Share{
-		UserUuid:      user.Uuid,
-		DownloadTimes: 0,
-		Code:          util.RandomString4(),
-		ExpireTime:    expireTime,
+		Name:           name,
+		ShareType:      shareType,
+		UserUuid:       user.Uuid,
+		DownloadTimes:  0,
+		Code:           util.RandomString4(),
+		ExpireInfinity: expireInfinity,
+		ExpireTime:     expireTime,
 	}
 	this.shareDao.Create(share)
 
 	//创建关联的matter
-	for _, matterUuid := range uuidArray {
+	for _, matter := range matters {
 		bridge := &Bridge{
 			ShareUuid:  share.Uuid,
-			MatterUuid: matterUuid,
+			MatterUuid: matter.Uuid,
 		}
 		this.bridgeDao.Create(bridge)
 	}
@@ -130,10 +172,40 @@ func (this *ShareController) Delete(writer http.ResponseWriter, request *http.Re
 	share := this.shareDao.FindByUuid(uuid)
 
 	if share != nil {
+
+		//删除对应的bridge.
+		this.bridgeDao.DeleteByShareUuid(share.Uuid)
+
 		this.shareDao.Delete(share)
 	}
 
 	return this.Success(nil)
+}
+
+//删除一系列分享
+func (this *ShareController) DeleteBatch(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+
+	uuids := request.FormValue("uuids")
+	if uuids == "" {
+		panic(result.BadRequest("uuids必填"))
+	}
+
+	uuidArray := strings.Split(uuids, ",")
+
+	for _, uuid := range uuidArray {
+
+		imageCache := this.shareDao.FindByUuid(uuid)
+
+		//判断图片缓存的所属人是否正确
+		user := this.checkUser(writer, request)
+		if user.Role != USER_ROLE_ADMINISTRATOR && imageCache.UserUuid != user.Uuid {
+			panic(result.Unauthorized("没有权限"))
+		}
+
+		this.shareDao.Delete(imageCache)
+	}
+
+	return this.Success("删除成功！")
 }
 
 //查看详情。
@@ -195,4 +267,60 @@ func (this *ShareController) Page(writer http.ResponseWriter, request *http.Requ
 	pager := this.shareDao.Page(page, pageSize, userUuid, sortArray)
 
 	return this.Success(pager)
+}
+
+//验证提取码对应的某个shareUuid是否有效
+func (this *ShareController) CheckShare(writer http.ResponseWriter, request *http.Request) *Share {
+
+	//如果是根目录，那么就传入root.
+	shareUuid := request.FormValue("shareUuid")
+	code := request.FormValue("code")
+
+	share := this.shareDao.CheckByUuid(shareUuid)
+	//如果是自己的分享，可以不要提取码
+	user := this.findUser(writer, request)
+	if user == nil {
+		if share.Code != code {
+			panic(result.Unauthorized("提取码错误！"))
+		}
+	} else {
+		if user.Uuid != share.UserUuid {
+			if share.Code != code {
+				panic(result.Unauthorized("提取码错误！"))
+			}
+		}
+	}
+
+	return share
+
+}
+
+//浏览某个分享中的文件
+func (this *ShareController) Browse(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+
+	//要求传参：shareUuid,code
+	share := this.CheckShare(writer, request)
+	bridges := this.bridgeDao.ListByShareUuid(share.Uuid)
+
+	//获取对应的 matter.
+	var matters []*Matter
+	if len(bridges) != 0 {
+		uuids := make([]string, 0)
+		for _, bridge := range bridges {
+			uuids = append(uuids, bridge.MatterUuid)
+		}
+
+		sortArray := []builder.OrderPair{
+			{
+				Key:   "dir",
+				Value: DIRECTION_DESC,
+			},
+		}
+		matters = this.matterDao.ListByUuids(uuids, sortArray)
+
+		share.Matters = matters
+	}
+
+	return this.Success(share)
+
 }
