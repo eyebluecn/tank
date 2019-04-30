@@ -16,6 +16,7 @@ type MatterController struct {
 	downloadTokenDao  *DownloadTokenDao
 	imageCacheDao     *ImageCacheDao
 	shareDao          *ShareDao
+	shareService      *ShareService
 	bridgeDao         *BridgeDao
 	imageCacheService *ImageCacheService
 }
@@ -48,6 +49,11 @@ func (this *MatterController) Init() {
 	b = core.CONTEXT.GetBean(this.shareDao)
 	if b, ok := b.(*ShareDao); ok {
 		this.shareDao = b
+	}
+
+	b = core.CONTEXT.GetBean(this.shareService)
+	if b, ok := b.(*ShareService); ok {
+		this.shareService = b
 	}
 
 	b = core.CONTEXT.GetBean(this.bridgeDao)
@@ -136,25 +142,14 @@ func (this *MatterController) Page(writer http.ResponseWriter, request *http.Req
 		if puuid == "" {
 			panic(result.BadRequest("puuid必填！"))
 		}
+
 		dirMatter := this.matterDao.CheckByUuid(puuid)
 		if !dirMatter.Dir {
 			panic(result.BadRequest("puuid 对应的不是文件夹"))
 		}
 
-		share := this.shareDao.CheckByUuid(shareUuid)
-		//如果是自己的分享，可以不要提取码
 		user := this.findUser(writer, request)
-		if user == nil {
-			if share.Code != shareCode {
-				panic(result.Unauthorized("提取码错误！"))
-			}
-		} else {
-			if user.Uuid != share.UserUuid {
-				if share.Code != shareCode {
-					panic(result.Unauthorized("提取码错误！"))
-				}
-			}
-		}
+		share := this.shareService.CheckShare(shareUuid, shareCode, user)
 
 		//验证 shareRootMatter是否在被分享。
 		shareRootMatter := this.matterDao.CheckByUuid(shareRootUuid)

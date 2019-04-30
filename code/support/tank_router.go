@@ -102,7 +102,7 @@ func (this *TankRouter) GlobalPanicHandler(writer http.ResponseWriter, request *
 		var webResult *result.WebResult = nil
 		if value, ok := err.(string); ok {
 			//一个字符串，默认是请求错误。
-			webResult = result.CustomWebResult(result.CODE_WRAPPER_BAD_REQUEST, value)
+			webResult = result.CustomWebResult(result.BAD_REQUEST, value)
 		} else if value, ok := err.(*result.WebResult); ok {
 			//一个WebResult对象
 			webResult = value
@@ -111,10 +111,10 @@ func (this *TankRouter) GlobalPanicHandler(writer http.ResponseWriter, request *
 			webResult = result.ConstWebResult(value)
 		} else if value, ok := err.(error); ok {
 			//一个普通的错误对象
-			webResult = result.CustomWebResult(result.CODE_WRAPPER_UNKNOWN, value.Error())
+			webResult = result.CustomWebResult(result.UNKNOWN, value.Error())
 		} else {
 			//其他不能识别的内容
-			webResult = result.ConstWebResult(result.CODE_WRAPPER_UNKNOWN)
+			webResult = result.ConstWebResult(result.UNKNOWN)
 		}
 
 		//修改http code码
@@ -176,7 +176,7 @@ func (this *TankRouter) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 				}
 
 				if !canHandle {
-					panic(result.CustomWebResult(result.CODE_WRAPPER_NOT_FOUND, fmt.Sprintf("没有找到能够处理%s的方法", path)))
+					panic(result.CustomWebResult(result.NOT_FOUND, fmt.Sprintf("没有找到能够处理%s的方法", path)))
 				}
 			}
 
@@ -190,7 +190,7 @@ func (this *TankRouter) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 			if handler, ok := this.installRouteMap[path]; ok {
 				handler(writer, request)
 			} else {
-				panic(result.ConstWebResult(result.CODE_WRAPPER_NOT_INSTALLED))
+				panic(result.ConstWebResult(result.NOT_INSTALLED))
 			}
 		}
 

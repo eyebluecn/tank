@@ -58,10 +58,10 @@ func (this *BaseController) Wrap(f func(writer http.ResponseWriter, request *htt
 
 			if user.Status == USER_STATUS_DISABLED {
 				//判断用户是否被禁用。
-				webResult = result.ConstWebResult(result.CODE_WRAPPER_USER_DISABLED)
+				webResult = result.ConstWebResult(result.USER_DISABLED)
 			} else {
 				if qualifiedRole == USER_ROLE_ADMINISTRATOR && user.Role != USER_ROLE_ADMINISTRATOR {
-					webResult = result.ConstWebResult(result.CODE_WRAPPER_UNAUTHORIZED)
+					webResult = result.ConstWebResult(result.UNAUTHORIZED)
 				} else {
 					webResult = f(writer, request)
 				}
@@ -98,16 +98,16 @@ func (this *BaseController) Success(data interface{}) *result.WebResult {
 	var webResult *result.WebResult = nil
 	if value, ok := data.(string); ok {
 		//返回一句普通的消息
-		webResult = &result.WebResult{Code: result.CODE_WRAPPER_OK.Code, Msg: value}
+		webResult = &result.WebResult{Code: result.OK.Code, Msg: value}
 	} else if value, ok := data.(*result.WebResult); ok {
 		//返回一个webResult对象
 		webResult = value
 	} else if _, ok := data.(types.Nil); ok {
 		//返回一个空指针
-		webResult = result.ConstWebResult(result.CODE_WRAPPER_OK)
+		webResult = result.ConstWebResult(result.OK)
 	} else {
 		//返回的类型不明确。
-		webResult = &result.WebResult{Code: result.CODE_WRAPPER_OK.Code, Data: data}
+		webResult = &result.WebResult{Code: result.OK.Code, Data: data}
 	}
 	return webResult
 }

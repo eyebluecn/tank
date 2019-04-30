@@ -282,36 +282,25 @@ func (this *ShareController) CheckShare(writer http.ResponseWriter, request *htt
 	//如果是根目录，那么就传入root.
 	shareUuid := request.FormValue("shareUuid")
 	code := request.FormValue("code")
-
-	share := this.shareDao.CheckByUuid(shareUuid)
-	//如果是自己的分享，可以不要提取码
 	user := this.findUser(writer, request)
-	if user == nil {
-		if share.Code != code {
-			panic(result.Unauthorized("提取码错误！"))
-		}
-	} else {
-		if user.Uuid != share.UserUuid {
-			if share.Code != code {
-				panic(result.Unauthorized("提取码错误！"))
-			}
-		}
-	}
 
-	return share
-
+	return this.shareService.CheckShare(shareUuid, code, user)
 }
 
 //浏览某个分享中的文件
 func (this *ShareController) Browse(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
-	//要求传参：shareUuid,code
-	share := this.CheckShare(writer, request)
-	bridges := this.bridgeDao.ListByShareUuid(share.Uuid)
+	//如果是根目录，那么就传入root.
+	shareUuid := request.FormValue("shareUuid")
+	code := request.FormValue("code")
 
 	//当前查看的puuid。 puuid=root表示查看分享的根目录，其余表示查看某个文件夹下的文件。
 	puuid := request.FormValue("puuid")
 	rootUuid := request.FormValue("rootUuid")
+
+	user := this.findUser(writer, request)
+	share := this.shareService.CheckShare(shareUuid, code, user)
+	bridges := this.bridgeDao.ListByShareUuid(share.Uuid)
 
 	if puuid == "" {
 		puuid = MATTER_ROOT

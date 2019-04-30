@@ -94,7 +94,7 @@ func (this *AlienService) PreviewOrDownload(
 
 			tokenUser := this.userDao.CheckByUuid(downloadToken.UserUuid)
 			if matter.UserUuid != tokenUser.Uuid {
-				panic(result.CODE_WRAPPER_UNAUTHORIZED)
+				panic(result.UNAUTHORIZED)
 			}
 
 			//下载之后立即过期掉。如果是分块下载的，必须以最终获取到完整的数据为准。
@@ -106,7 +106,7 @@ func (this *AlienService) PreviewOrDownload(
 			//判断文件的所属人是否正确
 			operator := this.findUser(writer, request)
 			if operator == nil || (operator.Role != USER_ROLE_ADMINISTRATOR && matter.UserUuid != operator.Uuid) {
-				panic(result.CODE_WRAPPER_UNAUTHORIZED)
+				panic(result.UNAUTHORIZED)
 			}
 
 		}

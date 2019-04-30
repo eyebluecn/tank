@@ -3,7 +3,6 @@ package cache
 import (
 	"errors"
 	"fmt"
-	"github.com/eyebluecn/tank/code/tool/util"
 	"sort"
 	"sync"
 	"time"
@@ -148,6 +147,18 @@ func (table *Table) SetDeleteCallback(f func(*Item)) {
 	table.deleteCallback = f
 }
 
+//带有panic恢复的方法
+func (table *Table) RunWithRecovery(f func()) {
+	defer func() {
+		if err := recover(); err != nil {
+			//core.LOGGER.Error("异步任务错误: %v", err)
+		}
+	}()
+
+	//执行函数
+	f()
+}
+
 //终结检查，被自调整的时间触发
 func (table *Table) checkExpire() {
 	table.Lock()
@@ -197,7 +208,7 @@ func (table *Table) checkExpire() {
 	table.cleanupInterval = smallestDuration
 	if smallestDuration > 0 {
 		table.cleanupTimer = time.AfterFunc(smallestDuration, func() {
-			go util.RunWithRecovery(table.checkExpire)
+			go table.RunWithRecovery(table.checkExpire)
 		})
 	}
 	table.Unlock()
@@ -387,8 +398,7 @@ func (table *Table) MostAccessed(count int64) []*Item {
 
 // 打印日志
 func (table *Table) log(format string, v ...interface{}) {
-	//TODO: 全局日志记录
-	//LOGGER.Info(format, v...)
+	//core.LOGGER.Info(format, v...)
 }
 
 //新建一个缓存Table

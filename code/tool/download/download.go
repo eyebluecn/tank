@@ -286,7 +286,7 @@ func DownloadFile(
 	if size >= 0 {
 		ranges, err := ParseRange(rangeReq, size)
 		if err != nil {
-			panic(result.CustomWebResult(result.CODE_WRAPPER_RANGE_NOT_SATISFIABLE, "range header出错"))
+			panic(result.CustomWebResult(result.RANGE_NOT_SATISFIABLE, "range header出错"))
 		}
 		if SumRangesSize(ranges) > size {
 			// The total number of bytes in all the ranges
@@ -310,7 +310,7 @@ func DownloadFile(
 			// be sent using the multipart/byteranges media type."
 			ra := ranges[0]
 			if _, err := diskFile.Seek(ra.start, io.SeekStart); err != nil {
-				panic(result.CustomWebResult(result.CODE_WRAPPER_RANGE_NOT_SATISFIABLE, "range header出错"))
+				panic(result.CustomWebResult(result.RANGE_NOT_SATISFIABLE, "range header出错"))
 			}
 			sendSize = ra.length
 			code = http.StatusPartialContent

@@ -200,7 +200,7 @@ func (this *TankApplication) HandleMirror() {
 		return
 	}
 
-	if webResult.Code == result.CODE_WRAPPER_OK.Code {
+	if webResult.Code == result.OK.Code {
 		fmt.Println("success")
 	} else {
 		fmt.Printf("error %s\r\n", webResult.Msg)
@@ -247,7 +247,7 @@ func (this *TankApplication) HandleCrawl() {
 		return
 	}
 
-	if webResult.Code == result.CODE_WRAPPER_OK.Code {
+	if webResult.Code == result.OK.Code {
 		fmt.Println("success")
 	} else {
 		fmt.Printf("error %s\r\n", webResult.Msg)

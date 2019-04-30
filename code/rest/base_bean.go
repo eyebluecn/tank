@@ -65,7 +65,7 @@ func (this *BaseBean) findUser(writer http.ResponseWriter, request *http.Request
 //获取当前登录的用户，找不到就返回登录错误
 func (this *BaseBean) checkUser(writer http.ResponseWriter, request *http.Request) *User {
 	if this.findUser(writer, request) == nil {
-		panic(result.ConstWebResult(result.CODE_WRAPPER_LOGIN))
+		panic(result.ConstWebResult(result.LOGIN))
 	} else {
 		return this.findUser(writer, request)
 	}
