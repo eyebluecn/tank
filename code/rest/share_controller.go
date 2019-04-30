@@ -302,11 +302,9 @@ func (this *ShareController) Browse(writer http.ResponseWriter, request *http.Re
 	share := this.shareService.CheckShare(shareUuid, code, user)
 	bridges := this.bridgeDao.ListByShareUuid(share.Uuid)
 
-	if puuid == "" {
-		puuid = MATTER_ROOT
-	}
-	//分享的跟目录
 	if puuid == MATTER_ROOT {
+
+		//分享的根目录
 
 		//获取对应的 matter.
 		var matters []*Matter
@@ -315,7 +313,6 @@ func (this *ShareController) Browse(writer http.ResponseWriter, request *http.Re
 			for _, bridge := range bridges {
 				uuids = append(uuids, bridge.MatterUuid)
 			}
-
 			sortArray := []builder.OrderPair{
 				{
 					Key:   "dir",

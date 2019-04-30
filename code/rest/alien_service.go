@@ -17,6 +17,7 @@ type AlienService struct {
 	userDao           *UserDao
 	uploadTokenDao    *UploadTokenDao
 	downloadTokenDao  *DownloadTokenDao
+	shareService      *ShareService
 	imageCacheDao     *ImageCacheDao
 	imageCacheService *ImageCacheService
 }
@@ -49,6 +50,11 @@ func (this *AlienService) Init() {
 	b = core.CONTEXT.GetBean(this.downloadTokenDao)
 	if c, ok := b.(*DownloadTokenDao); ok {
 		this.downloadTokenDao = c
+	}
+
+	b = core.CONTEXT.GetBean(this.shareService)
+	if c, ok := b.(*ShareService); ok {
+		this.shareService = c
 	}
 
 	b = core.CONTEXT.GetBean(this.imageCacheDao)
@@ -105,8 +111,15 @@ func (this *AlienService) PreviewOrDownload(
 
 			//判断文件的所属人是否正确
 			operator := this.findUser(writer, request)
-			if operator == nil || (operator.Role != USER_ROLE_ADMINISTRATOR && matter.UserUuid != operator.Uuid) {
+
+			//可以使用分享码的形式授权。
+			shareUuid := request.FormValue("shareUuid")
+			shareCode := request.FormValue("shareCode")
+			shareRootUuid := request.FormValue("shareRootUuid")
+			if shareUuid == "" || shareCode == "" || shareRootUuid == "" {
 				panic(result.UNAUTHORIZED)
+			} else {
+				this.shareService.ValidateMatter(shareUuid, shareCode, operator, shareRootUuid, matter)
 			}
 
 		}

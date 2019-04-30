@@ -149,20 +149,8 @@ func (this *MatterController) Page(writer http.ResponseWriter, request *http.Req
 		}
 
 		user := this.findUser(writer, request)
-		share := this.shareService.CheckShare(shareUuid, shareCode, user)
-
-		//验证 shareRootMatter是否在被分享。
-		shareRootMatter := this.matterDao.CheckByUuid(shareRootUuid)
-		if !shareRootMatter.Dir {
-			panic(result.BadRequest("只有文件夹可以浏览！"))
-		}
-		this.bridgeDao.CheckByShareUuidAndMatterUuid(share.Uuid, shareRootMatter.Uuid)
-
-		//保证 puuid对应的matter是shareRootMatter的子文件夹。
-		child := strings.HasPrefix(dirMatter.Path, shareRootMatter.Path)
-		if !child {
-			panic(result.BadRequest("%s 不是 %s 的子文件夹！", puuid, shareRootUuid))
-		}
+		//根据某个shareUuid和code，某个用户是否有权限获取 shareRootUuid 下面的 matterUuid
+		this.shareService.ValidateMatter(shareUuid, shareCode, user, shareRootUuid, dirMatter)
 
 	} else {
 		//非分享模式要求必须登录
