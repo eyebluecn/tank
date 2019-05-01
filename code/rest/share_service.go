@@ -79,7 +79,7 @@ func (this *ShareService) CheckShare(shareUuid string, code string, user *User) 
 func (this *ShareService) ValidateMatter(shareUuid string, code string, user *User, shareRootUuid string, matter *Matter) {
 
 	if matter == nil {
-		panic(result.BadRequest("matter cannot be nil"))
+		panic(result.Unauthorized("matter cannot be nil"))
 	}
 
 	//如果文件是自己的，那么放行
@@ -87,8 +87,8 @@ func (this *ShareService) ValidateMatter(shareUuid string, code string, user *Us
 		return
 	}
 
-	if shareRootUuid == "" {
-		panic(result.BadRequest("matterUuid cannot be null"))
+	if shareUuid == "" || code == "" || shareRootUuid == "" {
+		panic(result.Unauthorized("shareUuid,code,shareRootUuid cannot be null"))
 	}
 
 	share := this.CheckShare(shareUuid, code, user)
@@ -106,7 +106,7 @@ func (this *ShareService) ValidateMatter(shareUuid string, code string, user *Us
 		//保证 puuid对应的matter是shareRootMatter的子文件夹。
 		child := strings.HasPrefix(matter.Path, shareRootMatter.Path)
 		if !child {
-			panic(result.BadRequest("%s 不是 %s 的子文件夹！", matter.Uuid, shareRootUuid))
+			panic(result.Unauthorized("%s 不是 %s 的子文件夹！", matter.Uuid, shareRootUuid))
 		}
 	}
 

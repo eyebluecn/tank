@@ -74,15 +74,24 @@ func (this *PreferenceController) Edit(writer http.ResponseWriter, request *http
 	copyright := request.FormValue("copyright")
 	record := request.FormValue("record")
 	downloadDirMaxSizeStr := request.FormValue("downloadDirMaxSize")
+	downloadDirMaxNumStr := request.FormValue("downloadDirMaxNum")
 
 	var downloadDirMaxSize int64 = 0
 	if downloadDirMaxSizeStr == "" {
-		panic("文件下载最大限制必填！")
+		panic("文件下载大小限制必填！")
 	} else {
 		intDownloadDirMaxSize, err := strconv.Atoi(downloadDirMaxSizeStr)
 		this.PanicError(err)
-
 		downloadDirMaxSize = int64(intDownloadDirMaxSize)
+	}
+
+	var downloadDirMaxNum int64 = 0
+	if downloadDirMaxNumStr == "" {
+		panic("文件下载数量限制必填！")
+	} else {
+		intDownloadDirMaxNum, err := strconv.Atoi(downloadDirMaxNumStr)
+		this.PanicError(err)
+		downloadDirMaxNum = int64(intDownloadDirMaxNum)
 	}
 
 	preference := this.preferenceDao.Fetch()
@@ -92,6 +101,7 @@ func (this *PreferenceController) Edit(writer http.ResponseWriter, request *http
 	preference.Copyright = copyright
 	preference.Record = record
 	preference.DownloadDirMaxSize = downloadDirMaxSize
+	preference.DownloadDirMaxNum = downloadDirMaxNum
 
 	preference = this.preferenceDao.Save(preference)
 

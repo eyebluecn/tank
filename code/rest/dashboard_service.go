@@ -56,12 +56,12 @@ func (this *DashboardService) Bootstrap() {
 	expression := "0 5 0 * * ?"
 	cronJob := cron.New()
 	err := cronJob.AddFunc(expression, this.etl)
-	util.PanicError(err)
+	core.PanicError(err)
 	cronJob.Start()
 	this.logger.Info("[cron job] 每日00:05清洗离线数据")
 
 	//立即执行一次数据清洗任务
-	go util.RunWithRecovery(this.etl)
+	go core.RunWithRecovery(this.etl)
 
 }
 

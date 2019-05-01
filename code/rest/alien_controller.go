@@ -20,6 +20,7 @@ type AlienController struct {
 	imageCacheDao     *ImageCacheDao
 	imageCacheService *ImageCacheService
 	alienService      *AlienService
+	shareService      *ShareService
 }
 
 //初始化方法
@@ -60,6 +61,11 @@ func (this *AlienController) Init() {
 	b = core.CONTEXT.GetBean(this.alienService)
 	if c, ok := b.(*AlienService); ok {
 		this.alienService = c
+	}
+
+	b = core.CONTEXT.GetBean(this.shareService)
+	if c, ok := b.(*ShareService); ok {
+		this.shareService = c
 	}
 }
 

@@ -10,6 +10,7 @@ type Preference struct {
 	Copyright          string `json:"copyright" gorm:"type:varchar(1024)"`
 	Record             string `json:"record" gorm:"type:varchar(1024)"`
 	DownloadDirMaxSize int64  `json:"downloadDirMaxSize" gorm:"type:bigint(20) not null;default:-1"`
+	DownloadDirMaxNum  int64  `json:"downloadDirMaxNum" gorm:"type:bigint(20) not null;default:-1"`
 }
 
 // set File's table name to be `profiles`

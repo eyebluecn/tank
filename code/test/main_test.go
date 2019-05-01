@@ -30,7 +30,7 @@ func TestCron(t *testing.T) {
 			panic("intent to panic.")
 		}
 	})
-	util.PanicError(err)
+	core.PanicError(err)
 
 	c.Start()
 

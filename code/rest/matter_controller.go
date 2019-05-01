@@ -65,7 +65,6 @@ func (this *MatterController) Init() {
 	if b, ok := b.(*ImageCacheService); ok {
 		this.imageCacheService = b
 	}
-
 }
 
 //注册自己的路由。
@@ -87,6 +86,7 @@ func (this *MatterController) RegisterRoutes() map[string]func(writer http.Respo
 
 	//本地文件映射
 	routeMap["/api/matter/mirror"] = this.Wrap(this.Mirror, USER_ROLE_USER)
+	routeMap["/api/matter/zip"] = this.Wrap(this.Zip, USER_ROLE_USER)
 
 	return routeMap
 }
@@ -103,10 +103,8 @@ func (this *MatterController) Detail(writer http.ResponseWriter, request *http.R
 
 	//验证当前之人是否有权限查看这么详细。
 	user := this.checkUser(writer, request)
-	if user.Role != USER_ROLE_ADMINISTRATOR {
-		if matter.UserUuid != user.Uuid {
-			panic("没有权限查看该文件")
-		}
+	if matter.UserUuid != user.Uuid {
+		panic(result.UNAUTHORIZED)
 	}
 
 	return this.Success(matter)
@@ -125,13 +123,14 @@ func (this *MatterController) Page(writer http.ResponseWriter, request *http.Req
 	orderTimes := request.FormValue("orderTimes")
 
 	puuid := request.FormValue("puuid")
-	userUuid := request.FormValue("userUuid")
 	name := request.FormValue("name")
 	dir := request.FormValue("dir")
 	orderDir := request.FormValue("orderDir")
 	orderSize := request.FormValue("orderSize")
 	orderName := request.FormValue("orderName")
 	extensionsStr := request.FormValue("extensions")
+
+	var userUuid string
 
 	//使用分享提取码的形式授权。
 	shareUuid := request.FormValue("shareUuid")
@@ -151,13 +150,13 @@ func (this *MatterController) Page(writer http.ResponseWriter, request *http.Req
 		user := this.findUser(writer, request)
 		//根据某个shareUuid和code，某个用户是否有权限获取 shareRootUuid 下面的 matterUuid
 		this.shareService.ValidateMatter(shareUuid, shareCode, user, shareRootUuid, dirMatter)
+		userUuid = dirMatter.Uuid
 
 	} else {
 		//非分享模式要求必须登录
 		user := this.checkUser(writer, request)
-		if user.Role != USER_ROLE_ADMINISTRATOR {
-			userUuid = user.Uuid
-		}
+		userUuid = user.Uuid
+
 	}
 
 	var page int
@@ -220,14 +219,9 @@ func (this *MatterController) CreateDirectory(writer http.ResponseWriter, reques
 
 	puuid := request.FormValue("puuid")
 	name := request.FormValue("name")
-	userUuid := request.FormValue("userUuid")
 
 	//管理员可以指定给某个用户创建文件夹。
 	user := this.checkUser(writer, request)
-	if user.Role != USER_ROLE_ADMINISTRATOR {
-		userUuid = user.Uuid
-	}
-	user = this.userDao.CheckByUuid(userUuid)
 
 	//找到父级matter
 	var dirMatter *Matter
@@ -244,7 +238,6 @@ func (this *MatterController) CreateDirectory(writer http.ResponseWriter, reques
 //上传文件
 func (this *MatterController) Upload(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
-	userUuid := request.FormValue("userUuid")
 	puuid := request.FormValue("puuid")
 	privacyStr := request.FormValue("privacy")
 	file, handler, err := request.FormFile("file")
@@ -255,11 +248,6 @@ func (this *MatterController) Upload(writer http.ResponseWriter, request *http.R
 	}()
 
 	user := this.checkUser(writer, request)
-	//管理员可以传到指定用户的目录下。
-	if user.Role != USER_ROLE_ADMINISTRATOR {
-		userUuid = user.Uuid
-	}
-	user = this.userDao.CheckByUuid(userUuid)
 
 	privacy := privacyStr == TRUE
 
@@ -279,7 +267,8 @@ func (this *MatterController) Upload(writer http.ResponseWriter, request *http.R
 
 	dirMatter := this.matterDao.CheckWithRootByUuid(puuid, user)
 
-	matter := this.matterService.AtomicUpload(file, user, dirMatter, fileName, privacy)
+	//为了支持多文件同时上传
+	matter := this.matterService.Upload(file, user, dirMatter, fileName, privacy)
 
 	return this.Success(matter)
 }
@@ -289,19 +278,9 @@ func (this *MatterController) Crawl(writer http.ResponseWriter, request *http.Re
 
 	url := request.FormValue("url")
 	destPath := request.FormValue("destPath")
-	userUuid := request.FormValue("userUuid")
 	filename := request.FormValue("filename")
 
 	user := this.checkUser(writer, request)
-	if user.Role != USER_ROLE_ADMINISTRATOR {
-		userUuid = user.Uuid
-	} else {
-		if userUuid == "" {
-			userUuid = user.Uuid
-		}
-	}
-
-	user = this.userDao.CheckByUuid(userUuid)
 
 	dirMatter := this.matterService.CreateDirectories(user, destPath)
 
@@ -330,8 +309,8 @@ func (this *MatterController) Delete(writer http.ResponseWriter, request *http.R
 
 	//判断文件的所属人是否正确
 	user := this.checkUser(writer, request)
-	if user.Role != USER_ROLE_ADMINISTRATOR && matter.UserUuid != user.Uuid {
-		panic(result.Unauthorized("没有权限"))
+	if matter.UserUuid != user.Uuid {
+		panic(result.UNAUTHORIZED)
 	}
 
 	this.matterService.AtomicDelete(matter)
@@ -361,8 +340,8 @@ func (this *MatterController) DeleteBatch(writer http.ResponseWriter, request *h
 
 		//判断文件的所属人是否正确
 		user := this.checkUser(writer, request)
-		if user.Role != USER_ROLE_ADMINISTRATOR && matter.UserUuid != user.Uuid {
-			panic(result.Unauthorized("没有权限"))
+		if matter.UserUuid != user.Uuid {
+			panic(result.UNAUTHORIZED)
 		}
 
 		this.matterService.AtomicDelete(matter)
@@ -383,8 +362,8 @@ func (this *MatterController) Rename(writer http.ResponseWriter, request *http.R
 	//找出该文件或者文件夹
 	matter := this.matterDao.CheckByUuid(uuid)
 
-	if user.Role != USER_ROLE_ADMINISTRATOR && matter.UserUuid != user.Uuid {
-		panic(result.Unauthorized("没有权限"))
+	if matter.UserUuid != user.Uuid {
+		panic(result.UNAUTHORIZED)
 	}
 
 	this.matterService.AtomicRename(matter, name, user)
@@ -409,8 +388,8 @@ func (this *MatterController) ChangePrivacy(writer http.ResponseWriter, request 
 
 	//权限验证
 	user := this.checkUser(writer, request)
-	if user.Role != USER_ROLE_ADMINISTRATOR && matter.UserUuid != user.Uuid {
-		panic(result.Unauthorized("没有权限"))
+	if matter.UserUuid != user.Uuid {
+		panic(result.UNAUTHORIZED)
 	}
 
 	matter.Privacy = privacy
@@ -424,7 +403,6 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 
 	srcUuidsStr := request.FormValue("srcUuids")
 	destUuid := request.FormValue("destUuid")
-	userUuid := request.FormValue("userUuid")
 
 	var srcUuids []string
 	//验证参数。
@@ -435,11 +413,6 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 	}
 
 	user := this.checkUser(writer, request)
-	if user.Role != USER_ROLE_ADMINISTRATOR || userUuid == "" {
-		userUuid = user.Uuid
-	}
-
-	user = this.userDao.CheckByUuid(userUuid)
 
 	//验证dest是否有问题
 	var destMatter = this.matterDao.CheckWithRootByUuid(destUuid, user)
@@ -447,8 +420,8 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 		panic(result.BadRequest("目标不是文件夹"))
 	}
 
-	if user.Role != USER_ROLE_ADMINISTRATOR && destMatter.UserUuid != user.Uuid {
-		panic(result.Unauthorized("没有权限"))
+	if destMatter.UserUuid != user.Uuid {
+		panic(result.UNAUTHORIZED)
 	}
 
 	var srcMatters []*Matter
@@ -503,4 +476,35 @@ func (this *MatterController) Mirror(writer http.ResponseWriter, request *http.R
 
 	return this.Success(nil)
 
+}
+
+//下载压缩包
+func (this *MatterController) Zip(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+
+	uuids := request.FormValue("uuids")
+	if uuids == "" {
+		panic(result.BadRequest("文件的uuids必填"))
+	}
+
+	uuidArray := strings.Split(uuids, ",")
+
+	matters := this.matterDao.ListByUuids(uuidArray, nil)
+
+	if matters == nil || len(matters) == 0 {
+		panic(result.BadRequest("matters cannot be nil."))
+	}
+	user := this.checkUser(writer, request)
+	puuid := matters[0].Puuid
+
+	for _, m := range matters {
+		if m.UserUuid != user.Uuid {
+			panic(result.UNAUTHORIZED)
+		} else if m.Puuid != puuid {
+			panic(result.BadRequest("puuid not same"))
+		}
+	}
+
+	this.matterService.DownloadZip(writer, request, matters)
+
+	return nil
 }

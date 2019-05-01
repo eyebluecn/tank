@@ -218,8 +218,23 @@ func (this *MatterDao) ListByUserUuidAndPuuidAndDirAndName(userUuid string, puui
 }
 
 //获取某个文件夹下所有的文件和子文件
-func (this *MatterDao) List(puuid string, userUuid string, sortArray []builder.OrderPair) []*Matter {
+func (this *MatterDao) ListByPuuidAndUserUuid(puuid string, userUuid string, sortArray []builder.OrderPair) []*Matter {
 	var matters []*Matter
+
+	if sortArray == nil {
+
+		//顺序按照文件夹，创建时间
+		sortArray = []builder.OrderPair{
+			{
+				Key:   "dir",
+				Value: DIRECTION_DESC,
+			},
+			{
+				Key:   "create_time",
+				Value: DIRECTION_DESC,
+			},
+		}
+	}
 
 	db := core.CONTEXT.GetDB().Where(Matter{UserUuid: userUuid, Puuid: puuid}).Order(this.GetSortString(sortArray)).Find(&matters)
 	this.PanicError(db.Error)
@@ -228,10 +243,10 @@ func (this *MatterDao) List(puuid string, userUuid string, sortArray []builder.O
 }
 
 //根据uuid查找对应的Matters
-func (this *MatterDao) ListByUuids(puuids []string, sortArray []builder.OrderPair) []*Matter {
+func (this *MatterDao) ListByUuids(uuids []string, sortArray []builder.OrderPair) []*Matter {
 	var matters []*Matter
 
-	db := core.CONTEXT.GetDB().Where(puuids).Order(this.GetSortString(sortArray)).Find(&matters)
+	db := core.CONTEXT.GetDB().Where(uuids).Order(this.GetSortString(sortArray)).Find(&matters)
 	this.PanicError(db.Error)
 
 	return matters
@@ -315,12 +330,68 @@ func (this *MatterDao) TimesIncrement(matterUuid string) {
 	this.PanicError(db.Error)
 }
 
+//获取一个文件夹中直系文件/文件夹的总大小 puuid可以传root
+func (this *MatterDao) SizeByPuuidAndUserUuid(matterUuid string, userUuid string) int64 {
+
+	var wp = &builder.WherePair{Query: "puuid = ? AND user_uuid = ?", Args: []interface{}{matterUuid, userUuid}}
+
+	var count int64
+	db := core.CONTEXT.GetDB().Model(&Matter{}).Where(wp.Query, wp.Args...).Count(&count)
+	if count == 0 {
+		return 0
+	}
+
+	var sumSize int64
+	db = core.CONTEXT.GetDB().Model(&Matter{}).Where(wp.Query, wp.Args...).Select("SUM(size)")
+	this.PanicError(db.Error)
+	row := db.Row()
+	err := row.Scan(&sumSize)
+	core.PanicError(err)
+
+	return sumSize
+}
+
+//统计某个文件/文件夹的大小(会自动往上统计，直到根目录)
+func (this *MatterDao) ComputeRouteSize(matterUuid string, userUuid string) {
+
+	//如果更新到了根目录，那么更新到用户身上。
+	if matterUuid == MATTER_ROOT {
+
+		size := this.SizeByPuuidAndUserUuid(MATTER_ROOT, userUuid)
+
+		//更新用户文件的总大小。
+		db := core.CONTEXT.GetDB().Model(&User{}).Where("uuid = ?", userUuid).Update("total_size", size)
+		this.PanicError(db.Error)
+
+		return
+	}
+
+	matter := this.CheckByUuid(matterUuid)
+
+	//只有文件夹才去统计
+	if matter.Dir {
+		//计算该目录下的直系文件/文件夹总大小
+		size := this.SizeByPuuidAndUserUuid(matterUuid, userUuid)
+
+		//大小有变化才更新
+		if matter.Size != size {
+			//更新大小。
+			db := core.CONTEXT.GetDB().Model(&Matter{}).Where("uuid = ?", matterUuid).Update("size", size)
+			this.PanicError(db.Error)
+		}
+
+	}
+
+	//更新自己的上一级目录。
+	this.ComputeRouteSize(matter.Puuid, userUuid)
+}
+
 //删除一个文件，数据库中删除，物理磁盘上删除。
 func (this *MatterDao) Delete(matter *Matter) {
 
 	//目录的话递归删除。
 	if matter.Dir {
-		matters := this.List(matter.Uuid, matter.UserUuid, nil)
+		matters := this.ListByPuuidAndUserUuid(matter.Uuid, matter.UserUuid, nil)
 
 		for _, f := range matters {
 			this.Delete(f)
@@ -426,9 +497,22 @@ func (this *MatterDao) SumSizeByUserUuidAndPath(userUuid string, path string) in
 	this.PanicError(db.Error)
 	row := db.Row()
 	err := row.Scan(&sumSize)
-	util.PanicError(err)
+	core.PanicError(err)
 
 	return sumSize
+
+}
+
+//一个文件夹中的数量
+func (this *MatterDao) CountByUserUuidAndPath(userUuid string, path string) int64 {
+
+	var wp = &builder.WherePair{Query: "user_uuid = ? AND path like ?", Args: []interface{}{userUuid, path + "%"}}
+
+	var count int64
+	db := core.CONTEXT.GetDB().Model(&Matter{}).Where(wp.Query, wp.Args...).Count(&count)
+	core.PanicError(db.Error)
+
+	return count
 
 }
 

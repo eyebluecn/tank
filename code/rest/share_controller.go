@@ -64,6 +64,7 @@ func (this *ShareController) RegisterRoutes() map[string]func(writer http.Respon
 	routeMap["/api/share/detail"] = this.Wrap(this.Detail, USER_ROLE_USER)
 	routeMap["/api/share/page"] = this.Wrap(this.Page, USER_ROLE_USER)
 	routeMap["/api/share/browse"] = this.Wrap(this.Browse, USER_ROLE_GUEST)
+	routeMap["/api/share/zip"] = this.Wrap(this.Zip, USER_ROLE_GUEST)
 
 	return routeMap
 }
@@ -205,8 +206,8 @@ func (this *ShareController) DeleteBatch(writer http.ResponseWriter, request *ht
 
 		//判断图片缓存的所属人是否正确
 		user := this.checkUser(writer, request)
-		if user.Role != USER_ROLE_ADMINISTRATOR && imageCache.UserUuid != user.Uuid {
-			panic(result.Unauthorized("没有权限"))
+		if imageCache.UserUuid != user.Uuid {
+			panic(result.UNAUTHORIZED)
 		}
 
 		this.shareDao.Delete(imageCache)
@@ -227,10 +228,9 @@ func (this *ShareController) Detail(writer http.ResponseWriter, request *http.Re
 
 	//验证当前之人是否有权限查看这么详细。
 	user := this.checkUser(writer, request)
-	if user.Role != USER_ROLE_ADMINISTRATOR {
-		if share.UserUuid != user.Uuid {
-			panic(result.Unauthorized("没有权限"))
-		}
+
+	if share.UserUuid != user.Uuid {
+		panic(result.UNAUTHORIZED)
 	}
 
 	return this.Success(share)
@@ -243,13 +243,9 @@ func (this *ShareController) Page(writer http.ResponseWriter, request *http.Requ
 	//如果是根目录，那么就传入root.
 	pageStr := request.FormValue("page")
 	pageSizeStr := request.FormValue("pageSize")
-	userUuid := request.FormValue("userUuid")
 	orderCreateTime := request.FormValue("orderCreateTime")
 
 	user := this.checkUser(writer, request)
-	if user.Role != USER_ROLE_ADMINISTRATOR {
-		userUuid = user.Uuid
-	}
 
 	var page int
 	if pageStr != "" {
@@ -271,7 +267,7 @@ func (this *ShareController) Page(writer http.ResponseWriter, request *http.Requ
 		},
 	}
 
-	pager := this.shareDao.Page(page, pageSize, userUuid, sortArray)
+	pager := this.shareDao.Page(page, pageSize, user.Uuid, sortArray)
 
 	return this.Success(pager)
 }
@@ -363,4 +359,40 @@ func (this *ShareController) Browse(writer http.ResponseWriter, request *http.Re
 
 	return this.Success(share)
 
+}
+
+//下载压缩包
+func (this *ShareController) Zip(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+
+	//如果是根目录，那么就传入root.
+	shareUuid := request.FormValue("shareUuid")
+	code := request.FormValue("code")
+
+	//当前查看的puuid。 puuid=root表示查看分享的根目录，其余表示查看某个文件夹下的文件。
+	puuid := request.FormValue("puuid")
+	rootUuid := request.FormValue("rootUuid")
+
+	user := this.findUser(writer, request)
+
+	if puuid == MATTER_ROOT {
+
+		//下载分享全部内容。
+		share := this.shareService.CheckShare(shareUuid, code, user)
+		bridges := this.bridgeDao.ListByShareUuid(share.Uuid)
+		var matterUuids []string
+		for _, bridge := range bridges {
+			matterUuids = append(matterUuids, bridge.MatterUuid)
+		}
+		matters := this.matterDao.ListByUuids(matterUuids, nil)
+		this.matterService.DownloadZip(writer, request, matters)
+
+	} else {
+
+		//下载某个目录。
+		matter := this.matterDao.CheckByUuid(puuid)
+		this.shareService.ValidateMatter(shareUuid, code, user, rootUuid, matter)
+		this.matterService.DownloadZip(writer, request, []*Matter{matter})
+	}
+
+	return nil
 }

@@ -67,7 +67,7 @@ func GetHomePath() string {
 		exPath = GetDevHomePath() + "/tmp"
 	}
 
-	return exPath
+	return UniformPath(exPath)
 }
 
 //获取前端静态资源的位置。如果你在开发模式下，可以将这里直接返回tank/build下面的html路径。
@@ -253,4 +253,11 @@ func CopyFile(srcPath string, destPath string) (nBytes int64) {
 
 	nBytes, err = io.Copy(destFile, srcFile)
 	return nBytes
+}
+
+//路径归一化处理，把\\替换成/
+func UniformPath(path string) string {
+
+	return strings.Replace(path, "\\", "/", -1)
+
 }

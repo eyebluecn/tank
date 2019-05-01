@@ -173,7 +173,7 @@ func (this *DavService) HandlePropfind(writer http.ResponseWriter, request *http
 		matters = []*Matter{matter}
 	} else {
 		// len(matters) == 0 表示该文件夹下面是空文件夹
-		matters = this.matterDao.List(matter.Uuid, user.Uuid, nil)
+		matters = this.matterDao.ListByPuuidAndUserUuid(matter.Uuid, user.Uuid, nil)
 
 		//将当前的matter添加到头部
 		matters = append([]*Matter{matter}, matters...)
@@ -237,7 +237,7 @@ func (this *DavService) HandlePut(writer http.ResponseWriter, request *http.Requ
 		this.matterService.AtomicDelete(srcMatter)
 	}
 
-	this.matterService.AtomicUpload(request.Body, user, dirMatter, filename, true)
+	this.matterService.Upload(request.Body, user, dirMatter, filename, true)
 
 }
 

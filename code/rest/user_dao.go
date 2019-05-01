@@ -11,6 +11,12 @@ type UserDao struct {
 	BaseDao
 }
 
+//初始化方法
+func (this *UserDao) Init() {
+	this.BaseDao.Init()
+
+}
+
 //创建用户
 func (this *UserDao) Create(user *User) *User {
 

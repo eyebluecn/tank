@@ -188,7 +188,7 @@ func (this *TankApplication) HandleMirror() {
 	}
 
 	response, err := http.PostForm(urlString, params)
-	util.PanicError(err)
+	core.PanicError(err)
 
 	bodyBytes, err := ioutil.ReadAll(response.Body)
 
@@ -235,7 +235,7 @@ func (this *TankApplication) HandleCrawl() {
 	}
 
 	response, err := http.PostForm(urlString, params)
-	util.PanicError(err)
+	core.PanicError(err)
 
 	bodyBytes, err := ioutil.ReadAll(response.Body)
 

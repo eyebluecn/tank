@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/result"
-	"github.com/eyebluecn/tank/code/tool/util"
 	"net/http"
 	"time"
 )
@@ -116,11 +115,8 @@ func (this *AlienService) PreviewOrDownload(
 			shareUuid := request.FormValue("shareUuid")
 			shareCode := request.FormValue("shareCode")
 			shareRootUuid := request.FormValue("shareRootUuid")
-			if shareUuid == "" || shareCode == "" || shareRootUuid == "" {
-				panic(result.UNAUTHORIZED)
-			} else {
-				this.shareService.ValidateMatter(shareUuid, shareCode, operator, shareRootUuid, matter)
-			}
+
+			this.shareService.ValidateMatter(shareUuid, shareCode, operator, shareRootUuid, matter)
 
 		}
 	}
@@ -131,7 +127,7 @@ func (this *AlienService) PreviewOrDownload(
 		this.logger.Info("准备下载文件夹 %s", matter.Name)
 
 		//目标地点
-		this.matterService.DownloadDirectory(writer, request, matter)
+		this.matterService.DownloadZip(writer, request, []*Matter{matter})
 
 	} else {
 
@@ -155,7 +151,7 @@ func (this *AlienService) PreviewOrDownload(
 	}
 
 	//文件下载次数加一，为了加快访问速度，异步进行
-	go util.RunWithRecovery(func() {
+	go core.RunWithRecovery(func() {
 		this.matterDao.TimesIncrement(uuid)
 	})
 

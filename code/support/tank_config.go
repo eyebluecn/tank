@@ -145,7 +145,7 @@ func (this *TankConfig) ReadFromConfigFile() {
 		if this.item.MatterPath == "" {
 			this.matterPath = util.GetHomePath() + "/matter"
 		} else {
-			this.matterPath = this.item.MatterPath
+			this.matterPath = util.UniformPath(this.item.MatterPath)
 		}
 		util.MakeDirAll(this.matterPath)
 
@@ -179,6 +179,7 @@ func (this *TankConfig) MysqlUrl() string {
 
 //文件存放路径
 func (this *TankConfig) MatterPath() string {
+
 	return this.matterPath
 }
 
@@ -209,11 +210,11 @@ func (this *TankConfig) FinishInstall(mysqlPort int, mysqlHost string, mysqlSche
 	//写入到配置文件中（不能使用os.O_APPEND 否则会追加）
 	filePath := util.GetConfPath() + "/tank.json"
 	f, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE, 0777)
-	util.PanicError(err)
+	core.PanicError(err)
 	_, err = f.Write(jsonStr)
-	util.PanicError(err)
+	core.PanicError(err)
 	err = f.Close()
-	util.PanicError(err)
+	core.PanicError(err)
 
 	this.ReadFromConfigFile()
 

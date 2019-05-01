@@ -26,7 +26,7 @@ func (this *BaseBean) Cleanup() {
 
 //处理错误的统一方法 可以省去if err!=nil 这段代码
 func (this *BaseBean) PanicError(err error) {
-	util.PanicError(err)
+	core.PanicError(err)
 }
 
 //能找到一个user就找到一个

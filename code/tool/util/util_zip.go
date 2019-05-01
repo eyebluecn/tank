@@ -11,10 +11,10 @@ import (
 )
 
 //将srcPath压缩到destPath。
-func Zip(srcPath string, destPath string) {
+func Zip(srcPath string, destPath string) error {
 
 	//统一处理\\成/
-	srcPath = strings.Replace(srcPath, "\\", "/", -1)
+	srcPath = UniformPath(srcPath)
 
 	if PathExists(destPath) {
 		panic(result.BadRequest("%s 已经存在了", destPath))
@@ -22,10 +22,14 @@ func Zip(srcPath string, destPath string) {
 
 	// 创建准备写入的文件
 	fileWriter, err := os.Create(destPath)
-	PanicError(err)
+	if err != nil {
+		return err
+	}
 	defer func() {
 		err := fileWriter.Close()
-		PanicError(err)
+		if err != nil {
+			panic(err)
+		}
 	}()
 
 	// 通过 fileWriter 来创建 zip.Write
@@ -46,7 +50,7 @@ func Zip(srcPath string, destPath string) {
 		}
 
 		//统一处理\\成/
-		path = strings.Replace(path, "\\", "/", -1)
+		path = UniformPath(path)
 
 		// 通过文件信息，创建 zip 的文件信息
 		fileHeader, err := zip.FileInfoHeader(fileInfo)
@@ -78,7 +82,9 @@ func Zip(srcPath string, destPath string) {
 		fileToBeZip, err := os.Open(path)
 		defer func() {
 			err = fileToBeZip.Close()
-			PanicError(err)
+			if err != nil {
+				panic(err)
+			}
 		}()
 		if err != nil {
 			return
@@ -92,5 +98,5 @@ func Zip(srcPath string, destPath string) {
 
 		return nil
 	})
-	PanicError(err)
+	return err
 }

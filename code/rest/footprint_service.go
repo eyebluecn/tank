@@ -98,12 +98,12 @@ func (this *FootprintService) Bootstrap() {
 	expression := "0 10 0 * * ?"
 	cronJob := cron.New()
 	err := cronJob.AddFunc(expression, this.cleanOldData)
-	util.PanicError(err)
+	core.PanicError(err)
 	cronJob.Start()
 	this.logger.Info("[cron job] 每日00:10 删除8日之前的访问数据")
 
 	//立即执行一次数据清洗任务
-	go util.RunWithRecovery(this.cleanOldData)
+	go core.RunWithRecovery(this.cleanOldData)
 
 }
 

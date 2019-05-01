@@ -29,18 +29,20 @@ const (
 
 type User struct {
 	Base
-	Role      string    `json:"role" gorm:"type:varchar(45)"`
-	Username  string    `json:"username" gorm:"type:varchar(45) not null;unique"`
-	Password  string    `json:"-" gorm:"type:varchar(255)"`
-	Email     string    `json:"email" gorm:"type:varchar(45) not null;unique"`
-	Phone     string    `json:"phone" gorm:"type:varchar(45)"`
-	Gender    string    `json:"gender" gorm:"type:varchar(45)"`
-	City      string    `json:"city" gorm:"type:varchar(45)"`
-	AvatarUrl string    `json:"avatarUrl" gorm:"type:varchar(255)"`
-	LastIp    string    `json:"lastIp" gorm:"type:varchar(128)"`
-	LastTime  time.Time `json:"lastTime" gorm:"type:timestamp not null;default:'2018-01-01 00:00:00'"`
-	SizeLimit int64     `json:"sizeLimit" gorm:"type:bigint(20) not null;default:-1"`
-	Status    string    `json:"status" gorm:"type:varchar(45)"`
+	Role           string    `json:"role" gorm:"type:varchar(45)"`
+	Username       string    `json:"username" gorm:"type:varchar(45) not null;unique"`
+	Password       string    `json:"-" gorm:"type:varchar(255)"`
+	Email          string    `json:"email" gorm:"type:varchar(45) not null;unique"`
+	Phone          string    `json:"phone" gorm:"type:varchar(45)"`
+	Gender         string    `json:"gender" gorm:"type:varchar(45)"`
+	City           string    `json:"city" gorm:"type:varchar(45)"`
+	AvatarUrl      string    `json:"avatarUrl" gorm:"type:varchar(255)"`
+	LastIp         string    `json:"lastIp" gorm:"type:varchar(128)"`
+	LastTime       time.Time `json:"lastTime" gorm:"type:timestamp not null;default:'2018-01-01 00:00:00'"`
+	SizeLimit      int64     `json:"sizeLimit" gorm:"type:bigint(20) not null;default:-1"`
+	TotalSizeLimit int64     `json:"totalSizeLimit" gorm:"type:bigint(20) not null;default:-1"`
+	TotalSize      int64     `json:"totalSize" gorm:"type:bigint(20) not null;default:0"`
+	Status         string    `json:"status" gorm:"type:varchar(45)"`
 }
 
 // set User's table name to be `profiles`
@@ -59,7 +61,7 @@ func GetGender(genderString string) string {
 
 //通过一个字符串获取角色
 func GetRole(roleString string) string {
-	if roleString == USER_ROLE_USER || roleString == USER_ROLE_ADMINISTRATOR {
+	if roleString == USER_ROLE_GUEST || roleString == USER_ROLE_USER || roleString == USER_ROLE_ADMINISTRATOR {
 		return roleString
 	} else {
 		return USER_ROLE_USER

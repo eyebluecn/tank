@@ -2,6 +2,7 @@ package support
 
 import (
 	"fmt"
+	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/util"
 	"github.com/robfig/cron"
 	"log"
@@ -30,7 +31,7 @@ func (this *TankLogger) Init() {
 	expression := "0 0 0 * * ?"
 	cronJob := cron.New()
 	err := cronJob.AddFunc(expression, this.maintain)
-	util.PanicError(err)
+	core.PanicError(err)
 	cronJob.Start()
 	this.Info("[cron job] 每日00:00维护日志")
 

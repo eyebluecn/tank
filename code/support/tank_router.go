@@ -89,7 +89,7 @@ func (this *TankRouter) GlobalPanicHandler(writer http.ResponseWriter, request *
 			}
 		}
 		//全局方便的异常拦截
-		if strings.HasSuffix(file, "util/util_framework.go") {
+		if strings.HasSuffix(file, "core/handler.go") {
 			_, file, line, ok = runtime.Caller(4)
 			if !ok {
 				file = "???"
@@ -133,7 +133,7 @@ func (this *TankRouter) GlobalPanicHandler(writer http.ResponseWriter, request *
 		}
 
 		//错误情况记录。
-		go util.RunWithRecovery(func() {
+		go core.RunWithRecovery(func() {
 			this.footprintService.Trace(writer, request, time.Now().Sub(startTime), false)
 		})
 	}
@@ -181,7 +181,7 @@ func (this *TankRouter) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 			}
 
 			//正常的访问记录会落到这里。
-			go util.RunWithRecovery(func() {
+			go core.RunWithRecovery(func() {
 				this.footprintService.Trace(writer, request, time.Now().Sub(startTime), true)
 			})
 

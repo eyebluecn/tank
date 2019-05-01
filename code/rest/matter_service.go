@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"archive/zip"
 	"fmt"
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/download"
@@ -78,26 +79,54 @@ func (this *MatterService) DownloadFile(
 	download.DownloadFile(writer, request, filePath, filename, withContentDisposition)
 }
 
-//下载文件夹
-func (this *MatterService) DownloadDirectory(
+//下载文件 要求必须是同一个父matter下的。
+func (this *MatterService) DownloadZip(
 	writer http.ResponseWriter,
 	request *http.Request,
-	matter *Matter) {
+	matters []*Matter) {
 
-	if matter == nil {
-		panic(result.BadRequest("matter不能为nil"))
+	if matters == nil || len(matters) == 0 {
+		panic(result.BadRequest("matters cannot be nil."))
+	}
+	userUuid := matters[0].UserUuid
+	puuid := matters[0].Puuid
+
+	for _, m := range matters {
+		if m.UserUuid != userUuid {
+			panic(result.BadRequest("userUuid not same"))
+		} else if m.Puuid != puuid {
+			panic(result.BadRequest("puuid not same"))
+		}
 	}
 
-	if !matter.Dir {
-		panic(result.BadRequest("matter 只能是文件夹"))
+	preference := this.preferenceService.Fetch()
+
+	var count int64 = 0
+	for _, matter := range matters {
+		//验证文件夹中文件数量
+		count = count + this.matterDao.CountByUserUuidAndPath(matter.UserUuid, matter.Path)
+	}
+
+	this.logger.Info("此次下载包含文件数量 %s", count)
+
+	//文件数量判断。
+	if preference.DownloadDirMaxNum >= 0 {
+		if count > preference.DownloadDirMaxNum {
+			panic(result.BadRequest("下载包中文件数量 %d 超出限制了 %d ", count, preference.DownloadDirMaxNum))
+		}
+	}
+
+	var sumSize int64 = 0
+	for _, matter := range matters {
+		//验证文件夹中文件数量
+		sumSize = sumSize + this.matterDao.SumSizeByUserUuidAndPath(matter.UserUuid, matter.Path)
 	}
 
 	//验证文件夹中文件总大小。
-	sumSize := this.matterDao.SumSizeByUserUuidAndPath(matter.UserUuid, matter.Path)
-	this.logger.Info("文件夹 %s 大小为 %s", matter.Name, util.HumanFileSize(sumSize))
+	this.logger.Info("此次下载大小为 %s", util.HumanFileSize(sumSize))
 
 	//判断用户自身上传大小的限制
-	preference := this.preferenceService.Fetch()
+	//大小判断
 	if preference.DownloadDirMaxSize >= 0 {
 		if sumSize > preference.DownloadDirMaxSize {
 			panic(result.BadRequest("文件夹大小%s超出下载限制%s ", util.HumanFileSize(sumSize), util.HumanFileSize(preference.DownloadDirMaxSize)))
@@ -105,14 +134,18 @@ func (this *MatterService) DownloadDirectory(
 	}
 
 	//准备zip放置的目录。
-	destZipDirPath := fmt.Sprintf("%s/%d", GetUserZipRootDir(matter.Username), time.Now().UnixNano()/1e6)
+	destZipDirPath := fmt.Sprintf("%s/%d", GetUserZipRootDir(matters[0].Username), time.Now().UnixNano()/1e6)
 	util.MakeDirAll(destZipDirPath)
 
-	destZipName := fmt.Sprintf("%s.zip", matter.Name)
+	destZipName := fmt.Sprintf("%s.zip", matters[0].Name)
+	if len(matters) > 1 || !matters[0].Dir {
+		destZipName = "archive.zip"
+	}
 
 	destZipPath := fmt.Sprintf("%s/%s", destZipDirPath, destZipName)
 
-	util.Zip(matter.AbsolutePath(), destZipPath)
+	//_ = util.Zip(matter.AbsolutePath(), destZipPath)
+	this.zipMatters(matters, destZipPath)
 
 	//下载
 	download.DownloadFile(writer, request, destZipPath, destZipName, true)
@@ -126,6 +159,118 @@ func (this *MatterService) DownloadDirectory(
 
 }
 
+//打包一系列的matter
+func (this *MatterService) zipMatters(matters []*Matter, destPath string) {
+
+	if util.PathExists(destPath) {
+		panic(result.BadRequest("%s 已经存在了", destPath))
+	}
+
+	//要求必须是同一个父matter下的。
+	if matters == nil || len(matters) == 0 {
+		panic(result.BadRequest("matters cannot be nil."))
+	}
+	userUuid := matters[0].UserUuid
+	puuid := matters[0].Puuid
+	baseDirPath := util.GetDirOfPath(matters[0].AbsolutePath())
+
+	for _, m := range matters {
+		if m.UserUuid != userUuid {
+			panic(result.BadRequest("userUuid not same"))
+		} else if m.Puuid != puuid {
+			panic(result.BadRequest("puuid not same"))
+		}
+	}
+
+	//将每个matter的children装填好
+	for _, m := range matters {
+		this.WrapChildrenDetail(m)
+	}
+
+	// 创建准备写入的文件
+	fileWriter, err := os.Create(destPath)
+	this.PanicError(err)
+
+	defer func() {
+		err := fileWriter.Close()
+		this.PanicError(err)
+	}()
+
+	// 通过 fileWriter 来创建 zip.Write
+	zipWriter := zip.NewWriter(fileWriter)
+	defer func() {
+		// 检测一下是否成功关闭
+		err := zipWriter.Close()
+		this.PanicError(err)
+	}()
+
+	//采用深度优先搜索算法。
+	var walkFunc func(matter *Matter)
+	walkFunc = func(matter *Matter) {
+
+		path := matter.AbsolutePath()
+
+		fileInfo, err := os.Stat(path)
+		this.PanicError(err)
+
+		// 通过文件信息，创建 zip 的文件信息
+		fileHeader, err := zip.FileInfoHeader(fileInfo)
+		this.PanicError(err)
+
+		// 替换文件信息中的文件名
+		fileHeader.Name = strings.TrimPrefix(path, baseDirPath)
+
+		// 目录前要加上/
+		if matter.Dir {
+			fileHeader.Name += "/"
+		}
+
+		// 写入文件信息，并返回一个 Write 结构
+		writer, err := zipWriter.CreateHeader(fileHeader)
+		this.PanicError(err)
+
+		// 检测，如果不是标准文件就只写入头信息，不写入文件数据到 writer
+		// 如目录，也没有数据需要写
+		if fileHeader.Mode().IsRegular() {
+
+			// 打开要压缩的文件
+			fileToBeZip, err := os.Open(path)
+			defer func() {
+				err = fileToBeZip.Close()
+				this.PanicError(err)
+			}()
+			this.PanicError(err)
+
+			// 将打开的文件 Copy 到 writer
+			_, err = io.Copy(writer, fileToBeZip)
+			this.PanicError(err)
+
+		}
+
+		//如果有子文件，继续往下钻
+		for _, m := range matter.Children {
+			walkFunc(m)
+		}
+	}
+
+	for _, m := range matters {
+		walkFunc(m)
+	}
+}
+
+//删除文件
+func (this *MatterService) Delete(matter *Matter) {
+
+	if matter == nil {
+		panic(result.BadRequest("matter不能为nil"))
+	}
+
+	this.matterDao.Delete(matter)
+
+	//重新计算文件大小
+	this.matterDao.ComputeRouteSize(matter.Puuid, matter.UserUuid)
+}
+
 //删除文件
 func (this *MatterService) AtomicDelete(matter *Matter) {
 
@@ -137,7 +282,7 @@ func (this *MatterService) AtomicDelete(matter *Matter) {
 	this.userService.MatterLock(matter.UserUuid)
 	defer this.userService.MatterUnlock(matter.UserUuid)
 
-	this.matterDao.Delete(matter)
+	this.Delete(matter)
 }
 
 //上传文件
@@ -218,6 +363,11 @@ func (this *MatterService) Upload(file io.Reader, user *User, dirMatter *Matter,
 		Path:     fileRelativePath,
 	}
 	matter = this.matterDao.Create(matter)
+
+	//统计文件夹的大小。
+	go core.RunWithRecovery(func() {
+		this.matterDao.ComputeRouteSize(dirMatter.Uuid, user.Uuid)
+	})
 
 	return matter
 }
@@ -330,7 +480,7 @@ func (this *MatterService) handleOverwrite(userUuid string, destinationPath stri
 		//如果目标matter还存在了。
 		if overwrite {
 			//要求覆盖。那么删除。
-			this.matterDao.Delete(destMatter)
+			this.Delete(destMatter)
 		} else {
 			panic(result.BadRequest("%s已经存在，操作失败！", destMatter.Path))
 		}
@@ -349,6 +499,10 @@ func (this *MatterService) move(srcMatter *Matter, destDirMatter *Matter) {
 		panic(result.BadRequest("目标必须为文件夹"))
 	}
 
+	userUuid := srcMatter.UserUuid
+	srcPuuid := srcMatter.Puuid
+	destDirUuid := destDirMatter.Uuid
+
 	if srcMatter.Dir {
 		//如果源是文件夹
 		destAbsolutePath := destDirMatter.AbsolutePath() + "/" + srcMatter.Name
@@ -364,7 +518,7 @@ func (this *MatterService) move(srcMatter *Matter, destDirMatter *Matter) {
 		srcMatter = this.matterDao.Save(srcMatter)
 
 		//调整该文件夹下文件的Path.
-		matters := this.matterDao.List(srcMatter.Uuid, srcMatter.UserUuid, nil)
+		matters := this.matterDao.ListByPuuidAndUserUuid(srcMatter.Uuid, srcMatter.UserUuid, nil)
 		for _, m := range matters {
 			this.adjustPath(m, srcMatter)
 		}
@@ -389,7 +543,10 @@ func (this *MatterService) move(srcMatter *Matter, destDirMatter *Matter) {
 
 	}
 
-	return
+	//调整两个文件夹的大小
+	this.matterDao.ComputeRouteSize(srcPuuid, userUuid)
+	this.matterDao.ComputeRouteSize(destDirUuid, userUuid)
+
 }
 
 //将一个srcMatter放置到另一个destMatter(必须为文件夹)下
@@ -411,7 +568,7 @@ func (this *MatterService) AtomicMove(srcMatter *Matter, destDirMatter *Matter, 
 	}
 
 	//文件夹不能把自己移入到自己中，也不可以移入到自己的子文件夹下。
-	destDirMatter = this.WrapDetail(destDirMatter)
+	destDirMatter = this.WrapParentDetail(destDirMatter)
 	tmpMatter := destDirMatter
 	for tmpMatter != nil {
 		if srcMatter.Uuid == tmpMatter.Uuid {
@@ -448,7 +605,7 @@ func (this *MatterService) AtomicMoveBatch(srcMatters []*Matter, destDirMatter *
 	}
 
 	//文件夹不能把自己移入到自己中，也不可以移入到自己的子文件夹下。
-	destDirMatter = this.WrapDetail(destDirMatter)
+	destDirMatter = this.WrapParentDetail(destDirMatter)
 	for _, srcMatter := range srcMatters {
 
 		tmpMatter := destDirMatter
@@ -489,7 +646,7 @@ func (this *MatterService) copy(srcMatter *Matter, destDirMatter *Matter, name s
 		newMatter = this.matterDao.Create(newMatter)
 
 		//复制子文件或文件夹
-		matters := this.matterDao.List(srcMatter.Uuid, srcMatter.UserUuid, nil)
+		matters := this.matterDao.ListByPuuidAndUserUuid(srcMatter.Uuid, srcMatter.UserUuid, nil)
 		for _, m := range matters {
 			this.copy(m, newMatter, m.Name)
 		}
@@ -593,7 +750,7 @@ func (this *MatterService) AtomicRename(matter *Matter, name string, user *User)
 		matter = this.matterDao.Save(matter)
 
 		//调整该文件夹下文件的Path.
-		matters := this.matterDao.List(matter.Uuid, matter.UserUuid, nil)
+		matters := this.matterDao.ListByPuuidAndUserUuid(matter.Uuid, matter.UserUuid, nil)
 		for _, m := range matters {
 			this.adjustPath(m, matter)
 		}
@@ -691,7 +848,7 @@ func (this *MatterService) mirror(srcPath string, destDirMatter *Matter, overwri
 		if matter != nil {
 			//如果是覆盖，那么删除之前的文件
 			if overwrite {
-				this.matterDao.Delete(matter)
+				this.Delete(matter)
 			} else {
 				//直接完成。
 				return
@@ -757,7 +914,7 @@ func (this *MatterService) CreateDirectories(user *User, dirPath string) *Matter
 }
 
 //包装某个matter的详情。会把父级依次倒着装进去。如果中途出错，直接抛出异常。
-func (this *MatterService) WrapDetail(matter *Matter) *Matter {
+func (this *MatterService) WrapParentDetail(matter *Matter) *Matter {
 
 	if matter == nil {
 		panic(result.BadRequest("matter cannot be nil."))
@@ -776,10 +933,29 @@ func (this *MatterService) WrapDetail(matter *Matter) *Matter {
 	return matter
 }
 
+//包装某个matter的详情。会把子级依次装进去。如果中途出错，直接抛出异常。
+func (this *MatterService) WrapChildrenDetail(matter *Matter) {
+
+	if matter == nil {
+		panic(result.BadRequest("matter cannot be nil."))
+	}
+
+	if matter.Dir {
+
+		children := this.matterDao.ListByPuuidAndUserUuid(matter.Uuid, matter.UserUuid, nil)
+		matter.Children = children
+
+		for _, child := range matter.Children {
+			this.WrapChildrenDetail(child)
+		}
+	}
+
+}
+
 //获取某个文件的详情，会把父级依次倒着装进去。如果中途出错，直接抛出异常。
 func (this *MatterService) Detail(uuid string) *Matter {
 	matter := this.matterDao.CheckByUuid(uuid)
-	return this.WrapDetail(matter)
+	return this.WrapParentDetail(matter)
 }
 
 //去指定的url中爬文件
@@ -819,7 +995,7 @@ func (this *MatterService) adjustPath(matter *Matter, parentMatter *Matter) {
 		matter = this.matterDao.Save(matter)
 
 		//调整该文件夹下文件的Path.
-		matters := this.matterDao.List(matter.Uuid, matter.UserUuid, nil)
+		matters := this.matterDao.ListByPuuidAndUserUuid(matter.Uuid, matter.UserUuid, nil)
 		for _, m := range matters {
 			this.adjustPath(m, matter)
 		}
