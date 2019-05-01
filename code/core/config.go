@@ -15,7 +15,7 @@ const (
 	TABLE_PREFIX = "tank20_"
 
 	//当前版本
-	VERSION = "3.0.0-beta.1"
+	VERSION = "3.0.0.beta1"
 )
 
 type Config interface {
