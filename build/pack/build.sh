@@ -1,57 +1,33 @@
 #!/bin/bash
 
-# if GOPATH not set
-if [ -z "$GOPATH" ] ; then
-  echo "GOPATH not defined"
-  exit 1
-fi
+#prepare the variables.
 
-PRE_DIR=$(pwd)
+# version name
+VERSION_NAME=3.0.0-beta.1
+# eg. amd64
+GOARCH=$(go env GOARCH)
+# eg. darwin
+GOOS=$(go env GOOS)
+# service dir eg. /data/tank/build/service
+SERVICE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+# project dir eg. /data/tank
+PROJECT_DIR=$(dirname $(dirname ${SERVICE_DIR}))
+# final zip file name.
+FILE_NAME=${VERSION_NAME}.${GOOS}-${GOARCH}.tar.gz
+# zip dist dir
+DIST_DIR=${PROJECT_DIR}/tmp/dist
+# final dist path
+DIST_PATH=${DIST_DIR}/${FILE_NAME}
 
-VERSION_NAME=tank-2.0.0
-FINAL_NAME=$VERSION_NAME.linux-amd64.tar.gz
+cd ${PROJECT_DIR}
 
-cd $GOPATH
-
-# echo "go get golang.org/x"
-# go get golang.org/x
-if [ ! -d "$GOPATH/src/golang.org" ] ; then
-  echo "git clone https://github.com/eyebluecn/golang.org.git"
-  git clone https://github.com/eyebluecn/golang.org.git $GOPATH/src/golang.org
-fi
-
-# resize image
-echo "go get github.com/disintegration/imaging"
-go get github.com/disintegration/imaging
-
-# json parser
-echo "go get github.com/json-iterator/go"
-go get github.com/json-iterator/go
-
-# mysql
-echo "go get github.com/go-sql-driver/mysql"
-go get github.com/go-sql-driver/mysql
-
-# dao database
-echo "go get github.com/jinzhu/gorm"
-go get github.com/jinzhu/gorm
-
-# uuid
-echo "go get github.com/nu7hatch/gouuid"
-go get github.com/nu7hatch/gouuid
-
-echo "build tank ..."
-go install tank
-
-echo "packaging..."
-distFolder="$GOPATH/src/tank/dist"
+echo "go build -mod=readonly"
+go build -mod=readonly
 
 # if a directory
-if [ ! -d distFolder ] ; then
-    mkdir $distFolder
+if [[ ! -d DIST_DIR ]] ; then
+    mkdir -p ${DIST_DIR}
 fi
-
-distPath=$distFolder/$VERSION_NAME
 
 # if a directory
 if [ -d $distPath ] ; then
@@ -75,12 +51,10 @@ echo "remove doc"
 rm -rf $distPath/doc
 
 echo "compress to tar.gz"
-echo "tar -zcvf $distFolder/$FINAL_NAME ./$VERSION_NAME"
+echo "tar -zcvf $distFolder/$FILE_NAME ./$VERSION_NAME"
 cd $distPath
 cd ..
-tar -zcvf $distFolder/$FINAL_NAME ./$VERSION_NAME
-
-cd $PRE_DIR
+tar -zcvf $distFolder/$FILE_NAME ./$VERSION_NAME
 
 echo "check the dist file in $distPath"
 echo "finish!"
