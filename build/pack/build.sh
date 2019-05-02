@@ -1,27 +1,46 @@
 #!/bin/bash
 
+###########################################################################
+#
+#  Tank build script for Linux or MacOS
+#
+###########################################################################
+
 #prepare the variables.
 
 # version name
 VERSION_NAME=tank-3.0.0.beta1
+echo "VERSION_NAME: ${VERSION_NAME}"
 # eg. amd64
 GOARCH=$(go env GOARCH)
+echo "GOARCH: ${GOARCH}"
+# eg. /data/golang
+GOPATH=$(go env GOPATH)
+echo "GOPATH: ${GOPATH}"
 # eg. darwin
 GOOS=$(go env GOOS)
+echo "GOOS: ${GOOS}"
 # service dir eg. /data/tank/build/pack
-SERVICE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+PACK_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+echo "PACK_DIR: ${PACK_DIR}"
+# build dir eg. /data/tank/build
+BUILD_DIR=$(dirname ${PACK_DIR})
+echo "BUILD_DIR: ${BUILD_DIR}"
 # project dir eg. /data/tank
-PROJECT_DIR=$(dirname $(dirname ${SERVICE_DIR}))
-# build dir
-BUILD_DIR=${PROJECT_DIR}/build
+PROJECT_DIR=$(dirname ${BUILD_DIR})
+echo "PROJECT_DIR: ${PROJECT_DIR}"
 # final zip file name.
 FILE_NAME=${VERSION_NAME}.${GOOS}-${GOARCH}.tar.gz
+echo "FILE_NAME: ${FILE_NAME}"
 # zip dist dir eg. /data/tank/tmp/dist
 DIST_DIR=${PROJECT_DIR}/tmp/dist
+echo "DIST_DIR: ${DIST_DIR}"
 # component dir eg. /data/tank/tmp/dist/tank-3.0.0.beta1
 COMPONENT_DIR=${DIST_DIR}/${VERSION_NAME}
+echo "COMPONENT_DIR: ${COMPONENT_DIR}"
 # final dist path eg. /data/tank/tmp/dist/tank-3.0.0.beta1.darwin-amd64.tar.gz
 DIST_PATH=${DIST_DIR}/${FILE_NAME}
+echo "DIST_PATH: ${DIST_PATH}"
 
 cd ${PROJECT_DIR}
 

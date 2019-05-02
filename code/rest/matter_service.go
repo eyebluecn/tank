@@ -107,7 +107,7 @@ func (this *MatterService) DownloadZip(
 		count = count + this.matterDao.CountByUserUuidAndPath(matter.UserUuid, matter.Path)
 	}
 
-	this.logger.Info("此次下载包含文件数量 %s", count)
+	this.logger.Info("此次下载包含文件数量 %d", count)
 
 	//文件数量判断。
 	if preference.DownloadDirMaxNum >= 0 {
@@ -172,7 +172,7 @@ func (this *MatterService) zipMatters(matters []*Matter, destPath string) {
 	}
 	userUuid := matters[0].UserUuid
 	puuid := matters[0].Puuid
-	baseDirPath := util.GetDirOfPath(matters[0].AbsolutePath())
+	baseDirPath := util.GetDirOfPath(matters[0].AbsolutePath()) + "/"
 
 	for _, m := range matters {
 		if m.UserUuid != userUuid {

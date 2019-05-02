@@ -1,91 +1,74 @@
-@if "%DEBUG%" == "" echo off
-@rem ##########################################################################
-@rem
-@rem  Tank build script for Windows
-@rem
-@rem ##########################################################################
+@if "%DEBUG%" == "" ECHO off
+@REM ##########################################################################
+@REM
+@REM  Tank build script for Windows
+@REM  manual https://ss64.com/nt/
+@REM
+@REM ##########################################################################
 
 
 
-@REM ==== START VALIDATION ====
-if "%GOPATH%"=="" (
-    echo The GOPATH environment variable is not defined correctly
-    goto end
+@REM prepare the variables.
+
+@REM  version name
+SET VERSION_NAME=tank-3.0.0.beta1
+@REM  assign variable like Linux GOARCH=$(go env GOARCH) eg. amd64
+FOR /f %%i IN ('go env GOARCH') DO SET GOARCH=%%i
+ECHO GOARCH: %GOARCH%
+@REM  eg. D:\Group\Golang
+FOR /f %%i IN ('go env GOPATH') DO SET GOPATH=%%i
+ECHO GOPATH: %GOPATH%
+@REM  eg. windows
+FOR /f %%i IN ('go env GOOS') DO SET GOOS=%%i
+ECHO GOOS: %GOOS%
+@REM  service dir eg. D:\Group\eyeblue\tank\build\pack
+SET PACK_DIR=%CD%
+ECHO PACK_DIR: %PACK_DIR%
+@REM  build dir eg. D:\Group\eyeblue\tank\build
+FOR %%F IN (%CD%) DO SET BUILD_DIR_SLASH=%%~dpF
+SET BUILD_DIR=%BUILD_DIR_SLASH:~0,-1%
+ECHO BUILD_DIR: %BUILD_DIR%
+@REM project dir eg. D:\Group\eyeblue\tank
+FOR %%F IN (%BUILD_DIR%) DO SET PROJECT_DIR_SLASH=%%~dpF
+SET PROJECT_DIR=%PROJECT_DIR_SLASH:~0,-1%
+ECHO PROJECT_DIR: %PROJECT_DIR%
+
+@REM  final zip file name. eg. tank-3.0.0.beta1.windows-amd64.zip
+SET FILE_NAME=%VERSION_NAME%.%GOOS%-%GOARCH%.zip
+ECHO FILE_NAME: %FILE_NAME%
+@REM  zip dist dir eg. D:\Group\eyeblue\tank\tmp\dist
+SET DIST_DIR=%PROJECT_DIR%\tmp\dist
+ECHO DIST_DIR: %DIST_DIR%
+@REM  component dir eg. D:\Group\eyeblue\tank\tmp\dist\tank-3.0.0.beta1
+SET COMPONENT_DIR=%DIST_DIR%\%VERSION_NAME%
+ECHO COMPONENT_DIR: %COMPONENT_DIR%
+@REM  final dist path eg. D:\Group\eyeblue\tank\tmp\dist\tank-3.0.0.beta1.windows-amd64.zip
+SET DIST_PATH=%DIST_DIR%\%FILE_NAME%
+ECHO DIST_PATH: %DIST_PATH%
+
+cd %PROJECT_DIR%
+
+ECHO go build -mod=readonly
+go build -mod=readonly
+
+
+IF EXIST %COMPONENT_DIR% (
+    rmdir /s/q %COMPONENT_DIR%
+    md %COMPONENT_DIR%
+) ELSE (
+    md %COMPONENT_DIR%
 )
 
-set PRE_DIR=%cd%
 
-@rem version name
-set VERSION_NAME=tank-2.0.0
+ECHO copy .\tank.exe %COMPONENT_DIR%
+copy .\tank.exe %COMPONENT_DIR%
 
-cd %GOPATH%
+ECHO %BUILD_DIR%\conf %COMPONENT_DIR%\conf /E/H/I
+xcopy %BUILD_DIR%\conf %COMPONENT_DIR%\conf /E/H/I
 
-@rem echo golang.org . Please download from: https://github.com/eyebluecn/golang.org and put in the directory with same level of github.com
-@rem echo go get golang.org/x
-@rem go get golang.org/x
-echo git clone https://github.com/eyebluecn/golang.org.git %golangOrgFolder%
-set golangOrgFolder=%GOPATH%\src\golang.org
-if not exist %golangOrgFolder% (
-    git clone https://github.com/eyebluecn/golang.org.git %golangOrgFolder%
-)
+ECHO %BUILD_DIR%\html %COMPONENT_DIR%\html /E/H/I
+xcopy %BUILD_DIR%\html %COMPONENT_DIR%\html /E/H/I
 
-@rem resize image
-echo go get github.com/disintegration/imaging
-go get github.com/disintegration/imaging
+ECHO please zip to %DIST_PATH%
 
-@rem json parser
-echo go get github.com/json-iterator/go
-go get github.com/json-iterator/go
-
-
-@rem mysql
-echo go get github.com/go-sql-driver/mysql
-go get github.com/go-sql-driver/mysql
-
-@rem dao database
-echo go get github.com/jinzhu/gorm
-go get github.com/jinzhu/gorm
-
-
-@rem uuid
-echo go get github.com/nu7hatch/gouuid
-go get github.com/nu7hatch/gouuid
-
-echo build tank ...
-go install tank
-
-echo packaging
-
-set distFolder=%GOPATH%\src\tank\dist
-if not exist %distFolder% (
-    md %distFolder%
-)
-
-set distPath=%distFolder%\%VERSION_NAME%
-if exist %distPath% (
-    echo clear %distPath%
-    rmdir /s/q %distPath%
-)
-
-echo create directory %distPath%
-md %distPath%
-
-echo copying tank.exe
-copy %GOPATH%\bin\tank.exe %distPath%
-
-echo copying build
-xcopy %GOPATH%\src\tank\build %distPath% /e/h
-
-echo "remove pack"
-rmdir /s/q %distPath%\pack
-
-echo "remove service"
-rmdir /s/q %distPath%\service
-
-echo "remove doc"
-rmdir /s/q %distPath%\doc
-
-cd %PRE_DIR%
-
-echo check the dist file in %distPath%
-echo finish!
+ECHO finish packaging!
