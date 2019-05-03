@@ -43,7 +43,7 @@ func (this *FootprintService) Detail(uuid string) *Footprint {
 }
 
 //记录访问记录
-func (this *FootprintService) Trace(writer http.ResponseWriter, request *http.Request, duration time.Duration, success bool) {
+func (this *FootprintService) Trace(request *http.Request, duration time.Duration, success bool) {
 
 	params := make(map[string][]string)
 
@@ -56,6 +56,13 @@ func (this *FootprintService) Trace(writer http.ResponseWriter, request *http.Re
 	values1 := request.URL.Query()
 	for key, val := range values1 {
 		params[key] = val
+	}
+
+	//ignore password.
+	for key, _ := range params {
+		if key == core.PASSWORD_KEY || key == "password" || key == "adminPassword" {
+			params[key] = []string{"******"}
+		}
 	}
 
 	//用json的方式输出返回值。
@@ -77,7 +84,7 @@ func (this *FootprintService) Trace(writer http.ResponseWriter, request *http.Re
 
 	//有可能DB尚且没有配置 直接打印出内容，并且退出
 	if core.CONFIG.Installed() {
-		user := this.findUser(writer, request)
+		user := this.findUser(request)
 		userUuid := ""
 		if user != nil {
 			userUuid = user.Uuid
@@ -87,7 +94,7 @@ func (this *FootprintService) Trace(writer http.ResponseWriter, request *http.Re
 	}
 
 	//用json的方式输出返回值。
-	this.logger.Info("Ip:%s Host:%s Uri:%s Params:%s Cost:%d", footprint.Ip, footprint.Host, footprint.Uri, paramsString, int64(duration/time.Millisecond))
+	this.logger.Info("Ip:%s Cost:%d Uri:%s Params:%s", footprint.Ip, int64(duration/time.Millisecond), footprint.Uri, paramsString)
 
 }
 

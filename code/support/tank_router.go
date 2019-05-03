@@ -134,7 +134,7 @@ func (this *TankRouter) GlobalPanicHandler(writer http.ResponseWriter, request *
 
 		//错误情况记录。
 		go core.RunWithRecovery(func() {
-			this.footprintService.Trace(writer, request, time.Now().Sub(startTime), false)
+			this.footprintService.Trace(request, time.Now().Sub(startTime), false)
 		})
 	}
 }
@@ -182,7 +182,7 @@ func (this *TankRouter) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 
 			//正常的访问记录会落到这里。
 			go core.RunWithRecovery(func() {
-				this.footprintService.Trace(writer, request, time.Now().Sub(startTime), true)
+				this.footprintService.Trace(request, time.Now().Sub(startTime), true)
 			})
 
 		} else {

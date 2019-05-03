@@ -139,7 +139,7 @@ func (this *UserController) Edit(writer http.ResponseWriter, request *http.Reque
 	avatarUrl := request.FormValue("avatarUrl")
 	uuid := request.FormValue("uuid")
 
-	currentUser := this.checkUser(writer, request)
+	currentUser := this.checkUser(request)
 	user := this.userDao.CheckByUuid(uuid)
 
 	if currentUser.Role == USER_ROLE_ADMINISTRATOR {
@@ -191,7 +191,7 @@ func (this *UserController) Logout(writer http.ResponseWriter, request *http.Req
 	}
 	sessionId := sessionCookie.Value
 
-	user := this.findUser(writer, request)
+	user := this.findUser(request)
 	if user != nil {
 		session := this.sessionDao.FindByUuid(sessionId)
 		session.ExpireTime = time.Now()
@@ -274,7 +274,7 @@ func (this *UserController) ToggleStatus(writer http.ResponseWriter, request *ht
 
 	uuid := request.FormValue("uuid")
 	currentUser := this.userDao.CheckByUuid(uuid)
-	user := this.checkUser(writer, request)
+	user := this.checkUser(request)
 	if uuid == user.Uuid {
 		panic(result.Unauthorized("你不能操作自己的状态。"))
 	}
@@ -300,7 +300,7 @@ func (this *UserController) ChangePassword(writer http.ResponseWriter, request *
 		panic(result.BadRequest("旧密码和新密码都不能为空"))
 	}
 
-	user := this.checkUser(writer, request)
+	user := this.checkUser(request)
 
 	//如果是demo账号，不提供修改密码的功能。
 	if user.Username == "demo" {
@@ -330,7 +330,7 @@ func (this *UserController) ResetPassword(writer http.ResponseWriter, request *h
 		panic(result.BadRequest("密码不能为空"))
 	}
 
-	currentUser := this.checkUser(writer, request)
+	currentUser := this.checkUser(request)
 
 	if currentUser.Role != USER_ROLE_ADMINISTRATOR {
 		panic(result.Unauthorized("没有权限"))

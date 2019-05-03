@@ -54,7 +54,7 @@ func (this *BaseController) Wrap(f func(writer http.ResponseWriter, request *htt
 
 		//只有游客接口不需要登录
 		if qualifiedRole != USER_ROLE_GUEST {
-			user := this.checkUser(writer, request)
+			user := this.checkUser(request)
 
 			if user.Status == USER_STATUS_DISABLED {
 				//判断用户是否被禁用。

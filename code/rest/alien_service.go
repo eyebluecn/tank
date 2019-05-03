@@ -109,7 +109,7 @@ func (this *AlienService) PreviewOrDownload(
 		} else {
 
 			//判断文件的所属人是否正确
-			operator := this.findUser(writer, request)
+			operator := this.findUser(request)
 
 			//可以使用分享码的形式授权。
 			shareUuid := request.FormValue("shareUuid")

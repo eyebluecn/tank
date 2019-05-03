@@ -30,7 +30,7 @@ func (this *BaseBean) PanicError(err error) {
 }
 
 //能找到一个user就找到一个
-func (this *BaseBean) findUser(writer http.ResponseWriter, request *http.Request) *User {
+func (this *BaseBean) findUser(request *http.Request) *User {
 
 	//验证用户是否已经登录。
 	//登录身份有效期以数据库中记录的为准
@@ -63,10 +63,10 @@ func (this *BaseBean) findUser(writer http.ResponseWriter, request *http.Request
 }
 
 //获取当前登录的用户，找不到就返回登录错误
-func (this *BaseBean) checkUser(writer http.ResponseWriter, request *http.Request) *User {
-	if this.findUser(writer, request) == nil {
-		panic(result.ConstWebResult(result.LOGIN))
+func (this *BaseBean) checkUser(request *http.Request) *User {
+	if this.findUser(request) == nil {
+		panic(result.LOGIN)
 	} else {
-		return this.findUser(writer, request)
+		return this.findUser(request)
 	}
 }

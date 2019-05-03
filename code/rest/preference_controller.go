@@ -114,7 +114,7 @@ func (this *PreferenceController) Edit(writer http.ResponseWriter, request *http
 //清扫系统，所有数据全部丢失。一定要非常慎点，非常慎点！只在系统初始化的时候点击！
 func (this *PreferenceController) SystemCleanup(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
-	user := this.checkUser(writer, request)
+	user := this.checkUser(request)
 	password := request.FormValue("password")
 
 	if !util.MatchBcrypt(password, user.Password) {

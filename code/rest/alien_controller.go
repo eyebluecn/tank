@@ -174,7 +174,7 @@ func (this *AlienController) FetchUploadToken(writer http.ResponseWriter, reques
 	//文件夹路径，以 / 开头。
 	dir := request.FormValue("dir")
 
-	user := this.checkUser(writer, request)
+	user := this.checkUser(request)
 	dirMatter := this.matterService.CreateDirectories(user, dir)
 
 	mm, _ := time.ParseDuration(fmt.Sprintf("%ds", expire))
@@ -203,7 +203,7 @@ func (this *AlienController) Confirm(writer http.ResponseWriter, request *http.R
 		panic("matterUuid必填")
 	}
 
-	user := this.checkUser(writer, request)
+	user := this.checkUser(request)
 
 	matter := this.matterDao.CheckByUuid(matterUuid)
 	if matter.UserUuid != user.Uuid {
@@ -333,7 +333,7 @@ func (this *AlienController) CrawlDirect(writer http.ResponseWriter, request *ht
 		}
 	}
 
-	user := this.checkUser(writer, request)
+	user := this.checkUser(request)
 	dirMatter := this.matterService.CreateDirectories(user, dir)
 
 	matter := this.matterService.AtomicCrawl(url, filename, user, dirMatter, privacy)
@@ -349,7 +349,7 @@ func (this *AlienController) FetchDownloadToken(writer http.ResponseWriter, requ
 		panic("matterUuid必填")
 	}
 
-	user := this.checkUser(writer, request)
+	user := this.checkUser(request)
 
 	matter := this.matterDao.CheckByUuid(matterUuid)
 	if matter.UserUuid != user.Uuid {

@@ -102,7 +102,7 @@ func (this *MatterController) Detail(writer http.ResponseWriter, request *http.R
 	matter := this.matterService.Detail(uuid)
 
 	//验证当前之人是否有权限查看这么详细。
-	user := this.checkUser(writer, request)
+	user := this.checkUser(request)
 	if matter.UserUuid != user.Uuid {
 		panic(result.UNAUTHORIZED)
 	}
@@ -147,14 +147,14 @@ func (this *MatterController) Page(writer http.ResponseWriter, request *http.Req
 			panic(result.BadRequest("puuid 对应的不是文件夹"))
 		}
 
-		user := this.findUser(writer, request)
+		user := this.findUser(request)
 		//根据某个shareUuid和code，某个用户是否有权限获取 shareRootUuid 下面的 matterUuid
 		this.shareService.ValidateMatter(shareUuid, shareCode, user, shareRootUuid, dirMatter)
 		userUuid = dirMatter.Uuid
 
 	} else {
 		//非分享模式要求必须登录
-		user := this.checkUser(writer, request)
+		user := this.checkUser(request)
 		userUuid = user.Uuid
 
 	}
@@ -221,7 +221,7 @@ func (this *MatterController) CreateDirectory(writer http.ResponseWriter, reques
 	name := request.FormValue("name")
 
 	//管理员可以指定给某个用户创建文件夹。
-	user := this.checkUser(writer, request)
+	user := this.checkUser(request)
 
 	//找到父级matter
 	var dirMatter *Matter
@@ -247,7 +247,7 @@ func (this *MatterController) Upload(writer http.ResponseWriter, request *http.R
 		this.PanicError(err)
 	}()
 
-	user := this.checkUser(writer, request)
+	user := this.checkUser(request)
 
 	privacy := privacyStr == TRUE
 
@@ -280,7 +280,7 @@ func (this *MatterController) Crawl(writer http.ResponseWriter, request *http.Re
 	destPath := request.FormValue("destPath")
 	filename := request.FormValue("filename")
 
-	user := this.checkUser(writer, request)
+	user := this.checkUser(request)
 
 	dirMatter := this.matterService.CreateDirectories(user, destPath)
 
@@ -308,7 +308,7 @@ func (this *MatterController) Delete(writer http.ResponseWriter, request *http.R
 	matter := this.matterDao.CheckByUuid(uuid)
 
 	//判断文件的所属人是否正确
-	user := this.checkUser(writer, request)
+	user := this.checkUser(request)
 	if matter.UserUuid != user.Uuid {
 		panic(result.UNAUTHORIZED)
 	}
@@ -339,7 +339,7 @@ func (this *MatterController) DeleteBatch(writer http.ResponseWriter, request *h
 		}
 
 		//判断文件的所属人是否正确
-		user := this.checkUser(writer, request)
+		user := this.checkUser(request)
 		if matter.UserUuid != user.Uuid {
 			panic(result.UNAUTHORIZED)
 		}
@@ -357,7 +357,7 @@ func (this *MatterController) Rename(writer http.ResponseWriter, request *http.R
 	uuid := request.FormValue("uuid")
 	name := request.FormValue("name")
 
-	user := this.checkUser(writer, request)
+	user := this.checkUser(request)
 
 	//找出该文件或者文件夹
 	matter := this.matterDao.CheckByUuid(uuid)
@@ -387,7 +387,7 @@ func (this *MatterController) ChangePrivacy(writer http.ResponseWriter, request 
 	}
 
 	//权限验证
-	user := this.checkUser(writer, request)
+	user := this.checkUser(request)
 	if matter.UserUuid != user.Uuid {
 		panic(result.UNAUTHORIZED)
 	}
@@ -412,7 +412,7 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 		srcUuids = strings.Split(srcUuidsStr, ",")
 	}
 
-	user := this.checkUser(writer, request)
+	user := this.checkUser(request)
 
 	//验证dest是否有问题
 	var destMatter = this.matterDao.CheckWithRootByUuid(destUuid, user)
@@ -470,7 +470,7 @@ func (this *MatterController) Mirror(writer http.ResponseWriter, request *http.R
 		overwrite = true
 	}
 
-	user := this.userDao.checkUser(writer, request)
+	user := this.userDao.checkUser(request)
 
 	this.matterService.AtomicMirror(srcPath, destPath, overwrite, user)
 
@@ -493,7 +493,7 @@ func (this *MatterController) Zip(writer http.ResponseWriter, request *http.Requ
 	if matters == nil || len(matters) == 0 {
 		panic(result.BadRequest("matters cannot be nil."))
 	}
-	user := this.checkUser(writer, request)
+	user := this.checkUser(request)
 	puuid := matters[0].Puuid
 
 	for _, m := range matters {

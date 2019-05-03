@@ -57,7 +57,7 @@ func (this *ImageCacheController) Detail(writer http.ResponseWriter, request *ht
 	imageCache := this.imageCacheService.Detail(uuid)
 
 	//验证当前之人是否有权限查看这么详细。
-	user := this.checkUser(writer, request)
+	user := this.checkUser(request)
 	if imageCache.UserUuid != user.Uuid {
 		panic(result.UNAUTHORIZED)
 	}
@@ -79,7 +79,7 @@ func (this *ImageCacheController) Page(writer http.ResponseWriter, request *http
 	matterUuid := request.FormValue("matterUuid")
 	orderSize := request.FormValue("orderSize")
 
-	user := this.checkUser(writer, request)
+	user := this.checkUser(request)
 	userUuid = user.Uuid
 
 	var page int
@@ -131,7 +131,7 @@ func (this *ImageCacheController) Delete(writer http.ResponseWriter, request *ht
 	imageCache := this.imageCacheDao.FindByUuid(uuid)
 
 	//判断图片缓存的所属人是否正确
-	user := this.checkUser(writer, request)
+	user := this.checkUser(request)
 	if imageCache.UserUuid != user.Uuid {
 
 		panic(result.Unauthorized("没有权限"))
@@ -157,7 +157,7 @@ func (this *ImageCacheController) DeleteBatch(writer http.ResponseWriter, reques
 		imageCache := this.imageCacheDao.FindByUuid(uuid)
 
 		//判断图片缓存的所属人是否正确
-		user := this.checkUser(writer, request)
+		user := this.checkUser(request)
 		if imageCache.UserUuid != user.Uuid {
 			panic(result.Unauthorized("没有权限"))
 		}

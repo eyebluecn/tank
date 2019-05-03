@@ -109,7 +109,7 @@ func (this *ShareController) Create(writer http.ResponseWriter, request *http.Re
 
 	var name string
 	shareType := SHARE_TYPE_MIX
-	user := this.checkUser(writer, request)
+	user := this.checkUser(request)
 	var puuid string
 	var matters []*Matter
 	for key, uuid := range uuidArray {
@@ -205,7 +205,7 @@ func (this *ShareController) DeleteBatch(writer http.ResponseWriter, request *ht
 		imageCache := this.shareDao.FindByUuid(uuid)
 
 		//判断图片缓存的所属人是否正确
-		user := this.checkUser(writer, request)
+		user := this.checkUser(request)
 		if imageCache.UserUuid != user.Uuid {
 			panic(result.UNAUTHORIZED)
 		}
@@ -227,7 +227,7 @@ func (this *ShareController) Detail(writer http.ResponseWriter, request *http.Re
 	share := this.shareDao.CheckByUuid(uuid)
 
 	//验证当前之人是否有权限查看这么详细。
-	user := this.checkUser(writer, request)
+	user := this.checkUser(request)
 
 	if share.UserUuid != user.Uuid {
 		panic(result.UNAUTHORIZED)
@@ -245,7 +245,7 @@ func (this *ShareController) Page(writer http.ResponseWriter, request *http.Requ
 	pageSizeStr := request.FormValue("pageSize")
 	orderCreateTime := request.FormValue("orderCreateTime")
 
-	user := this.checkUser(writer, request)
+	user := this.checkUser(request)
 
 	var page int
 	if pageStr != "" {
@@ -278,7 +278,7 @@ func (this *ShareController) CheckShare(writer http.ResponseWriter, request *htt
 	//如果是根目录，那么就传入root.
 	shareUuid := request.FormValue("shareUuid")
 	code := request.FormValue("code")
-	user := this.findUser(writer, request)
+	user := this.findUser(request)
 
 	return this.shareService.CheckShare(shareUuid, code, user)
 }
@@ -294,7 +294,7 @@ func (this *ShareController) Browse(writer http.ResponseWriter, request *http.Re
 	puuid := request.FormValue("puuid")
 	rootUuid := request.FormValue("rootUuid")
 
-	user := this.findUser(writer, request)
+	user := this.findUser(request)
 	share := this.shareService.CheckShare(shareUuid, code, user)
 	bridges := this.bridgeDao.ListByShareUuid(share.Uuid)
 
@@ -372,7 +372,7 @@ func (this *ShareController) Zip(writer http.ResponseWriter, request *http.Reque
 	puuid := request.FormValue("puuid")
 	rootUuid := request.FormValue("rootUuid")
 
-	user := this.findUser(writer, request)
+	user := this.findUser(request)
 
 	if puuid == MATTER_ROOT {
 
