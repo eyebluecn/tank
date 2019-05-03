@@ -23,6 +23,8 @@ const (
 	MODE_MIRROR = "mirror"
 	//将远程的一个文件爬取到蓝眼云盘中
 	MODE_CRAWL = "crawl"
+	//TODO:查看当前蓝眼云盘版本
+	MODE_VERSION = "version"
 )
 
 //命令行输入相关的对象

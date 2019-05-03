@@ -73,6 +73,7 @@ func (this *UserService) MatterUnlock(userUuid string) {
 
 //装载session信息，如果session没有了根据cookie去装填用户信息。
 //在所有的路由最初会调用这个方法
+//1. 支持cookie形式 2.支持入参传入username和password 3.支持Basic Auth
 func (this *UserService) PreHandle(writer http.ResponseWriter, request *http.Request) {
 
 	//登录身份有效期以数据库中记录的为准
@@ -117,6 +118,10 @@ func (this *UserService) PreHandle(writer http.ResponseWriter, request *http.Req
 	if cacheItem == nil || cacheItem.Data() == nil {
 		username := request.FormValue(core.USERNAME_KEY)
 		password := request.FormValue(core.PASSWORD_KEY)
+
+		if username == "" || password == "" {
+			username, password, _ = request.BasicAuth()
+		}
 
 		if username != "" && password != "" {
 

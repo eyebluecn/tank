@@ -79,17 +79,15 @@ func (this *DavController) CheckCurrentUser(writer http.ResponseWriter, request 
 	if !ok {
 		//要求前端使用Basic的形式授权
 		writer.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
-
 		panic(result.ConstWebResult(result.LOGIN))
-
 	}
 
 	user := this.userDao.FindByUsername(username)
 	if user == nil {
-		panic(result.BadRequest("邮箱或密码错误"))
+		panic(result.BadRequest("用户名或密码错误"))
 	} else {
 		if !util.MatchBcrypt(password, user.Password) {
-			panic(result.BadRequest("邮箱或密码错误"))
+			panic(result.BadRequest("用户名或密码错误"))
 		}
 	}
 

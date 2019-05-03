@@ -113,37 +113,6 @@ func (this *AlienController) HandleRoutes(writer http.ResponseWriter, request *h
 	return nil, false
 }
 
-//直接从cookie中获取用户信息，或者使用邮箱和密码获取用户
-func (this *AlienController) CheckRequestUser(writer http.ResponseWriter, request *http.Request) *User {
-
-	//根据用户登录信息取
-	user := this.findUser(writer, request)
-	if user != nil {
-		return user
-	}
-
-	email := request.FormValue("email")
-	if email == "" {
-		panic("邮箱必填啦")
-	}
-
-	password := request.FormValue("password")
-	if password == "" {
-		panic("密码必填")
-	}
-
-	//验证用户身份合法性。
-	user = this.userDao.FindByEmail(email)
-	if user == nil {
-		panic(`邮箱或密码错误`)
-	} else {
-		if !util.MatchBcrypt(password, user.Password) {
-			panic(`邮箱或密码错误`)
-		}
-	}
-	return user
-}
-
 //系统中的用户x要获取一个UploadToken，用于提供给x信任的用户上传文件。
 func (this *AlienController) FetchUploadToken(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
@@ -205,7 +174,7 @@ func (this *AlienController) FetchUploadToken(writer http.ResponseWriter, reques
 	//文件夹路径，以 / 开头。
 	dir := request.FormValue("dir")
 
-	user := this.CheckRequestUser(writer, request)
+	user := this.checkUser(writer, request)
 	dirMatter := this.matterService.CreateDirectories(user, dir)
 
 	mm, _ := time.ParseDuration(fmt.Sprintf("%ds", expire))
@@ -234,7 +203,7 @@ func (this *AlienController) Confirm(writer http.ResponseWriter, request *http.R
 		panic("matterUuid必填")
 	}
 
-	user := this.CheckRequestUser(writer, request)
+	user := this.checkUser(writer, request)
 
 	matter := this.matterDao.CheckByUuid(matterUuid)
 	if matter.UserUuid != user.Uuid {
@@ -364,7 +333,7 @@ func (this *AlienController) CrawlDirect(writer http.ResponseWriter, request *ht
 		}
 	}
 
-	user := this.CheckRequestUser(writer, request)
+	user := this.checkUser(writer, request)
 	dirMatter := this.matterService.CreateDirectories(user, dir)
 
 	matter := this.matterService.AtomicCrawl(url, filename, user, dirMatter, privacy)
@@ -380,7 +349,7 @@ func (this *AlienController) FetchDownloadToken(writer http.ResponseWriter, requ
 		panic("matterUuid必填")
 	}
 
-	user := this.CheckRequestUser(writer, request)
+	user := this.checkUser(writer, request)
 
 	matter := this.matterDao.CheckByUuid(matterUuid)
 	if matter.UserUuid != user.Uuid {

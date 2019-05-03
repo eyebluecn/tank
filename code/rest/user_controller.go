@@ -13,11 +13,17 @@ import (
 
 type UserController struct {
 	BaseController
+	preferenceService *PreferenceService
 }
 
 //初始化方法
 func (this *UserController) Init() {
 	this.BaseController.Init()
+
+	b := core.CONTEXT.GetBean(this.preferenceService)
+	if b, ok := b.(*PreferenceService); ok {
+		this.preferenceService = b
+	}
 }
 
 //注册自己的路由。
@@ -26,23 +32,22 @@ func (this *UserController) RegisterRoutes() map[string]func(writer http.Respons
 	routeMap := make(map[string]func(writer http.ResponseWriter, request *http.Request))
 
 	//每个Controller需要主动注册自己的路由。
-	routeMap["/api/user/create"] = this.Wrap(this.Create, USER_ROLE_ADMINISTRATOR)
+	routeMap["/api/user/login"] = this.Wrap(this.Login, USER_ROLE_GUEST)
+	routeMap["/api/user/register"] = this.Wrap(this.Register, USER_ROLE_GUEST)
 	routeMap["/api/user/edit"] = this.Wrap(this.Edit, USER_ROLE_USER)
+	routeMap["/api/user/detail"] = this.Wrap(this.Detail, USER_ROLE_USER)
+	routeMap["/api/user/logout"] = this.Wrap(this.Logout, USER_ROLE_GUEST)
 	routeMap["/api/user/change/password"] = this.Wrap(this.ChangePassword, USER_ROLE_USER)
 	routeMap["/api/user/reset/password"] = this.Wrap(this.ResetPassword, USER_ROLE_ADMINISTRATOR)
-	routeMap["/api/user/login"] = this.Wrap(this.Login, USER_ROLE_GUEST)
-	routeMap["/api/user/logout"] = this.Wrap(this.Logout, USER_ROLE_GUEST)
-	routeMap["/api/user/detail"] = this.Wrap(this.Detail, USER_ROLE_USER)
 	routeMap["/api/user/page"] = this.Wrap(this.Page, USER_ROLE_ADMINISTRATOR)
-	routeMap["/api/user/disable"] = this.Wrap(this.Disable, USER_ROLE_ADMINISTRATOR)
-	routeMap["/api/user/enable"] = this.Wrap(this.Enable, USER_ROLE_ADMINISTRATOR)
+	routeMap["/api/user/toggle/status"] = this.Wrap(this.ToggleStatus, USER_ROLE_ADMINISTRATOR)
 
 	return routeMap
 }
 
 //使用用户名和密码进行登录。
 //参数：
-// @username:用户名（也可以输入邮箱）
+// @username:用户名
 // @password:密码
 func (this *UserController) Login(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
@@ -56,11 +61,7 @@ func (this *UserController) Login(writer http.ResponseWriter, request *http.Requ
 
 	user := this.userDao.FindByUsername(username)
 	if user == nil {
-		user = this.userDao.FindByEmail(username)
-		if user == nil {
-			panic(result.BadRequest("用户名或密码错误"))
-		}
-
+		panic(result.BadRequest("用户名或密码错误"))
 	}
 
 	if !util.MatchBcrypt(password, user.Password) {
@@ -98,61 +99,32 @@ func (this *UserController) Login(writer http.ResponseWriter, request *http.Requ
 	return this.Success(user)
 }
 
-//创建一个用户
-func (this *UserController) Create(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+//用户自主注册。
+func (this *UserController) Register(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	username := request.FormValue("username")
+	password := request.FormValue("password")
+
 	if m, _ := regexp.MatchString(`^[0-9a-zA-Z_]+$`, username); !m {
 		panic(`用户名必填，且只能包含字母，数字和'_''`)
 	}
-	password := request.FormValue("password")
+
 	if len(password) < 6 {
 		panic(`密码长度至少为6位`)
 	}
 
-	email := request.FormValue("email")
-	if email == "" {
-		panic("邮箱必填！")
-	}
-
-	avatarUrl := request.FormValue("avatarUrl")
-	phone := request.FormValue("phone")
-	gender := request.FormValue("gender")
-	role := request.FormValue("role")
-	city := request.FormValue("city")
-
-	//判断用户上传大小限制。
-	sizeLimitStr := request.FormValue("sizeLimit")
-	var sizeLimit int64 = 0
-	if sizeLimitStr == "" {
-		panic("用户上传限制必填！")
-	} else {
-		intsizeLimit, err := strconv.Atoi(sizeLimitStr)
-		if err != nil {
-			this.PanicError(err)
-		}
-		sizeLimit = int64(intsizeLimit)
-	}
-
 	//判断重名。
 	if this.userDao.CountByUsername(username) > 0 {
-		panic(username + "已经被其他用户占用。")
-	}
-	//判断邮箱重名
-	if this.userDao.CountByEmail(email) > 0 {
-		panic(email + "已经被其他用户占用。")
+		panic(result.BadRequest("%s已经被其他用户占用。", username))
 	}
 
+	preference := this.preferenceService.Fetch()
+
 	user := &User{
-		Role:      GetRole(role),
+		Role:      USER_ROLE_USER,
 		Username:  username,
 		Password:  util.GetBcrypt(password),
-		Email:     email,
-		Phone:     phone,
-		Gender:    gender,
-		City:      city,
-		AvatarUrl: avatarUrl,
-		SizeLimit: sizeLimit,
+		SizeLimit: preference.DefaultTotalSizeLimit,
 		Status:    USER_STATUS_OK,
 	}
 
@@ -166,9 +138,6 @@ func (this *UserController) Edit(writer http.ResponseWriter, request *http.Reque
 
 	avatarUrl := request.FormValue("avatarUrl")
 	uuid := request.FormValue("uuid")
-	phone := request.FormValue("phone")
-	gender := request.FormValue("gender")
-	city := request.FormValue("city")
 
 	currentUser := this.checkUser(writer, request)
 	user := this.userDao.CheckByUuid(uuid)
@@ -195,9 +164,6 @@ func (this *UserController) Edit(writer http.ResponseWriter, request *http.Reque
 	}
 
 	user.AvatarUrl = avatarUrl
-	user.Phone = phone
-	user.Gender = GetGender(gender)
-	user.City = city
 
 	user = this.userDao.Save(user)
 
@@ -303,50 +269,25 @@ func (this *UserController) Page(writer http.ResponseWriter, request *http.Reque
 	return this.Success(pager)
 }
 
-//禁用用户
-func (this *UserController) Disable(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+//修改用户状态
+func (this *UserController) ToggleStatus(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	uuid := request.FormValue("uuid")
-
-	user := this.userDao.CheckByUuid(uuid)
-
-	loginUser := this.checkUser(writer, request)
-	if uuid == loginUser.Uuid {
-		panic(result.BadRequest("你不能操作自己的状态。"))
+	currentUser := this.userDao.CheckByUuid(uuid)
+	user := this.checkUser(writer, request)
+	if uuid == user.Uuid {
+		panic(result.Unauthorized("你不能操作自己的状态。"))
 	}
 
-	if user.Status == USER_STATUS_DISABLED {
-		panic(result.BadRequest("用户已经被禁用，操作无效。"))
+	if currentUser.Status == USER_STATUS_OK {
+		currentUser.Status = USER_STATUS_DISABLED
+	} else if currentUser.Status == USER_STATUS_DISABLED {
+		currentUser.Status = USER_STATUS_OK
 	}
 
-	user.Status = USER_STATUS_DISABLED
+	currentUser = this.userDao.Save(currentUser)
 
-	user = this.userDao.Save(user)
-
-	return this.Success(user)
-
-}
-
-//启用用户
-func (this *UserController) Enable(writer http.ResponseWriter, request *http.Request) *result.WebResult {
-
-	uuid := request.FormValue("uuid")
-
-	user := this.userDao.CheckByUuid(uuid)
-	loginUser := this.checkUser(writer, request)
-	if uuid == loginUser.Uuid {
-		panic(result.BadRequest("你不能操作自己的状态。"))
-	}
-
-	if user.Status == USER_STATUS_OK {
-		panic(result.BadRequest("用户已经是正常状态，操作无效。"))
-	}
-
-	user.Status = USER_STATUS_OK
-
-	user = this.userDao.Save(user)
-
-	return this.Success(user)
+	return this.Success(currentUser)
 
 }
 

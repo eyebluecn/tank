@@ -310,7 +310,6 @@ func (this *InstallController) CreateAdmin(writer http.ResponseWriter, request *
 	defer this.closeDbConnection(db)
 
 	adminUsername := request.FormValue("adminUsername")
-	adminEmail := request.FormValue("adminEmail")
 	adminPassword := request.FormValue("adminPassword")
 
 	//验证超级管理员的信息
@@ -322,23 +321,12 @@ func (this *InstallController) CreateAdmin(writer http.ResponseWriter, request *
 		panic(result.BadRequest(`超级管理员密码长度至少为6位`))
 	}
 
-	if adminEmail == "" {
-		panic(result.BadRequest(`超级管理员邮箱必填`))
-	}
-
 	//检查是否有重复。
-	var count1 int64
-	db1 := db.Model(&User{}).Where("email = ?", adminEmail).Count(&count1)
-	this.PanicError(db1.Error)
-	if count1 > 0 {
-		panic(result.BadRequest(`该邮箱已存在`))
-	}
-
 	var count2 int64
 	db2 := db.Model(&User{}).Where("username = ?", adminUsername).Count(&count2)
 	this.PanicError(db2.Error)
 	if count2 > 0 {
-		panic(result.BadRequest(`该用户名已存在`))
+		panic(result.BadRequest(`%s该用户名已存在`, adminUsername))
 	}
 
 	user := &User{}
@@ -351,9 +339,6 @@ func (this *InstallController) CreateAdmin(writer http.ResponseWriter, request *
 	user.Role = USER_ROLE_ADMINISTRATOR
 	user.Username = adminUsername
 	user.Password = util.GetBcrypt(adminPassword)
-	user.Email = adminEmail
-	user.Phone = ""
-	user.Gender = USER_GENDER_UNKNOWN
 	user.SizeLimit = -1
 	user.Status = USER_STATUS_OK
 
@@ -370,28 +355,28 @@ func (this *InstallController) ValidateAdmin(writer http.ResponseWriter, request
 	db := this.openDbConnection(writer, request)
 	defer this.closeDbConnection(db)
 
-	adminEmail := request.FormValue("adminEmail")
+	adminUsername := request.FormValue("adminUsername")
 	adminPassword := request.FormValue("adminPassword")
 
 	//验证超级管理员的信息
-	if adminEmail == "" {
-		panic(result.BadRequest(`超级管理员邮箱必填`))
+	if adminUsername == "" {
+		panic(result.BadRequest(`超级管理员用户名必填`))
 	}
 	if len(adminPassword) < 6 {
 		panic(result.BadRequest(`超级管理员密码长度至少为6位`))
 	}
 
-	var existEmailUser = &User{}
-	db = db.Where(&User{Email: adminEmail}).First(existEmailUser)
+	var existUsernameUser = &User{}
+	db = db.Where(&User{Username: adminUsername}).First(existUsernameUser)
 	if db.Error != nil {
-		panic(result.BadRequest(fmt.Sprintf("%s对应的用户不存在", adminEmail)))
+		panic(result.BadRequest(fmt.Sprintf("%s对应的用户不存在", adminUsername)))
 	}
 
-	if !util.MatchBcrypt(adminPassword, existEmailUser.Password) {
-		panic(result.BadRequest("邮箱或密码错误"))
+	if !util.MatchBcrypt(adminPassword, existUsernameUser.Password) {
+		panic(result.BadRequest("用户名或密码错误"))
 	}
 
-	if existEmailUser.Role != USER_ROLE_ADMINISTRATOR {
+	if existUsernameUser.Role != USER_ROLE_ADMINISTRATOR {
 		panic(result.BadRequest("该账号不是管理员"))
 	}
 

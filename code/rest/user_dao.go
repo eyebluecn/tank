@@ -3,6 +3,7 @@ package rest
 import (
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/builder"
+	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/nu7hatch/gouuid"
 	"time"
 )
@@ -14,7 +15,6 @@ type UserDao struct {
 //初始化方法
 func (this *UserDao) Init() {
 	this.BaseDao.Init()
-
 }
 
 //创建用户
@@ -63,24 +63,17 @@ func (this *UserDao) CheckByUuid(uuid string) *User {
 	return user
 }
 
-//按照邮箱查询用户。
+//查询用户。
 func (this *UserDao) FindByUsername(username string) *User {
 
 	var user = &User{}
 	db := core.CONTEXT.GetDB().Where(&User{Username: username}).First(user)
 	if db.Error != nil {
-		return nil
-	}
-	return user
-}
-
-//按照邮箱查询用户。
-func (this *UserDao) FindByEmail(email string) *User {
-
-	var user *User = &User{}
-	db := core.CONTEXT.GetDB().Where(&User{Email: email}).First(user)
-	if db.Error != nil {
-		return nil
+		if db.Error.Error() == result.DB_ERROR_NOT_FOUND {
+			return nil
+		} else {
+			panic(db.Error)
+		}
 	}
 	return user
 }
@@ -131,17 +124,6 @@ func (this *UserDao) CountByUsername(username string) int {
 	db := core.CONTEXT.GetDB().
 		Model(&User{}).
 		Where("username = ?", username).
-		Count(&count)
-	this.PanicError(db.Error)
-	return count
-}
-
-//查询某个邮箱是否已经有用户了
-func (this *UserDao) CountByEmail(email string) int {
-	var count int
-	db := core.CONTEXT.GetDB().
-		Model(&User{}).
-		Where("email = ?", email).
 		Count(&count)
 	this.PanicError(db.Error)
 	return count

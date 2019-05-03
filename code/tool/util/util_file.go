@@ -74,18 +74,11 @@ func GetHomePath() string {
 //例如：C:/Users/lishuang/AppData/Local/Temp/html
 func GetHtmlPath() string {
 
-	homePath := GetHomePath()
-	filePath := homePath + "/html"
-	exists := PathExists(filePath)
-
-	if !exists {
-		err := os.MkdirAll(filePath, 0777)
-		if err != nil {
-			panic("创建上传文件夹时出错！")
-		}
+	//开发环境直接使用 build/html 下面的文件
+	if EnvWinDevelopment() || EnvMacDevelopment() {
+		return GetDevHomePath() + "/build/html"
 	}
-
-	return filePath
+	return GetHomePath() + "/html"
 }
 
 //如果文件夹存在就不管，不存在就创建。 例如：/var/www/matter
