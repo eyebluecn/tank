@@ -33,6 +33,7 @@ func (this *UserController) RegisterRoutes() map[string]func(writer http.Respons
 
 	//每个Controller需要主动注册自己的路由。
 	routeMap["/api/user/login"] = this.Wrap(this.Login, USER_ROLE_GUEST)
+	routeMap["/api/user/authentication/login"] = this.Wrap(this.AuthenticationLogin, USER_ROLE_GUEST)
 	routeMap["/api/user/register"] = this.Wrap(this.Register, USER_ROLE_GUEST)
 	routeMap["/api/user/edit"] = this.Wrap(this.Edit, USER_ROLE_USER)
 	routeMap["/api/user/detail"] = this.Wrap(this.Detail, USER_ROLE_USER)
@@ -41,33 +42,12 @@ func (this *UserController) RegisterRoutes() map[string]func(writer http.Respons
 	routeMap["/api/user/reset/password"] = this.Wrap(this.ResetPassword, USER_ROLE_ADMINISTRATOR)
 	routeMap["/api/user/page"] = this.Wrap(this.Page, USER_ROLE_ADMINISTRATOR)
 	routeMap["/api/user/toggle/status"] = this.Wrap(this.ToggleStatus, USER_ROLE_ADMINISTRATOR)
+	routeMap["/api/user/transfiguration"] = this.Wrap(this.Transfiguration, USER_ROLE_ADMINISTRATOR)
 
 	return routeMap
 }
 
-//使用用户名和密码进行登录。
-//参数：
-// @username:用户名
-// @password:密码
-func (this *UserController) Login(writer http.ResponseWriter, request *http.Request) *result.WebResult {
-
-	username := request.FormValue("username")
-	password := request.FormValue("password")
-
-	if "" == username || "" == password {
-
-		panic(result.BadRequest("请输入用户名和密码"))
-	}
-
-	user := this.userDao.FindByUsername(username)
-	if user == nil {
-		panic(result.BadRequest("用户名或密码错误"))
-	}
-
-	if !util.MatchBcrypt(password, user.Password) {
-
-		panic(result.BadRequest("用户名或密码错误"))
-	}
+func (this *UserController) innerLogin(writer http.ResponseWriter, request *http.Request, user *User) {
 
 	//登录成功，设置Cookie。有效期30天。
 	expiration := time.Now()
@@ -95,7 +75,55 @@ func (this *UserController) Login(writer http.ResponseWriter, request *http.Requ
 	user.LastTime = time.Now()
 	user.LastIp = util.GetIpAddress(request)
 	this.userDao.Save(user)
+}
 
+//使用用户名和密码进行登录。
+//参数：
+// @username:用户名
+// @password:密码
+func (this *UserController) Login(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+
+	username := request.FormValue("username")
+	password := request.FormValue("password")
+
+	if "" == username || "" == password {
+
+		panic(result.BadRequest("请输入用户名和密码"))
+	}
+
+	user := this.userDao.FindByUsername(username)
+	if user == nil {
+		panic(result.BadRequest("用户名或密码错误"))
+	}
+
+	if !util.MatchBcrypt(password, user.Password) {
+
+		panic(result.BadRequest("用户名或密码错误"))
+	}
+
+	this.innerLogin(writer, request, user)
+
+	return this.Success(user)
+}
+
+//使用Authentication进行登录。
+func (this *UserController) AuthenticationLogin(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+
+	authentication := request.FormValue("authentication")
+	if authentication == "" {
+		panic(result.BadRequest("authentication 必填"))
+	}
+	session := this.sessionDao.FindByUuid(authentication)
+	if session == nil {
+		panic(result.BadRequest("authentication 错误"))
+	}
+	duration := session.ExpireTime.Sub(time.Now())
+	if duration <= 0 {
+		panic(result.BadRequest("登录信息已过期"))
+	}
+
+	user := this.userDao.CheckByUuid(session.UserUuid)
+	this.innerLogin(writer, request, user)
 	return this.Success(user)
 }
 
@@ -104,6 +132,11 @@ func (this *UserController) Register(writer http.ResponseWriter, request *http.R
 
 	username := request.FormValue("username")
 	password := request.FormValue("password")
+
+	preference := this.preferenceService.Fetch()
+	if !preference.AllowRegister {
+		panic(result.Unauthorized("管理员已禁用自主注册！"))
+	}
 
 	if m, _ := regexp.MatchString(`^[0-9a-zA-Z_]+$`, username); !m {
 		panic(`用户名必填，且只能包含字母，数字和'_''`)
@@ -115,10 +148,8 @@ func (this *UserController) Register(writer http.ResponseWriter, request *http.R
 
 	//判断重名。
 	if this.userDao.CountByUsername(username) > 0 {
-		panic(result.BadRequest("%s已经被其他用户占用。", username))
+		panic(result.BadRequest("%s已经被使用，请更换。", username))
 	}
-
-	preference := this.preferenceService.Fetch()
 
 	user := &User{
 		Role:      USER_ROLE_USER,
@@ -129,6 +160,9 @@ func (this *UserController) Register(writer http.ResponseWriter, request *http.R
 	}
 
 	user = this.userDao.Create(user)
+
+	//做一次登录操作
+	this.innerLogin(writer, request, user)
 
 	return this.Success(user)
 }
@@ -289,6 +323,29 @@ func (this *UserController) ToggleStatus(writer http.ResponseWriter, request *ht
 
 	return this.Success(currentUser)
 
+}
+
+//变身为指定用户。
+func (this *UserController) Transfiguration(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+
+	uuid := request.FormValue("uuid")
+	currentUser := this.userDao.CheckByUuid(uuid)
+
+	//有效期10分钟
+	expiration := time.Now()
+	expiration = expiration.Add(10 * time.Minute)
+
+	//持久化用户的session.
+	session := &Session{
+		UserUuid:   currentUser.Uuid,
+		Ip:         util.GetIpAddress(request),
+		ExpireTime: expiration,
+	}
+	session.UpdateTime = time.Now()
+	session.CreateTime = time.Now()
+	session = this.sessionDao.Create(session)
+
+	return this.Success(session.Uuid)
 }
 
 //用户修改密码

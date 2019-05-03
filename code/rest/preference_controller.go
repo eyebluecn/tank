@@ -75,6 +75,8 @@ func (this *PreferenceController) Edit(writer http.ResponseWriter, request *http
 	record := request.FormValue("record")
 	downloadDirMaxSizeStr := request.FormValue("downloadDirMaxSize")
 	downloadDirMaxNumStr := request.FormValue("downloadDirMaxNum")
+	defaultTotalSizeLimitStr := request.FormValue("defaultTotalSizeLimit")
+	allowRegisterStr := request.FormValue("allowRegister")
 
 	var downloadDirMaxSize int64 = 0
 	if downloadDirMaxSizeStr == "" {
@@ -94,6 +96,20 @@ func (this *PreferenceController) Edit(writer http.ResponseWriter, request *http
 		downloadDirMaxNum = int64(intDownloadDirMaxNum)
 	}
 
+	var defaultTotalSizeLimit int64 = 0
+	if defaultTotalSizeLimitStr == "" {
+		panic("用户默认总限制！")
+	} else {
+		intDefaultTotalSizeLimit, err := strconv.Atoi(defaultTotalSizeLimitStr)
+		this.PanicError(err)
+		defaultTotalSizeLimit = int64(intDefaultTotalSizeLimit)
+	}
+
+	var allowRegister = false
+	if allowRegisterStr == TRUE {
+		allowRegister = true
+	}
+
 	preference := this.preferenceDao.Fetch()
 	preference.Name = name
 	preference.LogoUrl = logoUrl
@@ -102,6 +118,8 @@ func (this *PreferenceController) Edit(writer http.ResponseWriter, request *http
 	preference.Record = record
 	preference.DownloadDirMaxSize = downloadDirMaxSize
 	preference.DownloadDirMaxNum = downloadDirMaxNum
+	preference.DefaultTotalSizeLimit = defaultTotalSizeLimit
+	preference.AllowRegister = allowRegister
 
 	preference = this.preferenceDao.Save(preference)
 

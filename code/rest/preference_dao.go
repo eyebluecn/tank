@@ -21,7 +21,7 @@ func (this *PreferenceDao) Fetch() *Preference {
 
 		if db.Error.Error() == result.DB_ERROR_NOT_FOUND {
 			preference.Name = "蓝眼云盘"
-
+			preference.Version = core.VERSION
 			this.Create(preference)
 			return preference
 		} else {
@@ -29,6 +29,7 @@ func (this *PreferenceDao) Fetch() *Preference {
 		}
 	}
 
+	preference.Version = core.VERSION
 	return preference
 }
 
