@@ -14,4 +14,5 @@ require (
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d
 	github.com/robfig/cron v0.0.0-20180505203441-b41be1df6967
 	golang.org/x/crypto v0.0.0-20190325154230-a5d413f7728c
+	golang.org/x/text v0.3.1-0.20180807135948-17ff2d5776d2
 )

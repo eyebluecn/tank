@@ -51,7 +51,7 @@ func (this *ImageCacheController) Detail(writer http.ResponseWriter, request *ht
 
 	uuid := request.FormValue("uuid")
 	if uuid == "" {
-		panic(result.BadRequest("图片缓存的uuid必填"))
+		panic(result.BadRequest("uuid cannot be null"))
 	}
 
 	imageCache := this.imageCacheService.Detail(uuid)
@@ -125,7 +125,7 @@ func (this *ImageCacheController) Delete(writer http.ResponseWriter, request *ht
 
 	uuid := request.FormValue("uuid")
 	if uuid == "" {
-		panic(result.BadRequest("图片缓存的uuid必填"))
+		panic(result.BadRequest("uuid cannot be null"))
 	}
 
 	imageCache := this.imageCacheDao.FindByUuid(uuid)
@@ -147,7 +147,7 @@ func (this *ImageCacheController) DeleteBatch(writer http.ResponseWriter, reques
 
 	uuids := request.FormValue("uuids")
 	if uuids == "" {
-		panic(result.BadRequest("图片缓存的uuids必填"))
+		panic(result.BadRequest("uuids cannot be null"))
 	}
 
 	uuidArray := strings.Split(uuids, ",")

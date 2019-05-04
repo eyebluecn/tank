@@ -136,7 +136,7 @@ func (this *PreferenceController) SystemCleanup(writer http.ResponseWriter, requ
 	password := request.FormValue("password")
 
 	if !util.MatchBcrypt(password, user.Password) {
-		panic(result.BadRequest("密码错误，不能执行！"))
+		panic(result.BadRequest("password error"))
 	}
 
 	//清空系统

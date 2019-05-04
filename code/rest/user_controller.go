@@ -3,6 +3,7 @@ package rest
 import (
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/builder"
+	"github.com/eyebluecn/tank/code/tool/i18n"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
 	"net/http"
@@ -87,20 +88,17 @@ func (this *UserController) Login(writer http.ResponseWriter, request *http.Requ
 	password := request.FormValue("password")
 
 	if "" == username || "" == password {
-
-		panic(result.BadRequest("请输入用户名和密码"))
+		panic(result.BadRequestI18n(request, i18n.UsernameOrPasswordCannotNull))
 	}
 
 	user := this.userDao.FindByUsername(username)
 	if user == nil {
-		panic(result.BadRequest("用户名或密码错误"))
+		panic(result.BadRequestI18n(request, i18n.UsernameOrPasswordError))
 	}
 
 	if !util.MatchBcrypt(password, user.Password) {
-
-		panic(result.BadRequest("用户名或密码错误"))
+		panic(result.BadRequestI18n(request, i18n.UsernameOrPasswordError))
 	}
-
 	this.innerLogin(writer, request, user)
 
 	return this.Success(user)
@@ -111,15 +109,15 @@ func (this *UserController) AuthenticationLogin(writer http.ResponseWriter, requ
 
 	authentication := request.FormValue("authentication")
 	if authentication == "" {
-		panic(result.BadRequest("authentication 必填"))
+		panic(result.BadRequest("authentication cannot be null"))
 	}
 	session := this.sessionDao.FindByUuid(authentication)
 	if session == nil {
-		panic(result.BadRequest("authentication 错误"))
+		panic(result.BadRequest("authentication error"))
 	}
 	duration := session.ExpireTime.Sub(time.Now())
 	if duration <= 0 {
-		panic(result.BadRequest("登录信息已过期"))
+		panic(result.BadRequest("login info has expired"))
 	}
 
 	user := this.userDao.CheckByUuid(session.UserUuid)
@@ -135,20 +133,20 @@ func (this *UserController) Register(writer http.ResponseWriter, request *http.R
 
 	preference := this.preferenceService.Fetch()
 	if !preference.AllowRegister {
-		panic(result.Unauthorized("管理员已禁用自主注册！"))
+		panic(result.BadRequestI18n(request, i18n.UserRegisterNotAllowd))
 	}
 
 	if m, _ := regexp.MatchString(`^[0-9a-zA-Z_]+$`, username); !m {
-		panic(`用户名必填，且只能包含字母，数字和'_''`)
+		panic(result.BadRequestI18n(request, i18n.UsernameError))
 	}
 
 	if len(password) < 6 {
-		panic(`密码长度至少为6位`)
+		panic(result.BadRequestI18n(request, i18n.UserPasswordLengthError))
 	}
 
 	//判断重名。
 	if this.userDao.CountByUsername(username) > 0 {
-		panic(result.BadRequest("%s已经被使用，请更换。", username))
+		panic(result.BadRequestI18n(request, i18n.UsernameExist, username))
 	}
 
 	user := &User{
@@ -193,7 +191,7 @@ func (this *UserController) Edit(writer http.ResponseWriter, request *http.Reque
 		user.SizeLimit = sizeLimit
 	} else {
 		if currentUser.Uuid != uuid {
-			panic(result.Unauthorized("没有权限"))
+			panic(result.UNAUTHORIZED)
 		}
 	}
 
@@ -354,7 +352,7 @@ func (this *UserController) ChangePassword(writer http.ResponseWriter, request *
 	oldPassword := request.FormValue("oldPassword")
 	newPassword := request.FormValue("newPassword")
 	if oldPassword == "" || newPassword == "" {
-		panic(result.BadRequest("旧密码和新密码都不能为空"))
+		panic(result.BadRequest("oldPassword and newPassword cannot be null"))
 	}
 
 	user := this.checkUser(request)
@@ -365,7 +363,7 @@ func (this *UserController) ChangePassword(writer http.ResponseWriter, request *
 	}
 
 	if !util.MatchBcrypt(oldPassword, user.Password) {
-		panic(result.BadRequest("旧密码不正确！"))
+		panic(result.BadRequestI18n(request, i18n.UserOldPasswordError))
 	}
 
 	user.Password = util.GetBcrypt(newPassword)
@@ -381,16 +379,16 @@ func (this *UserController) ResetPassword(writer http.ResponseWriter, request *h
 	userUuid := request.FormValue("userUuid")
 	password := request.FormValue("password")
 	if userUuid == "" {
-		panic(result.BadRequest("用户不能为空"))
+		panic(result.BadRequest("userUuid cannot be null"))
 	}
 	if password == "" {
-		panic(result.BadRequest("密码不能为空"))
+		panic(result.BadRequest("password cannot be null"))
 	}
 
 	currentUser := this.checkUser(request)
 
 	if currentUser.Role != USER_ROLE_ADMINISTRATOR {
-		panic(result.Unauthorized("没有权限"))
+		panic(result.UNAUTHORIZED)
 	}
 
 	user := this.userDao.CheckByUuid(userUuid)

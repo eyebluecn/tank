@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/eyebluecn/tank/code/core"
+	"github.com/eyebluecn/tank/code/tool/i18n"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
 	"io/ioutil"
@@ -84,10 +85,10 @@ func (this *DavController) CheckCurrentUser(writer http.ResponseWriter, request 
 
 	user := this.userDao.FindByUsername(username)
 	if user == nil {
-		panic(result.BadRequest("用户名或密码错误"))
+		panic(result.BadRequestI18n(request, i18n.UsernameOrPasswordError))
 	} else {
 		if !util.MatchBcrypt(password, user.Password) {
-			panic(result.BadRequest("用户名或密码错误"))
+			panic(result.BadRequestI18n(request, i18n.UsernameOrPasswordError))
 		}
 	}
 
@@ -108,7 +109,7 @@ func (this *DavController) HandleRoutes(writer http.ResponseWriter, request *htt
 	path := request.URL.Path
 
 	//匹配 /api/dav{subPath}
-	pattern := fmt.Sprintf(`^%s(.*)$`, WEBDAV_PREFFIX)
+	pattern := fmt.Sprintf(`^%s(.*)$`, WEBDAV_PREFIX)
 	reg := regexp.MustCompile(pattern)
 	strs := reg.FindStringSubmatch(path)
 	if len(strs) == 2 {

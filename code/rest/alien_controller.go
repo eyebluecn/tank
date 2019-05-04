@@ -3,6 +3,7 @@ package rest
 import (
 	"fmt"
 	"github.com/eyebluecn/tank/code/core"
+	"github.com/eyebluecn/tank/code/tool/i18n"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
 	"net/http"
@@ -120,8 +121,8 @@ func (this *AlienController) FetchUploadToken(writer http.ResponseWriter, reques
 	filename := request.FormValue("filename")
 	if filename == "" {
 		panic("文件名必填")
-	} else if m, _ := regexp.MatchString(`[<>|*?/\\]`, filename); m {
-		panic(fmt.Sprintf(`【%s】不符合要求，文件名中不能包含以下特殊符号：< > | * ? / \`, filename))
+	} else if m, _ := regexp.MatchString(MATTER_NAME_PATTERN, filename); m {
+		panic(result.BadRequestI18n(request, i18n.MatterNameContainSpecialChars))
 	}
 
 	//什么时间后过期，默认24h
@@ -175,7 +176,7 @@ func (this *AlienController) FetchUploadToken(writer http.ResponseWriter, reques
 	dir := request.FormValue("dir")
 
 	user := this.checkUser(request)
-	dirMatter := this.matterService.CreateDirectories(user, dir)
+	dirMatter := this.matterService.CreateDirectories(request, user, dir)
 
 	mm, _ := time.ParseDuration(fmt.Sprintf("%ds", expire))
 	uploadToken := &UploadToken{
@@ -257,7 +258,7 @@ func (this *AlienController) Upload(writer http.ResponseWriter, request *http.Re
 
 	dirMatter := this.matterDao.CheckWithRootByUuid(uploadToken.FolderUuid, user)
 
-	matter := this.matterService.AtomicUpload(file, user, dirMatter, uploadToken.Filename, uploadToken.Privacy)
+	matter := this.matterService.AtomicUpload(request, file, user, dirMatter, uploadToken.Filename, uploadToken.Privacy)
 
 	//更新这个uploadToken的信息.
 	uploadToken.ExpireTime = time.Now()
@@ -294,7 +295,7 @@ func (this *AlienController) CrawlToken(writer http.ResponseWriter, request *htt
 
 	dirMatter := this.matterDao.CheckWithRootByUuid(uploadToken.FolderUuid, user)
 
-	matter := this.matterService.AtomicCrawl(url, uploadToken.Filename, user, dirMatter, uploadToken.Privacy)
+	matter := this.matterService.AtomicCrawl(request, url, uploadToken.Filename, user, dirMatter, uploadToken.Privacy)
 
 	//更新这个uploadToken的信息.
 	uploadToken.ExpireTime = time.Now()
@@ -316,8 +317,8 @@ func (this *AlienController) CrawlDirect(writer http.ResponseWriter, request *ht
 
 	if filename == "" {
 		panic("文件名必填")
-	} else if m, _ := regexp.MatchString(`[<>|*?/\\]`, filename); m {
-		panic(fmt.Sprintf(`【%s】不符合要求，文件名中不能包含以下特殊符号：< > | * ? / \`, filename))
+	} else if m, _ := regexp.MatchString(MATTER_NAME_PATTERN, filename); m {
+		panic(result.BadRequestI18n(request, i18n.MatterNameContainSpecialChars))
 	}
 
 	var privacy bool
@@ -334,9 +335,9 @@ func (this *AlienController) CrawlDirect(writer http.ResponseWriter, request *ht
 	}
 
 	user := this.checkUser(request)
-	dirMatter := this.matterService.CreateDirectories(user, dir)
+	dirMatter := this.matterService.CreateDirectories(request, user, dir)
 
-	matter := this.matterService.AtomicCrawl(url, filename, user, dirMatter, privacy)
+	matter := this.matterService.AtomicCrawl(request, url, filename, user, dirMatter, privacy)
 
 	return this.Success(matter)
 }

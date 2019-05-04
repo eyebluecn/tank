@@ -2,6 +2,7 @@ package result
 
 import (
 	"fmt"
+	"github.com/eyebluecn/tank/code/tool/i18n"
 	"net/http"
 )
 
@@ -101,7 +102,11 @@ func CustomWebResult(codeWrapper *CodeWrapper, description string) *WebResult {
 	return wr
 }
 
-//请求参数有问题
+func BadRequestI18n(request *http.Request, item *i18n.Item, v ...interface{}) *WebResult {
+	return CustomWebResult(BAD_REQUEST, fmt.Sprintf(item.Message(request), v...))
+}
+
+//没有权限
 func BadRequest(format string, v ...interface{}) *WebResult {
 	return CustomWebResult(BAD_REQUEST, fmt.Sprintf(format, v...))
 }

@@ -10,7 +10,7 @@ import (
 )
 
 //访问前缀，这个是特殊入口
-var WEBDAV_PREFFIX = "/api/dav"
+var WEBDAV_PREFIX = "/api/dav"
 
 //动态的文件属性
 type LiveProp struct {

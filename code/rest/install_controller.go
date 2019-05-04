@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/builder"
+	"github.com/eyebluecn/tank/code/tool/i18n"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
 	"github.com/jinzhu/gorm"
@@ -226,10 +227,10 @@ func (this *InstallController) validateTableMetaList(tableInfoList []*InstallTab
 					strs = append(strs, v.DBName)
 				}
 
-				panic(result.BadRequest(fmt.Sprintf("%s 表的以下字段缺失：%v", tableInfo.Name, strs)))
+				panic(result.BadRequest(fmt.Sprintf("table %s miss the following fields %v", tableInfo.Name, strs)))
 			}
 		} else {
-			panic(result.BadRequest(tableInfo.Name + "表不存在"))
+			panic(result.BadRequest(tableInfo.Name + " table not exist"))
 		}
 	}
 
@@ -314,11 +315,11 @@ func (this *InstallController) CreateAdmin(writer http.ResponseWriter, request *
 
 	//验证超级管理员的信息
 	if m, _ := regexp.MatchString(`^[0-9a-zA-Z_]+$`, adminUsername); !m {
-		panic(result.BadRequest(`超级管理员用户名必填，且只能包含字母，数字和'_''`))
+		panic(result.BadRequest(`admin's username cannot oly be alphabet, number or '_'`))
 	}
 
 	if len(adminPassword) < 6 {
-		panic(result.BadRequest(`超级管理员密码长度至少为6位`))
+		panic(result.BadRequest(`admin's password at least 6 chars'`))
 	}
 
 	//检查是否有重复。
@@ -326,7 +327,7 @@ func (this *InstallController) CreateAdmin(writer http.ResponseWriter, request *
 	db2 := db.Model(&User{}).Where("username = ?", adminUsername).Count(&count2)
 	this.PanicError(db2.Error)
 	if count2 > 0 {
-		panic(result.BadRequest(`%s该用户名已存在`, adminUsername))
+		panic(result.BadRequestI18n(request, i18n.UsernameExist, adminUsername))
 	}
 
 	user := &User{}
@@ -360,24 +361,24 @@ func (this *InstallController) ValidateAdmin(writer http.ResponseWriter, request
 
 	//验证超级管理员的信息
 	if adminUsername == "" {
-		panic(result.BadRequest(`超级管理员用户名必填`))
+		panic(result.BadRequest(`admin's username cannot be null'`))
 	}
 	if len(adminPassword) < 6 {
-		panic(result.BadRequest(`超级管理员密码长度至少为6位`))
+		panic(result.BadRequest(`admin's password at least 6 chars'`))
 	}
 
 	var existUsernameUser = &User{}
 	db = db.Where(&User{Username: adminUsername}).First(existUsernameUser)
 	if db.Error != nil {
-		panic(result.BadRequest(fmt.Sprintf("%s对应的用户不存在", adminUsername)))
+		panic(result.BadRequestI18n(request, i18n.UsernameNotExist, adminUsername))
 	}
 
 	if !util.MatchBcrypt(adminPassword, existUsernameUser.Password) {
-		panic(result.BadRequest("用户名或密码错误"))
+		panic(result.BadRequestI18n(request, i18n.UsernameOrPasswordError, adminUsername))
 	}
 
 	if existUsernameUser.Role != USER_ROLE_ADMINISTRATOR {
-		panic(result.BadRequest("该账号不是管理员"))
+		panic(result.BadRequestI18n(request, i18n.UsernameIsNotAdmin, adminUsername))
 	}
 
 	return this.Success("OK")
@@ -413,7 +414,7 @@ func (this *InstallController) Finish(writer http.ResponseWriter, request *http.
 	db1 := db.Model(&User{}).Where("role = ?", USER_ROLE_ADMINISTRATOR).Count(&count1)
 	this.PanicError(db1.Error)
 	if count1 == 0 {
-		panic(result.BadRequest(`请至少配置一名管理员`))
+		panic(result.BadRequest(`please config at least one admin user`))
 	}
 
 	//通知配置文件安装完毕。

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/download"
+	"github.com/eyebluecn/tank/code/tool/i18n"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
 	"io"
@@ -107,12 +108,10 @@ func (this *MatterService) DownloadZip(
 		count = count + this.matterDao.CountByUserUuidAndPath(matter.UserUuid, matter.Path)
 	}
 
-	this.logger.Info("此次下载包含文件数量 %d", count)
-
 	//文件数量判断。
 	if preference.DownloadDirMaxNum >= 0 {
 		if count > preference.DownloadDirMaxNum {
-			panic(result.BadRequest("下载包中文件数量 %d 超出限制了 %d ", count, preference.DownloadDirMaxNum))
+			panic(result.BadRequestI18n(request, i18n.MatterSelectNumExceedLimit, count, preference.DownloadDirMaxNum))
 		}
 	}
 
@@ -122,14 +121,11 @@ func (this *MatterService) DownloadZip(
 		sumSize = sumSize + this.matterDao.SumSizeByUserUuidAndPath(matter.UserUuid, matter.Path)
 	}
 
-	//验证文件夹中文件总大小。
-	this.logger.Info("此次下载大小为 %s", util.HumanFileSize(sumSize))
-
 	//判断用户自身上传大小的限制
 	//大小判断
 	if preference.DownloadDirMaxSize >= 0 {
 		if sumSize > preference.DownloadDirMaxSize {
-			panic(result.BadRequest("文件夹大小%s超出下载限制%s ", util.HumanFileSize(sumSize), util.HumanFileSize(preference.DownloadDirMaxSize)))
+			panic(result.BadRequestI18n(request, i18n.MatterSelectSizeExceedLimit, util.HumanFileSize(sumSize), util.HumanFileSize(preference.DownloadDirMaxSize)))
 		}
 	}
 
@@ -145,7 +141,7 @@ func (this *MatterService) DownloadZip(
 	destZipPath := fmt.Sprintf("%s/%s", destZipDirPath, destZipName)
 
 	//_ = util.Zip(matter.AbsolutePath(), destZipPath)
-	this.zipMatters(matters, destZipPath)
+	this.zipMatters(request, matters, destZipPath)
 
 	//下载
 	download.DownloadFile(writer, request, destZipPath, destZipName, true)
@@ -153,17 +149,17 @@ func (this *MatterService) DownloadZip(
 	//删除临时压缩文件
 	err := os.Remove(destZipPath)
 	if err != nil {
-		this.logger.Error("删除磁盘上的文件出错 %s", err.Error())
+		this.logger.Error("error while deleting zip file %s", err.Error())
 	}
 	util.DeleteEmptyDir(destZipDirPath)
 
 }
 
 //打包一系列的matter
-func (this *MatterService) zipMatters(matters []*Matter, destPath string) {
+func (this *MatterService) zipMatters(request *http.Request, matters []*Matter, destPath string) {
 
 	if util.PathExists(destPath) {
-		panic(result.BadRequest("%s 已经存在了", destPath))
+		panic(result.BadRequest("%s exists", destPath))
 	}
 
 	//要求必须是同一个父matter下的。
@@ -184,7 +180,7 @@ func (this *MatterService) zipMatters(matters []*Matter, destPath string) {
 
 	//将每个matter的children装填好
 	for _, m := range matters {
-		this.WrapChildrenDetail(m)
+		this.WrapChildrenDetail(request, m)
 	}
 
 	// 创建准备写入的文件
@@ -259,10 +255,10 @@ func (this *MatterService) zipMatters(matters []*Matter, destPath string) {
 }
 
 //删除文件
-func (this *MatterService) Delete(matter *Matter) {
+func (this *MatterService) Delete(request *http.Request, matter *Matter) {
 
 	if matter == nil {
-		panic(result.BadRequest("matter不能为nil"))
+		panic(result.BadRequest("matter cannot be nil"))
 	}
 
 	this.matterDao.Delete(matter)
@@ -272,21 +268,21 @@ func (this *MatterService) Delete(matter *Matter) {
 }
 
 //删除文件
-func (this *MatterService) AtomicDelete(matter *Matter) {
+func (this *MatterService) AtomicDelete(request *http.Request, matter *Matter) {
 
 	if matter == nil {
-		panic(result.BadRequest("matter不能为nil"))
+		panic(result.BadRequest("matter cannot be nil"))
 	}
 
 	//操作锁
 	this.userService.MatterLock(matter.UserUuid)
 	defer this.userService.MatterUnlock(matter.UserUuid)
 
-	this.Delete(matter)
+	this.Delete(request, matter)
 }
 
 //上传文件
-func (this *MatterService) Upload(file io.Reader, user *User, dirMatter *Matter, filename string, privacy bool) *Matter {
+func (this *MatterService) Upload(request *http.Request, file io.Reader, user *User, dirMatter *Matter, filename string, privacy bool) *Matter {
 
 	if user == nil {
 		panic(result.BadRequest("user cannot be nil."))
@@ -299,7 +295,7 @@ func (this *MatterService) Upload(file io.Reader, user *User, dirMatter *Matter,
 
 	//文件名不能太长。
 	if len(filename) > MATTER_NAME_MAX_LENGTH {
-		panic(result.BadRequest("文件名不能超过%s", MATTER_NAME_MAX_LENGTH))
+		panic(result.BadRequestI18n(request, i18n.MatterNameLengthExceedLimit, len(filename), MATTER_NAME_MAX_LENGTH))
 	}
 
 	//文件夹路径
@@ -308,7 +304,7 @@ func (this *MatterService) Upload(file io.Reader, user *User, dirMatter *Matter,
 
 	count := this.matterDao.CountByUserUuidAndPuuidAndDirAndName(user.Uuid, dirMatter.Uuid, false, filename)
 	if count > 0 {
-		panic(result.BadRequest("该目录下%s已经存在了", filename))
+		panic(result.BadRequest("%s already exists", filename))
 	}
 
 	//获取文件应该存放在的物理路径的绝对路径和相对路径。
@@ -346,7 +342,7 @@ func (this *MatterService) Upload(file io.Reader, user *User, dirMatter *Matter,
 			err = os.Remove(fileAbsolutePath)
 			this.PanicError(err)
 
-			panic(result.BadRequest("文件大小超出限制 %s > %s ", util.HumanFileSize(user.SizeLimit), util.HumanFileSize(fileSize)))
+			panic(result.BadRequest("file's size exceed the limit %s > %s ", util.HumanFileSize(user.SizeLimit), util.HumanFileSize(fileSize)))
 		}
 	}
 
@@ -373,7 +369,7 @@ func (this *MatterService) Upload(file io.Reader, user *User, dirMatter *Matter,
 }
 
 //上传文件
-func (this *MatterService) AtomicUpload(file io.Reader, user *User, dirMatter *Matter, filename string, privacy bool) *Matter {
+func (this *MatterService) AtomicUpload(request *http.Request, file io.Reader, user *User, dirMatter *Matter, filename string, privacy bool) *Matter {
 
 	if user == nil {
 		panic(result.BadRequest("user cannot be nil."))
@@ -383,41 +379,41 @@ func (this *MatterService) AtomicUpload(file io.Reader, user *User, dirMatter *M
 	this.userService.MatterLock(user.Uuid)
 	defer this.userService.MatterUnlock(user.Uuid)
 
-	return this.Upload(file, user, dirMatter, filename, privacy)
+	return this.Upload(request, file, user, dirMatter, filename, privacy)
 }
 
 //内部创建文件，不带操作锁。
-func (this *MatterService) createDirectory(dirMatter *Matter, name string, user *User) *Matter {
+func (this *MatterService) createDirectory(request *http.Request, dirMatter *Matter, name string, user *User) *Matter {
 
 	//父级matter必须存在
 	if dirMatter == nil {
-		panic(result.BadRequest("dirMatter必须指定"))
+		panic(result.BadRequest("dirMatter cannot be nil"))
 	}
 
 	//必须是文件夹
 	if !dirMatter.Dir {
-		panic(result.BadRequest("dirMatter必须是文件夹"))
+		panic(result.BadRequest("dirMatter must be directory"))
 	}
 
 	if dirMatter.UserUuid != user.Uuid {
 
-		panic(result.BadRequest("dirMatter的userUuid和user不一致"))
+		panic(result.BadRequest("file's user not the same"))
 	}
 
 	name = strings.TrimSpace(name)
 	//验证参数。
 	if name == "" {
-		panic(result.BadRequest("name参数必填，并且不能全是空格"))
+		panic(result.BadRequest("name cannot be blank"))
 	}
 
 	if len(name) > MATTER_NAME_MAX_LENGTH {
 
-		panic(result.BadRequest("name长度不能超过%d", MATTER_NAME_MAX_LENGTH))
+		panic(result.BadRequestI18n(request, i18n.MatterNameLengthExceedLimit, len(name), MATTER_NAME_MAX_LENGTH))
 
 	}
 
-	if m, _ := regexp.MatchString(`[<>|*?/\\]`, name); m {
-		panic(result.BadRequest(`名称中不能包含以下特殊符号：< > | * ? / \`))
+	if m, _ := regexp.MatchString(MATTER_NAME_PATTERN, name); m {
+		panic(result.BadRequestI18n(request, i18n.MatterNameContainSpecialChars))
 	}
 
 	//判断同级文件夹中是否有同名的文件夹。存在了直接返回即可。
@@ -427,10 +423,9 @@ func (this *MatterService) createDirectory(dirMatter *Matter, name string, user 
 	}
 
 	parts := strings.Split(dirMatter.Path, "/")
-	this.logger.Info("%s的层数：%d", dirMatter.Name, len(parts))
 
-	if len(parts) > 32 {
-		panic(result.BadRequest("文件夹最多%d层", MATTER_NAME_MAX_DEPTH))
+	if len(parts) > MATTER_NAME_MAX_DEPTH {
+		panic(result.BadRequestI18n(request, i18n.MatterDepthExceedLimit, len(parts), MATTER_NAME_MAX_DEPTH))
 	}
 
 	//绝对路径
@@ -459,19 +454,19 @@ func (this *MatterService) createDirectory(dirMatter *Matter, name string, user 
 }
 
 //在dirMatter中创建文件夹 返回刚刚创建的这个文件夹
-func (this *MatterService) AtomicCreateDirectory(dirMatter *Matter, name string, user *User) *Matter {
+func (this *MatterService) AtomicCreateDirectory(request *http.Request, dirMatter *Matter, name string, user *User) *Matter {
 
 	//操作锁
 	this.userService.MatterLock(user.Uuid)
 	defer this.userService.MatterUnlock(user.Uuid)
 
-	matter := this.createDirectory(dirMatter, name, user)
+	matter := this.createDirectory(request, dirMatter, name, user)
 
 	return matter
 }
 
 //处理 移动和复制时可能存在的覆盖问题。
-func (this *MatterService) handleOverwrite(userUuid string, destinationPath string, overwrite bool) {
+func (this *MatterService) handleOverwrite(request *http.Request, userUuid string, destinationPath string, overwrite bool) {
 
 	//目标matter。因为有可能已经存在了
 	destMatter := this.matterDao.findByUserUuidAndPath(userUuid, destinationPath)
@@ -480,23 +475,23 @@ func (this *MatterService) handleOverwrite(userUuid string, destinationPath stri
 		//如果目标matter还存在了。
 		if overwrite {
 			//要求覆盖。那么删除。
-			this.Delete(destMatter)
+			this.Delete(request, destMatter)
 		} else {
-			panic(result.BadRequest("%s已经存在，操作失败！", destMatter.Path))
+			panic(result.BadRequestI18n(request, i18n.MatterExist, destMatter.Path))
 		}
 	}
 
 }
 
 //将一个srcMatter放置到另一个destMatter(必须为文件夹)下 不关注 overwrite 和 lock.
-func (this *MatterService) move(srcMatter *Matter, destDirMatter *Matter) {
+func (this *MatterService) move(request *http.Request, srcMatter *Matter, destDirMatter *Matter) {
 
 	if srcMatter == nil {
 		panic(result.BadRequest("srcMatter cannot be nil."))
 	}
 
 	if !destDirMatter.Dir {
-		panic(result.BadRequest("目标必须为文件夹"))
+		panic(result.BadRequestI18n(request, i18n.MatterDestinationMustDirectory))
 	}
 
 	userUuid := srcMatter.UserUuid
@@ -550,7 +545,7 @@ func (this *MatterService) move(srcMatter *Matter, destDirMatter *Matter) {
 }
 
 //将一个srcMatter放置到另一个destMatter(必须为文件夹)下
-func (this *MatterService) AtomicMove(srcMatter *Matter, destDirMatter *Matter, overwrite bool) {
+func (this *MatterService) AtomicMove(request *http.Request, srcMatter *Matter, destDirMatter *Matter, overwrite bool) {
 
 	if srcMatter == nil {
 		panic(result.BadRequest("srcMatter cannot be nil."))
@@ -564,29 +559,29 @@ func (this *MatterService) AtomicMove(srcMatter *Matter, destDirMatter *Matter, 
 		panic(result.BadRequest("destDirMatter cannot be nil."))
 	}
 	if !destDirMatter.Dir {
-		panic(result.BadRequest("目标必须为文件夹"))
+		panic(result.BadRequestI18n(request, i18n.MatterDestinationMustDirectory))
 	}
 
 	//文件夹不能把自己移入到自己中，也不可以移入到自己的子文件夹下。
-	destDirMatter = this.WrapParentDetail(destDirMatter)
+	destDirMatter = this.WrapParentDetail(request, destDirMatter)
 	tmpMatter := destDirMatter
 	for tmpMatter != nil {
 		if srcMatter.Uuid == tmpMatter.Uuid {
-			panic("文件夹不能把自己移入到自己中，也不可以移入到自己的子文件夹下。")
+			panic(result.BadRequestI18n(request, i18n.MatterMoveRecursive))
 		}
 		tmpMatter = tmpMatter.Parent
 	}
 
 	//处理覆盖的问题
 	destinationPath := destDirMatter.Path + "/" + srcMatter.Name
-	this.handleOverwrite(srcMatter.UserUuid, destinationPath, overwrite)
+	this.handleOverwrite(request, srcMatter.UserUuid, destinationPath, overwrite)
 
 	//做move操作。
-	this.move(srcMatter, destDirMatter)
+	this.move(request, srcMatter, destDirMatter)
 }
 
 //将一个srcMatter放置到另一个destMatter(必须为文件夹)下
-func (this *MatterService) AtomicMoveBatch(srcMatters []*Matter, destDirMatter *Matter) {
+func (this *MatterService) AtomicMoveBatch(request *http.Request, srcMatters []*Matter, destDirMatter *Matter) {
 
 	if destDirMatter == nil {
 		panic(result.BadRequest("destDirMatter cannot be nil."))
@@ -601,11 +596,11 @@ func (this *MatterService) AtomicMoveBatch(srcMatters []*Matter, destDirMatter *
 	}
 
 	if !destDirMatter.Dir {
-		panic(result.BadRequest("目标必须为文件夹"))
+		panic(result.BadRequestI18n(request, i18n.MatterDestinationMustDirectory))
 	}
 
 	//文件夹不能把自己移入到自己中，也不可以移入到自己的子文件夹下。
-	destDirMatter = this.WrapParentDetail(destDirMatter)
+	destDirMatter = this.WrapParentDetail(request, destDirMatter)
 	for _, srcMatter := range srcMatters {
 
 		tmpMatter := destDirMatter
@@ -618,13 +613,13 @@ func (this *MatterService) AtomicMoveBatch(srcMatters []*Matter, destDirMatter *
 	}
 
 	for _, srcMatter := range srcMatters {
-		this.move(srcMatter, destDirMatter)
+		this.move(request, srcMatter, destDirMatter)
 	}
 
 }
 
 //内部移动一个文件(提供给Copy调用)，无需关心overwrite问题。
-func (this *MatterService) copy(srcMatter *Matter, destDirMatter *Matter, name string) {
+func (this *MatterService) copy(request *http.Request, srcMatter *Matter, destDirMatter *Matter, name string) {
 
 	if srcMatter.Dir {
 
@@ -648,7 +643,7 @@ func (this *MatterService) copy(srcMatter *Matter, destDirMatter *Matter, name s
 		//复制子文件或文件夹
 		matters := this.matterDao.ListByPuuidAndUserUuid(srcMatter.Uuid, srcMatter.UserUuid, nil)
 		for _, m := range matters {
-			this.copy(m, newMatter, m.Name)
+			this.copy(request, m, newMatter, m.Name)
 		}
 
 	} else {
@@ -678,7 +673,7 @@ func (this *MatterService) copy(srcMatter *Matter, destDirMatter *Matter, name s
 }
 
 //将一个srcMatter复制到另一个destMatter(必须为文件夹)下，名字叫做name
-func (this *MatterService) AtomicCopy(srcMatter *Matter, destDirMatter *Matter, name string, overwrite bool) {
+func (this *MatterService) AtomicCopy(request *http.Request, srcMatter *Matter, destDirMatter *Matter, name string, overwrite bool) {
 
 	if srcMatter == nil {
 		panic(result.BadRequest("srcMatter cannot be nil."))
@@ -689,17 +684,17 @@ func (this *MatterService) AtomicCopy(srcMatter *Matter, destDirMatter *Matter, 
 	defer this.userService.MatterUnlock(srcMatter.UserUuid)
 
 	if !destDirMatter.Dir {
-		panic(result.BadRequest("目标必须为文件夹"))
+		panic(result.BadRequestI18n(request, i18n.MatterDestinationMustDirectory))
 	}
 
 	destinationPath := destDirMatter.Path + "/" + name
-	this.handleOverwrite(srcMatter.UserUuid, destinationPath, overwrite)
+	this.handleOverwrite(request, srcMatter.UserUuid, destinationPath, overwrite)
 
-	this.copy(srcMatter, destDirMatter, name)
+	this.copy(request, srcMatter, destDirMatter, name)
 }
 
 //将一个matter 重命名为 name
-func (this *MatterService) AtomicRename(matter *Matter, name string, user *User) {
+func (this *MatterService) AtomicRename(request *http.Request, matter *Matter, name string, user *User) {
 
 	if user == nil {
 		panic(result.BadRequest("user cannot be nil"))
@@ -711,25 +706,27 @@ func (this *MatterService) AtomicRename(matter *Matter, name string, user *User)
 
 	//验证参数。
 	if name == "" {
-		panic(result.BadRequest("name参数必填"))
+		panic(result.BadRequest("name cannot be null"))
 	}
-	if m, _ := regexp.MatchString(`[<>|*?/\\]`, name); m {
-		panic(result.BadRequest(`名称中不能包含以下特殊符号：< > | * ? / \`))
+	if m, _ := regexp.MatchString(MATTER_NAME_PATTERN, name); m {
+		panic(result.BadRequestI18n(request, i18n.MatterNameContainSpecialChars))
 	}
 
-	if len(name) > 200 {
-		panic("name长度不能超过200")
+	//文件名不能太长。
+	if len(name) > MATTER_NAME_MAX_LENGTH {
+		panic(result.BadRequestI18n(request, i18n.MatterNameLengthExceedLimit, len(name), MATTER_NAME_MAX_LENGTH))
 	}
 
 	if name == matter.Name {
-		panic(result.BadRequest("新名称和旧名称一样，操作失败！"))
+		panic(result.BadRequestI18n(request, i18n.MatterNameNoChange))
 	}
 
 	//判断同级文件夹中是否有同名的文件
 	count := this.matterDao.CountByUserUuidAndPuuidAndDirAndName(user.Uuid, matter.Puuid, matter.Dir, name)
 
 	if count > 0 {
-		panic(result.BadRequest("【" + name + "】已经存在了，请使用其他名称。"))
+
+		panic(result.BadRequestI18n(request, i18n.MatterExist, name))
 	}
 
 	if matter.Dir {
@@ -781,7 +778,7 @@ func (this *MatterService) AtomicRename(matter *Matter, name string, user *User)
 }
 
 //将本地文件映射到蓝眼云盘中去。
-func (this *MatterService) AtomicMirror(srcPath string, destPath string, overwrite bool, user *User) {
+func (this *MatterService) AtomicMirror(request *http.Request, srcPath string, destPath string, overwrite bool, user *User) {
 
 	if user == nil {
 		panic(result.BadRequest("user cannot be nil"))
@@ -793,16 +790,16 @@ func (this *MatterService) AtomicMirror(srcPath string, destPath string, overwri
 
 	//验证参数。
 	if destPath == "" {
-		panic(result.BadRequest("dest 参数必填"))
+		panic(result.BadRequest("dest cannot be null"))
 	}
 
-	destDirMatter := this.CreateDirectories(user, destPath)
+	destDirMatter := this.CreateDirectories(request, user, destPath)
 
-	this.mirror(srcPath, destDirMatter, overwrite, user)
+	this.mirror(request, srcPath, destDirMatter, overwrite, user)
 }
 
 //将本地文件/文件夹映射到蓝眼云盘中去。
-func (this *MatterService) mirror(srcPath string, destDirMatter *Matter, overwrite bool, user *User) {
+func (this *MatterService) mirror(request *http.Request, srcPath string, destDirMatter *Matter, overwrite bool, user *User) {
 
 	if user == nil {
 		panic(result.BadRequest("user cannot be nil"))
@@ -828,7 +825,7 @@ func (this *MatterService) mirror(srcPath string, destDirMatter *Matter, overwri
 		srcDirMatter := this.matterDao.FindByUserUuidAndPuuidAndDirAndName(user.Uuid, destDirMatter.Uuid, true, fileStat.Name())
 
 		if srcDirMatter == nil {
-			srcDirMatter = this.createDirectory(destDirMatter, fileStat.Name(), user)
+			srcDirMatter = this.createDirectory(request, destDirMatter, fileStat.Name(), user)
 		}
 
 		fileInfos, err := ioutil.ReadDir(srcPath)
@@ -838,7 +835,7 @@ func (this *MatterService) mirror(srcPath string, destDirMatter *Matter, overwri
 		for _, fileInfo := range fileInfos {
 
 			path := fmt.Sprintf("%s/%s", srcPath, fileInfo.Name())
-			this.mirror(path, srcDirMatter, overwrite, user)
+			this.mirror(request, path, srcDirMatter, overwrite, user)
 		}
 
 	} else {
@@ -848,7 +845,7 @@ func (this *MatterService) mirror(srcPath string, destDirMatter *Matter, overwri
 		if matter != nil {
 			//如果是覆盖，那么删除之前的文件
 			if overwrite {
-				this.Delete(matter)
+				this.Delete(request, matter)
 			} else {
 				//直接完成。
 				return
@@ -863,14 +860,14 @@ func (this *MatterService) mirror(srcPath string, destDirMatter *Matter, overwri
 			this.PanicError(err)
 		}()
 
-		this.Upload(file, user, destDirMatter, fileStat.Name(), true)
+		this.Upload(request, file, user, destDirMatter, fileStat.Name(), true)
 
 	}
 
 }
 
 //根据一个文件夹路径，依次创建，找到最后一个文件夹的matter，如果中途出错，返回err. 如果存在了那就直接返回即可。
-func (this *MatterService) CreateDirectories(user *User, dirPath string) *Matter {
+func (this *MatterService) CreateDirectories(request *http.Request, user *User, dirPath string) *Matter {
 
 	if dirPath == "" {
 		panic(`文件夹不能为空`)
@@ -878,8 +875,8 @@ func (this *MatterService) CreateDirectories(user *User, dirPath string) *Matter
 		panic(`文件夹必须以/开头`)
 	} else if strings.Index(dirPath, "//") != -1 {
 		panic(`文件夹不能出现连续的//`)
-	} else if m, _ := regexp.MatchString(`[<>|*?\\]`, dirPath); m {
-		panic(`文件夹中不能包含以下特殊符号：< > | * ? \`)
+	} else if m, _ := regexp.MatchString(MATTER_NAME_PATTERN, dirPath); m {
+		panic(result.BadRequestI18n(request, i18n.MatterNameContainSpecialChars))
 	}
 
 	if dirPath == "/" {
@@ -895,7 +892,7 @@ func (this *MatterService) CreateDirectories(user *User, dirPath string) *Matter
 	folders := strings.Split(dirPath, "/")
 
 	if len(folders) > MATTER_NAME_MAX_DEPTH {
-		panic(result.BadRequest("文件夹最多%d层。", MATTER_NAME_MAX_DEPTH))
+		panic(result.BadRequestI18n(request, i18n.MatterDepthExceedLimit, len(folders), MATTER_NAME_MAX_DEPTH))
 	}
 
 	var dirMatter *Matter
@@ -907,14 +904,14 @@ func (this *MatterService) CreateDirectories(user *User, dirPath string) *Matter
 			continue
 		}
 
-		dirMatter = this.createDirectory(dirMatter, name, user)
+		dirMatter = this.createDirectory(request, dirMatter, name, user)
 	}
 
 	return dirMatter
 }
 
 //包装某个matter的详情。会把父级依次倒着装进去。如果中途出错，直接抛出异常。
-func (this *MatterService) WrapParentDetail(matter *Matter) *Matter {
+func (this *MatterService) WrapParentDetail(request *http.Request, matter *Matter) *Matter {
 
 	if matter == nil {
 		panic(result.BadRequest("matter cannot be nil."))
@@ -934,7 +931,7 @@ func (this *MatterService) WrapParentDetail(matter *Matter) *Matter {
 }
 
 //包装某个matter的详情。会把子级依次装进去。如果中途出错，直接抛出异常。
-func (this *MatterService) WrapChildrenDetail(matter *Matter) {
+func (this *MatterService) WrapChildrenDetail(request *http.Request, matter *Matter) {
 
 	if matter == nil {
 		panic(result.BadRequest("matter cannot be nil."))
@@ -946,20 +943,20 @@ func (this *MatterService) WrapChildrenDetail(matter *Matter) {
 		matter.Children = children
 
 		for _, child := range matter.Children {
-			this.WrapChildrenDetail(child)
+			this.WrapChildrenDetail(request, child)
 		}
 	}
 
 }
 
 //获取某个文件的详情，会把父级依次倒着装进去。如果中途出错，直接抛出异常。
-func (this *MatterService) Detail(uuid string) *Matter {
+func (this *MatterService) Detail(request *http.Request, uuid string) *Matter {
 	matter := this.matterDao.CheckByUuid(uuid)
-	return this.WrapParentDetail(matter)
+	return this.WrapParentDetail(request, matter)
 }
 
 //去指定的url中爬文件
-func (this *MatterService) AtomicCrawl(url string, filename string, user *User, dirMatter *Matter, privacy bool) *Matter {
+func (this *MatterService) AtomicCrawl(request *http.Request, url string, filename string, user *User, dirMatter *Matter, privacy bool) *Matter {
 
 	if user == nil {
 		panic(result.BadRequest("user cannot be nil."))
@@ -970,7 +967,7 @@ func (this *MatterService) AtomicCrawl(url string, filename string, user *User, 
 	defer this.userService.MatterUnlock(user.Uuid)
 
 	if url == "" || (!strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://")) {
-		panic("资源url必填，并且应该以http://或者https://开头")
+		panic(`url must start with http:// or https://`)
 	}
 
 	if filename == "" {
@@ -981,7 +978,7 @@ func (this *MatterService) AtomicCrawl(url string, filename string, user *User, 
 	resp, err := http.Get(url)
 	this.PanicError(err)
 
-	return this.Upload(resp.Body, user, dirMatter, filename, privacy)
+	return this.Upload(request, resp.Body, user, dirMatter, filename, privacy)
 }
 
 //调整一个Matter的path值

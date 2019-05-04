@@ -3,6 +3,7 @@ package rest
 import (
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/builder"
+	"github.com/eyebluecn/tank/code/tool/i18n"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"net/http"
 	"strconv"
@@ -96,10 +97,10 @@ func (this *MatterController) Detail(writer http.ResponseWriter, request *http.R
 
 	uuid := request.FormValue("uuid")
 	if uuid == "" {
-		panic(result.BadRequest("文件的uuid必填"))
+		panic(result.BadRequest("uuid cannot be null"))
 	}
 
-	matter := this.matterService.Detail(uuid)
+	matter := this.matterService.Detail(request, uuid)
 
 	//验证当前之人是否有权限查看这么详细。
 	user := this.checkUser(request)
@@ -139,12 +140,12 @@ func (this *MatterController) Page(writer http.ResponseWriter, request *http.Req
 	if shareUuid != "" {
 
 		if puuid == "" {
-			panic(result.BadRequest("puuid必填！"))
+			panic(result.BadRequest("puuid cannot be null"))
 		}
 
 		dirMatter := this.matterDao.CheckByUuid(puuid)
 		if !dirMatter.Dir {
-			panic(result.BadRequest("puuid 对应的不是文件夹"))
+			panic(result.BadRequest("puuid is not a directory"))
 		}
 
 		user := this.findUser(request)
@@ -231,7 +232,7 @@ func (this *MatterController) CreateDirectory(writer http.ResponseWriter, reques
 		dirMatter = this.matterDao.CheckByUuid(puuid)
 	}
 
-	matter := this.matterService.AtomicCreateDirectory(dirMatter, name, user)
+	matter := this.matterService.AtomicCreateDirectory(request, dirMatter, name, user)
 	return this.Success(matter)
 }
 
@@ -268,7 +269,7 @@ func (this *MatterController) Upload(writer http.ResponseWriter, request *http.R
 	dirMatter := this.matterDao.CheckWithRootByUuid(puuid, user)
 
 	//为了支持多文件同时上传
-	matter := this.matterService.Upload(file, user, dirMatter, fileName, privacy)
+	matter := this.matterService.Upload(request, file, user, dirMatter, fileName, privacy)
 
 	return this.Success(matter)
 }
@@ -282,7 +283,7 @@ func (this *MatterController) Crawl(writer http.ResponseWriter, request *http.Re
 
 	user := this.checkUser(request)
 
-	dirMatter := this.matterService.CreateDirectories(user, destPath)
+	dirMatter := this.matterService.CreateDirectories(request, user, destPath)
 
 	if url == "" || (!strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://")) {
 		panic("资源url必填，并且应该以http://或者https://开头")
@@ -292,7 +293,7 @@ func (this *MatterController) Crawl(writer http.ResponseWriter, request *http.Re
 		panic("filename 必填")
 	}
 
-	matter := this.matterService.AtomicCrawl(url, filename, user, dirMatter, true)
+	matter := this.matterService.AtomicCrawl(request, url, filename, user, dirMatter, true)
 
 	return this.Success(matter)
 }
@@ -302,7 +303,7 @@ func (this *MatterController) Delete(writer http.ResponseWriter, request *http.R
 
 	uuid := request.FormValue("uuid")
 	if uuid == "" {
-		panic(result.BadRequest("文件的uuid必填"))
+		panic(result.BadRequest("uuid cannot be null"))
 	}
 
 	matter := this.matterDao.CheckByUuid(uuid)
@@ -313,7 +314,7 @@ func (this *MatterController) Delete(writer http.ResponseWriter, request *http.R
 		panic(result.UNAUTHORIZED)
 	}
 
-	this.matterService.AtomicDelete(matter)
+	this.matterService.AtomicDelete(request, matter)
 
 	return this.Success("删除成功！")
 }
@@ -323,7 +324,7 @@ func (this *MatterController) DeleteBatch(writer http.ResponseWriter, request *h
 
 	uuids := request.FormValue("uuids")
 	if uuids == "" {
-		panic(result.BadRequest("文件的uuids必填"))
+		panic(result.BadRequest("uuids cannot be null"))
 	}
 
 	uuidArray := strings.Split(uuids, ",")
@@ -334,7 +335,7 @@ func (this *MatterController) DeleteBatch(writer http.ResponseWriter, request *h
 
 		//如果matter已经是nil了，直接跳过
 		if matter == nil {
-			this.logger.Warn("%s 对应的文件记录已经不存在了", uuid)
+			this.logger.Warn("%s not exist anymore", uuid)
 			continue
 		}
 
@@ -344,7 +345,7 @@ func (this *MatterController) DeleteBatch(writer http.ResponseWriter, request *h
 			panic(result.UNAUTHORIZED)
 		}
 
-		this.matterService.AtomicDelete(matter)
+		this.matterService.AtomicDelete(request, matter)
 
 	}
 
@@ -366,7 +367,7 @@ func (this *MatterController) Rename(writer http.ResponseWriter, request *http.R
 		panic(result.UNAUTHORIZED)
 	}
 
-	this.matterService.AtomicRename(matter, name, user)
+	this.matterService.AtomicRename(request, matter, name, user)
 
 	return this.Success(matter)
 }
@@ -407,7 +408,7 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 	var srcUuids []string
 	//验证参数。
 	if srcUuidsStr == "" {
-		panic(result.BadRequest("srcUuids参数必填"))
+		panic(result.BadRequest("srcUuids cannot be null"))
 	} else {
 		srcUuids = strings.Split(srcUuidsStr, ",")
 	}
@@ -417,7 +418,7 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 	//验证dest是否有问题
 	var destMatter = this.matterDao.CheckWithRootByUuid(destUuid, user)
 	if !destMatter.Dir {
-		panic(result.BadRequest("目标不是文件夹"))
+		panic(result.BadRequest("destination is not a directory"))
 	}
 
 	if destMatter.UserUuid != user.Uuid {
@@ -431,25 +432,25 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 		srcMatter := this.matterDao.CheckByUuid(uuid)
 
 		if srcMatter.Puuid == destMatter.Uuid {
-			panic(result.BadRequest("没有进行移动，操作无效！"))
+			panic(result.BadRequest("no move, invalid operation"))
 		}
 
 		//判断同级文件夹中是否有同名的文件
 		count := this.matterDao.CountByUserUuidAndPuuidAndDirAndName(user.Uuid, destMatter.Uuid, srcMatter.Dir, srcMatter.Name)
 
 		if count > 0 {
-			panic(result.BadRequest("【" + srcMatter.Name + "】在目标文件夹已经存在了，操作失败。"))
+			panic(result.BadRequestI18n(request, i18n.MatterExist, srcMatter.Name))
 		}
 
 		//判断和目标文件夹是否是同一个主人。
 		if srcMatter.UserUuid != destMatter.UserUuid {
-			panic("文件和目标文件夹的拥有者不是同一人")
+			panic("owner not the same")
 		}
 
 		srcMatters = append(srcMatters, srcMatter)
 	}
 
-	this.matterService.AtomicMoveBatch(srcMatters, destMatter)
+	this.matterService.AtomicMoveBatch(request, srcMatters, destMatter)
 
 	return this.Success(nil)
 }
@@ -462,7 +463,7 @@ func (this *MatterController) Mirror(writer http.ResponseWriter, request *http.R
 	overwriteStr := request.FormValue("overwrite")
 
 	if srcPath == "" {
-		panic(result.BadRequest("srcPath必填"))
+		panic(result.BadRequest("srcPath cannot be null"))
 	}
 
 	overwrite := false
@@ -472,7 +473,7 @@ func (this *MatterController) Mirror(writer http.ResponseWriter, request *http.R
 
 	user := this.userDao.checkUser(request)
 
-	this.matterService.AtomicMirror(srcPath, destPath, overwrite, user)
+	this.matterService.AtomicMirror(request, srcPath, destPath, overwrite, user)
 
 	return this.Success(nil)
 
@@ -483,7 +484,7 @@ func (this *MatterController) Zip(writer http.ResponseWriter, request *http.Requ
 
 	uuids := request.FormValue("uuids")
 	if uuids == "" {
-		panic(result.BadRequest("文件的uuids必填"))
+		panic(result.BadRequest("uuids cannot be null"))
 	}
 
 	uuidArray := strings.Split(uuids, ",")

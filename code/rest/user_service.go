@@ -46,12 +46,12 @@ func (this *UserService) MatterLock(userUuid string) {
 	//去缓存中捞取
 	cacheItem, err := this.locker.Value(userUuid)
 	if err != nil {
-		this.logger.Error("获取缓存时出错了" + err.Error())
+		this.logger.Error("error while get cache" + err.Error())
 	}
 
 	//当前被锁住了。
 	if cacheItem != nil && cacheItem.Data() != nil {
-		panic(result.BadRequest("当前正在进行文件操作，请稍后再试！"))
+		panic(result.BadRequest("file is being operating, retry later"))
 	}
 
 	//添加一把新锁，有效期为12小时

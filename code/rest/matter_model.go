@@ -17,6 +17,8 @@ const (
 	MATTER_NAME_MAX_LENGTH = 200
 	//matter文件夹最大深度
 	MATTER_NAME_MAX_DEPTH = 32
+	//matter name pattern
+	MATTER_NAME_PATTERN = `[\\/:*?"<>|]`
 )
 
 /**

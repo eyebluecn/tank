@@ -63,13 +63,13 @@ func (this *MatterDao) CheckByUuid(uuid string) *Matter {
 func (this *MatterDao) CheckWithRootByUuid(uuid string, user *User) *Matter {
 
 	if uuid == "" {
-		panic(result.BadRequest("uuid cannot be nil."))
+		panic(result.BadRequest("uuid cannot be null."))
 	}
 
 	var matter *Matter
 	if uuid == MATTER_ROOT {
 		if user == nil {
-			panic(result.BadRequest("user cannot be nil."))
+			panic(result.BadRequest("user cannot be null."))
 		}
 		matter = NewRootMatter(user)
 	} else {
@@ -85,7 +85,7 @@ func (this *MatterDao) CheckWithRootByPath(path string, user *User) *Matter {
 	var matter *Matter
 
 	if user == nil {
-		panic(result.BadRequest("user cannot be nil."))
+		panic(result.BadRequest("user cannot be null."))
 	}
 
 	//目标文件夹matter
@@ -471,11 +471,11 @@ func (this *MatterDao) findByUserUuidAndPath(userUuid string, path string) *Matt
 func (this *MatterDao) checkByUserUuidAndPath(userUuid string, path string) *Matter {
 
 	if path == "" {
-		panic(result.BadRequest("path 不能为空"))
+		panic(result.BadRequest("path cannot be null"))
 	}
 	matter := this.findByUserUuidAndPath(userUuid, path)
 	if matter == nil {
-		panic(result.NotFound("path = %s 不存在", path))
+		panic(result.NotFound("path = %s not exists", path))
 	}
 
 	return matter

@@ -3,6 +3,7 @@ package rest
 import (
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/builder"
+	"github.com/eyebluecn/tank/code/tool/i18n"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
 	"net/http"
@@ -77,7 +78,7 @@ func (this *ShareController) Create(writer http.ResponseWriter, request *http.Re
 	expireTimeStr := request.FormValue("expireTime")
 
 	if matterUuids == "" {
-		panic(result.BadRequest("matterUuids必填"))
+		panic(result.BadRequest("matterUuids cannot be null"))
 	}
 
 	var expireTime time.Time
@@ -88,13 +89,13 @@ func (this *ShareController) Create(writer http.ResponseWriter, request *http.Re
 	} else {
 
 		if expireTimeStr == "" {
-			panic(result.BadRequest("时间格式错误！"))
+			panic(result.BadRequest("time format error"))
 		} else {
 			expireTime = util.ConvertDateTimeStringToTime(expireTimeStr)
 		}
 
 		if expireTime.Before(time.Now()) {
-			panic(result.BadRequest("过期时间错误！"))
+			panic(result.BadRequest("expire time cannot before now"))
 		}
 
 	}
@@ -102,9 +103,9 @@ func (this *ShareController) Create(writer http.ResponseWriter, request *http.Re
 	uuidArray := strings.Split(matterUuids, ",")
 
 	if len(uuidArray) == 0 {
-		panic(result.BadRequest("请至少分享一个文件"))
+		panic(result.BadRequest("share at least one file"))
 	} else if len(uuidArray) > SHARE_MAX_NUM {
-		panic(result.BadRequest("一次分享文件数不能超过 %d", SHARE_MAX_NUM))
+		panic(result.BadRequestI18n(request, i18n.ShareNumExceedLimit, len(uuidArray), SHARE_MAX_NUM))
 	}
 
 	var name string
@@ -174,7 +175,7 @@ func (this *ShareController) Delete(writer http.ResponseWriter, request *http.Re
 
 	uuid := request.FormValue("uuid")
 	if uuid == "" {
-		panic(result.BadRequest("uuid必填"))
+		panic(result.BadRequest("uuid cannot be null"))
 	}
 
 	share := this.shareDao.FindByUuid(uuid)
@@ -195,7 +196,7 @@ func (this *ShareController) DeleteBatch(writer http.ResponseWriter, request *ht
 
 	uuids := request.FormValue("uuids")
 	if uuids == "" {
-		panic(result.BadRequest("uuids必填"))
+		panic(result.BadRequest("uuids cannot be null"))
 	}
 
 	uuidArray := strings.Split(uuids, ",")
@@ -221,7 +222,7 @@ func (this *ShareController) Detail(writer http.ResponseWriter, request *http.Re
 
 	uuid := request.FormValue("uuid")
 	if uuid == "" {
-		panic(result.BadRequest("分享的uuid必填"))
+		panic(result.BadRequest("uuid cannot be null"))
 	}
 
 	share := this.shareDao.CheckByUuid(uuid)
@@ -327,12 +328,12 @@ func (this *ShareController) Browse(writer http.ResponseWriter, request *http.Re
 			dirMatter := this.matterDao.CheckByUuid(puuid)
 			share.DirMatter = dirMatter
 		} else {
-			dirMatter := this.matterService.Detail(puuid)
+			dirMatter := this.matterService.Detail(request, puuid)
 
 			//验证 shareRootMatter是否在被分享。
 			shareRootMatter := this.matterDao.CheckByUuid(rootUuid)
 			if !shareRootMatter.Dir {
-				panic(result.BadRequest("只有文件夹可以浏览！"))
+				panic(result.BadRequestI18n(request, i18n.MatterDestinationMustDirectory))
 			}
 			this.bridgeDao.CheckByShareUuidAndMatterUuid(share.Uuid, shareRootMatter.Uuid)
 
@@ -349,7 +350,7 @@ func (this *ShareController) Browse(writer http.ResponseWriter, request *http.Re
 			}
 
 			if !find {
-				panic(result.BadRequest("rootUuid不是分享的根目录"))
+				panic(result.BadRequest("rootUuid is not the root of share."))
 			}
 
 			share.DirMatter = dirMatter

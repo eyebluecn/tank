@@ -59,7 +59,7 @@ func (this *DavService) ParseDepth(request *http.Request) int {
 			return 1
 		}
 	} else {
-		panic(result.BadRequest("必须指定Header Depth"))
+		panic(result.BadRequest("Header Depth cannot be null"))
 	}
 	return depth
 }
@@ -108,7 +108,7 @@ func (this *DavService) PropstatsFromXmlNames(user *User, matter *Matter, xmlNam
 	}
 
 	if len(properties) == 0 {
-		panic(result.BadRequest("请求的属性项无法解析！"))
+		panic(result.BadRequest("cannot parse request properties"))
 	}
 
 	okPropstat := dav.Propstat{Status: http.StatusOK, Props: properties}
@@ -137,7 +137,7 @@ func (this *DavService) Propstats(user *User, matter *Matter, propfind *dav.Prop
 
 	propstats := make([]dav.Propstat, 0)
 	if propfind.Propname != nil {
-		panic(result.BadRequest("propfind.Propname != nil 尚未处理"))
+		panic(result.BadRequest("TODO: propfind.Propname != nil "))
 	} else if propfind.Allprop != nil {
 
 		//TODO: 如果include中还有内容，那么包含进去。
@@ -187,7 +187,7 @@ func (this *DavService) HandlePropfind(writer http.ResponseWriter, request *http
 		fmt.Printf("处理Matter %s\n", matter.Path)
 
 		propstats := this.Propstats(user, matter, propfind)
-		path := fmt.Sprintf("%s%s", WEBDAV_PREFFIX, matter.Path)
+		path := fmt.Sprintf("%s%s", WEBDAV_PREFIX, matter.Path)
 		response := this.makePropstatResponse(path, propstats)
 
 		err := multiStatusWriter.Write(response)
@@ -234,10 +234,10 @@ func (this *DavService) HandlePut(writer http.ResponseWriter, request *http.Requ
 	//如果存在，那么先删除再说。
 	srcMatter := this.matterDao.findByUserUuidAndPath(user.Uuid, subPath)
 	if srcMatter != nil {
-		this.matterService.AtomicDelete(srcMatter)
+		this.matterService.AtomicDelete(request, srcMatter)
 	}
 
-	this.matterService.Upload(request.Body, user, dirMatter, filename, true)
+	this.matterService.Upload(request, request.Body, user, dirMatter, filename, true)
 
 }
 
@@ -249,7 +249,7 @@ func (this *DavService) HandleDelete(writer http.ResponseWriter, request *http.R
 	//寻找符合条件的matter.
 	matter := this.matterDao.CheckWithRootByPath(subPath, user)
 
-	this.matterService.AtomicDelete(matter)
+	this.matterService.AtomicDelete(request, matter)
 }
 
 //创建文件夹
@@ -263,7 +263,7 @@ func (this *DavService) HandleMkcol(writer http.ResponseWriter, request *http.Re
 	//寻找符合条件的matter.
 	dirMatter := this.matterDao.CheckWithRootByPath(dirPath, user)
 
-	this.matterService.AtomicCreateDirectory(dirMatter, thisDirName, user)
+	this.matterService.AtomicCreateDirectory(request, dirMatter, thisDirName, user)
 
 }
 
@@ -314,17 +314,17 @@ func (this *DavService) prepareMoveCopy(
 	var destinationPath string
 
 	if destinationStr == "" {
-		panic(result.BadRequest("Header Destination必填"))
+		panic(result.BadRequest("Header Destination cannot be null"))
 	}
 
 	//如果是重命名，那么就不是http开头了。
-	if strings.HasPrefix(destinationStr, WEBDAV_PREFFIX) {
+	if strings.HasPrefix(destinationStr, WEBDAV_PREFIX) {
 		fullDestinationPath = destinationStr
 	} else {
 		destinationUrl, err := url.Parse(destinationStr)
 		this.PanicError(err)
 		if destinationUrl.Host != request.Host {
-			panic(result.BadRequest("Destination Host不一致. %s  %s != %s", destinationStr, destinationUrl.Host, request.Host))
+			panic(result.BadRequest("Destination Host not the same. %s  %s != %s", destinationStr, destinationUrl.Host, request.Host))
 		}
 		fullDestinationPath = destinationUrl.Path
 	}
@@ -333,13 +333,13 @@ func (this *DavService) prepareMoveCopy(
 	fullDestinationPath = path.Clean(fullDestinationPath)
 
 	//去除前缀
-	pattern := fmt.Sprintf(`^%s(.*)$`, WEBDAV_PREFFIX)
+	pattern := fmt.Sprintf(`^%s(.*)$`, WEBDAV_PREFIX)
 	reg := regexp.MustCompile(pattern)
 	strs := reg.FindStringSubmatch(fullDestinationPath)
 	if len(strs) == 2 {
 		destinationPath = strs[1]
 	} else {
-		panic(result.BadRequest("目标前缀必须为：%s", WEBDAV_PREFFIX))
+		panic(result.BadRequest("destination prefix must be %s", WEBDAV_PREFIX))
 	}
 
 	destinationName = util.GetFilenameOfPath(destinationPath)
@@ -362,7 +362,7 @@ func (this *DavService) prepareMoveCopy(
 
 	//如果是空或者/就是请求根目录
 	if srcMatter.Uuid == MATTER_ROOT {
-		panic(result.BadRequest("你不能移动根目录！"))
+		panic(result.BadRequest("you cannot move the root directory"))
 	}
 
 	//寻找目标文件夹matter
@@ -381,9 +381,9 @@ func (this *DavService) HandleMove(writer http.ResponseWriter, request *http.Req
 	//移动到新目录中去。
 	if destinationDirPath == srcDirPath {
 		//文件夹没变化，相当于重命名。
-		this.matterService.AtomicRename(srcMatter, destinationName, user)
+		this.matterService.AtomicRename(request, srcMatter, destinationName, user)
 	} else {
-		this.matterService.AtomicMove(srcMatter, destDirMatter, overwrite)
+		this.matterService.AtomicMove(request, srcMatter, destDirMatter, overwrite)
 	}
 
 	this.logger.Info("完成移动 %s => %s", subPath, destDirMatter.Path)
@@ -397,7 +397,7 @@ func (this *DavService) HandleCopy(writer http.ResponseWriter, request *http.Req
 	srcMatter, destDirMatter, _, _, destinationName, overwrite := this.prepareMoveCopy(writer, request, user, subPath)
 
 	//复制到新目录中去。
-	this.matterService.AtomicCopy(srcMatter, destDirMatter, destinationName, overwrite)
+	this.matterService.AtomicCopy(request, srcMatter, destDirMatter, destinationName, overwrite)
 
 	this.logger.Info("完成复制 %s => %s", subPath, destDirMatter.Path)
 
@@ -406,19 +406,19 @@ func (this *DavService) HandleCopy(writer http.ResponseWriter, request *http.Req
 //加锁
 func (this *DavService) HandleLock(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
 
-	panic(result.BadRequest("不支持LOCK方法"))
+	panic(result.BadRequest("not support LOCK yet."))
 }
 
 //解锁
 func (this *DavService) HandleUnlock(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
 
-	panic(result.BadRequest("不支持UNLOCK方法"))
+	panic(result.BadRequest("not support UNLOCK yet."))
 }
 
 //修改文件属性
 func (this *DavService) HandleProppatch(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
 
-	panic(result.BadRequest("不支持PROPPATCH方法"))
+	panic(result.BadRequest("not support PROPPATCH yet."))
 }
 
 //处理所有的请求
@@ -482,7 +482,7 @@ func (this *DavService) HandleDav(writer http.ResponseWriter, request *http.Requ
 
 	} else {
 
-		panic(result.BadRequest("该方法还不支持。%s", method))
+		panic(result.BadRequest("not support %s yet.", method))
 
 	}
 

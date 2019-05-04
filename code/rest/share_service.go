@@ -65,12 +65,11 @@ func (this *ShareService) CheckShare(shareUuid string, code string, user *User) 
 		} else {
 			if !share.ExpireInfinity {
 				if share.ExpireTime.Before(time.Now()) {
-					panic(result.BadRequest("分享已过期"))
+					panic(result.BadRequest("share expired"))
 				}
 			}
 		}
 	}
-
 	return share
 }
 
@@ -106,7 +105,7 @@ func (this *ShareService) ValidateMatter(shareUuid string, code string, user *Us
 		//保证 puuid对应的matter是shareRootMatter的子文件夹。
 		child := strings.HasPrefix(matter.Path, shareRootMatter.Path)
 		if !child {
-			panic(result.Unauthorized("%s 不是 %s 的子文件夹！", matter.Uuid, shareRootUuid))
+			panic(result.BadRequest("%s is not %s's children", matter.Uuid, shareRootUuid))
 		}
 	}
 
