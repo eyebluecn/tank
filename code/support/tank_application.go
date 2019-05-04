@@ -23,7 +23,7 @@ const (
 	MODE_MIRROR = "mirror"
 	//将远程的一个文件爬取到蓝眼云盘中
 	MODE_CRAWL = "crawl"
-	//TODO:查看当前蓝眼云盘版本
+	//TODO: 查看当前蓝眼云盘版本
 	MODE_VERSION = "version"
 )
 
@@ -85,6 +85,11 @@ func (this *TankApplication) Start() {
 
 		//直接web启动
 		this.HandleWeb()
+
+	} else if strings.ToLower(this.mode) == MODE_VERSION {
+
+		//直接web启动
+		this.HandleVersion()
 
 	} else {
 
@@ -254,5 +259,12 @@ func (this *TankApplication) HandleCrawl() {
 	} else {
 		fmt.Printf("error %s\r\n", webResult.Msg)
 	}
+
+}
+
+//fetch the application version
+func (this *TankApplication) HandleVersion() {
+
+	fmt.Printf("EyeblueTank %s\r\n", core.VERSION)
 
 }

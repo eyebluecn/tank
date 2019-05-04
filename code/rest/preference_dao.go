@@ -20,7 +20,7 @@ func (this *PreferenceDao) Fetch() *Preference {
 	if db.Error != nil {
 
 		if db.Error.Error() == result.DB_ERROR_NOT_FOUND {
-			preference.Name = "蓝眼云盘"
+			preference.Name = "EyeblueTank"
 			preference.Version = core.VERSION
 			this.Create(preference)
 			return preference

@@ -11,18 +11,16 @@ const (
 	MATTER_ROOT = "root"
 	//cache directory name.
 	MATTER_CACHE = "cache"
-	//压缩文件的临时目录
-	MATTER_ZIP = "zip"
-	//matter名称最大长度
+	//zip file temp directory.
+	MATTER_ZIP             = "zip"
 	MATTER_NAME_MAX_LENGTH = 200
-	//matter文件夹最大深度
-	MATTER_NAME_MAX_DEPTH = 32
+	MATTER_NAME_MAX_DEPTH  = 32
 	//matter name pattern
 	MATTER_NAME_PATTERN = `[\\/:*?"<>|]`
 )
 
 /**
- * 文件。
+ * file
  */
 type Matter struct {
 	Base
@@ -45,17 +43,16 @@ func (Matter) TableName() string {
 	return core.TABLE_PREFIX + "matter"
 }
 
-// 获取该Matter的绝对路径。path代表的是相对路径。
+// get matter's absolute path. the Path property is relative path in db.
 func (this *Matter) AbsolutePath() string {
-	return GetUserFileRootDir(this.Username) + this.Path
+	return GetUserMatterRootDir(this.Username) + this.Path
 }
 
-// 获取该Matter的MimeType
 func (this *Matter) MimeType() string {
 	return util.GetMimeType(util.GetExtension(this.Name))
 }
 
-//创建一个 ROOT 的matter，主要用于统一化处理移动复制等内容。
+//Create a root matter. It's convenient for copy and move
 func NewRootMatter(user *User) *Matter {
 	matter := &Matter{}
 	matter.Uuid = MATTER_ROOT
@@ -69,15 +66,15 @@ func NewRootMatter(user *User) *Matter {
 	return matter
 }
 
-//获取到用户文件的根目录。
-func GetUserFileRootDir(username string) (rootDirPath string) {
+//get user's root absolute path
+func GetUserMatterRootDir(username string) (rootDirPath string) {
 
 	rootDirPath = fmt.Sprintf("%s/%s/%s", core.CONFIG.MatterPath(), username, MATTER_ROOT)
 
 	return rootDirPath
 }
 
-//获取到用户缓存的根目录。
+//get user's cache absolute path
 func GetUserCacheRootDir(username string) (rootDirPath string) {
 
 	rootDirPath = fmt.Sprintf("%s/%s/%s", core.CONFIG.MatterPath(), username, MATTER_CACHE)
@@ -85,7 +82,7 @@ func GetUserCacheRootDir(username string) (rootDirPath string) {
 	return rootDirPath
 }
 
-//获取到用户压缩临时文件的根目录。
+//get user's zip absolute path
 func GetUserZipRootDir(username string) (rootDirPath string) {
 
 	rootDirPath = fmt.Sprintf("%s/%s/%s", core.CONFIG.MatterPath(), username, MATTER_ZIP)

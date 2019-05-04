@@ -413,7 +413,7 @@ func (this *MatterService) createDirectory(request *http.Request, dirMatter *Mat
 	}
 
 	//绝对路径
-	absolutePath := GetUserFileRootDir(user.Username) + dirMatter.Path + "/" + name
+	absolutePath := GetUserMatterRootDir(user.Username) + dirMatter.Path + "/" + name
 
 	//相对路径
 	relativePath := dirMatter.Path + "/" + name
