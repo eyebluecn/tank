@@ -2,6 +2,7 @@ package rest
 
 import (
 	"github.com/eyebluecn/tank/code/core"
+	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/nu7hatch/gouuid"
 	"time"
 )
@@ -10,18 +11,27 @@ type UploadTokenDao struct {
 	BaseDao
 }
 
-//按照Id查询
+//find by uuid. if not found return nil.
 func (this *UploadTokenDao) FindByUuid(uuid string) *UploadToken {
-
-	// Read
-	var uploadToken = &UploadToken{}
-	db := core.CONTEXT.GetDB().Where(&UploadToken{Base: Base{Uuid: uuid}}).First(uploadToken)
+	var entity = &UploadToken{}
+	db := core.CONTEXT.GetDB().Where("uuid = ?", uuid).First(entity)
 	if db.Error != nil {
-		return nil
+		if db.Error.Error() == result.DB_ERROR_NOT_FOUND {
+			return nil
+		} else {
+			panic(db.Error)
+		}
 	}
+	return entity
+}
 
-	return uploadToken
-
+//find by uuid. if not found panic NotFound error
+func (this *UploadTokenDao) CheckByUuid(uuid string) *UploadToken {
+	entity := this.FindByUuid(uuid)
+	if entity == nil {
+		panic(result.NotFound("not found record with uuid = %s", uuid))
+	}
+	return entity
 }
 
 //创建一个session并且持久化到数据库中。

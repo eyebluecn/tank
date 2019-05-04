@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/builder"
+	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
 	"github.com/jinzhu/gorm"
 	"github.com/nu7hatch/gouuid"
@@ -16,31 +17,30 @@ type ImageCacheDao struct {
 	BaseDao
 }
 
-//按照Id查询文件
+//find by uuid. if not found return nil.
 func (this *ImageCacheDao) FindByUuid(uuid string) *ImageCache {
-
-	// Read
-	var imageCache ImageCache
-	db := core.CONTEXT.GetDB().Where(&ImageCache{Base: Base{Uuid: uuid}}).First(&imageCache)
+	var entity = &ImageCache{}
+	db := core.CONTEXT.GetDB().Where("uuid = ?", uuid).First(entity)
 	if db.Error != nil {
-		return nil
+		if db.Error.Error() == result.DB_ERROR_NOT_FOUND {
+			return nil
+		} else {
+			panic(db.Error)
+		}
 	}
-	return &imageCache
+	return entity
 }
 
-//按照Id查询文件
+//find by uuid. if not found panic NotFound error
 func (this *ImageCacheDao) CheckByUuid(uuid string) *ImageCache {
-
-	// Read
-	var imageCache ImageCache
-	db := core.CONTEXT.GetDB().Where(&ImageCache{Base: Base{Uuid: uuid}}).First(&imageCache)
-	this.PanicError(db.Error)
-
-	return &imageCache
+	entity := this.FindByUuid(uuid)
+	if entity == nil {
+		panic(result.NotFound("not found record with uuid = %s", uuid))
+	}
+	return entity
 
 }
 
-//按照名字查询文件夹
 func (this *ImageCacheDao) FindByMatterUuidAndMode(matterUuid string, mode string) *ImageCache {
 
 	var wp = &builder.WherePair{}
@@ -63,7 +63,6 @@ func (this *ImageCacheDao) FindByMatterUuidAndMode(matterUuid string, mode strin
 	return imageCache
 }
 
-//按照id和userUuid来查找。找不到抛异常。
 func (this *ImageCacheDao) CheckByUuidAndUserUuid(uuid string, userUuid string) *ImageCache {
 
 	// Read
@@ -75,8 +74,7 @@ func (this *ImageCacheDao) CheckByUuidAndUserUuid(uuid string, userUuid string) 
 
 }
 
-//获取某个用户的某个文件夹下的某个名字的文件(或文件夹)列表
-func (this *ImageCacheDao) ListByUserUuidAndPuuidAndDirAndName(userUuid string) []*ImageCache {
+func (this *ImageCacheDao) FindByUserUuidAndPuuidAndDirAndName(userUuid string) []*ImageCache {
 
 	var imageCaches []*ImageCache
 
@@ -88,7 +86,6 @@ func (this *ImageCacheDao) ListByUserUuidAndPuuidAndDirAndName(userUuid string) 
 	return imageCaches
 }
 
-//获取某个文件夹下所有的文件和子文件
 func (this *ImageCacheDao) Page(page int, pageSize int, userUuid string, matterUuid string, sortArray []builder.OrderPair) *Pager {
 
 	var wp = &builder.WherePair{}
@@ -116,7 +113,6 @@ func (this *ImageCacheDao) Page(page int, pageSize int, userUuid string, matterU
 	return pager
 }
 
-//创建
 func (this *ImageCacheDao) Create(imageCache *ImageCache) *ImageCache {
 
 	timeUUID, _ := uuid.NewV4()
@@ -130,7 +126,6 @@ func (this *ImageCacheDao) Create(imageCache *ImageCache) *ImageCache {
 	return imageCache
 }
 
-//修改一个文件
 func (this *ImageCacheDao) Save(imageCache *ImageCache) *ImageCache {
 
 	imageCache.UpdateTime = time.Now()
@@ -140,25 +135,24 @@ func (this *ImageCacheDao) Save(imageCache *ImageCache) *ImageCache {
 	return imageCache
 }
 
-//删除一个文件包括文件夹
 func (this *ImageCacheDao) deleteFileAndDir(imageCache *ImageCache) {
 
 	filePath := GetUserCacheRootDir(imageCache.Username) + imageCache.Path
 
 	dirPath := filepath.Dir(filePath)
 
-	//删除文件
+	//delete file from disk.
 	err := os.Remove(filePath)
 	if err != nil {
-		this.logger.Error(fmt.Sprintf("删除磁盘上的文件%s出错 %s", filePath, err.Error()))
+		this.logger.Error(fmt.Sprintf("error while deleting %s from disk %s", filePath, err.Error()))
 	}
 
-	//如果这一层文件夹是空的，那么删除文件夹本身。
+	//if this level is empty. Delete the directory
 	util.DeleteEmptyDirRecursive(dirPath)
 
 }
 
-//删除一个文件，数据库中删除，物理磁盘上删除。
+//delete a file from db and disk.
 func (this *ImageCacheDao) Delete(imageCache *ImageCache) {
 
 	db := core.CONTEXT.GetDB().Delete(&imageCache)
@@ -168,42 +162,50 @@ func (this *ImageCacheDao) Delete(imageCache *ImageCache) {
 
 }
 
-//删除一个matter对应的所有缓存
+//delete all the cache of a matter.
 func (this *ImageCacheDao) DeleteByMatterUuid(matterUuid string) {
 
 	var wp = &builder.WherePair{}
 
 	wp = wp.And(&builder.WherePair{Query: "matter_uuid = ?", Args: []interface{}{matterUuid}})
 
-	//查询出即将删除的图片缓存
 	var imageCaches []*ImageCache
 	db := core.CONTEXT.GetDB().Where(wp.Query, wp.Args).Find(&imageCaches)
 	this.PanicError(db.Error)
 
-	//删除文件记录
+	//delete from db.
 	db = core.CONTEXT.GetDB().Where(wp.Query, wp.Args).Delete(ImageCache{})
 	this.PanicError(db.Error)
 
-	//删除文件实体
+	//delete from disk.
 	for _, imageCache := range imageCaches {
 		this.deleteFileAndDir(imageCache)
 	}
 
 }
 
-//获取一段时间中文件总大小
 func (this *ImageCacheDao) SizeBetweenTime(startTime time.Time, endTime time.Time) int64 {
+
+	var wp = &builder.WherePair{Query: "create_time >= ? AND create_time <= ?", Args: []interface{}{startTime, endTime}}
+
+	var count int64
+	db := core.CONTEXT.GetDB().Model(&ImageCache{}).Where(wp.Query, wp.Args...).Count(&count)
+	if count == 0 {
+		return 0
+	}
+
 	var size int64
-	db := core.CONTEXT.GetDB().Model(&ImageCache{}).Where("create_time >= ? AND create_time <= ?", startTime, endTime).Select("SUM(size)")
+	db = core.CONTEXT.GetDB().Model(&ImageCache{}).Where("create_time >= ? AND create_time <= ?", startTime, endTime).Select("SUM(size)")
 	this.PanicError(db.Error)
 	row := db.Row()
-	row.Scan(&size)
+	err := row.Scan(&size)
+	this.PanicError(err)
 	return size
 }
 
-//执行清理操作
+//System cleanup.
 func (this *ImageCacheDao) Cleanup() {
-	this.logger.Info("[ImageCacheDao]执行清理：清除数据库中所有ImageCache记录。")
+	this.logger.Info("[ImageCacheDao]clean up. Delete all ImageCache ")
 	db := core.CONTEXT.GetDB().Where("uuid is not null").Delete(ImageCache{})
 	this.PanicError(db.Error)
 }

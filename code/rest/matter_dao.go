@@ -17,11 +17,9 @@ type MatterDao struct {
 	bridgeDao     *BridgeDao
 }
 
-//初始化方法
 func (this *MatterDao) Init() {
 	this.BaseDao.Init()
 
-	//手动装填本实例的Bean. 这里必须要用中间变量方可。
 	b := core.CONTEXT.GetBean(this.imageCacheDao)
 	if b, ok := b.(*ImageCacheDao); ok {
 		this.imageCacheDao = b
@@ -34,32 +32,29 @@ func (this *MatterDao) Init() {
 
 }
 
-//按照Id查询文件
 func (this *MatterDao) FindByUuid(uuid string) *Matter {
-
-	// Read
-	var matter Matter
-	db := core.CONTEXT.GetDB().Where(&Matter{Base: Base{Uuid: uuid}}).First(&matter)
+	var entity = &Matter{}
+	db := core.CONTEXT.GetDB().Where("uuid = ?", uuid).First(entity)
 	if db.Error != nil {
 		if db.Error.Error() == result.DB_ERROR_NOT_FOUND {
 			return nil
 		} else {
-			this.PanicError(db.Error)
+			panic(db.Error)
 		}
 	}
-	return &matter
+	return entity
 }
 
-//按照Id查询文件
+//find by uuid. if not found panic NotFound error
 func (this *MatterDao) CheckByUuid(uuid string) *Matter {
-	matter := this.FindByUuid(uuid)
-	if matter == nil {
-		panic(result.NotFound("%s 对应的matter不存在", uuid))
+	entity := this.FindByUuid(uuid)
+	if entity == nil {
+		panic(result.NotFound("not found record with uuid = %s", uuid))
 	}
-	return matter
+	return entity
 }
 
-//按照uuid查找一个文件夹，可能返回root对应的matter.
+// find by uuid. if uuid=root, then return the Root Matter
 func (this *MatterDao) CheckWithRootByUuid(uuid string, user *User) *Matter {
 
 	if uuid == "" {
@@ -79,7 +74,7 @@ func (this *MatterDao) CheckWithRootByUuid(uuid string, user *User) *Matter {
 	return matter
 }
 
-//按照path查找一个matter，可能返回root对应的matter.
+// find by path. if path=/, then return the Root Matter
 func (this *MatterDao) CheckWithRootByPath(path string, user *User) *Matter {
 
 	var matter *Matter
@@ -88,7 +83,6 @@ func (this *MatterDao) CheckWithRootByPath(path string, user *User) *Matter {
 		panic(result.BadRequest("user cannot be null."))
 	}
 
-	//目标文件夹matter
 	if path == "" || path == "/" {
 		matter = NewRootMatter(user)
 	} else {
@@ -98,7 +92,6 @@ func (this *MatterDao) CheckWithRootByPath(path string, user *User) *Matter {
 	return matter
 }
 
-//按照名字查询文件夹
 func (this *MatterDao) FindByUserUuidAndPuuidAndNameAndDirTrue(userUuid string, puuid string, name string) *Matter {
 
 	var wp = &builder.WherePair{}
@@ -127,10 +120,8 @@ func (this *MatterDao) FindByUserUuidAndPuuidAndNameAndDirTrue(userUuid string, 
 	return matter
 }
 
-//按照id和userUuid来查找。找不到抛异常。
 func (this *MatterDao) CheckByUuidAndUserUuid(uuid string, userUuid string) *Matter {
 
-	// Read
 	var matter = &Matter{}
 	db := core.CONTEXT.GetDB().Where(&Matter{Base: Base{Uuid: uuid}, UserUuid: userUuid}).First(matter)
 	this.PanicError(db.Error)
@@ -139,7 +130,6 @@ func (this *MatterDao) CheckByUuidAndUserUuid(uuid string, userUuid string) *Mat
 
 }
 
-//统计某个用户的某个文件夹下的某个名字的文件(或文件夹)数量。
 func (this *MatterDao) CountByUserUuidAndPuuidAndDirAndName(userUuid string, puuid string, dir bool, name string) int {
 
 	var matter Matter
@@ -170,7 +160,6 @@ func (this *MatterDao) CountByUserUuidAndPuuidAndDirAndName(userUuid string, puu
 	return count
 }
 
-//统计某个用户的某个文件夹下的某个名字的文件(或文件夹)数量。
 func (this *MatterDao) FindByUserUuidAndPuuidAndDirAndName(userUuid string, puuid string, dir bool, name string) *Matter {
 
 	var matter = &Matter{}
@@ -204,7 +193,6 @@ func (this *MatterDao) FindByUserUuidAndPuuidAndDirAndName(userUuid string, puui
 	return matter
 }
 
-//获取某个用户的某个文件夹下的某个名字的文件(或文件夹)列表
 func (this *MatterDao) ListByUserUuidAndPuuidAndDirAndName(userUuid string, puuid string, dir bool, name string) []*Matter {
 
 	var matters []*Matter
@@ -217,13 +205,11 @@ func (this *MatterDao) ListByUserUuidAndPuuidAndDirAndName(userUuid string, puui
 	return matters
 }
 
-//获取某个文件夹下所有的文件和子文件
 func (this *MatterDao) ListByPuuidAndUserUuid(puuid string, userUuid string, sortArray []builder.OrderPair) []*Matter {
 	var matters []*Matter
 
 	if sortArray == nil {
 
-		//顺序按照文件夹，创建时间
 		sortArray = []builder.OrderPair{
 			{
 				Key:   "dir",
@@ -242,7 +228,6 @@ func (this *MatterDao) ListByPuuidAndUserUuid(puuid string, userUuid string, sor
 	return matters
 }
 
-//根据uuid查找对应的Matters
 func (this *MatterDao) ListByUuids(uuids []string, sortArray []builder.OrderPair) []*Matter {
 	var matters []*Matter
 
@@ -252,7 +237,6 @@ func (this *MatterDao) ListByUuids(uuids []string, sortArray []builder.OrderPair
 	return matters
 }
 
-//获取某个文件夹下所有的文件和子文件
 func (this *MatterDao) Page(page int, pageSize int, puuid string, userUuid string, name string, dir string, extensions []string, sortArray []builder.OrderPair) *Pager {
 
 	var wp = &builder.WherePair{}
@@ -300,7 +284,6 @@ func (this *MatterDao) Page(page int, pageSize int, puuid string, userUuid strin
 	return pager
 }
 
-//创建
 func (this *MatterDao) Create(matter *Matter) *Matter {
 
 	timeUUID, _ := uuid.NewV4()
@@ -314,7 +297,6 @@ func (this *MatterDao) Create(matter *Matter) *Matter {
 	return matter
 }
 
-//修改一个文件
 func (this *MatterDao) Save(matter *Matter) *Matter {
 
 	matter.UpdateTime = time.Now()
@@ -324,13 +306,12 @@ func (this *MatterDao) Save(matter *Matter) *Matter {
 	return matter
 }
 
-//计数器加一
+//download time add 1
 func (this *MatterDao) TimesIncrement(matterUuid string) {
 	db := core.CONTEXT.GetDB().Model(&Matter{}).Where("uuid = ?", matterUuid).Update("times", gorm.Expr("times + 1"))
 	this.PanicError(db.Error)
 }
 
-//获取一个文件夹中直系文件/文件夹的总大小 puuid可以传root
 func (this *MatterDao) SizeByPuuidAndUserUuid(matterUuid string, userUuid string) int64 {
 
 	var wp = &builder.WherePair{Query: "puuid = ? AND user_uuid = ?", Args: []interface{}{matterUuid, userUuid}}
@@ -351,15 +332,14 @@ func (this *MatterDao) SizeByPuuidAndUserUuid(matterUuid string, userUuid string
 	return sumSize
 }
 
-//统计某个文件/文件夹的大小(会自动往上统计，直到根目录)
+// compute route size. It will compute upward until root directory
 func (this *MatterDao) ComputeRouteSize(matterUuid string, userUuid string) {
 
-	//如果更新到了根目录，那么更新到用户身上。
+	//if to root directory, then update to user's info.
 	if matterUuid == MATTER_ROOT {
 
 		size := this.SizeByPuuidAndUserUuid(MATTER_ROOT, userUuid)
 
-		//更新用户文件的总大小。
 		db := core.CONTEXT.GetDB().Model(&User{}).Where("uuid = ?", userUuid).Update("total_size", size)
 		this.PanicError(db.Error)
 
@@ -368,28 +348,27 @@ func (this *MatterDao) ComputeRouteSize(matterUuid string, userUuid string) {
 
 	matter := this.CheckByUuid(matterUuid)
 
-	//只有文件夹才去统计
+	//only compute dir
 	if matter.Dir {
-		//计算该目录下的直系文件/文件夹总大小
+		//compute the total size.
 		size := this.SizeByPuuidAndUserUuid(matterUuid, userUuid)
 
-		//大小有变化才更新
+		//when changed, we update
 		if matter.Size != size {
-			//更新大小。
 			db := core.CONTEXT.GetDB().Model(&Matter{}).Where("uuid = ?", matterUuid).Update("size", size)
 			this.PanicError(db.Error)
 		}
 
 	}
 
-	//更新自己的上一级目录。
+	//update parent recursively.
 	this.ComputeRouteSize(matter.Puuid, userUuid)
 }
 
-//删除一个文件，数据库中删除，物理磁盘上删除。
+//delete a file from db and disk.
 func (this *MatterDao) Delete(matter *Matter) {
 
-	//目录的话递归删除。
+	// recursive if dir
 	if matter.Dir {
 		matters := this.ListByPuuidAndUserUuid(matter.Uuid, matter.UserUuid, nil)
 
@@ -397,37 +376,34 @@ func (this *MatterDao) Delete(matter *Matter) {
 			this.Delete(f)
 		}
 
-		//删除数据库中文件夹本身
+		//delete from db.
 		db := core.CONTEXT.GetDB().Delete(&matter)
 		this.PanicError(db.Error)
 
-		//从磁盘中删除该文件夹。
+		//delete dir from disk.
 		util.DeleteEmptyDir(matter.AbsolutePath())
 
 	} else {
 
-		//删除数据库中文件记录
+		//delete from db.
 		db := core.CONTEXT.GetDB().Delete(&matter)
 		this.PanicError(db.Error)
 
-		//删除对应的缓存图片。
+		//delete its image cache.
 		this.imageCacheDao.DeleteByMatterUuid(matter.Uuid)
 
-		//删除所有的分享文件
+		//delete all the share.
 		this.bridgeDao.DeleteByMatterUuid(matter.Uuid)
 
-		//删除文件
+		//delete from disk.
 		err := os.Remove(matter.AbsolutePath())
 		if err != nil {
-			this.logger.Error("删除磁盘上的文件出错 %s", err.Error())
+			this.logger.Error("occur error when deleting file. %v", err)
 		}
-
-		//由于目录和物理结构一一对应，这里不能删除上级文件夹。
 
 	}
 }
 
-//获取一段时间中，总的数量
 func (this *MatterDao) CountBetweenTime(startTime time.Time, endTime time.Time) int64 {
 	var count int64
 	db := core.CONTEXT.GetDB().Model(&Matter{}).Where("create_time >= ? AND create_time <= ?", startTime, endTime).Count(&count)
@@ -435,12 +411,18 @@ func (this *MatterDao) CountBetweenTime(startTime time.Time, endTime time.Time) 
 	return count
 }
 
-//获取一段时间中文件总大小
 func (this *MatterDao) SizeBetweenTime(startTime time.Time, endTime time.Time) int64 {
 
-	//TODO: 所有函数汇总的SQL均需要先count询问，再处理。
+	var wp = &builder.WherePair{Query: "create_time >= ? AND create_time <= ?", Args: []interface{}{startTime, endTime}}
+
+	var count int64
+	db := core.CONTEXT.GetDB().Model(&Matter{}).Where(wp.Query, wp.Args...).Count(&count)
+	if count == 0 {
+		return 0
+	}
+
 	var size int64
-	db := core.CONTEXT.GetDB().Model(&Matter{}).Where("create_time >= ? AND create_time <= ?", startTime, endTime).Select("SUM(size)")
+	db = core.CONTEXT.GetDB().Model(&Matter{}).Where(wp.Query, wp.Args...).Select("SUM(size)")
 	this.PanicError(db.Error)
 	row := db.Row()
 	err := row.Scan(&size)
@@ -448,7 +430,6 @@ func (this *MatterDao) SizeBetweenTime(startTime time.Time, endTime time.Time) i
 	return size
 }
 
-//根据userUuid和path来查找
 func (this *MatterDao) findByUserUuidAndPath(userUuid string, path string) *Matter {
 
 	var wp = &builder.WherePair{Query: "user_uuid = ? AND path = ?", Args: []interface{}{userUuid, path}}
@@ -467,7 +448,6 @@ func (this *MatterDao) findByUserUuidAndPath(userUuid string, path string) *Matt
 	return matter
 }
 
-//根据userUuid和path来查找
 func (this *MatterDao) checkByUserUuidAndPath(userUuid string, path string) *Matter {
 
 	if path == "" {
@@ -481,7 +461,6 @@ func (this *MatterDao) checkByUserUuidAndPath(userUuid string, path string) *Mat
 	return matter
 }
 
-//获取一个文件夹中文件总大小
 func (this *MatterDao) SumSizeByUserUuidAndPath(userUuid string, path string) int64 {
 
 	var wp = &builder.WherePair{Query: "user_uuid = ? AND path like ?", Args: []interface{}{userUuid, path + "%"}}
@@ -503,7 +482,6 @@ func (this *MatterDao) SumSizeByUserUuidAndPath(userUuid string, path string) in
 
 }
 
-//一个文件夹中的数量
 func (this *MatterDao) CountByUserUuidAndPath(userUuid string, path string) int64 {
 
 	var wp = &builder.WherePair{Query: "user_uuid = ? AND path like ?", Args: []interface{}{userUuid, path + "%"}}
@@ -516,9 +494,9 @@ func (this *MatterDao) CountByUserUuidAndPath(userUuid string, path string) int6
 
 }
 
-//执行清理操作
+//System cleanup.
 func (this *MatterDao) Cleanup() {
-	this.logger.Info("[MatterDao]执行清理：清除数据库中所有Matter记录。删除磁盘中所有Matter文件。")
+	this.logger.Info("[MatterDao] clean up. Delete all Matter record in db and on disk.")
 	db := core.CONTEXT.GetDB().Where("uuid is not null").Delete(Matter{})
 	this.PanicError(db.Error)
 

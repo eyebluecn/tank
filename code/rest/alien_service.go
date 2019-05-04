@@ -21,11 +21,9 @@ type AlienService struct {
 	imageCacheService *ImageCacheService
 }
 
-//初始化方法
 func (this *AlienService) Init() {
 	this.BaseBean.Init()
 
-	//手动装填本实例的Bean. 这里必须要用中间变量方可。
 	b := core.CONTEXT.GetBean(this.matterDao)
 	if b, ok := b.(*MatterDao); ok {
 		this.matterDao = b
@@ -67,7 +65,6 @@ func (this *AlienService) Init() {
 	}
 }
 
-//预览或者下载的统一处理.
 func (this *AlienService) PreviewOrDownload(
 	writer http.ResponseWriter,
 	request *http.Request,
@@ -78,23 +75,22 @@ func (this *AlienService) PreviewOrDownload(
 	matter := this.matterDao.CheckByUuid(uuid)
 
 	if matter.Name != filename {
-		panic("文件信息错误")
+		panic(result.BadRequest("filename in url incorrect"))
 	}
 
-	//验证用户的权限问题。
-	//文件如果是私有的才需要权限
+	//only private file need auth.
 	if matter.Privacy {
 
-		//1.如果带有downloadTokenUuid那么就按照token的信息去获取。
+		//1.use downloadToken to auth.
 		downloadTokenUuid := request.FormValue("downloadTokenUuid")
 		if downloadTokenUuid != "" {
 			downloadToken := this.downloadTokenDao.CheckByUuid(downloadTokenUuid)
 			if downloadToken.ExpireTime.Before(time.Now()) {
-				panic("downloadToken已失效")
+				panic(result.BadRequest("downloadToken has expired"))
 			}
 
 			if downloadToken.MatterUuid != uuid {
-				panic("token和文件信息不一致")
+				panic(result.BadRequest("token and file info not match"))
 			}
 
 			tokenUser := this.userDao.CheckByUuid(downloadToken.UserUuid)
@@ -102,16 +98,15 @@ func (this *AlienService) PreviewOrDownload(
 				panic(result.UNAUTHORIZED)
 			}
 
-			//下载之后立即过期掉。如果是分块下载的，必须以最终获取到完整的数据为准。
+			//TODO: expire the download token. If download by chunk, do this later.
 			downloadToken.ExpireTime = time.Now()
 			this.downloadTokenDao.Save(downloadToken)
 
 		} else {
 
-			//判断文件的所属人是否正确
 			operator := this.findUser(request)
 
-			//可以使用分享码的形式授权。
+			//use share code to auth.
 			shareUuid := request.FormValue("shareUuid")
 			shareCode := request.FormValue("shareCode")
 			shareRootUuid := request.FormValue("shareRootUuid")
@@ -121,27 +116,25 @@ func (this *AlienService) PreviewOrDownload(
 		}
 	}
 
-	//文件夹下载
+	//download directory
 	if matter.Dir {
 
-		this.logger.Info("准备下载文件夹 %s", matter.Name)
-
-		//目标地点
 		this.matterService.DownloadZip(writer, request, []*Matter{matter})
 
 	} else {
 
-		//对图片处理。
+		//handle the image operation.
 		needProcess, imageResizeM, imageResizeW, imageResizeH := this.imageCacheService.ResizeParams(request)
 		if needProcess {
 
-			//如果是图片，那么能用缓存就用缓存
-			imageCache := this.imageCacheDao.FindByMatterUuidAndMode(matter.Uuid, fmt.Sprintf("%s_%d_%d", imageResizeM, imageResizeW, imageResizeH))
+			//if image, try to use cache.
+			mode := fmt.Sprintf("%s_%d_%d", imageResizeM, imageResizeW, imageResizeH)
+			imageCache := this.imageCacheDao.FindByMatterUuidAndMode(matter.Uuid, mode)
 			if imageCache == nil {
 				imageCache = this.imageCacheService.cacheImage(writer, request, matter)
 			}
 
-			//直接使用缓存中的信息
+			//download the cache image file.
 			this.matterService.DownloadFile(writer, request, GetUserCacheRootDir(imageCache.Username)+imageCache.Path, imageCache.Name, withContentDisposition)
 
 		} else {
@@ -150,7 +143,7 @@ func (this *AlienService) PreviewOrDownload(
 
 	}
 
-	//文件下载次数加一，为了加快访问速度，异步进行
+	//async increase the download times.
 	go core.RunWithRecovery(func() {
 		this.matterDao.TimesIncrement(uuid)
 	})

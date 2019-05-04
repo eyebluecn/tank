@@ -16,10 +16,10 @@ import (
 
 /**
  *
- * WebDav协议文档
+ * WebDav document
  * https://tools.ietf.org/html/rfc4918
- * 主要参考 golang.org/x/net/webdav
- * 测试机：http://www.webdav.org/neon/litmus/
+ * refer: golang.org/x/net/webdav
+ * test machine: http://www.webdav.org/neon/litmus/
  */
 //@Service
 type DavService struct {
@@ -28,11 +28,9 @@ type DavService struct {
 	matterService *MatterService
 }
 
-//初始化方法
 func (this *DavService) Init() {
 	this.BaseBean.Init()
 
-	//手动装填本实例的Bean. 这里必须要用中间变量方可。
 	b := core.CONTEXT.GetBean(this.matterDao)
 	if b, ok := b.(*MatterDao); ok {
 		this.matterDao = b
@@ -45,7 +43,7 @@ func (this *DavService) Init() {
 
 }
 
-//获取Header头中的Depth值，暂不支持 infinity
+//get the depth in header. Not support infinity yet.
 func (this *DavService) ParseDepth(request *http.Request) int {
 
 	depth := 1
@@ -84,7 +82,7 @@ func (this *DavService) makePropstatResponse(href string, pstats []dav.Propstat)
 	return &resp
 }
 
-//从一个matter中获取其 []dav.Propstat
+//fetch a matter's []dav.Propstat
 func (this *DavService) PropstatsFromXmlNames(user *User, matter *Matter, xmlNames []xml.Name) []dav.Propstat {
 
 	propstats := make([]dav.Propstat, 0)
@@ -92,7 +90,7 @@ func (this *DavService) PropstatsFromXmlNames(user *User, matter *Matter, xmlNam
 	var properties []dav.Property
 
 	for _, xmlName := range xmlNames {
-		//TODO: deadprops尚未考虑
+		//TODO: deadprops not implement yet.
 
 		// Otherwise, it must either be a live property or we don't know it.
 		if liveProp := LivePropMap[xmlName]; liveProp.findFn != nil && (liveProp.dir || !matter.Dir) {
@@ -103,7 +101,7 @@ func (this *DavService) PropstatsFromXmlNames(user *User, matter *Matter, xmlNam
 				InnerXML: []byte(innerXML),
 			})
 		} else {
-			this.logger.Info("%s的%s无法完成", matter.Path, xmlName.Local)
+			this.logger.Info("%s %s cannot finish.", matter.Path, xmlName.Local)
 		}
 	}
 
@@ -119,7 +117,6 @@ func (this *DavService) PropstatsFromXmlNames(user *User, matter *Matter, xmlNam
 
 }
 
-//从一个matter中获取所有的propsNames
 func (this *DavService) AllPropXmlNames(matter *Matter) []xml.Name {
 
 	pnames := make([]xml.Name, 0)
@@ -132,7 +129,6 @@ func (this *DavService) AllPropXmlNames(matter *Matter) []xml.Name {
 	return pnames
 }
 
-//从一个matter中获取其 []dav.Propstat
 func (this *DavService) Propstats(user *User, matter *Matter, propfind *dav.Propfind) []dav.Propstat {
 
 	propstats := make([]dav.Propstat, 0)
@@ -140,7 +136,7 @@ func (this *DavService) Propstats(user *User, matter *Matter, propfind *dav.Prop
 		panic(result.BadRequest("TODO: propfind.Propname != nil "))
 	} else if propfind.Allprop != nil {
 
-		//TODO: 如果include中还有内容，那么包含进去。
+		//TODO: if include other things. add to it.
 		xmlNames := this.AllPropXmlNames(matter)
 
 		propstats = this.PropstatsFromXmlNames(user, matter, xmlNames)
@@ -153,48 +149,44 @@ func (this *DavService) Propstats(user *User, matter *Matter, propfind *dav.Prop
 
 }
 
-//列出文件夹或者目录详情
+//list the directory.
 func (this *DavService) HandlePropfind(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
 
 	fmt.Printf("PROPFIND %s\n", subPath)
 
-	//获取请求的层数。暂不支持 infinity
 	depth := this.ParseDepth(request)
 
-	//读取请求参数。按照用户的参数请求返回内容。
 	propfind := dav.ReadPropfind(request.Body)
 
-	//寻找符合条件的matter.
-	//如果是空或者/就是请求根目录
+	//find the matter, if subPath is null, means the root directory.
 	matter := this.matterDao.CheckWithRootByPath(subPath, user)
 
 	var matters []*Matter
 	if depth == 0 {
 		matters = []*Matter{matter}
 	} else {
-		// len(matters) == 0 表示该文件夹下面是空文件夹
+		// len(matters) == 0 means empty directory
 		matters = this.matterDao.ListByPuuidAndUserUuid(matter.Uuid, user.Uuid, nil)
 
-		//将当前的matter添加到头部
+		//add this matter to head.
 		matters = append([]*Matter{matter}, matters...)
 	}
 
-	//准备一个输出结果的Writer
+	//prepare a multiStatusWriter.
 	multiStatusWriter := &dav.MultiStatusWriter{Writer: writer}
 
 	for _, matter := range matters {
 
-		fmt.Printf("处理Matter %s\n", matter.Path)
+		fmt.Printf("handle Matter %s\n", matter.Path)
 
 		propstats := this.Propstats(user, matter, propfind)
-		path := fmt.Sprintf("%s%s", WEBDAV_PREFIX, matter.Path)
-		response := this.makePropstatResponse(path, propstats)
+		visitPath := fmt.Sprintf("%s%s", WEBDAV_PREFIX, matter.Path)
+		response := this.makePropstatResponse(visitPath, propstats)
 
 		err := multiStatusWriter.Write(response)
 		this.PanicError(err)
 	}
 
-	//闭合
 	err := multiStatusWriter.Close()
 	this.PanicError(err)
 
@@ -202,25 +194,25 @@ func (this *DavService) HandlePropfind(writer http.ResponseWriter, request *http
 
 }
 
-//请求文件详情（下载）
+//handle download
 func (this *DavService) HandleGetHeadPost(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
 
 	fmt.Printf("GET %s\n", subPath)
 
 	matter := this.matterDao.CheckWithRootByPath(subPath, user)
 
-	//如果是文件夹，相当于是 Propfind
+	//if this is a Directory, it means Propfind
 	if matter.Dir {
 		this.HandlePropfind(writer, request, user, subPath)
 		return
 	}
 
-	//下载一个文件。
+	//download a file.
 	this.matterService.DownloadFile(writer, request, matter.AbsolutePath(), matter.Name, false)
 
 }
 
-//上传文件
+//upload a file
 func (this *DavService) HandlePut(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
 
 	fmt.Printf("PUT %s\n", subPath)
@@ -228,10 +220,9 @@ func (this *DavService) HandlePut(writer http.ResponseWriter, request *http.Requ
 	filename := util.GetFilenameOfPath(subPath)
 	dirPath := util.GetDirOfPath(subPath)
 
-	//寻找符合条件的matter.
 	dirMatter := this.matterDao.CheckWithRootByPath(dirPath, user)
 
-	//如果存在，那么先删除再说。
+	//if exist delete it.
 	srcMatter := this.matterDao.findByUserUuidAndPath(user.Uuid, subPath)
 	if srcMatter != nil {
 		this.matterService.AtomicDelete(request, srcMatter)
@@ -241,18 +232,17 @@ func (this *DavService) HandlePut(writer http.ResponseWriter, request *http.Requ
 
 }
 
-//删除文件
+//delete file
 func (this *DavService) HandleDelete(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
 
 	fmt.Printf("DELETE %s\n", subPath)
 
-	//寻找符合条件的matter.
 	matter := this.matterDao.CheckWithRootByPath(subPath, user)
 
 	this.matterService.AtomicDelete(request, matter)
 }
 
-//创建文件夹
+//crate a directory
 func (this *DavService) HandleMkcol(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
 
 	fmt.Printf("MKCOL %s\n", subPath)
@@ -260,19 +250,17 @@ func (this *DavService) HandleMkcol(writer http.ResponseWriter, request *http.Re
 	thisDirName := util.GetFilenameOfPath(subPath)
 	dirPath := util.GetDirOfPath(subPath)
 
-	//寻找符合条件的matter.
 	dirMatter := this.matterDao.CheckWithRootByPath(dirPath, user)
 
 	this.matterService.AtomicCreateDirectory(request, dirMatter, thisDirName, user)
 
 }
 
-//跨域请求的OPTIONS询问
+//cors options
 func (this *DavService) HandleOptions(w http.ResponseWriter, r *http.Request, user *User, subPath string) {
 
 	fmt.Printf("OPTIONS %s\n", subPath)
 
-	//寻找符合条件的matter.
 	matter := this.matterDao.CheckWithRootByPath(subPath, user)
 
 	allow := "OPTIONS, LOCK, PUT, MKCOL"
@@ -290,7 +278,7 @@ func (this *DavService) HandleOptions(w http.ResponseWriter, r *http.Request, us
 
 }
 
-//移动或者复制的准备工作
+//prepare for moving or copying
 func (this *DavService) prepareMoveCopy(
 	writer http.ResponseWriter,
 	request *http.Request,
@@ -302,22 +290,22 @@ func (this *DavService) prepareMoveCopy(
 	destinationName string,
 	overwrite bool) {
 
-	//解析出目标路径。
+	//parse the destination.
 	destinationStr := request.Header.Get("Destination")
 
-	//解析出Overwrite。
+	//parse Overwrite。
 	overwriteStr := request.Header.Get("Overwrite")
 
-	//有前缀的目标path
+	//destination path with prefix
 	var fullDestinationPath string
-	//去掉前缀的目标path
+	//destination path without prefix
 	var destinationPath string
 
 	if destinationStr == "" {
 		panic(result.BadRequest("Header Destination cannot be null"))
 	}
 
-	//如果是重命名，那么就不是http开头了。
+	//if rename. not start with http
 	if strings.HasPrefix(destinationStr, WEBDAV_PREFIX) {
 		fullDestinationPath = destinationStr
 	} else {
@@ -329,10 +317,10 @@ func (this *DavService) prepareMoveCopy(
 		fullDestinationPath = destinationUrl.Path
 	}
 
-	//去除 路径中的相对路径 比如 /a/b/../ => /a/
+	//clean the relative path. eg. /a/b/../ => /a/
 	fullDestinationPath = path.Clean(fullDestinationPath)
 
-	//去除前缀
+	//clean the prefix
 	pattern := fmt.Sprintf(`^%s(.*)$`, WEBDAV_PREFIX)
 	reg := regexp.MustCompile(pattern)
 	strs := reg.FindStringSubmatch(fullDestinationPath)
@@ -351,133 +339,131 @@ func (this *DavService) prepareMoveCopy(
 		overwrite = true
 	}
 
-	//如果前后一致，那么相当于没有改变
+	//if not change return.
 	if destinationPath == subPath {
 		return
 	}
 
-	//源matter.
-	//寻找符合条件的matter.
+	//source matter
 	srcMatter = this.matterDao.CheckWithRootByPath(subPath, user)
 
-	//如果是空或者/就是请求根目录
+	//if source matter is root.
 	if srcMatter.Uuid == MATTER_ROOT {
 		panic(result.BadRequest("you cannot move the root directory"))
 	}
 
-	//寻找目标文件夹matter
 	destDirMatter = this.matterDao.CheckWithRootByPath(destinationDirPath, user)
 
 	return srcMatter, destDirMatter, srcDirPath, destinationDirPath, destinationName, overwrite
 
 }
 
-//移动或者重命名
+//move or rename.
 func (this *DavService) HandleMove(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
 
 	fmt.Printf("MOVE %s\n", subPath)
 
 	srcMatter, destDirMatter, srcDirPath, destinationDirPath, destinationName, overwrite := this.prepareMoveCopy(writer, request, user, subPath)
-	//移动到新目录中去。
+	//move to the new directory
 	if destinationDirPath == srcDirPath {
-		//文件夹没变化，相当于重命名。
+		//if destination path not change. it means rename.
 		this.matterService.AtomicRename(request, srcMatter, destinationName, user)
 	} else {
 		this.matterService.AtomicMove(request, srcMatter, destDirMatter, overwrite)
 	}
 
-	this.logger.Info("完成移动 %s => %s", subPath, destDirMatter.Path)
+	this.logger.Info("finish moving %s => %s", subPath, destDirMatter.Path)
 }
 
-//复制文件/文件夹
+//copy file/directory
 func (this *DavService) HandleCopy(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
 
 	fmt.Printf("COPY %s\n", subPath)
 
 	srcMatter, destDirMatter, _, _, destinationName, overwrite := this.prepareMoveCopy(writer, request, user, subPath)
 
-	//复制到新目录中去。
+	//copy to the new directory
 	this.matterService.AtomicCopy(request, srcMatter, destDirMatter, destinationName, overwrite)
 
-	this.logger.Info("完成复制 %s => %s", subPath, destDirMatter.Path)
+	this.logger.Info("finish copying %s => %s", subPath, destDirMatter.Path)
 
 }
 
-//加锁
+//lock.
 func (this *DavService) HandleLock(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
 
 	panic(result.BadRequest("not support LOCK yet."))
 }
 
-//解锁
+//unlock
 func (this *DavService) HandleUnlock(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
 
 	panic(result.BadRequest("not support UNLOCK yet."))
 }
 
-//修改文件属性
+//change the file's property
 func (this *DavService) HandleProppatch(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
 
 	panic(result.BadRequest("not support PROPPATCH yet."))
 }
 
-//处理所有的请求
+//hanle all the request.
 func (this *DavService) HandleDav(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
 
 	method := request.Method
 	if method == "OPTIONS" {
 
-		//跨域问询
+		//cors option
 		this.HandleOptions(writer, request, user, subPath)
 
 	} else if method == "GET" || method == "HEAD" || method == "POST" {
 
-		//请求文件详情（下载）
+		//get the detail of file. download
 		this.HandleGetHeadPost(writer, request, user, subPath)
 
 	} else if method == "DELETE" {
 
-		//删除文件
+		//delete file
 		this.HandleDelete(writer, request, user, subPath)
 
 	} else if method == "PUT" {
 
-		//上传文件
+		//upload file
 		this.HandlePut(writer, request, user, subPath)
 
 	} else if method == "MKCOL" {
 
-		//创建文件夹
+		//crate directory
 		this.HandleMkcol(writer, request, user, subPath)
 
 	} else if method == "COPY" {
 
-		//复制文件/文件夹
+		//copy file/directory
 		this.HandleCopy(writer, request, user, subPath)
 
 	} else if method == "MOVE" {
 
-		//移动（重命名）文件/文件夹
+		//move/rename a file or directory
 		this.HandleMove(writer, request, user, subPath)
 
 	} else if method == "LOCK" {
 
-		//加锁
+		//lock
 		this.HandleLock(writer, request, user, subPath)
 
 	} else if method == "UNLOCK" {
 
-		//释放锁
+		//unlock
 		this.HandleUnlock(writer, request, user, subPath)
 
 	} else if method == "PROPFIND" {
 
-		//列出文件夹或者目录详情
+		//list a directory
 		this.HandlePropfind(writer, request, user, subPath)
 
 	} else if method == "PROPPATCH" {
 
-		//修改文件属性
+		//change file's property.
 		this.HandleProppatch(writer, request, user, subPath)
 
 	} else {

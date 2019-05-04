@@ -3,20 +3,20 @@ package rest
 import "github.com/eyebluecn/tank/code/core"
 
 /**
- * 系统的所有访问记录均记录在此
+ * application's dashboard.
  */
 type Dashboard struct {
 	Base
-	InvokeNum      int64  `json:"invokeNum" gorm:"type:bigint(20) not null"`                //当日访问量
-	TotalInvokeNum int64  `json:"totalInvokeNum" gorm:"type:bigint(20) not null;default:0"` //截至目前总访问量
-	Uv             int64  `json:"uv" gorm:"type:bigint(20) not null;default:0"`             //当日UV
-	TotalUv        int64  `json:"totalUv" gorm:"type:bigint(20) not null;default:0"`        //截至目前总UV
-	MatterNum      int64  `json:"matterNum" gorm:"type:bigint(20) not null;default:0"`      //文件数量
-	TotalMatterNum int64  `json:"totalMatterNum" gorm:"type:bigint(20) not null;default:0"` //截至目前文件数量
-	FileSize       int64  `json:"fileSize" gorm:"type:bigint(20) not null;default:0"`       //当日文件大小
-	TotalFileSize  int64  `json:"totalFileSize" gorm:"type:bigint(20) not null;default:0"`  //截至目前文件总大小
-	AvgCost        int64  `json:"avgCost" gorm:"type:bigint(20) not null;default:0"`        //请求平均耗时 ms
-	Dt             string `json:"dt" gorm:"type:varchar(45) not null;index:idx_dt"`         //日期
+	InvokeNum      int64  `json:"invokeNum" gorm:"type:bigint(20) not null"`                //api invoke num.
+	TotalInvokeNum int64  `json:"totalInvokeNum" gorm:"type:bigint(20) not null;default:0"` //total invoke num up to now.
+	Uv             int64  `json:"uv" gorm:"type:bigint(20) not null;default:0"`             //today's uv
+	TotalUv        int64  `json:"totalUv" gorm:"type:bigint(20) not null;default:0"`        //total uv
+	MatterNum      int64  `json:"matterNum" gorm:"type:bigint(20) not null;default:0"`      //file's num
+	TotalMatterNum int64  `json:"totalMatterNum" gorm:"type:bigint(20) not null;default:0"` //file's total number
+	FileSize       int64  `json:"fileSize" gorm:"type:bigint(20) not null;default:0"`       //today's file size
+	TotalFileSize  int64  `json:"totalFileSize" gorm:"type:bigint(20) not null;default:0"`  //total file's size
+	AvgCost        int64  `json:"avgCost" gorm:"type:bigint(20) not null;default:0"`        //api time cost in ms
+	Dt             string `json:"dt" gorm:"type:varchar(45) not null;index:idx_dt"`         //date
 }
 
 // set File's table name to be `profiles`
@@ -25,7 +25,7 @@ func (this *Dashboard) TableName() string {
 }
 
 /**
- * 统计IP活跃数的
+ * ip
  */
 type DashboardIpTimes struct {
 	Ip    string `json:"ip"`

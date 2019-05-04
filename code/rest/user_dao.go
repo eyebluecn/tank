@@ -12,7 +12,6 @@ type UserDao struct {
 	BaseDao
 }
 
-//初始化方法
 func (this *UserDao) Init() {
 	this.BaseDao.Init()
 }
@@ -37,30 +36,27 @@ func (this *UserDao) Create(user *User) *User {
 	return user
 }
 
-//按照Id查询用户，找不到返回nil
+//find by uuid. if not found return nil.
 func (this *UserDao) FindByUuid(uuid string) *User {
-
-	// Read
-	var user *User = &User{}
-	db := core.CONTEXT.GetDB().Where(&User{Base: Base{Uuid: uuid}}).First(user)
+	var entity = &User{}
+	db := core.CONTEXT.GetDB().Where("uuid = ?", uuid).First(entity)
 	if db.Error != nil {
-		return nil
+		if db.Error.Error() == result.DB_ERROR_NOT_FOUND {
+			return nil
+		} else {
+			panic(db.Error)
+		}
 	}
-	return user
+	return entity
 }
 
-//按照Id查询用户,找不到抛panic
+//find by uuid. if not found panic NotFound error
 func (this *UserDao) CheckByUuid(uuid string) *User {
-
-	if uuid == "" {
-		panic("uuid必须指定")
+	entity := this.FindByUuid(uuid)
+	if entity == nil {
+		panic(result.NotFound("not found record with uuid = %s", uuid))
 	}
-
-	// Read
-	var user = &User{}
-	db := core.CONTEXT.GetDB().Where(&User{Base: Base{Uuid: uuid}}).First(user)
-	this.PanicError(db.Error)
-	return user
+	return entity
 }
 
 //查询用户。
@@ -139,9 +135,9 @@ func (this *UserDao) Save(user *User) *User {
 	return user
 }
 
-//执行清理操作
+//System cleanup.
 func (this *UserDao) Cleanup() {
-	this.logger.Info("[UserDao]执行清理：清除数据库中所有User记录。")
+	this.logger.Info("[UserDao] clean up. Delete all User")
 	db := core.CONTEXT.GetDB().Where("uuid is not null and role != ?", USER_ROLE_ADMINISTRATOR).Delete(User{})
 	this.PanicError(db.Error)
 }

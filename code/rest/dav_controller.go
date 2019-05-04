@@ -15,7 +15,7 @@ import (
 
 /**
  *
- * WebDav协议文档
+ * WebDav document
  * https://tools.ietf.org/html/rfc4918
  * http://www.webdav.org/specs/rfc4918.html
  *
@@ -32,11 +32,9 @@ type DavController struct {
 	davService        *DavService
 }
 
-//初始化方法
 func (this *DavController) Init() {
 	this.BaseController.Init()
 
-	//手动装填本实例的Bean.
 	b := core.CONTEXT.GetBean(this.uploadTokenDao)
 	if c, ok := b.(*UploadTokenDao); ok {
 		this.uploadTokenDao = c
@@ -73,12 +71,12 @@ func (this *DavController) Init() {
 	}
 }
 
-//通过BasicAuth的方式授权。
+//Auth user by BasicAuth
 func (this *DavController) CheckCurrentUser(writer http.ResponseWriter, request *http.Request) *User {
 
 	username, password, ok := request.BasicAuth()
 	if !ok {
-		//要求前端使用Basic的形式授权
+		// require the basic auth.
 		writer.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
 		panic(result.ConstWebResult(result.LOGIN))
 	}
@@ -95,7 +93,6 @@ func (this *DavController) CheckCurrentUser(writer http.ResponseWriter, request 
 	return user
 }
 
-//注册自己的路由。
 func (this *DavController) RegisterRoutes() map[string]func(writer http.ResponseWriter, request *http.Request) {
 
 	routeMap := make(map[string]func(writer http.ResponseWriter, request *http.Request))
@@ -103,23 +100,20 @@ func (this *DavController) RegisterRoutes() map[string]func(writer http.Response
 	return routeMap
 }
 
-//处理一些特殊的接口，比如参数包含在路径中,一般情况下，controller不将参数放在url路径中
+//handle some special routes, eg. params in the url.
 func (this *DavController) HandleRoutes(writer http.ResponseWriter, request *http.Request) (func(writer http.ResponseWriter, request *http.Request), bool) {
 
 	path := request.URL.Path
 
-	//匹配 /api/dav{subPath}
+	//match /api/dav{subPath}
 	pattern := fmt.Sprintf(`^%s(.*)$`, WEBDAV_PREFIX)
 	reg := regexp.MustCompile(pattern)
 	strs := reg.FindStringSubmatch(path)
 	if len(strs) == 2 {
 		var f = func(writer http.ResponseWriter, request *http.Request) {
 			subPath := strs[1]
-			//保证subPath不是以/结尾的。
-			//最后多余的/要去掉
-			if strings.HasSuffix(subPath, "/") {
-				subPath = subPath[0 : len(subPath)-1]
-			}
+			//guarantee subPath not end with /
+			subPath = strings.TrimSuffix(subPath, "/")
 			this.Index(writer, request, subPath)
 		}
 		return f, true
@@ -128,12 +122,10 @@ func (this *DavController) HandleRoutes(writer http.ResponseWriter, request *htt
 	return nil, false
 }
 
-//完成系统安装
-func (this *DavController) Index(writer http.ResponseWriter, request *http.Request, subPath string) {
+func (this *DavController) debug(writer http.ResponseWriter, request *http.Request, subPath string) {
 
-	/*打印所有HEADER以及请求参数*/
-
-	fmt.Printf("\n------ 请求： %s  --  %s  ------\n", request.URL, subPath)
+	//Print the Request info.
+	fmt.Printf("\n------  %s  --  %s  ------\n", request.URL, subPath)
 
 	fmt.Printf("\n------Method：------\n")
 	fmt.Println(request.Method)
@@ -143,13 +135,13 @@ func (this *DavController) Index(writer http.ResponseWriter, request *http.Reque
 		fmt.Printf("%s = %s\n", key, value)
 	}
 
-	fmt.Printf("\n------请求参数：------\n")
+	fmt.Printf("\n------Params：------\n")
 	for key, value := range request.Form {
 		fmt.Printf("%s = %s\n", key, value)
 	}
 
 	fmt.Printf("\n------Body：------\n")
-	//ioutil.ReadAll 不可重复读，第二次读的时候就什么都没有了。
+	//ioutil.ReadAll cannot read again. when read again, there is nothing.
 
 	bodyBytes, err := ioutil.ReadAll(request.Body)
 	if err != nil {
@@ -157,7 +149,7 @@ func (this *DavController) Index(writer http.ResponseWriter, request *http.Reque
 	}
 	fmt.Println(string(bodyBytes))
 
-	//关闭之后再重新赋值
+	//close and resign
 	err = request.Body.Close()
 	if err != nil {
 		panic(err)
@@ -166,7 +158,12 @@ func (this *DavController) Index(writer http.ResponseWriter, request *http.Reque
 
 	fmt.Println("------------------")
 
-	//获取请求者
+}
+
+func (this *DavController) Index(writer http.ResponseWriter, request *http.Request, subPath string) {
+
+	//this.debug(writer, request, subPath)
+
 	user := this.CheckCurrentUser(writer, request)
 
 	this.davService.HandleDav(writer, request, user, subPath)

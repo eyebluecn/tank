@@ -17,7 +17,6 @@ type UserController struct {
 	preferenceService *PreferenceService
 }
 
-//初始化方法
 func (this *UserController) Init() {
 	this.BaseController.Init()
 
@@ -27,12 +26,10 @@ func (this *UserController) Init() {
 	}
 }
 
-//注册自己的路由。
 func (this *UserController) RegisterRoutes() map[string]func(writer http.ResponseWriter, request *http.Request) {
 
 	routeMap := make(map[string]func(writer http.ResponseWriter, request *http.Request))
 
-	//每个Controller需要主动注册自己的路由。
 	routeMap["/api/user/login"] = this.Wrap(this.Login, USER_ROLE_GUEST)
 	routeMap["/api/user/authentication/login"] = this.Wrap(this.AuthenticationLogin, USER_ROLE_GUEST)
 	routeMap["/api/user/register"] = this.Wrap(this.Register, USER_ROLE_GUEST)

@@ -12,7 +12,6 @@ type DashboardDao struct {
 	BaseDao
 }
 
-//创建
 func (this *DashboardDao) Create(dashboard *Dashboard) *Dashboard {
 
 	timeUUID, _ := uuid.NewV4()
@@ -26,7 +25,6 @@ func (this *DashboardDao) Create(dashboard *Dashboard) *Dashboard {
 	return dashboard
 }
 
-//修改一条记录
 func (this *DashboardDao) Save(dashboard *Dashboard) *Dashboard {
 
 	dashboard.UpdateTime = time.Now()
@@ -36,26 +34,22 @@ func (this *DashboardDao) Save(dashboard *Dashboard) *Dashboard {
 	return dashboard
 }
 
-//删除一条记录
 func (this *DashboardDao) Delete(dashboard *Dashboard) {
 
 	db := core.CONTEXT.GetDB().Delete(&dashboard)
 	this.PanicError(db.Error)
 }
 
-//按照dt查询
 func (this *DashboardDao) FindByDt(dt string) *Dashboard {
 
-	// Read
-	var dashboard Dashboard
-	db := core.CONTEXT.GetDB().Where(&Dashboard{Dt: dt}).First(&dashboard)
+	var dashboard = &Dashboard{}
+	db := core.CONTEXT.GetDB().Where("dt = ?", dt).First(dashboard)
 	if db.Error != nil {
 		return nil
 	}
-	return &dashboard
+	return dashboard
 }
 
-//获取某个文件夹下所有的文件和子文件
 func (this *DashboardDao) Page(page int, pageSize int, dt string, sortArray []builder.OrderPair) *Pager {
 
 	var wp = &builder.WherePair{}
@@ -79,7 +73,6 @@ func (this *DashboardDao) Page(page int, pageSize int, dt string, sortArray []bu
 	return pager
 }
 
-//获取最活跃的前10个ip
 func (this *DashboardDao) ActiveIpTop10() []*DashboardIpTimes {
 
 	var dashboardIpTimes []*DashboardIpTimes
@@ -102,7 +95,8 @@ func (this *DashboardDao) ActiveIpTop10() []*DashboardIpTimes {
 	for rows.Next() {
 		var ip string
 		var times int64 = 0
-		rows.Scan(&ip, &times)
+		err := rows.Scan(&ip, &times)
+		this.PanicError(err)
 		item := &DashboardIpTimes{
 			Ip:    ip,
 			Times: times,
@@ -113,9 +107,8 @@ func (this *DashboardDao) ActiveIpTop10() []*DashboardIpTimes {
 	return dashboardIpTimes
 }
 
-//执行清理操作
 func (this *DashboardDao) Cleanup() {
-	this.logger.Info("[DashboardDao]执行清理：清除数据库中所有Dashboard记录。")
+	this.logger.Info("[DashboardDao] cleanup. Delete all Dashboard records")
 	db := core.CONTEXT.GetDB().Where("uuid is not null").Delete(Dashboard{})
 	this.PanicError(db.Error)
 }

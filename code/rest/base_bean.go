@@ -19,50 +19,48 @@ func (this *BaseBean) Bootstrap() {
 
 }
 
-//系统大清理，一般时产品即将上线时，清除脏数据，只执行一次。
+//clean up the application.
 func (this *BaseBean) Cleanup() {
 
 }
 
-//处理错误的统一方法 可以省去if err!=nil 这段代码
+//shortcut for panic check.
 func (this *BaseBean) PanicError(err error) {
 	core.PanicError(err)
 }
 
-//能找到一个user就找到一个
+//find the current user from request.
 func (this *BaseBean) findUser(request *http.Request) *User {
 
-	//验证用户是否已经登录。
-	//登录身份有效期以数据库中记录的为准
+	//try to find from SessionCache.
 	sessionId := util.GetSessionUuidFromRequest(request, core.COOKIE_AUTH_KEY)
 	if sessionId == "" {
 		return nil
 	}
 
-	//去缓存中捞取看看
 	cacheItem, err := core.CONTEXT.GetSessionCache().Value(sessionId)
 	if err != nil {
-		this.logger.Warn("获取缓存时出错了" + err.Error())
+		this.logger.Warn("error while get from session cache. sessionId = %s, error = %v", sessionId, err)
 		return nil
 	}
 
 	if cacheItem == nil || cacheItem.Data() == nil {
 
-		this.logger.Warn("cache item中已经不存在了 ")
+		this.logger.Warn("cache item doesn't exist with sessionId = %s", sessionId)
 		return nil
 	}
 
 	if value, ok := cacheItem.Data().(*User); ok {
 		return value
 	} else {
-		this.logger.Error("cache item中的类型不是*User ")
+		this.logger.Error("cache item not store the *User")
 	}
 
 	return nil
 
 }
 
-//获取当前登录的用户，找不到就返回登录错误
+//find current error. If not found, panic the LOGIN error.
 func (this *BaseBean) checkUser(request *http.Request) *User {
 	if this.findUser(request) == nil {
 		panic(result.LOGIN)

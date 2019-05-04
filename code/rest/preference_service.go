@@ -9,11 +9,9 @@ type PreferenceService struct {
 	preference    *Preference
 }
 
-//初始化方法
 func (this *PreferenceService) Init() {
 	this.BaseBean.Init()
 
-	//手动装填本实例的Bean. 这里必须要用中间变量方可。
 	b := core.CONTEXT.GetBean(this.preferenceDao)
 	if b, ok := b.(*PreferenceDao); ok {
 		this.preferenceDao = b
@@ -38,10 +36,10 @@ func (this *PreferenceService) Reset() {
 
 }
 
-//执行清理操作
+//System cleanup.
 func (this *PreferenceService) Cleanup() {
 
-	this.logger.Info("[PreferenceService]执行清理：重置缓存中的preference。")
+	this.logger.Info("[PreferenceService] clean up. Delete all preference")
 
 	this.Reset()
 }

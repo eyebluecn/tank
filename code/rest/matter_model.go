@@ -7,9 +7,9 @@ import (
 )
 
 const (
-	//根目录的uuid
+	//root matter's uuid
 	MATTER_ROOT = "root"
-	//cache文件夹名称
+	//cache directory name.
 	MATTER_CACHE = "cache"
 	//压缩文件的临时目录
 	MATTER_ZIP = "zip"

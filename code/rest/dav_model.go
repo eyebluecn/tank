@@ -9,16 +9,16 @@ import (
 	"strconv"
 )
 
-//访问前缀，这个是特殊入口
+//webdav url prefix.
 var WEBDAV_PREFIX = "/api/dav"
 
-//动态的文件属性
+//live prop.
 type LiveProp struct {
 	findFn func(user *User, matter *Matter) string
 	dir    bool
 }
 
-//所有的动态属性定义及其值的获取方式
+//all live prop map.
 var LivePropMap = map[xml.Name]LiveProp{
 	{Space: "DAV:", Local: "resourcetype"}: {
 		findFn: func(user *User, matter *Matter) string {
@@ -106,7 +106,7 @@ var LivePropMap = map[xml.Name]LiveProp{
 			if user.SizeLimit >= 0 {
 				size = user.SizeLimit
 			} else {
-				//没有限制，默认100G
+				//TODO: no limit, default 100G.
 				size = 100 * 1024 * 1024 * 1024
 			}
 			return fmt.Sprintf(`%d`, size)
@@ -115,7 +115,7 @@ var LivePropMap = map[xml.Name]LiveProp{
 	},
 	{Space: "DAV:", Local: "quota-used-bytes"}: {
 		findFn: func(user *User, matter *Matter) string {
-			//已使用大小，默认0
+			//TODO: default 0
 			return fmt.Sprintf(`%d`, 0)
 		},
 		dir: true,

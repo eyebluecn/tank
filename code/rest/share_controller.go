@@ -21,11 +21,9 @@ type ShareController struct {
 	shareService  *ShareService
 }
 
-//初始化方法
 func (this *ShareController) Init() {
 	this.BaseController.Init()
 
-	//手动装填本实例的Bean. 这里必须要用中间变量方可。
 	b := core.CONTEXT.GetBean(this.shareDao)
 	if b, ok := b.(*ShareDao); ok {
 		this.shareDao = b
@@ -53,12 +51,10 @@ func (this *ShareController) Init() {
 
 }
 
-//注册自己的路由。
 func (this *ShareController) RegisterRoutes() map[string]func(writer http.ResponseWriter, request *http.Request) {
 
 	routeMap := make(map[string]func(writer http.ResponseWriter, request *http.Request))
 
-	//每个Controller需要主动注册自己的路由。
 	routeMap["/api/share/create"] = this.Wrap(this.Create, USER_ROLE_USER)
 	routeMap["/api/share/delete"] = this.Wrap(this.Delete, USER_ROLE_USER)
 	routeMap["/api/share/delete/batch"] = this.Wrap(this.DeleteBatch, USER_ROLE_USER)
@@ -170,7 +166,6 @@ func (this *ShareController) Create(writer http.ResponseWriter, request *http.Re
 	return this.Success(share)
 }
 
-//删除一条记录
 func (this *ShareController) Delete(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	uuid := request.FormValue("uuid")
@@ -297,7 +292,7 @@ func (this *ShareController) Browse(writer http.ResponseWriter, request *http.Re
 
 	user := this.findUser(request)
 	share := this.shareService.CheckShare(shareUuid, code, user)
-	bridges := this.bridgeDao.ListByShareUuid(share.Uuid)
+	bridges := this.bridgeDao.FindByShareUuid(share.Uuid)
 
 	if puuid == MATTER_ROOT {
 
@@ -379,7 +374,7 @@ func (this *ShareController) Zip(writer http.ResponseWriter, request *http.Reque
 
 		//下载分享全部内容。
 		share := this.shareService.CheckShare(shareUuid, code, user)
-		bridges := this.bridgeDao.ListByShareUuid(share.Uuid)
+		bridges := this.bridgeDao.FindByShareUuid(share.Uuid)
 		var matterUuids []string
 		for _, bridge := range bridges {
 			matterUuids = append(matterUuids, bridge.MatterUuid)

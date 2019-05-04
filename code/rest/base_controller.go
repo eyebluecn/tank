@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/result"
+	"github.com/eyebluecn/tank/code/tool/util"
 	"github.com/json-iterator/go"
 	"go/types"
 	"net/http"
@@ -19,7 +20,6 @@ func (this *BaseController) Init() {
 
 	this.BaseBean.Init()
 
-	//手动装填本实例的Bean.
 	b := core.CONTEXT.GetBean(this.userDao)
 	if b, ok := b.(*UserDao); ok {
 		this.userDao = b
@@ -32,32 +32,29 @@ func (this *BaseController) Init() {
 
 }
 
-//注册自己的路由。
 func (this *BaseController) RegisterRoutes() map[string]func(writer http.ResponseWriter, request *http.Request) {
-	//每个Controller需要主动注册自己的路由。
+
 	return make(map[string]func(writer http.ResponseWriter, request *http.Request))
 }
 
-//处理一些特殊的接口，比如参数包含在路径中,一般情况下，controller不将参数放在url路径中
+//handle some special routes, eg. params in the url.
 func (this *BaseController) HandleRoutes(writer http.ResponseWriter, request *http.Request) (func(writer http.ResponseWriter, request *http.Request), bool) {
 	return nil, false
 }
 
-//需要进行登录验证的wrap包装
+//wrap the handle method.
 func (this *BaseController) Wrap(f func(writer http.ResponseWriter, request *http.Request) *result.WebResult, qualifiedRole string) func(w http.ResponseWriter, r *http.Request) {
 
 	return func(writer http.ResponseWriter, request *http.Request) {
 
-		//writer和request赋值给自己。
-
 		var webResult *result.WebResult = nil
 
-		//只有游客接口不需要登录
+		//if the api not annotated with GUEST. login is required.
 		if qualifiedRole != USER_ROLE_GUEST {
 			user := this.checkUser(request)
 
 			if user.Status == USER_STATUS_DISABLED {
-				//判断用户是否被禁用。
+				//check user's status
 				webResult = result.ConstWebResult(result.USER_DISABLED)
 			} else {
 				if qualifiedRole == USER_ROLE_ADMINISTRATOR && user.Role != USER_ROLE_ADMINISTRATOR {
@@ -71,12 +68,11 @@ func (this *BaseController) Wrap(f func(writer http.ResponseWriter, request *htt
 			webResult = f(writer, request)
 		}
 
-		//输出的是json格式
+		//if webResult not nil. response a json. if webResult is nil, return empty body or binary content.
 		if webResult != nil {
-			//返回的内容申明是json，utf-8
+
 			writer.Header().Set("Content-Type", "application/json;charset=UTF-8")
 
-			//用json的方式输出返回值。
 			b, err := jsoniter.ConfigCompatibleWithStandardLibrary.Marshal(webResult)
 
 			this.PanicError(err)
@@ -85,36 +81,31 @@ func (this *BaseController) Wrap(f func(writer http.ResponseWriter, request *htt
 
 			_, err = fmt.Fprintf(writer, string(b))
 			this.PanicError(err)
-		} else {
-			//输出的内容是二进制的。
-
 		}
 
 	}
 }
 
-//返回成功的结果。支持放置三种类型 1.字符串 2. WebResult对象 3.空指针 4.任意类型
+//response a success result. 1.string 2. WebResult 3.nil pointer 4.any type
 func (this *BaseController) Success(data interface{}) *result.WebResult {
 	var webResult *result.WebResult = nil
 	if value, ok := data.(string); ok {
-		//返回一句普通的消息
+		//a simple message
 		webResult = &result.WebResult{Code: result.OK.Code, Msg: value}
 	} else if value, ok := data.(*result.WebResult); ok {
-		//返回一个webResult对象
+		//a webResult
 		webResult = value
 	} else if _, ok := data.(types.Nil); ok {
-		//返回一个空指针
+		//nil pointer means OK.
 		webResult = result.ConstWebResult(result.OK)
 	} else {
-		//返回的类型不明确。
+		//other type.
 		webResult = &result.WebResult{Code: result.OK.Code, Data: data}
 	}
 	return webResult
 }
 
-//允许跨域请求
+//allow cors.
 func (this *BaseController) allowCORS(writer http.ResponseWriter) {
-	writer.Header().Add("Access-Control-Allow-Origin", "*")
-	writer.Header().Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE")
-	writer.Header().Add("Access-Control-Max-Age", "3600")
+	util.AllowCORS(writer)
 }

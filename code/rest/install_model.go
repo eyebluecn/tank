@@ -3,7 +3,7 @@ package rest
 import "github.com/jinzhu/gorm"
 
 /**
- * 表名对应的表结构
+ * table meta info.
  */
 type InstallTableInfo struct {
 	Name          string              `json:"name"`

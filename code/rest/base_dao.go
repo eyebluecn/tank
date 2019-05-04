@@ -1,12 +1,14 @@
 package rest
 
-import "github.com/eyebluecn/tank/code/tool/builder"
+import (
+	"github.com/eyebluecn/tank/code/tool/builder"
+)
 
 type BaseDao struct {
 	BaseBean
 }
 
-//根据一个sortMap，获取到order字符串
+//get an order string by sortMap
 func (this *BaseDao) GetSortString(sortArray []builder.OrderPair) string {
 
 	if sortArray == nil || len(sortArray) == 0 {
@@ -14,7 +16,7 @@ func (this *BaseDao) GetSortString(sortArray []builder.OrderPair) string {
 	}
 	str := ""
 	for _, pair := range sortArray {
-		if pair.Value == "DESC" || pair.Value == "ASC" {
+		if pair.Value == DIRECTION_DESC || pair.Value == DIRECTION_ASC {
 			if str != "" {
 				str = str + ","
 			}

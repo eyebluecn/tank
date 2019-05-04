@@ -3,7 +3,7 @@ package rest
 import "github.com/eyebluecn/tank/code/core"
 
 /**
- * 系统的所有访问记录均记录在此
+ * visit record.
  */
 type Footprint struct {
 	Base

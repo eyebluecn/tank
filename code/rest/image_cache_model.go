@@ -5,7 +5,7 @@ import (
 )
 
 /**
- * 图片缓存，对于那些处理过的图片，统一管理在这里。
+ * image cache.
  */
 type ImageCache struct {
 	Base
@@ -26,7 +26,7 @@ func (this *ImageCache) TableName() string {
 	return core.TABLE_PREFIX + "image_cache"
 }
 
-// 获取该ImageCache的绝对路径。path代表的是相对路径。
+// get the absolute path. path in db means relative path.
 func (this *ImageCache) AbsolutePath() string {
 	return GetUserCacheRootDir(this.Username) + this.Path
 }

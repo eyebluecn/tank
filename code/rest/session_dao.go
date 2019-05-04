@@ -2,6 +2,7 @@ package rest
 
 import (
 	"github.com/eyebluecn/tank/code/core"
+	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/nu7hatch/gouuid"
 	"time"
 )
@@ -10,26 +11,27 @@ type SessionDao struct {
 	BaseDao
 }
 
-//按照Id查询session.
+//find by uuid. if not found return nil.
 func (this *SessionDao) FindByUuid(uuid string) *Session {
-
-	// Read
-	var session = &Session{}
-	db := core.CONTEXT.GetDB().Where(&Session{Base: Base{Uuid: uuid}}).First(session)
+	var entity = &Session{}
+	db := core.CONTEXT.GetDB().Where("uuid = ?", uuid).First(entity)
 	if db.Error != nil {
-		return nil
+		if db.Error.Error() == result.DB_ERROR_NOT_FOUND {
+			return nil
+		} else {
+			panic(db.Error)
+		}
 	}
-	return session
+	return entity
 }
 
-//按照Id查询session.
+//find by uuid. if not found panic NotFound error
 func (this *SessionDao) CheckByUuid(uuid string) *Session {
-
-	// Read
-	var session = &Session{}
-	db := core.CONTEXT.GetDB().Where(&Session{Base: Base{Uuid: uuid}}).First(session)
-	this.PanicError(db.Error)
-	return session
+	entity := this.FindByUuid(uuid)
+	if entity == nil {
+		panic(result.NotFound("not found record with uuid = %s", uuid))
+	}
+	return entity
 }
 
 //创建一个session并且持久化到数据库中。
@@ -67,9 +69,9 @@ func (this *SessionDao) Delete(uuid string) {
 
 }
 
-//执行清理操作
+//System cleanup.
 func (this *SessionDao) Cleanup() {
-	this.logger.Info("[SessionDao]执行清理：清除数据库中所有Session记录。")
+	this.logger.Info("[SessionDao] clean up. Delete all Session")
 	db := core.CONTEXT.GetDB().Where("uuid is not null").Delete(Session{})
 	this.PanicError(db.Error)
 }

@@ -7,24 +7,21 @@ import (
 )
 
 type Context interface {
-	//具备响应http请求的能力
 	http.Handler
 
-	//获取数据库链接
+	//get the gorm.DB. all the db connection will use this
 	GetDB() *gorm.DB
 
-	//获取一个Bean
 	GetBean(bean Bean) Bean
 
-	//获取全局的Session缓存
+	//get the global session cache
 	GetSessionCache() *cache.Table
 
-	//获取全局的ControllerMap
 	GetControllerMap() map[string]Controller
 
-	//系统安装成功
+	//when application installed. this method will invoke every bean's Bootstrap method
 	InstallOk()
 
-	//清空系统
+	//this method will invoke every bean's Cleanup method
 	Cleanup()
 }

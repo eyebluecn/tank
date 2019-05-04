@@ -1,18 +1,18 @@
 package core
 
-//带有panic恢复的方法
+//run a method with panic recovery.
 func RunWithRecovery(f func()) {
 	defer func() {
 		if err := recover(); err != nil {
-			LOGGER.Error("异步任务错误: %v", err)
+			LOGGER.Error("error in async method: %v", err)
 		}
 	}()
 
-	//执行函数
+	//execute the method
 	f()
 }
 
-//处理错误的统一方法 可以省去if err!=nil 这段代码
+//shortcut for panic check
 func PanicError(err error) {
 	if err != nil {
 		panic(err)

@@ -11,7 +11,7 @@ type PreferenceDao struct {
 	BaseDao
 }
 
-//按照Id查询偏好设置
+//find by uuid. if not found return nil.
 func (this *PreferenceDao) Fetch() *Preference {
 
 	// Read
@@ -57,10 +57,10 @@ func (this *PreferenceDao) Save(preference *Preference) *Preference {
 	return preference
 }
 
-//执行清理操作
+//System cleanup.
 func (this *PreferenceDao) Cleanup() {
 
-	this.logger.Info("[PreferenceDao]执行清理：清除数据库中所有Preference记录。")
+	this.logger.Info("[PreferenceDao] clean up. Delete all Preference")
 	db := core.CONTEXT.GetDB().Where("uuid is not null").Delete(Preference{})
 	this.PanicError(db.Error)
 }

@@ -1,9 +1,7 @@
 package rest
 
 import (
-	"github.com/eyebluecn/tank/code/core"
 	"math"
-	"reflect"
 	"time"
 )
 
@@ -16,11 +14,12 @@ const (
 )
 
 type IBase interface {
-	//返回其对应的数据库表名
+	//name of db table
 	TableName() string
 }
 
-//Mysql 5.5只支持一个CURRENT_TIMESTAMP的默认值，因此时间的默认值都使用蓝眼云盘第一个发布版本时间 2018-01-01 00:00:00
+// Mysql 5.5 only support one CURRENT_TIMESTAMP
+// so we use 2018-01-01 00:00:00 as default, which is the first release date of EyeblueTank
 type Base struct {
 	Uuid       string    `json:"uuid" gorm:"type:char(36);primary_key;unique"`
 	Sort       int64     `json:"sort" gorm:"type:bigint(20) not null"`
@@ -28,23 +27,11 @@ type Base struct {
 	CreateTime time.Time `json:"createTime" gorm:"type:timestamp not null;default:'2018-01-01 00:00:00'"`
 }
 
-//将 Struct 转换成map[string]interface{}类型
-func (this *Base) Map() map[string]interface{} {
-	t := reflect.TypeOf(this)
-	v := reflect.ValueOf(this)
-
-	var data = make(map[string]interface{})
-	for i := 0; i < t.NumField(); i++ {
-		data[t.Field(i).Name] = v.Field(i).Interface()
-	}
-	return data
-}
-
 func (this *Base) TableName() string {
-	return core.TABLE_PREFIX + "base"
+	panic("you should overwrite TableName()")
 }
 
-//分页类
+//pager
 type Pager struct {
 	Page       int         `json:"page"`
 	PageSize   int         `json:"pageSize"`

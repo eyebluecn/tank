@@ -1,15 +1,15 @@
 package core
 
 /**
- * 系统中的Bean接口，即系统中单例模式
+ * bean interface means singleton in application
  */
 type Bean interface {
-	//初始化方法
+	//init the bean when constructing
 	Init()
-	//系统清理方法
+	//cleanup the bean when system's cleanup
 	Cleanup()
-	//所有配置都加载完成后调用的方法，包括数据库加载完毕
+	//when everything(including db's connection) loaded, this method will be invoked.
 	Bootstrap()
-	//快速的Panic方法
+	//shortcut for panic check.
 	PanicError(err error)
 }

@@ -5,7 +5,7 @@ import (
 )
 
 /**
- * 分享记录和matter的关联表
+ * the link table for Share and Matter.
  */
 type Bridge struct {
 	Base
@@ -13,7 +13,6 @@ type Bridge struct {
 	MatterUuid string `json:"matterUuid" gorm:"type:char(36)"`
 }
 
-// set File's table name to be `profiles`
 func (this *Bridge) TableName() string {
 	return core.TABLE_PREFIX + "bridge"
 }

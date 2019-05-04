@@ -9,15 +9,13 @@ import (
 	"github.com/eyebluecn/tank/code/tool/util"
 	"github.com/jinzhu/gorm"
 	"github.com/nu7hatch/gouuid"
-	"go/build"
-	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strconv"
 	"time"
 )
 
-//安装程序的接口，只有安装阶段可以访问。
+//install apis. Only when installing period can be visited.
 type InstallController struct {
 	BaseController
 	uploadTokenDao    *UploadTokenDao
@@ -29,11 +27,9 @@ type InstallController struct {
 	tableNames        []IBase
 }
 
-//初始化方法
 func (this *InstallController) Init() {
 	this.BaseController.Init()
 
-	//手动装填本实例的Bean.
 	b := core.CONTEXT.GetBean(this.uploadTokenDao)
 	if c, ok := b.(*UploadTokenDao); ok {
 		this.uploadTokenDao = c
@@ -80,12 +76,10 @@ func (this *InstallController) Init() {
 
 }
 
-//注册自己的路由。
 func (this *InstallController) RegisterRoutes() map[string]func(writer http.ResponseWriter, request *http.Request) {
 
 	routeMap := make(map[string]func(writer http.ResponseWriter, request *http.Request))
 
-	//每个Controller需要主动注册自己的路由。
 	routeMap["/api/install/verify"] = this.Wrap(this.Verify, USER_ROLE_GUEST)
 	routeMap["/api/install/table/info/list"] = this.Wrap(this.TableInfoList, USER_ROLE_GUEST)
 	routeMap["/api/install/create/table"] = this.Wrap(this.CreateTable, USER_ROLE_GUEST)
@@ -97,7 +91,6 @@ func (this *InstallController) RegisterRoutes() map[string]func(writer http.Resp
 	return routeMap
 }
 
-//获取数据库连接
 func (this *InstallController) openDbConnection(writer http.ResponseWriter, request *http.Request) *gorm.DB {
 	mysqlPortStr := request.FormValue("mysqlPort")
 	mysqlHost := request.FormValue("mysqlHost")
@@ -114,7 +107,7 @@ func (this *InstallController) openDbConnection(writer http.ResponseWriter, requ
 
 	mysqlUrl := util.GetMysqlUrl(mysqlPort, mysqlHost, mysqlSchema, mysqlUsername, mysqlPassword)
 
-	this.logger.Info("连接MySQL %s", mysqlUrl)
+	this.logger.Info("Connect MySQL %s", mysqlUrl)
 
 	var err error = nil
 	db, err := gorm.Open("mysql", mysqlUrl)
@@ -126,50 +119,18 @@ func (this *InstallController) openDbConnection(writer http.ResponseWriter, requ
 
 }
 
-//关闭数据库连接
 func (this *InstallController) closeDbConnection(db *gorm.DB) {
 
 	if db != nil {
 		err := db.Close()
 		if err != nil {
-			this.logger.Error("关闭数据库连接出错 %v", err)
+			this.logger.Error("occur error when close db. %v", err)
 		}
 	}
 }
 
-//根据表名获取建表SQL语句
-func (this *InstallController) getCreateSQLFromFile(tableName string) string {
-
-	//1. 从当前安装目录db下去寻找建表文件。
-	homePath := util.GetHomePath()
-	filePath := homePath + "/db/" + tableName + ".sql"
-	exists := util.PathExists(filePath)
-
-	//2. 从GOPATH下面去找，因为可能是开发环境
-	if !exists {
-
-		this.logger.Info("GOPATH = %s", build.Default.GOPATH)
-
-		filePath1 := filePath
-		filePath = build.Default.GOPATH + "/src/tank/build/db/" + tableName + ".sql"
-		exists = util.PathExists(filePath)
-
-		if !exists {
-			panic(result.Server("%s 或 %s 均不存在，请检查你的安装情况。", filePath1, filePath))
-		}
-	}
-
-	//读取文件内容.
-	bytes, err := ioutil.ReadFile(filePath)
-	this.PanicError(err)
-
-	return string(bytes)
-}
-
-//根据表名获取建表SQL语句
 func (this *InstallController) getTableMeta(gormDb *gorm.DB, entity IBase) (bool, []*gorm.StructField, []*gorm.StructField) {
 
-	//挣扎一下，尝试获取建表语句。
 	db := gormDb.Unscoped()
 	scope := db.NewScope(entity)
 
@@ -197,7 +158,6 @@ func (this *InstallController) getTableMeta(gormDb *gorm.DB, entity IBase) (bool
 
 }
 
-//根据表名获取建表SQL语句
 func (this *InstallController) getTableMetaList(db *gorm.DB) []*InstallTableInfo {
 
 	var installTableInfos []*InstallTableInfo
@@ -215,7 +175,7 @@ func (this *InstallController) getTableMetaList(db *gorm.DB) []*InstallTableInfo
 	return installTableInfos
 }
 
-//验证表结构是否完整。会直接抛出异常
+// validate table whether integrity. if not panic err.
 func (this *InstallController) validateTableMetaList(tableInfoList []*InstallTableInfo) {
 
 	for _, tableInfo := range tableInfoList {
@@ -236,20 +196,19 @@ func (this *InstallController) validateTableMetaList(tableInfoList []*InstallTab
 
 }
 
-//验证数据库连接
+//Ping db.
 func (this *InstallController) Verify(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	db := this.openDbConnection(writer, request)
 	defer this.closeDbConnection(db)
 
-	this.logger.Info("Ping一下数据库")
+	this.logger.Info("Ping DB")
 	err := db.DB().Ping()
 	this.PanicError(err)
 
 	return this.Success("OK")
 }
 
-//获取需要安装的数据库表
 func (this *InstallController) TableInfoList(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	db := this.openDbConnection(writer, request)
@@ -258,7 +217,6 @@ func (this *InstallController) TableInfoList(writer http.ResponseWriter, request
 	return this.Success(this.getTableMetaList(db))
 }
 
-//创建缺失数据库和表
 func (this *InstallController) CreateTable(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	var installTableInfos []*InstallTableInfo
@@ -268,7 +226,7 @@ func (this *InstallController) CreateTable(writer http.ResponseWriter, request *
 
 	for _, iBase := range this.tableNames {
 
-		//补全缺失字段或者创建数据库表
+		//complete the missing fields or create table.
 		db1 := db.AutoMigrate(iBase)
 		this.PanicError(db1.Error)
 
@@ -286,7 +244,7 @@ func (this *InstallController) CreateTable(writer http.ResponseWriter, request *
 
 }
 
-//获取管理员列表(10条记录)
+//get the list of admin.
 func (this *InstallController) AdminList(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	db := this.openDbConnection(writer, request)
@@ -304,7 +262,7 @@ func (this *InstallController) AdminList(writer http.ResponseWriter, request *ht
 	return this.Success(users)
 }
 
-//创建管理员
+//create admin
 func (this *InstallController) CreateAdmin(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	db := this.openDbConnection(writer, request)
@@ -313,7 +271,7 @@ func (this *InstallController) CreateAdmin(writer http.ResponseWriter, request *
 	adminUsername := request.FormValue("adminUsername")
 	adminPassword := request.FormValue("adminPassword")
 
-	//验证超级管理员的信息
+	//validate admin's username
 	if m, _ := regexp.MatchString(`^[0-9a-zA-Z_]+$`, adminUsername); !m {
 		panic(result.BadRequest(`admin's username cannot oly be alphabet, number or '_'`))
 	}
@@ -322,7 +280,7 @@ func (this *InstallController) CreateAdmin(writer http.ResponseWriter, request *
 		panic(result.BadRequest(`admin's password at least 6 chars'`))
 	}
 
-	//检查是否有重复。
+	//check whether duplicate
 	var count2 int64
 	db2 := db.Model(&User{}).Where("username = ?", adminUsername).Count(&count2)
 	this.PanicError(db2.Error)
@@ -350,7 +308,7 @@ func (this *InstallController) CreateAdmin(writer http.ResponseWriter, request *
 
 }
 
-//(如果数据库中本身存在管理员了)验证管理员
+//(if there is admin in db)Validate admin.
 func (this *InstallController) ValidateAdmin(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	db := this.openDbConnection(writer, request)
@@ -359,7 +317,6 @@ func (this *InstallController) ValidateAdmin(writer http.ResponseWriter, request
 	adminUsername := request.FormValue("adminUsername")
 	adminPassword := request.FormValue("adminPassword")
 
-	//验证超级管理员的信息
 	if adminUsername == "" {
 		panic(result.BadRequest(`admin's username cannot be null'`))
 	}
@@ -385,7 +342,7 @@ func (this *InstallController) ValidateAdmin(writer http.ResponseWriter, request
 
 }
 
-//完成系统安装
+//Finish the installation
 func (this *InstallController) Finish(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	mysqlPortStr := request.FormValue("mysqlPort")
@@ -401,15 +358,15 @@ func (this *InstallController) Finish(writer http.ResponseWriter, request *http.
 		mysqlPort = tmp
 	}
 
-	//要求数据库连接通畅
+	//Recheck the db connection
 	db := this.openDbConnection(writer, request)
 	defer this.closeDbConnection(db)
 
-	//要求数据库完整。
+	//Recheck the integrity of tables.
 	tableMetaList := this.getTableMetaList(db)
 	this.validateTableMetaList(tableMetaList)
 
-	//要求至少有一名管理员。
+	//At least one admin
 	var count1 int64
 	db1 := db.Model(&User{}).Where("role = ?", USER_ROLE_ADMINISTRATOR).Count(&count1)
 	this.PanicError(db1.Error)
@@ -417,10 +374,10 @@ func (this *InstallController) Finish(writer http.ResponseWriter, request *http.
 		panic(result.BadRequest(`please config at least one admin user`))
 	}
 
-	//通知配置文件安装完毕。
+	//announce the config to write config to tank.json
 	core.CONFIG.FinishInstall(mysqlPort, mysqlHost, mysqlSchema, mysqlUsername, mysqlPassword)
 
-	//通知全局上下文，说系统安装好了
+	//announce the context to broadcast the installation news to bean.
 	core.CONTEXT.InstallOk()
 
 	return this.Success("OK")

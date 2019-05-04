@@ -14,11 +14,9 @@ type PreferenceController struct {
 	preferenceService *PreferenceService
 }
 
-//初始化方法
 func (this *PreferenceController) Init() {
 	this.BaseController.Init()
 
-	//手动装填本实例的Bean. 这里必须要用中间变量方可。
 	b := core.CONTEXT.GetBean(this.preferenceDao)
 	if b, ok := b.(*PreferenceDao); ok {
 		this.preferenceDao = b
@@ -31,12 +29,10 @@ func (this *PreferenceController) Init() {
 
 }
 
-//注册自己的路由。
 func (this *PreferenceController) RegisterRoutes() map[string]func(writer http.ResponseWriter, request *http.Request) {
 
 	routeMap := make(map[string]func(writer http.ResponseWriter, request *http.Request))
 
-	//每个Controller需要主动注册自己的路由。
 	routeMap["/api/preference/ping"] = this.Wrap(this.Ping, USER_ROLE_GUEST)
 	routeMap["/api/preference/fetch"] = this.Wrap(this.Fetch, USER_ROLE_GUEST)
 	routeMap["/api/preference/edit"] = this.Wrap(this.Edit, USER_ROLE_ADMINISTRATOR)

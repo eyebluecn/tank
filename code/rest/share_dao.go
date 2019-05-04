@@ -3,6 +3,7 @@ package rest
 import (
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/builder"
+	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/jinzhu/gorm"
 
 	"github.com/nu7hatch/gouuid"
@@ -13,28 +14,27 @@ type ShareDao struct {
 	BaseDao
 }
 
-//按照Id查询文件
+//find by uuid. if not found return nil.
 func (this *ShareDao) FindByUuid(uuid string) *Share {
-
-	// Read
-	var share Share
-	db := core.CONTEXT.GetDB().Where(&Share{Base: Base{Uuid: uuid}}).First(&share)
+	var entity = &Share{}
+	db := core.CONTEXT.GetDB().Where("uuid = ?", uuid).First(entity)
 	if db.Error != nil {
-		return nil
+		if db.Error.Error() == result.DB_ERROR_NOT_FOUND {
+			return nil
+		} else {
+			panic(db.Error)
+		}
 	}
-	return &share
+	return entity
 }
 
-//按照Id查询文件
+//find by uuid. if not found panic NotFound error
 func (this *ShareDao) CheckByUuid(uuid string) *Share {
-
-	// Read
-	var share Share
-	db := core.CONTEXT.GetDB().Where(&Share{Base: Base{Uuid: uuid}}).First(&share)
-	this.PanicError(db.Error)
-
-	return &share
-
+	entity := this.FindByUuid(uuid)
+	if entity == nil {
+		panic(result.NotFound("not found record with uuid = %s", uuid))
+	}
+	return entity
 }
 
 //按分页条件获取分页
@@ -85,7 +85,6 @@ func (this *ShareDao) Save(share *Share) *Share {
 	return share
 }
 
-//删除一条记录
 func (this *ShareDao) Delete(share *Share) {
 
 	db := core.CONTEXT.GetDB().Delete(&share)
@@ -93,9 +92,9 @@ func (this *ShareDao) Delete(share *Share) {
 
 }
 
-//执行清理操作
+//System cleanup.
 func (this *ShareDao) Cleanup() {
-	this.logger.Info("[ShareDao]执行清理：清除数据库中所有Share记录。")
+	this.logger.Info("[ShareDao] clean up. Delete all Share")
 	db := core.CONTEXT.GetDB().Where("uuid is not null").Delete(Share{})
 	this.PanicError(db.Error)
 }

@@ -32,11 +32,9 @@ type MatterService struct {
 	preferenceService *PreferenceService
 }
 
-//初始化方法
 func (this *MatterService) Init() {
 	this.BaseBean.Init()
 
-	//手动装填本实例的Bean. 这里必须要用中间变量方可。
 	b := core.CONTEXT.GetBean(this.matterDao)
 	if b, ok := b.(*MatterDao); ok {
 		this.matterDao = b
@@ -366,20 +364,6 @@ func (this *MatterService) Upload(request *http.Request, file io.Reader, user *U
 	})
 
 	return matter
-}
-
-//上传文件
-func (this *MatterService) AtomicUpload(request *http.Request, file io.Reader, user *User, dirMatter *Matter, filename string, privacy bool) *Matter {
-
-	if user == nil {
-		panic(result.BadRequest("user cannot be nil."))
-	}
-
-	//操作锁
-	this.userService.MatterLock(user.Uuid)
-	defer this.userService.MatterUnlock(user.Uuid)
-
-	return this.Upload(request, file, user, dirMatter, filename, privacy)
 }
 
 //内部创建文件，不带操作锁。

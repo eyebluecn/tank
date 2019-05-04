@@ -17,11 +17,9 @@ type DashboardService struct {
 	userDao       *UserDao
 }
 
-//初始化方法
 func (this *DashboardService) Init() {
 	this.BaseBean.Init()
 
-	//手动装填本实例的Bean. 这里必须要用中间变量方可。
 	b := core.CONTEXT.GetBean(this.dashboardDao)
 	if b, ok := b.(*DashboardDao); ok {
 		this.dashboardDao = b
@@ -49,81 +47,61 @@ func (this *DashboardService) Init() {
 
 }
 
-//系统启动，数据库配置完毕后会调用该方法
 func (this *DashboardService) Bootstrap() {
 
-	//每日00:05分清洗离线数据
+	this.logger.Info("[cron job] Everyday 00:05 ETL dashboard data.")
 	expression := "0 5 0 * * ?"
 	cronJob := cron.New()
 	err := cronJob.AddFunc(expression, this.etl)
 	core.PanicError(err)
 	cronJob.Start()
-	this.logger.Info("[cron job] 每日00:05清洗离线数据")
 
-	//立即执行一次数据清洗任务
+	//do the etl method now.
 	go core.RunWithRecovery(this.etl)
-
 }
 
-//每日清洗离线数据表。
+// handle the dashboard data.
 func (this *DashboardService) etl() {
 
-	this.logger.Info("每日定时数据清洗")
+	this.logger.Info("ETL dashboard data.")
 
-	//准备日期开始结尾
 	startTime := util.FirstSecondOfDay(util.Yesterday())
 	endTime := util.LastSecondOfDay(util.Yesterday())
 	dt := util.ConvertTimeToDateString(startTime)
 	longTimeAgo := time.Now()
 	longTimeAgo = longTimeAgo.AddDate(-20, 0, 0)
 
-	this.logger.Info("统计汇总表 %s -> %s", util.ConvertTimeToDateTimeString(startTime), util.ConvertTimeToDateTimeString(endTime))
+	this.logger.Info("Time %s -> %s", util.ConvertTimeToDateTimeString(startTime), util.ConvertTimeToDateTimeString(endTime))
 
-	//判断昨天的记录是否已经生成，如果生成了就直接删除掉
+	//check whether the record has created.
 	dbDashboard := this.dashboardDao.FindByDt(dt)
 	if dbDashboard != nil {
-		this.logger.Info(" %s 的汇总已经存在了，删除以进行更新", dt)
+		this.logger.Info(" %s already exits. delete it and insert new one.", dt)
 		this.dashboardDao.Delete(dbDashboard)
 	}
 
 	invokeNum := this.footprintDao.CountBetweenTime(startTime, endTime)
-	this.logger.Info("调用数：%d", invokeNum)
-
 	totalInvokeNum := this.footprintDao.CountBetweenTime(longTimeAgo, endTime)
-	this.logger.Info("历史总调用数：%d", totalInvokeNum)
-
 	uv := this.footprintDao.UvBetweenTime(startTime, endTime)
-	this.logger.Info("UV：%d", uv)
-
 	totalUv := this.footprintDao.UvBetweenTime(longTimeAgo, endTime)
-	this.logger.Info("历史总UV：%d", totalUv)
-
 	matterNum := this.matterDao.CountBetweenTime(startTime, endTime)
-	this.logger.Info("文件数量数：%d", matterNum)
-
 	totalMatterNum := this.matterDao.CountBetweenTime(longTimeAgo, endTime)
-	this.logger.Info("历史文件总数：%d", totalMatterNum)
 
-	var matterSize int64
-	if matterNum != 0 {
-		matterSize = this.matterDao.SizeBetweenTime(startTime, endTime)
-	}
-	this.logger.Info("文件大小：%d", matterSize)
+	matterSize := this.matterDao.SizeBetweenTime(startTime, endTime)
 
-	var totalMatterSize int64
-	if totalMatterNum != 0 {
-		totalMatterSize = this.matterDao.SizeBetweenTime(longTimeAgo, endTime)
-	}
-	this.logger.Info("历史文件总大小：%d", totalMatterSize)
+	totalMatterSize := this.matterDao.SizeBetweenTime(longTimeAgo, endTime)
 
 	cacheSize := this.imageCacheDao.SizeBetweenTime(startTime, endTime)
-	this.logger.Info("缓存大小：%d", cacheSize)
 
 	totalCacheSize := this.imageCacheDao.SizeBetweenTime(longTimeAgo, endTime)
-	this.logger.Info("历史缓存总大小：%d", totalCacheSize)
 
 	avgCost := this.footprintDao.AvgCostBetweenTime(startTime, endTime)
-	this.logger.Info("平均耗时：%d ms", avgCost)
+
+	this.logger.Info("Dashboard Summery 1. invokeNum = %d, totalInvokeNum = %d, UV = %d, totalUV = %d, matterNum = %d, totalMatterNum = %d",
+		invokeNum, totalInvokeNum, uv, totalUv, matterNum, totalMatterNum)
+
+	this.logger.Info("Dashboard Summery 2. matterSize = %d, totalMatterSize = %d, cacheSize = %d, totalCacheSize = %d, avgCost = %d",
+		matterSize, totalMatterSize, cacheSize, totalCacheSize, avgCost)
 
 	dashboard := &Dashboard{
 		InvokeNum:      invokeNum,
@@ -139,5 +117,4 @@ func (this *DashboardService) etl() {
 	}
 
 	this.dashboardDao.Create(dashboard)
-
 }

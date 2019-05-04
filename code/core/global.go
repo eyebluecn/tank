@@ -1,16 +1,15 @@
 package core
 
-//该文件中记录的是应用系统中全局变量。主要有日志LOGGER和上下文CONTEXT
+//the global variables in the application.
 
-//命令行输入等相关信息
+//application
 var APPLICATION Application
 
-//日志系统必须高保
-//全局唯一的日志对象(在main函数中初始化)
+//logger
 var LOGGER Logger
 
-//全局唯一配置
+//config
 var CONFIG Config
 
-//全局唯一的上下文(在main函数中初始化)
+//context
 var CONTEXT Context
