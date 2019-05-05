@@ -201,7 +201,7 @@ func (table *Table) Add(key interface{}, duration time.Duration, data interface{
 	item := NewItem(key, duration, data)
 
 	table.Lock()
-	table.log("Adding item with key %v and lifespan of %v to table", key, duration)
+	table.log("Adding item with key %v and lifespan of %d to table", key, duration)
 	table.items[key] = item
 
 	expDur := table.cleanupInterval
@@ -243,7 +243,7 @@ func (table *Table) Delete(key interface{}) (*Item, error) {
 
 	table.Lock()
 	defer table.Unlock()
-	table.log("Deleting item with key %v created on %v and hit %v times from table", key, r.createTime, r.count)
+	table.log("Deleting item with key %v created on %s and hit %d times from table", key, r.createTime, r.count)
 	delete(table.items, key)
 
 	return r, nil
@@ -268,7 +268,7 @@ func (table *Table) NotFoundAdd(key interface{}, lifeSpan time.Duration, data in
 	}
 
 	item := NewItem(key, lifeSpan, data)
-	table.log("Adding item with key %v and lifespan of %v to table", key, lifeSpan)
+	table.log("Adding item with key %v and lifespan of %d to table", key, lifeSpan)
 	table.items[key] = item
 
 	expDur := table.cleanupInterval
@@ -368,7 +368,7 @@ func (table *Table) MostAccessed(count int64) []*Item {
 
 // print log.
 func (table *Table) log(format string, v ...interface{}) {
-	fmt.Printf(format, v)
+	//fmt.Printf(format+"\r\n", v)
 }
 
 func NewTable() *Table {
