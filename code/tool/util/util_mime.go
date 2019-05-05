@@ -618,7 +618,7 @@ var allMimeMap = map[string]string{
 	".z":                      "application/x-compress",
 	".zip":                    "application/zip"}
 
-//根据文件名字获取后缀名，均是小写。
+//get extension by name. lowercase.
 func GetExtension(filename string) string {
 
 	var extension = filepath.Ext(filename)
@@ -627,7 +627,7 @@ func GetExtension(filename string) string {
 
 }
 
-//根据文件名字获取去除后缀的名称
+//get filename without extension
 func GetSimpleFileName(filename string) string {
 
 	for i := len(filename) - 1; i >= 0 && !os.IsPathSeparator(filename[i]); i-- {
@@ -639,7 +639,7 @@ func GetSimpleFileName(filename string) string {
 
 }
 
-//根据一个后缀名获取MimeType，获取不到默认返回 "application/octet-stream"
+//get MimeType by filename, if not found return "application/octet-stream"
 func GetMimeType(filename string) string {
 
 	extension := GetExtension(filename)
@@ -651,7 +651,7 @@ func GetMimeType(filename string) string {
 	}
 }
 
-//根据一个后缀名获取MimeType，获取不到默认返回fallback.
+//get MimeType by filename, if not found return fallback.
 func GetFallbackMimeType(filename string, fallback string) string {
 
 	extension := GetExtension(filename)

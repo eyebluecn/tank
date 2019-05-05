@@ -34,7 +34,6 @@ func (this *UploadTokenDao) CheckByUuid(uuid string) *UploadToken {
 	return entity
 }
 
-//创建一个session并且持久化到数据库中。
 func (this *UploadTokenDao) Create(uploadToken *UploadToken) *UploadToken {
 
 	timeUUID, _ := uuid.NewV4()
@@ -49,7 +48,6 @@ func (this *UploadTokenDao) Create(uploadToken *UploadToken) *UploadToken {
 	return uploadToken
 }
 
-//修改一个uploadToken
 func (this *UploadTokenDao) Save(uploadToken *UploadToken) *UploadToken {
 
 	uploadToken.UpdateTime = time.Now()

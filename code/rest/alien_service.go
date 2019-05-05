@@ -111,7 +111,7 @@ func (this *AlienService) PreviewOrDownload(
 			shareCode := request.FormValue("shareCode")
 			shareRootUuid := request.FormValue("shareRootUuid")
 
-			this.shareService.ValidateMatter(shareUuid, shareCode, operator, shareRootUuid, matter)
+			this.shareService.ValidateMatter(request, shareUuid, shareCode, operator, shareRootUuid, matter)
 
 		}
 	}

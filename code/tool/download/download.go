@@ -60,7 +60,7 @@ func CheckLastModified(w http.ResponseWriter, r *http.Request, modifyTime time.T
 	return false
 }
 
-// 处理ETag标签
+// handle ETag
 // CheckETag implements If-None-Match and If-Range checks.
 //
 // The ETag or modtime must have been previously set in the
@@ -211,8 +211,7 @@ func PanicError(err error) {
 	}
 }
 
-//文件下载。具有进度功能。
-//下载功能参考：https://github.com/Masterminds/go-fileserver
+//file download. https://github.com/Masterminds/go-fileserver
 func DownloadFile(
 	writer http.ResponseWriter,
 	request *http.Request,
@@ -228,16 +227,15 @@ func DownloadFile(
 		PanicError(e)
 	}()
 
-	//根据参数添加content-disposition。该Header会让浏览器自动下载，而不是预览。
+	//content-disposition tell browser to download rather than preview.
 	if withContentDisposition {
 		fileName := url.QueryEscape(filename)
 		writer.Header().Set("content-disposition", "attachment; filename=\""+fileName+"\"")
 	}
 
-	//显示文件大小。
 	fileInfo, err := diskFile.Stat()
 	if err != nil {
-		panic("无法从磁盘中获取文件信息")
+		panic("cannot load fileInfo from disk." + filePath)
 	}
 
 	modifyTime := fileInfo.ModTime()
@@ -261,7 +259,7 @@ func DownloadFile(
 	ctypes, haveType := writer.Header()["Content-Type"]
 	var ctype string
 	if !haveType {
-		//使用mimeUtil来获取mime
+		//get mime
 		ctype = util.GetFallbackMimeType(filename, "")
 		if ctype == "" {
 			// read a chunk to decide between utf-8 text and binary
@@ -270,7 +268,7 @@ func DownloadFile(
 			ctype = http.DetectContentType(buf[:n])
 			_, err := diskFile.Seek(0, os.SEEK_SET) // rewind to output whole file
 			if err != nil {
-				panic("无法准确定位文件")
+				panic("cannot seek file")
 			}
 		}
 		writer.Header().Set("Content-Type", ctype)

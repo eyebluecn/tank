@@ -2,7 +2,9 @@ package rest
 
 import (
 	"github.com/eyebluecn/tank/code/core"
+	"github.com/eyebluecn/tank/code/tool/i18n"
 	"github.com/eyebluecn/tank/code/tool/result"
+	"net/http"
 	"strings"
 	"time"
 )
@@ -41,7 +43,6 @@ func (this *ShareService) Init() {
 
 }
 
-//获取某个分享的详情。
 func (this *ShareService) Detail(uuid string) *Share {
 
 	share := this.shareDao.CheckByUuid(uuid)
@@ -49,17 +50,17 @@ func (this *ShareService) Detail(uuid string) *Share {
 	return share
 }
 
-//验证一个shareUuid和shareCode是否匹配和有权限。
-func (this *ShareService) CheckShare(shareUuid string, code string, user *User) *Share {
+// check whether shareUuid and shareCode matches. check whether user can access.
+func (this *ShareService) CheckShare(request *http.Request, shareUuid string, code string, user *User) *Share {
 
 	share := this.shareDao.CheckByUuid(shareUuid)
-	//如果是自己的分享，可以不要提取码
+	//if self, not need shareCode
 	if user == nil || user.Uuid != share.UserUuid {
-		//没有登录，或者查看的不是自己的分享，要求有验证码
+		//if not login or not self's share, shareCode is required.
 		if code == "" {
-			panic(result.CustomWebResult(result.NEED_SHARE_CODE, "提取码必填"))
+			panic(result.CustomWebResultI18n(request, result.NEED_SHARE_CODE, i18n.ShareCodeRequired))
 		} else if share.Code != code {
-			panic(result.CustomWebResult(result.SHARE_CODE_ERROR, "提取码错误"))
+			panic(result.CustomWebResultI18n(request, result.SHARE_CODE_ERROR, i18n.ShareCodeError))
 		} else {
 			if !share.ExpireInfinity {
 				if share.ExpireTime.Before(time.Now()) {
@@ -71,15 +72,14 @@ func (this *ShareService) CheckShare(shareUuid string, code string, user *User) 
 	return share
 }
 
-//根据某个shareUuid和code，某个用户是否有权限获取 shareRootUuid 下面的 matterUuid
-//如果是根目录下的文件，那么shareRootUuid传root.
-func (this *ShareService) ValidateMatter(shareUuid string, code string, user *User, shareRootUuid string, matter *Matter) {
+//check whether a user can access a matter. shareRootUuid is matter's parent(or parent's parent and so on)
+func (this *ShareService) ValidateMatter(request *http.Request, shareUuid string, code string, user *User, shareRootUuid string, matter *Matter) {
 
 	if matter == nil {
 		panic(result.Unauthorized("matter cannot be nil"))
 	}
 
-	//如果文件是自己的，那么放行
+	//if self's matter, ok.
 	if user != nil && matter.UserUuid == user.Uuid {
 		return
 	}
@@ -88,19 +88,19 @@ func (this *ShareService) ValidateMatter(shareUuid string, code string, user *Us
 		panic(result.Unauthorized("shareUuid,code,shareRootUuid cannot be null"))
 	}
 
-	share := this.CheckShare(shareUuid, code, user)
+	share := this.CheckShare(request, shareUuid, code, user)
 
-	//如果shareRootUuid是根，那么matterUuid在bridge中应该有记录
+	//if shareRootUuid is root. Bridge must has record.
 	if shareRootUuid == MATTER_ROOT {
 
 		this.bridgeDao.CheckByShareUuidAndMatterUuid(share.Uuid, matter.Uuid)
 
 	} else {
-		//验证 shareRootMatter是否在被分享。
+		//check whether shareRootMatter is being sharing
 		shareRootMatter := this.matterDao.CheckByUuid(shareRootUuid)
 		this.bridgeDao.CheckByShareUuidAndMatterUuid(share.Uuid, shareRootMatter.Uuid)
 
-		//保证 puuid对应的matter是shareRootMatter的子文件夹。
+		// shareRootMatter is ancestor of matter.
 		child := strings.HasPrefix(matter.Path, shareRootMatter.Path)
 		if !child {
 			panic(result.BadRequest("%s is not %s's children", matter.Uuid, shareRootUuid))

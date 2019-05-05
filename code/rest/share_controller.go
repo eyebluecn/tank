@@ -66,7 +66,6 @@ func (this *ShareController) RegisterRoutes() map[string]func(writer http.Respon
 	return routeMap
 }
 
-//创建一个分享
 func (this *ShareController) Create(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	matterUuids := request.FormValue("matterUuids")
@@ -113,9 +112,8 @@ func (this *ShareController) Create(writer http.ResponseWriter, request *http.Re
 
 		matter := this.matterDao.CheckByUuid(uuid)
 
-		//判断文件的所属人是否正确
 		if matter.UserUuid != user.Uuid {
-			panic(result.Unauthorized("不是你的文件，没有权限"))
+			panic(result.UNAUTHORIZED)
 		}
 
 		matters = append(matters, matter)
@@ -130,7 +128,7 @@ func (this *ShareController) Create(writer http.ResponseWriter, request *http.Re
 			}
 		} else {
 			if matter.Puuid != puuid {
-				panic(result.Unauthorized("一次只能分享同一个文件夹中的内容"))
+				panic(result.Unauthorized("you can only share files in the same directory"))
 			}
 		}
 
@@ -138,10 +136,9 @@ func (this *ShareController) Create(writer http.ResponseWriter, request *http.Re
 
 	if len(matters) > 1 {
 		shareType = SHARE_TYPE_MIX
-		name = matters[0].Name + "," + matters[1].Name + " 等"
+		name = matters[0].Name + "," + matters[1].Name + " ..."
 	}
 
-	//创建share记录
 	share := &Share{
 		Name:           name,
 		ShareType:      shareType,
@@ -154,7 +151,6 @@ func (this *ShareController) Create(writer http.ResponseWriter, request *http.Re
 	}
 	this.shareDao.Create(share)
 
-	//创建关联的matter
 	for _, matter := range matters {
 		bridge := &Bridge{
 			ShareUuid:  share.Uuid,
@@ -177,7 +173,6 @@ func (this *ShareController) Delete(writer http.ResponseWriter, request *http.Re
 
 	if share != nil {
 
-		//删除对应的bridge.
 		this.bridgeDao.DeleteByShareUuid(share.Uuid)
 
 		this.shareDao.Delete(share)
@@ -186,7 +181,6 @@ func (this *ShareController) Delete(writer http.ResponseWriter, request *http.Re
 	return this.Success(nil)
 }
 
-//删除一系列分享
 func (this *ShareController) DeleteBatch(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	uuids := request.FormValue("uuids")
@@ -200,7 +194,6 @@ func (this *ShareController) DeleteBatch(writer http.ResponseWriter, request *ht
 
 		imageCache := this.shareDao.FindByUuid(uuid)
 
-		//判断图片缓存的所属人是否正确
 		user := this.checkUser(request)
 		if imageCache.UserUuid != user.Uuid {
 			panic(result.UNAUTHORIZED)
@@ -209,10 +202,9 @@ func (this *ShareController) DeleteBatch(writer http.ResponseWriter, request *ht
 		this.shareDao.Delete(imageCache)
 	}
 
-	return this.Success("删除成功！")
+	return this.Success("OK")
 }
 
-//查看详情。
 func (this *ShareController) Detail(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	uuid := request.FormValue("uuid")
@@ -222,7 +214,6 @@ func (this *ShareController) Detail(writer http.ResponseWriter, request *http.Re
 
 	share := this.shareDao.CheckByUuid(uuid)
 
-	//验证当前之人是否有权限查看这么详细。
 	user := this.checkUser(request)
 
 	if share.UserUuid != user.Uuid {
@@ -233,10 +224,8 @@ func (this *ShareController) Detail(writer http.ResponseWriter, request *http.Re
 
 }
 
-//按照分页的方式查询
 func (this *ShareController) Page(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
-	//如果是根目录，那么就传入root.
 	pageStr := request.FormValue("page")
 	pageSizeStr := request.FormValue("pageSize")
 	orderCreateTime := request.FormValue("orderCreateTime")
@@ -268,37 +257,30 @@ func (this *ShareController) Page(writer http.ResponseWriter, request *http.Requ
 	return this.Success(pager)
 }
 
-//验证提取码对应的某个shareUuid是否有效
 func (this *ShareController) CheckShare(writer http.ResponseWriter, request *http.Request) *Share {
 
-	//如果是根目录，那么就传入root.
 	shareUuid := request.FormValue("shareUuid")
 	code := request.FormValue("code")
 	user := this.findUser(request)
 
-	return this.shareService.CheckShare(shareUuid, code, user)
+	return this.shareService.CheckShare(request, shareUuid, code, user)
 }
 
-//浏览某个分享中的文件
 func (this *ShareController) Browse(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
-	//如果是根目录，那么就传入root.
 	shareUuid := request.FormValue("shareUuid")
 	code := request.FormValue("code")
 
-	//当前查看的puuid。 puuid=root表示查看分享的根目录，其余表示查看某个文件夹下的文件。
+	//puuid can be "root"
 	puuid := request.FormValue("puuid")
 	rootUuid := request.FormValue("rootUuid")
 
 	user := this.findUser(request)
-	share := this.shareService.CheckShare(shareUuid, code, user)
+	share := this.shareService.CheckShare(request, shareUuid, code, user)
 	bridges := this.bridgeDao.FindByShareUuid(share.Uuid)
 
 	if puuid == MATTER_ROOT {
 
-		//分享的根目录
-
-		//获取对应的 matter.
 		var matters []*Matter
 		if len(bridges) != 0 {
 			uuids := make([]string, 0)
@@ -318,21 +300,21 @@ func (this *ShareController) Browse(writer http.ResponseWriter, request *http.Re
 
 	} else {
 
-		//如果当前查看的目录就是根目录，那么无需再验证
+		//if root. No need to validate.
 		if puuid == rootUuid {
 			dirMatter := this.matterDao.CheckByUuid(puuid)
 			share.DirMatter = dirMatter
 		} else {
 			dirMatter := this.matterService.Detail(request, puuid)
 
-			//验证 shareRootMatter是否在被分享。
+			//check whether shareRootMatter is being sharing
 			shareRootMatter := this.matterDao.CheckByUuid(rootUuid)
 			if !shareRootMatter.Dir {
 				panic(result.BadRequestI18n(request, i18n.MatterDestinationMustDirectory))
 			}
 			this.bridgeDao.CheckByShareUuidAndMatterUuid(share.Uuid, shareRootMatter.Uuid)
 
-			//到rootUuid的地方掐断。
+			//stop at rootUuid
 			find := false
 			parentMatter := dirMatter.Parent
 			for parentMatter != nil {
@@ -357,14 +339,11 @@ func (this *ShareController) Browse(writer http.ResponseWriter, request *http.Re
 
 }
 
-//下载压缩包
 func (this *ShareController) Zip(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
-	//如果是根目录，那么就传入root.
 	shareUuid := request.FormValue("shareUuid")
 	code := request.FormValue("code")
 
-	//当前查看的puuid。 puuid=root表示查看分享的根目录，其余表示查看某个文件夹下的文件。
 	puuid := request.FormValue("puuid")
 	rootUuid := request.FormValue("rootUuid")
 
@@ -372,8 +351,8 @@ func (this *ShareController) Zip(writer http.ResponseWriter, request *http.Reque
 
 	if puuid == MATTER_ROOT {
 
-		//下载分享全部内容。
-		share := this.shareService.CheckShare(shareUuid, code, user)
+		//download all things.
+		share := this.shareService.CheckShare(request, shareUuid, code, user)
 		bridges := this.bridgeDao.FindByShareUuid(share.Uuid)
 		var matterUuids []string
 		for _, bridge := range bridges {
@@ -384,9 +363,9 @@ func (this *ShareController) Zip(writer http.ResponseWriter, request *http.Reque
 
 	} else {
 
-		//下载某个目录。
+		//download a folder.
 		matter := this.matterDao.CheckByUuid(puuid)
-		this.shareService.ValidateMatter(shareUuid, code, user, rootUuid, matter)
+		this.shareService.ValidateMatter(request, shareUuid, code, user, rootUuid, matter)
 		this.matterService.DownloadZip(writer, request, []*Matter{matter})
 	}
 

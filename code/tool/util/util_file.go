@@ -7,12 +7,12 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
 )
 
-//判断文件或文件夹是否已经存在
 func PathExists(path string) bool {
 	_, err := os.Stat(path)
 	if err == nil {
@@ -26,14 +26,13 @@ func PathExists(path string) bool {
 	}
 }
 
-//获取GOPATH路径
 func GetGoPath() string {
 
 	return build.Default.GOPATH
 
 }
 
-//获取开发时的Home目录
+//get development home path.
 func GetDevHomePath() string {
 
 	_, file, _, ok := runtime.Caller(0)
@@ -50,8 +49,7 @@ func GetDevHomePath() string {
 	return dir
 }
 
-//获取该应用可执行文件的位置。
-//例如：C:\Users\lishuang\AppData\Local\Temp
+//get home path for application.
 func GetHomePath() string {
 	ex, err := os.Executable()
 	if err != nil {
@@ -70,8 +68,9 @@ func GetHomePath() string {
 	return UniformPath(exPath)
 }
 
-//获取前端静态资源的位置。如果你在开发模式下，可以将这里直接返回tank/build下面的html路径。
-//例如：C:/Users/lishuang/AppData/Local/Temp/html
+//get html path
+//dev: return $project/build/html
+//prod: return $application/html
 func GetHtmlPath() string {
 
 	//开发环境直接使用 build/html 下面的文件
@@ -81,27 +80,27 @@ func GetHtmlPath() string {
 	return GetHomePath() + "/html"
 }
 
-//如果文件夹存在就不管，不存在就创建。 例如：/var/www/matter
+//if directory not exit, create it.
 func MakeDirAll(dirPath string) string {
 
 	exists := PathExists(dirPath)
 
 	if !exists {
-		//TODO:文件权限需要进一步考虑
+
 		err := os.MkdirAll(dirPath, 0777)
 		if err != nil {
-			panic("创建文件夹时出错！")
+			panic("error while creating directory")
 		}
 	}
 
 	return dirPath
 }
 
-//获取到一个Path的文件夹路径，eg /var/www/xx.log -> /var/www
+//eg /var/www/xx.log -> /var/www
 func GetDirOfPath(fullPath string) string {
 
 	index1 := strings.LastIndex(fullPath, "/")
-	//可能是windows的环境
+	//maybe windows environment
 	index2 := strings.LastIndex(fullPath, "\\")
 	index := index1
 	if index2 > index1 {
@@ -111,11 +110,11 @@ func GetDirOfPath(fullPath string) string {
 	return fullPath[:index]
 }
 
-//获取到一个Path 中的文件名，eg /var/www/xx.log -> xx.log
+//get filename from path. eg /var/www/xx.log -> xx.log
 func GetFilenameOfPath(fullPath string) string {
 
 	index1 := strings.LastIndex(fullPath, "/")
-	//可能是windows的环境
+	//maybe windows env
 	index2 := strings.LastIndex(fullPath, "\\")
 	index := index1
 	if index2 > index1 {
@@ -125,17 +124,17 @@ func GetFilenameOfPath(fullPath string) string {
 	return fullPath[index+1:]
 }
 
-//尝试删除空文件夹 true表示删掉了一个空文件夹，false表示没有删掉任何东西
+//try to delete empty dir. true: delete an empty dir, false: delete nothing.
 func DeleteEmptyDir(dirPath string) bool {
 	dir, err := ioutil.ReadDir(dirPath)
 	if err != nil {
-		panic(result.BadRequest("尝试读取目录%s时出错 %s", dirPath, err.Error()))
+		panic(result.BadRequest("occur error while reading %s %s", dirPath, err.Error()))
 	}
 	if len(dir) == 0 {
-		//空文件夹
+		//empty dir
 		err = os.Remove(dirPath)
 		if err != nil {
-			panic(result.BadRequest("删除磁盘上的文件夹%s出错 %s", dirPath, err.Error()))
+			panic(result.BadRequest("occur error while deleting %s %s", dirPath, err.Error()))
 		}
 		return true
 	}
@@ -143,39 +142,23 @@ func DeleteEmptyDir(dirPath string) bool {
 	return false
 }
 
-//递归尝试删除空文件夹，一直空就一直删，直到不空为止
+//delete empty dir recursive, delete until not empty.
 func DeleteEmptyDirRecursive(dirPath string) {
 
-	fmt.Printf("递归删除删 %v \n", dirPath)
+	fmt.Printf("recursive delete %v \n", dirPath)
 
 	tmpPath := dirPath
 	for DeleteEmptyDir(tmpPath) {
 
 		dir := GetDirOfPath(tmpPath)
 
-		fmt.Printf("尝试删除 %v\n", dir)
+		fmt.Printf("try to delete %v\n", dir)
 
 		tmpPath = dir
 	}
 }
 
-//移除某个文件夹。
-func RemoveDirectory(dirPath string) string {
-
-	exists := PathExists(dirPath)
-	if exists {
-
-		err := os.Remove(dirPath)
-		if err != nil {
-			panic("删除文件夹时出错！")
-		}
-	}
-
-	return dirPath
-}
-
-//获取配置文件存放的位置
-//例如：C:\Users\lishuang\AppData\Local\Temp/conf
+//get conf path.
 func GetConfPath() string {
 
 	homePath := GetHomePath()
@@ -185,15 +168,14 @@ func GetConfPath() string {
 	if !exists {
 		err := os.MkdirAll(filePath, 0777)
 		if err != nil {
-			panic("创建日志文件夹时出错！")
+			panic("error while mkdir " + err.Error())
 		}
 	}
 
 	return filePath
 }
 
-//获取日志的路径
-//例如：默认存放于 home/log
+//get log path.
 func GetLogPath() string {
 
 	homePath := GetHomePath()
@@ -203,14 +185,14 @@ func GetLogPath() string {
 	if !exists {
 		err := os.MkdirAll(filePath, 0777)
 		if err != nil {
-			panic("创建日志文件夹时出错！")
+			panic("error while mkdir " + err.Error())
 		}
 	}
 
 	return filePath
 }
 
-//复制文件
+//copy file
 func CopyFile(srcPath string, destPath string) (nBytes int64) {
 
 	srcFileStat, err := os.Stat(srcPath)
@@ -248,9 +230,12 @@ func CopyFile(srcPath string, destPath string) (nBytes int64) {
 	return nBytes
 }
 
-//路径归一化处理，把\\替换成/
-func UniformPath(path string) string {
-
-	return strings.Replace(path, "\\", "/", -1)
-
+//1. replace \\ to /
+//2. clean path.
+//3. trim suffix /
+func UniformPath(p string) string {
+	p = strings.Replace(p, "\\", "/", -1)
+	p = path.Clean(p)
+	p = strings.TrimSuffix(p, "/")
+	return p
 }

@@ -34,7 +34,6 @@ func (this *SessionDao) CheckByUuid(uuid string) *Session {
 	return entity
 }
 
-//创建一个session并且持久化到数据库中。
 func (this *SessionDao) Create(session *Session) *Session {
 
 	timeUUID, _ := uuid.NewV4()
@@ -48,7 +47,6 @@ func (this *SessionDao) Create(session *Session) *Session {
 	return session
 }
 
-//修改一个session
 func (this *SessionDao) Save(session *Session) *Session {
 
 	session.UpdateTime = time.Now()

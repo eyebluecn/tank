@@ -19,7 +19,6 @@ func (this *PreferenceService) Init() {
 
 }
 
-//获取单例的配置。
 func (this *PreferenceService) Fetch() *Preference {
 
 	if this.preference == nil {

@@ -33,7 +33,6 @@ func (this *PreferenceDao) Fetch() *Preference {
 	return preference
 }
 
-//创建
 func (this *PreferenceDao) Create(preference *Preference) *Preference {
 
 	timeUUID, _ := uuid.NewV4()
@@ -47,7 +46,6 @@ func (this *PreferenceDao) Create(preference *Preference) *Preference {
 	return preference
 }
 
-//修改一个偏好设置
 func (this *PreferenceDao) Save(preference *Preference) *Preference {
 
 	preference.UpdateTime = time.Now()

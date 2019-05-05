@@ -16,11 +16,10 @@ func (this *UserDao) Init() {
 	this.BaseDao.Init()
 }
 
-//创建用户
 func (this *UserDao) Create(user *User) *User {
 
 	if user == nil {
-		panic("参数不能为nil")
+		panic(result.BadRequest("user cannot be nil"))
 	}
 
 	timeUUID, _ := uuid.NewV4()
@@ -59,7 +58,6 @@ func (this *UserDao) CheckByUuid(uuid string) *User {
 	return entity
 }
 
-//查询用户。
 func (this *UserDao) FindByUsername(username string) *User {
 
 	var user = &User{}
@@ -74,7 +72,6 @@ func (this *UserDao) FindByUsername(username string) *User {
 	return user
 }
 
-//显示用户列表。
 func (this *UserDao) Page(page int, pageSize int, username string, email string, phone string, status string, sortArray []builder.OrderPair) *Pager {
 
 	var wp = &builder.WherePair{}
@@ -114,7 +111,6 @@ func (this *UserDao) Page(page int, pageSize int, username string, email string,
 	return pager
 }
 
-//查询某个用户名是否已经有用户了
 func (this *UserDao) CountByUsername(username string) int {
 	var count int
 	db := core.CONTEXT.GetDB().
@@ -125,7 +121,6 @@ func (this *UserDao) CountByUsername(username string) int {
 	return count
 }
 
-//保存用户
 func (this *UserDao) Save(user *User) *User {
 
 	user.UpdateTime = time.Now()

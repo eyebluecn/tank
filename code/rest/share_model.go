@@ -6,11 +6,11 @@ import (
 )
 
 const (
-	//单文件
+	//single file.
 	SHARE_TYPE_FILE = "FILE"
-	//文件夹
+	//directory
 	SHARE_TYPE_DIRECTORY = "DIRECTORY"
-	//混合体
+	//mix things
 	SHARE_TYPE_MIX = "MIX"
 )
 
@@ -19,7 +19,7 @@ const (
 )
 
 /**
- * 分享记录
+ * share record
  */
 type Share struct {
 	Base

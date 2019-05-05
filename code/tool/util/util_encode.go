@@ -6,7 +6,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-//给密码字符串加密
+//md5
 func GetMd5(raw string) string {
 	return fmt.Sprintf("%x", md5.Sum([]byte(raw)))
 }

@@ -2,7 +2,6 @@ package rest
 
 import (
 	"github.com/eyebluecn/tank/code/core"
-	"github.com/eyebluecn/tank/code/tool/i18n"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
 	"net/http"
@@ -119,11 +118,7 @@ func (this *AlienController) FetchUploadToken(writer http.ResponseWriter, reques
 	//store dir path
 	dirPath := request.FormValue("dirPath")
 
-	if filename == "" {
-		panic(result.BadRequest("filename cannot be null"))
-	} else if m, _ := regexp.MatchString(MATTER_NAME_PATTERN, filename); m {
-		panic(result.BadRequestI18n(request, i18n.MatterNameContainSpecialChars))
-	}
+	filename = CheckMatterName(request, filename)
 
 	var expireTime time.Time
 	if expireTimeStr == "" {
@@ -288,11 +283,7 @@ func (this *AlienController) CrawlDirect(writer http.ResponseWriter, request *ht
 	dirPath := request.FormValue("dirPath")
 	url := request.FormValue("url")
 
-	if filename == "" {
-		panic(result.BadRequest("filename cannot be null."))
-	} else if m, _ := regexp.MatchString(MATTER_NAME_PATTERN, filename); m {
-		panic(result.BadRequestI18n(request, i18n.MatterNameContainSpecialChars))
-	}
+	filename = CheckMatterName(request, filename)
 
 	var privacy bool
 	if privacyStr == TRUE {

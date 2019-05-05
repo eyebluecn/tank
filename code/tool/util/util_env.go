@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-//是否为win开发环境
+//whether windows develop environment
 func EnvWinDevelopment() bool {
 
 	ex, err := os.Executable()
@@ -14,7 +14,7 @@ func EnvWinDevelopment() bool {
 		panic(err)
 	}
 
-	//如果exPath中包含了 \\AppData\\Local\\Temp 我们认为是在Win的开发环境中
+	//if exPath contains \\AppData\\Local\\Temp we regard as dev.
 	systemUser, err := user.Current()
 	if systemUser != nil {
 
@@ -26,7 +26,7 @@ func EnvWinDevelopment() bool {
 
 }
 
-//是否为mac开发环境
+//whether mac develop environment
 func EnvMacDevelopment() bool {
 
 	ex, err := os.Executable()
@@ -38,7 +38,7 @@ func EnvMacDevelopment() bool {
 
 }
 
-//是否为开发环境 (即是否在IDE中运行)
+//whether develop environment (whether run in IDE)
 func EnvDevelopment() bool {
 
 	return EnvWinDevelopment() || EnvMacDevelopment()

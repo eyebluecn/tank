@@ -7,7 +7,6 @@ import (
 	"time"
 )
 
-//把一个大小转变成方便读的格式
 //human readable file size
 func HumanFileSize(bytes int64) string {
 	var thresh int64 = 1024
@@ -33,7 +32,7 @@ func HumanFileSize(bytes int64) string {
 	return fmt.Sprintf("%s%s", numStr, units[u])
 }
 
-//获取MySQL的URL
+//get mysql url.
 func GetMysqlUrl(
 	mysqlPort int,
 	mysqlHost string,
@@ -43,15 +42,15 @@ func GetMysqlUrl(
 	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8&parseTime=True&loc=Local", mysqlUsername, mysqlPassword, mysqlHost, mysqlPort, mysqlSchema)
 }
 
-//获取四位随机数字
+//get random number 4.
 func RandomNumber4() string {
 	return fmt.Sprintf("%04v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31()%10000)
 }
 
-//获取四位随机数字
+//get random 4 string
 func RandomString4() string {
 
-	//0和o，l和1难以区分，剔除掉
+	//0 and o, 1 and l are not easy to distinguish
 	var letterRunes = []rune("abcdefghijkmnpqrstuvwxyz23456789")
 
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))

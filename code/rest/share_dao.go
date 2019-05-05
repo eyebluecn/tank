@@ -37,7 +37,6 @@ func (this *ShareDao) CheckByUuid(uuid string) *Share {
 	return entity
 }
 
-//按分页条件获取分页
 func (this *ShareDao) Page(page int, pageSize int, userUuid string, sortArray []builder.OrderPair) *Pager {
 
 	var wp = &builder.WherePair{}
@@ -61,7 +60,6 @@ func (this *ShareDao) Page(page int, pageSize int, userUuid string, sortArray []
 	return pager
 }
 
-//创建
 func (this *ShareDao) Create(share *Share) *Share {
 
 	timeUUID, _ := uuid.NewV4()
@@ -75,7 +73,6 @@ func (this *ShareDao) Create(share *Share) *Share {
 	return share
 }
 
-//修改一条记录
 func (this *ShareDao) Save(share *Share) *Share {
 
 	share.UpdateTime = time.Now()

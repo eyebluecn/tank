@@ -6,19 +6,25 @@ import (
 )
 
 const (
-	//游客身份
+	//guest
 	USER_ROLE_GUEST = "GUEST"
-	//普通注册用户
+	//normal user
 	USER_ROLE_USER = "USER"
-	//管理员
+	//administrator
 	USER_ROLE_ADMINISTRATOR = "ADMINISTRATOR"
 )
 
 const (
-	//正常状态
+	//ok
 	USER_STATUS_OK = "OK"
-	//被禁用
+	//disabled
 	USER_STATUS_DISABLED = "DISABLED"
+)
+
+const (
+	//username pattern
+	USERNAME_PATTERN = `^[0-9a-z_]+$`
+	USERNAME_DEMO    = "demo"
 )
 
 type User struct {

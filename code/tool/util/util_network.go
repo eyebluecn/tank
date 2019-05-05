@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-//根据一个请求，获取ip.
+//get ip from request
 func GetIpAddress(r *http.Request) string {
 	var ipAddress string
 
@@ -25,21 +25,21 @@ func GetIpAddress(r *http.Request) string {
 	return ipAddress
 }
 
-//根据一个请求，获取host
-func GetHostFromRequest(r *http.Request) string {
+//get host from request
+func GetHostFromRequest(request *http.Request) string {
 
-	return r.Host
+	return request.Host
 
 }
 
-//根据一个请求，获取authenticationId
+//get cookieAuthKey from request.
 func GetSessionUuidFromRequest(request *http.Request, cookieAuthKey string) string {
 
-	//验证用户是否已经登录。
+	//get from cookie
 	sessionCookie, err := request.Cookie(cookieAuthKey)
 	var sessionId string
 	if err != nil {
-		//从入参中捞取
+		//try to get from Form
 		sessionId = request.FormValue(cookieAuthKey)
 	} else {
 		sessionId = sessionCookie.Value
@@ -49,7 +49,7 @@ func GetSessionUuidFromRequest(request *http.Request, cookieAuthKey string) stri
 
 }
 
-//允许跨域请求
+//allow cors.
 func AllowCORS(writer http.ResponseWriter) {
 	writer.Header().Add("Access-Control-Allow-Origin", "*")
 	writer.Header().Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE")
@@ -57,9 +57,9 @@ func AllowCORS(writer http.ResponseWriter) {
 	writer.Header().Add("Access-Control-Allow-Headers", "content-type")
 }
 
-//禁用缓存
+//disable cache.
 func DisableCache(writer http.ResponseWriter) {
-	//对于IE浏览器，会自动缓存，因此设置不缓存Header.
+	//IE browser will cache automatically. disable the cache.
 	writer.Header().Set("Pragma", "No-cache")
 	writer.Header().Set("Cache-Control", "no-cache")
 	writer.Header().Set("Expires", "0")

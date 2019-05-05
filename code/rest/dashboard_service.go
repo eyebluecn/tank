@@ -71,7 +71,7 @@ func (this *DashboardService) etl() {
 	longTimeAgo := time.Now()
 	longTimeAgo = longTimeAgo.AddDate(-20, 0, 0)
 
-	this.logger.Info("Time %s -> %s", util.ConvertTimeToDateTimeString(startTime), util.ConvertTimeToDateTimeString(endTime))
+	this.logger.Info("ETL dashboard data from %s to %s", util.ConvertTimeToDateTimeString(startTime), util.ConvertTimeToDateTimeString(endTime))
 
 	//check whether the record has created.
 	dbDashboard := this.dashboardDao.FindByDt(dt)

@@ -8,27 +8,25 @@ import (
 	"time"
 )
 
-//缓存项
-//主要借鉴了cache2go https://github.com/muesli/cache2go
+//cache2go https://github.com/muesli/cache2go
 type Item struct {
-	sync.RWMutex //读写锁
-	//缓存键
-	key interface{}
-	//缓存值
+	//read write lock
+	sync.RWMutex
+	key  interface{}
 	data interface{}
-	// 缓存项的生命期
+	// cache duration.
 	duration time.Duration
-	//创建时间
+	// create time
 	createTime time.Time
-	//最后访问时间
+	//last access time
 	accessTime time.Time
-	//访问次数
+	//visit times
 	count int64
-	// 在删除缓存项之前调用的回调函数
+	// callback after deleting
 	deleteCallback func(key interface{})
 }
 
-//新建一项缓存
+//create item.
 func NewItem(key interface{}, duration time.Duration, data interface{}) *Item {
 	t := time.Now()
 	return &Item{
@@ -42,7 +40,7 @@ func NewItem(key interface{}, duration time.Duration, data interface{}) *Item {
 	}
 }
 
-//手动获取一下，保持该项
+//keep alive
 func (item *Item) KeepAlive() {
 	item.Lock()
 	defer item.Unlock()
@@ -50,73 +48,63 @@ func (item *Item) KeepAlive() {
 	item.count++
 }
 
-//返回生命周期
 func (item *Item) Duration() time.Duration {
 	return item.duration
 }
 
-//返回访问时间。可能并发，加锁
 func (item *Item) AccessTime() time.Time {
 	item.RLock()
 	defer item.RUnlock()
 	return item.accessTime
 }
 
-//返回创建时间
 func (item *Item) CreateTime() time.Time {
 	return item.createTime
 }
 
-//返回访问时间。可能并发，加锁
 func (item *Item) Count() int64 {
 	item.RLock()
 	defer item.RUnlock()
 	return item.count
 }
 
-//返回key值
 func (item *Item) Key() interface{} {
 	return item.key
 }
 
-//返回数据
 func (item *Item) Data() interface{} {
 	return item.data
 }
 
-//设置回调函数
 func (item *Item) SetDeleteCallback(f func(interface{})) {
 	item.Lock()
 	defer item.Unlock()
 	item.deleteCallback = f
 }
 
-// 统一管理缓存项的表
+// table for managing cache items
 type Table struct {
 	sync.RWMutex
 
-	//所有缓存项
+	//all cache items
 	items map[interface{}]*Item
-	// 触发缓存清理的定时器
+	// trigger cleanup
 	cleanupTimer *time.Timer
-	// 缓存清理周期
+	// cleanup interval
 	cleanupInterval time.Duration
-	// 获取一个不存在的缓存项时的回调函数
-	loadData func(key interface{}, args ...interface{}) *Item
-	// 向缓存表增加缓存项时的回调函数
+	loadData        func(key interface{}, args ...interface{}) *Item
+	// callback after adding.
 	addedCallback func(item *Item)
-	// 从缓存表删除一个缓存项时的回调函数
+	// callback after deleting
 	deleteCallback func(item *Item)
 }
 
-// 返回缓存中存储有多少项
 func (table *Table) Count() int {
 	table.RLock()
 	defer table.RUnlock()
 	return len(table.items)
 }
 
-// 遍历所有项
 func (table *Table) Foreach(trans func(key interface{}, item *Item)) {
 	table.RLock()
 	defer table.RUnlock()
@@ -126,40 +114,34 @@ func (table *Table) Foreach(trans func(key interface{}, item *Item)) {
 	}
 }
 
-// SetDataLoader配置一个数据加载的回调，当尝试去请求一个不存在的key的时候调用
 func (table *Table) SetDataLoader(f func(interface{}, ...interface{}) *Item) {
 	table.Lock()
 	defer table.Unlock()
 	table.loadData = f
 }
 
-// 添加时的回调函数
 func (table *Table) SetAddedCallback(f func(*Item)) {
 	table.Lock()
 	defer table.Unlock()
 	table.addedCallback = f
 }
 
-// 删除时的回调函数
 func (table *Table) SetDeleteCallback(f func(*Item)) {
 	table.Lock()
 	defer table.Unlock()
 	table.deleteCallback = f
 }
 
-//带有panic恢复的方法
 func (table *Table) RunWithRecovery(f func()) {
 	defer func() {
 		if err := recover(); err != nil {
-			//core.LOGGER.Error("异步任务错误: %v", err)
+			fmt.Printf("occur error %v \r\n", err)
 		}
 	}()
 
-	//执行函数
 	f()
 }
 
-//终结检查，被自调整的时间触发
 func (table *Table) checkExpire() {
 	table.Lock()
 	if table.cleanupTimer != nil {
@@ -171,39 +153,39 @@ func (table *Table) checkExpire() {
 		table.log("Expiration check installed for table")
 	}
 
-	// 为了不抢占锁，采用临时的items.
+	// in order to not take the lock. use temp items.
 	items := table.items
 	table.Unlock()
 
-	//为了定时器更准确，我们需要在每一个循环中更新‘now’，不确定是否是有效率的。
+	//in order to make timer more precise, update now every loop.
 	now := time.Now()
 	smallestDuration := 0 * time.Second
 	for key, item := range items {
-		// 取出我们需要的东西，为了不抢占锁
+		//take out our things, in order not to take the lock.
 		item.RLock()
 		duration := item.duration
 		accessTime := item.accessTime
 		item.RUnlock()
 
-		// 0永久有效
+		// 0 means valid.
 		if duration == 0 {
 			continue
 		}
 		if now.Sub(accessTime) >= duration {
-			//缓存项已经过期
+			//cache item expired.
 			_, e := table.Delete(key)
 			if e != nil {
-				table.log("删除缓存项时出错 %v", e.Error())
+				table.log("occur error while deleting %v", e.Error())
 			}
 		} else {
-			//查找最靠近结束生命周期的项目
+			//find the most possible expire item.
 			if smallestDuration == 0 || duration-now.Sub(accessTime) < smallestDuration {
 				smallestDuration = duration - now.Sub(accessTime)
 			}
 		}
 	}
 
-	// 为下次清理设置间隔，自触发机制
+	//trigger next clean
 	table.Lock()
 	table.cleanupInterval = smallestDuration
 	if smallestDuration > 0 {
@@ -214,26 +196,23 @@ func (table *Table) checkExpire() {
 	table.Unlock()
 }
 
-// 添加缓存项
+// add item
 func (table *Table) Add(key interface{}, duration time.Duration, data interface{}) *Item {
 	item := NewItem(key, duration, data)
 
-	// 将缓存项放入表中
 	table.Lock()
 	table.log("Adding item with key %v and lifespan of %v to table", key, duration)
 	table.items[key] = item
 
-	// 取出需要的东西，释放锁
 	expDur := table.cleanupInterval
 	addedItem := table.addedCallback
 	table.Unlock()
 
-	// 有回调函数便执行回调
 	if addedItem != nil {
 		addedItem(item)
 	}
 
-	// 如果我们没有设置任何心跳检查定时器或者找一个即将迫近的项目
+	//find the most possible expire item.
 	if duration > 0 && (expDur == 0 || duration < expDur) {
 		table.checkExpire()
 	}
@@ -241,20 +220,17 @@ func (table *Table) Add(key interface{}, duration time.Duration, data interface{
 	return item
 }
 
-// 从缓存中删除项
 func (table *Table) Delete(key interface{}) (*Item, error) {
 	table.RLock()
 	r, ok := table.items[key]
 	if !ok {
 		table.RUnlock()
-		return nil, errors.New(fmt.Sprintf("没有找到%s对应的记录", key))
+		return nil, errors.New(fmt.Sprintf("no item with key %s", key))
 	}
 
-	// 取出要用到的东西，释放锁
 	deleteCallback := table.deleteCallback
 	table.RUnlock()
 
-	// 调用删除回调函数
 	if deleteCallback != nil {
 		deleteCallback(r)
 	}
@@ -273,7 +249,7 @@ func (table *Table) Delete(key interface{}) (*Item, error) {
 	return r, nil
 }
 
-//单纯的检查某个键是否存在
+//check exist.
 func (table *Table) Exists(key interface{}) bool {
 	table.RLock()
 	defer table.RUnlock()
@@ -282,7 +258,7 @@ func (table *Table) Exists(key interface{}) bool {
 	return ok
 }
 
-//如果存在，返回false. 如果不存在,就去添加一个键，并且返回true
+//if exist, return false. if not exist add a key and return true.
 func (table *Table) NotFoundAdd(key interface{}, lifeSpan time.Duration, data interface{}) bool {
 	table.Lock()
 
@@ -295,24 +271,20 @@ func (table *Table) NotFoundAdd(key interface{}, lifeSpan time.Duration, data in
 	table.log("Adding item with key %v and lifespan of %v to table", key, lifeSpan)
 	table.items[key] = item
 
-	// 取出需要的内容，释放锁
 	expDur := table.cleanupInterval
 	addedItem := table.addedCallback
 	table.Unlock()
 
-	// 添加回调函数
 	if addedItem != nil {
 		addedItem(item)
 	}
 
-	// 触发过期检查
 	if lifeSpan > 0 && (expDur == 0 || lifeSpan < expDur) {
 		table.checkExpire()
 	}
 	return true
 }
 
-//从缓存中返回一个被标记的并保持活性的值。你可以传附件的参数到DataLoader回调函数
 func (table *Table) Value(key interface{}, args ...interface{}) (*Item, error) {
 	table.RLock()
 	r, ok := table.items[key]
@@ -320,12 +292,11 @@ func (table *Table) Value(key interface{}, args ...interface{}) (*Item, error) {
 	table.RUnlock()
 
 	if ok {
-		// 更新访问次数和访问时间
+		//update visit count and visit time.
 		r.KeepAlive()
 		return r, nil
 	}
 
-	// 有加载数据的方式，就通过loadData函数去加载进来
 	if loadData != nil {
 		item := loadData(key, args...)
 		if item != nil {
@@ -333,14 +304,13 @@ func (table *Table) Value(key interface{}, args ...interface{}) (*Item, error) {
 			return item, nil
 		}
 
-		return nil, errors.New("无法加载到缓存值")
+		return nil, errors.New("cannot load item")
 	}
 
-	//没有找到任何东西，返回nil.
 	return nil, nil
 }
 
-// 删除缓存表中的所有项目
+// truncate a table.
 func (table *Table) Truncate() {
 	table.Lock()
 	defer table.Unlock()
@@ -354,7 +324,7 @@ func (table *Table) Truncate() {
 	}
 }
 
-//辅助table中排序，统计的
+//support table sort
 type ItemPair struct {
 	Key         interface{}
 	AccessCount int64
@@ -366,7 +336,7 @@ func (p ItemPairList) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 func (p ItemPairList) Len() int           { return len(p) }
 func (p ItemPairList) Less(i, j int) bool { return p[i].AccessCount > p[j].AccessCount }
 
-// 返回缓存表中被访问最多的项目
+//return most visited.
 func (table *Table) MostAccessed(count int64) []*Item {
 	table.RLock()
 	defer table.RUnlock()
@@ -396,12 +366,11 @@ func (table *Table) MostAccessed(count int64) []*Item {
 	return r
 }
 
-// 打印日志
+// print log.
 func (table *Table) log(format string, v ...interface{}) {
-	//core.LOGGER.Info(format, v...)
+	fmt.Printf(format, v)
 }
 
-//新建一个缓存Table
 func NewTable() *Table {
 	return &Table{
 		items: make(map[interface{}]*Item),

@@ -12,14 +12,12 @@ import (
 	"time"
 )
 
-//在Logger的基础上包装一个全新的Logger.
 type TankLogger struct {
-	//加锁，在维护日志期间，禁止写入日志。
+	//lock. when maintaining, cannot write
 	sync.RWMutex
-
-	//继承logger
+	//extend logger
 	goLogger *log.Logger
-	//日志记录所在的文件
+	//log file.
 	file *os.File
 }
 
@@ -27,13 +25,12 @@ func (this *TankLogger) Init() {
 
 	this.openFile()
 
-	//每日00:00整理日志。
+	this.Info("[cron job] Every day 00:00 maintain log file.")
 	expression := "0 0 0 * * ?"
 	cronJob := cron.New()
 	err := cronJob.AddFunc(expression, this.maintain)
 	core.PanicError(err)
 	cronJob.Start()
-	this.Info("[cron job] 每日00:00维护日志")
 
 }
 
@@ -41,12 +38,12 @@ func (this *TankLogger) Destroy() {
 	this.closeFile()
 }
 
-//处理日志的统一方法。
+//uniform log method
 func (this *TankLogger) Log(prefix string, format string, v ...interface{}) {
 
 	content := fmt.Sprintf(format+"\r\n", v...)
 
-	//控制台中打印日志，记录行号。
+	//print to console with line number
 	_, file, line, ok := runtime.Caller(2)
 	if !ok {
 		file = "???"
@@ -58,14 +55,12 @@ func (this *TankLogger) Log(prefix string, format string, v ...interface{}) {
 
 	this.goLogger.SetPrefix(prefix)
 
-	//每一行我们加上换行符
 	err := this.goLogger.Output(3, content)
 	if err != nil {
 		fmt.Printf("occur error while logging %s \r\n", err.Error())
 	}
 }
 
-//处理日志的统一方法。
 func (this *TankLogger) Debug(format string, v ...interface{}) {
 	this.Log("[DEBUG]", format, v...)
 }
@@ -88,59 +83,59 @@ func (this *TankLogger) Panic(format string, v ...interface{}) {
 }
 
 //将日志写入到今天的日期中(该方法内必须使用异步方法记录日志，否则会引发死锁)
+//rename log file.
 func (this *TankLogger) maintain() {
 
-	this.Info("每日维护日志")
+	this.Info("maintain log")
 
 	this.Lock()
 	defer this.Unlock()
 
-	//首先关闭文件。
 	this.closeFile()
 
-	//日志归类到昨天
+	//archive to yesterday
 	destPath := util.GetLogPath() + "/tank-" + util.ConvertTimeToDateString(util.Yesterday()) + ".log"
 
-	//直接重命名文件
+	//rename the log file.
 	err := os.Rename(this.fileName(), destPath)
 	if err != nil {
-		this.Error("重命名文件出错", err.Error())
+		this.Error("occur error while renaming log file %s %s", destPath, err.Error())
 	}
 
-	//再次打开文件
+	//reopen
 	this.openFile()
 
-	//删除一个月之前的日志文件。
+	//delete log files a month ago
 	monthAgo := time.Now()
 	monthAgo = monthAgo.AddDate(0, -1, 0)
 	oldDestPath := util.GetLogPath() + "/tank-" + util.ConvertTimeToDateString(monthAgo) + ".log"
-	this.Log("删除日志文件 %s", oldDestPath)
+	this.Log("try to delete log file %s", oldDestPath)
 
-	//删除文件
+	//delete log file
 	exists := util.PathExists(oldDestPath)
 	if exists {
 		err = os.Remove(oldDestPath)
 		if err != nil {
-			this.Error("删除磁盘上的文件%s 出错 %s", oldDestPath, err.Error())
+			this.Error("occur error while deleting log file %s %s", oldDestPath, err.Error())
 		}
 	} else {
-		this.Error("日志文件 %s 不存在，无需删除", oldDestPath)
+		this.Error("log file %s not exist, skip", oldDestPath)
 	}
 
 }
 
-//日志名称
+//log file name
 func (this *TankLogger) fileName() string {
 	return util.GetLogPath() + "/tank.log"
 }
 
-//打开日志文件
+//open log file
 func (this *TankLogger) openFile() {
-	//日志输出到文件中 文件打开后暂时不关闭
-	fmt.Printf("使用日志文件 %s\r\n", this.fileName())
+	// not close log file immediately
+	fmt.Printf("use log file %s\r\n", this.fileName())
 	f, err := os.OpenFile(this.fileName(), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
-		panic("日志文件无法正常打开: " + err.Error())
+		panic("cannot open log file " + err.Error())
 	}
 
 	this.goLogger = log.New(f, "", log.Ltime|log.Lshortfile)
@@ -152,12 +147,12 @@ func (this *TankLogger) openFile() {
 	this.file = f
 }
 
-//关闭日志文件
+//close log file.
 func (this *TankLogger) closeFile() {
 	if this.file != nil {
 		err := this.file.Close()
 		if err != nil {
-			panic("尝试关闭日志时出错: " + err.Error())
+			panic("occur error while closing log file: " + err.Error())
 		}
 	}
 }

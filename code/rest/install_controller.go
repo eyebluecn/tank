@@ -272,8 +272,8 @@ func (this *InstallController) CreateAdmin(writer http.ResponseWriter, request *
 	adminPassword := request.FormValue("adminPassword")
 
 	//validate admin's username
-	if m, _ := regexp.MatchString(`^[0-9a-zA-Z_]+$`, adminUsername); !m {
-		panic(result.BadRequest(`admin's username cannot oly be alphabet, number or '_'`))
+	if m, _ := regexp.MatchString(USERNAME_PATTERN, adminUsername); !m {
+		panic(result.BadRequestI18n(request, i18n.UsernameError))
 	}
 
 	if len(adminPassword) < 6 {

@@ -47,11 +47,11 @@ func (this *UserController) RegisterRoutes() map[string]func(writer http.Respons
 
 func (this *UserController) innerLogin(writer http.ResponseWriter, request *http.Request, user *User) {
 
-	//登录成功，设置Cookie。有效期30天。
+	//set cookie. expire after 30 days.
 	expiration := time.Now()
 	expiration = expiration.AddDate(0, 0, 30)
 
-	//持久化用户的session.
+	//save session to db.
 	session := &Session{
 		UserUuid:   user.Uuid,
 		Ip:         util.GetIpAddress(request),
@@ -61,7 +61,7 @@ func (this *UserController) innerLogin(writer http.ResponseWriter, request *http
 	session.CreateTime = time.Now()
 	session = this.sessionDao.Create(session)
 
-	//设置用户的cookie.
+	//set cookie
 	cookie := http.Cookie{
 		Name:    core.COOKIE_AUTH_KEY,
 		Path:    "/",
@@ -69,16 +69,13 @@ func (this *UserController) innerLogin(writer http.ResponseWriter, request *http
 		Expires: expiration}
 	http.SetCookie(writer, &cookie)
 
-	//更新用户上次登录时间和ip
+	//update lastTime and lastIp
 	user.LastTime = time.Now()
 	user.LastIp = util.GetIpAddress(request)
 	this.userDao.Save(user)
 }
 
-//使用用户名和密码进行登录。
-//参数：
-// @username:用户名
-// @password:密码
+//login by username and password
 func (this *UserController) Login(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	username := request.FormValue("username")
@@ -101,7 +98,7 @@ func (this *UserController) Login(writer http.ResponseWriter, request *http.Requ
 	return this.Success(user)
 }
 
-//使用Authentication进行登录。
+//login by authentication.
 func (this *UserController) AuthenticationLogin(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	authentication := request.FormValue("authentication")
@@ -122,7 +119,7 @@ func (this *UserController) AuthenticationLogin(writer http.ResponseWriter, requ
 	return this.Success(user)
 }
 
-//用户自主注册。
+//register by username and password. After registering, will auto login.
 func (this *UserController) Register(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	username := request.FormValue("username")
@@ -133,7 +130,7 @@ func (this *UserController) Register(writer http.ResponseWriter, request *http.R
 		panic(result.BadRequestI18n(request, i18n.UserRegisterNotAllowd))
 	}
 
-	if m, _ := regexp.MatchString(`^[0-9a-zA-Z_]+$`, username); !m {
+	if m, _ := regexp.MatchString(USERNAME_PATTERN, username); !m {
 		panic(result.BadRequestI18n(request, i18n.UsernameError))
 	}
 
@@ -141,7 +138,6 @@ func (this *UserController) Register(writer http.ResponseWriter, request *http.R
 		panic(result.BadRequestI18n(request, i18n.UserPasswordLengthError))
 	}
 
-	//判断重名。
 	if this.userDao.CountByUsername(username) > 0 {
 		panic(result.BadRequestI18n(request, i18n.UsernameExist, username))
 	}
@@ -156,50 +152,45 @@ func (this *UserController) Register(writer http.ResponseWriter, request *http.R
 
 	user = this.userDao.Create(user)
 
-	//做一次登录操作
+	//auto login
 	this.innerLogin(writer, request, user)
 
 	return this.Success(user)
 }
 
-//编辑一个用户的资料。
 func (this *UserController) Edit(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	avatarUrl := request.FormValue("avatarUrl")
 	uuid := request.FormValue("uuid")
+	sizeLimitStr := request.FormValue("sizeLimit")
 
-	currentUser := this.checkUser(request)
-	user := this.userDao.CheckByUuid(uuid)
+	user := this.checkUser(request)
+	currentUser := this.userDao.CheckByUuid(uuid)
 
-	if currentUser.Role == USER_ROLE_ADMINISTRATOR {
-		//只有管理员可以改变用户上传的大小
-		//判断用户上传大小限制。
-		sizeLimitStr := request.FormValue("sizeLimit")
+	if user.Role == USER_ROLE_ADMINISTRATOR {
+		//only admin can edit user's sizeLimit
 		var sizeLimit int64 = 0
 		if sizeLimitStr == "" {
-			panic("用户上传限制必填！")
+			panic("user's limit size is required")
 		} else {
-			intsizeLimit, err := strconv.Atoi(sizeLimitStr)
+			intSizeLimit, err := strconv.Atoi(sizeLimitStr)
 			if err != nil {
 				this.PanicError(err)
 			}
-			sizeLimit = int64(intsizeLimit)
+			sizeLimit = int64(intSizeLimit)
 		}
-		user.SizeLimit = sizeLimit
-	} else {
-		if currentUser.Uuid != uuid {
-			panic(result.UNAUTHORIZED)
-		}
+		currentUser.SizeLimit = sizeLimit
+	} else if user.Uuid != uuid {
+		panic(result.UNAUTHORIZED)
 	}
 
-	user.AvatarUrl = avatarUrl
+	currentUser.AvatarUrl = avatarUrl
 
-	user = this.userDao.Save(user)
+	currentUser = this.userDao.Save(currentUser)
 
-	return this.Success(user)
+	return this.Success(currentUser)
 }
 
-//获取用户详情
 func (this *UserController) Detail(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	uuid := request.FormValue("uuid")
@@ -210,13 +201,12 @@ func (this *UserController) Detail(writer http.ResponseWriter, request *http.Req
 
 }
 
-//退出登录
 func (this *UserController) Logout(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
-	//session置为过期
+	//expire session.
 	sessionCookie, err := request.Cookie(core.COOKIE_AUTH_KEY)
 	if err != nil {
-		return this.Success("已经退出登录了！")
+		return this.Success("OK")
 	}
 	sessionId := sessionCookie.Value
 
@@ -227,13 +217,13 @@ func (this *UserController) Logout(writer http.ResponseWriter, request *http.Req
 		this.sessionDao.Save(session)
 	}
 
-	//删掉session缓存
+	//delete session.
 	_, err = core.CONTEXT.GetSessionCache().Delete(sessionId)
 	if err != nil {
-		this.logger.Error("删除用户session缓存时出错")
+		this.logger.Error("error while deleting session.")
 	}
 
-	//清空客户端的cookie.
+	//clear cookie.
 	expiration := time.Now()
 	expiration = expiration.AddDate(-1, 0, 0)
 	cookie := http.Cookie{
@@ -243,10 +233,9 @@ func (this *UserController) Logout(writer http.ResponseWriter, request *http.Req
 		Expires: expiration}
 	http.SetCookie(writer, &cookie)
 
-	return this.Success("退出成功！")
+	return this.Success("OK")
 }
 
-//获取用户列表 管理员的权限。
 func (this *UserController) Page(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	pageStr := request.FormValue("page")
@@ -298,14 +287,13 @@ func (this *UserController) Page(writer http.ResponseWriter, request *http.Reque
 	return this.Success(pager)
 }
 
-//修改用户状态
 func (this *UserController) ToggleStatus(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	uuid := request.FormValue("uuid")
 	currentUser := this.userDao.CheckByUuid(uuid)
 	user := this.checkUser(request)
 	if uuid == user.Uuid {
-		panic(result.Unauthorized("你不能操作自己的状态。"))
+		panic(result.UNAUTHORIZED)
 	}
 
 	if currentUser.Status == USER_STATUS_OK {
@@ -320,17 +308,15 @@ func (this *UserController) ToggleStatus(writer http.ResponseWriter, request *ht
 
 }
 
-//变身为指定用户。
 func (this *UserController) Transfiguration(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	uuid := request.FormValue("uuid")
 	currentUser := this.userDao.CheckByUuid(uuid)
 
-	//有效期10分钟
+	//expire after 10 minutes.
 	expiration := time.Now()
 	expiration = expiration.Add(10 * time.Minute)
 
-	//持久化用户的session.
 	session := &Session{
 		UserUuid:   currentUser.Uuid,
 		Ip:         util.GetIpAddress(request),
@@ -343,7 +329,6 @@ func (this *UserController) Transfiguration(writer http.ResponseWriter, request 
 	return this.Success(session.Uuid)
 }
 
-//用户修改密码
 func (this *UserController) ChangePassword(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	oldPassword := request.FormValue("oldPassword")
@@ -354,8 +339,8 @@ func (this *UserController) ChangePassword(writer http.ResponseWriter, request *
 
 	user := this.checkUser(request)
 
-	//如果是demo账号，不提供修改密码的功能。
-	if user.Username == "demo" {
+	//if username is demo, cannot change password.
+	if user.Username == USERNAME_DEMO {
 		return this.Success(user)
 	}
 
@@ -370,7 +355,7 @@ func (this *UserController) ChangePassword(writer http.ResponseWriter, request *
 	return this.Success(user)
 }
 
-//管理员重置用户密码
+//admin reset password.
 func (this *UserController) ResetPassword(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	userUuid := request.FormValue("userUuid")

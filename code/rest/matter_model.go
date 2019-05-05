@@ -3,7 +3,12 @@ package rest
 import (
 	"fmt"
 	"github.com/eyebluecn/tank/code/core"
+	"github.com/eyebluecn/tank/code/tool/i18n"
+	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
+	"net/http"
+	"regexp"
+	"strings"
 )
 
 const (
@@ -88,4 +93,23 @@ func GetUserZipRootDir(username string) (rootDirPath string) {
 	rootDirPath = fmt.Sprintf("%s/%s/%s", core.CONFIG.MatterPath(), username, MATTER_ZIP)
 
 	return rootDirPath
+}
+
+//check matter's name. If error, panic.
+func CheckMatterName(request *http.Request, name string) string {
+
+	if name == "" {
+		panic(result.BadRequest("name cannot be null"))
+	}
+	if strings.HasPrefix(name, " ") || strings.HasSuffix(name, " ") {
+		panic(result.BadRequest("name cannot start with or end with space"))
+	}
+	if m, _ := regexp.MatchString(MATTER_NAME_PATTERN, name); m {
+		panic(result.BadRequestI18n(request, i18n.MatterNameContainSpecialChars))
+	}
+
+	if len(name) > MATTER_NAME_MAX_LENGTH {
+		panic(result.BadRequestI18n(request, i18n.MatterNameLengthExceedLimit, len(name), MATTER_NAME_MAX_LENGTH))
+	}
+	return name
 }

@@ -5,7 +5,7 @@ import (
 	"github.com/eyebluecn/tank/code/tool/cache"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
-	uuid "github.com/nu7hatch/gouuid"
+	gouuid "github.com/nu7hatch/gouuid"
 	"net/http"
 	"time"
 )
@@ -16,7 +16,7 @@ type UserService struct {
 	userDao    *UserDao
 	sessionDao *SessionDao
 
-	//操作文件的锁。
+	//file lock
 	locker *cache.Table
 }
 
@@ -33,31 +33,27 @@ func (this *UserService) Init() {
 		this.sessionDao = b
 	}
 
-	//创建一个用于存储用户文件锁的缓存。
+	//create a lock cache.
 	this.locker = cache.NewTable()
 }
 
-//对某个用户进行加锁。加锁阶段用户是不允许操作文件的。
+//lock a user's operation. If lock, user cannot operate file.
 func (this *UserService) MatterLock(userUuid string) {
-	//如果已经是锁住的状态，直接报错
 
-	//去缓存中捞取
 	cacheItem, err := this.locker.Value(userUuid)
 	if err != nil {
 		this.logger.Error("error while get cache" + err.Error())
 	}
 
-	//当前被锁住了。
 	if cacheItem != nil && cacheItem.Data() != nil {
 		panic(result.BadRequest("file is being operating, retry later"))
 	}
 
-	//添加一把新锁，有效期为12小时
 	duration := 12 * time.Hour
 	this.locker.Add(userUuid, duration, true)
 }
 
-//对某个用户解锁，解锁后用户可以操作文件。
+//unlock
 func (this *UserService) MatterUnlock(userUuid string) {
 
 	exist := this.locker.Exists(userUuid)
@@ -65,58 +61,53 @@ func (this *UserService) MatterUnlock(userUuid string) {
 		_, err := this.locker.Delete(userUuid)
 		this.PanicError(err)
 	} else {
-		this.logger.Error("%s已经不存在matter锁了，解锁错误。", userUuid)
+		this.logger.Error("unlock error. %s has no matter lock ", userUuid)
 	}
 }
 
-//装载session信息，如果session没有了根据cookie去装填用户信息。
-//在所有的路由最初会调用这个方法
-//1. 支持cookie形式 2.支持入参传入username和password 3.支持Basic Auth
+//load session to SessionCache. This method will be invoked in every request.
+//authorize by 1. cookie 2. username and password in request form. 3. Basic Auth
 func (this *UserService) PreHandle(writer http.ResponseWriter, request *http.Request) {
 
-	//登录身份有效期以数据库中记录的为准
-
-	//验证用户是否已经登录。
 	sessionId := util.GetSessionUuidFromRequest(request, core.COOKIE_AUTH_KEY)
 
 	if sessionId != "" {
 
-		//去缓存中捞取
 		cacheItem, err := core.CONTEXT.GetSessionCache().Value(sessionId)
 		if err != nil {
-			this.logger.Error("获取缓存时出错了" + err.Error())
+			this.logger.Error("occur error will get session cache %s", err.Error())
 		}
 
-		//缓存中没有，尝试去数据库捞取
+		//if no cache. try to find in db.
 		if cacheItem == nil || cacheItem.Data() == nil {
 			session := this.sessionDao.FindByUuid(sessionId)
 			if session != nil {
 				duration := session.ExpireTime.Sub(time.Now())
 				if duration <= 0 {
-					this.logger.Error("登录信息已过期")
+					this.logger.Error("login info has expired.")
 				} else {
 					user := this.userDao.FindByUuid(session.UserUuid)
 					if user != nil {
-						//将用户装填进缓存中
 						core.CONTEXT.GetSessionCache().Add(sessionId, duration, user)
 					} else {
-						this.logger.Error("没有找到对应的user %s", session.UserUuid)
+						this.logger.Error("no user with sessionId %s", session.UserUuid)
 					}
 				}
 			}
 		}
 	}
 
-	//再尝试读取一次，这次从 USERNAME_KEY PASSWORD_KEY 中装填用户登录信息
+	//try to auth by USERNAME_KEY PASSWORD_KEY
 	cacheItem, err := core.CONTEXT.GetSessionCache().Value(sessionId)
 	if err != nil {
-		this.logger.Error("获取缓存时出错了" + err.Error())
+		this.logger.Error("occur error will get session cache %s", err.Error())
 	}
 
 	if cacheItem == nil || cacheItem.Data() == nil {
 		username := request.FormValue(core.USERNAME_KEY)
 		password := request.FormValue(core.PASSWORD_KEY)
 
+		//try to read from BasicAuth
 		if username == "" || password == "" {
 			username, password, _ = request.BasicAuth()
 		}
@@ -125,19 +116,18 @@ func (this *UserService) PreHandle(writer http.ResponseWriter, request *http.Req
 
 			user := this.userDao.FindByUsername(username)
 			if user == nil {
-				this.logger.Error("%s 用户名或密码错误", core.USERNAME_KEY)
+				this.logger.Error("%s no such user in db.", username)
 			} else {
 
 				if !util.MatchBcrypt(password, user.Password) {
-					this.logger.Error("%s 用户名或密码错误", core.USERNAME_KEY)
+					this.logger.Error("%s password error", username)
 				} else {
-					//装填一个临时的session用作后续使用。
-					this.logger.Info("准备装载一个临时的用作。")
-					timeUUID, _ := uuid.NewV4()
+
+					this.logger.Info("load a temp session by username and password.")
+					timeUUID, _ := gouuid.NewV4()
 					uuidStr := string(timeUUID.String())
 					request.Form[core.COOKIE_AUTH_KEY] = []string{uuidStr}
 
-					//将用户装填进缓存中
 					core.CONTEXT.GetSessionCache().Add(uuidStr, 10*time.Second, user)
 				}
 			}

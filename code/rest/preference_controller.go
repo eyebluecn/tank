@@ -41,14 +41,13 @@ func (this *PreferenceController) RegisterRoutes() map[string]func(writer http.R
 	return routeMap
 }
 
-//简单验证蓝眼云盘服务是否已经启动了。
+//ping the application. Return current version.
 func (this *PreferenceController) Ping(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
-	return this.Success(nil)
+	return this.Success(core.VERSION)
 
 }
 
-//查看某个偏好设置的详情。
 func (this *PreferenceController) Fetch(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	preference := this.preferenceService.Fetch()
@@ -56,14 +55,9 @@ func (this *PreferenceController) Fetch(writer http.ResponseWriter, request *htt
 	return this.Success(preference)
 }
 
-//修改
 func (this *PreferenceController) Edit(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
-	//验证参数。
 	name := request.FormValue("name")
-	if name == "" {
-		panic("name参数必填")
-	}
 
 	logoUrl := request.FormValue("logoUrl")
 	faviconUrl := request.FormValue("faviconUrl")
@@ -74,9 +68,13 @@ func (this *PreferenceController) Edit(writer http.ResponseWriter, request *http
 	defaultTotalSizeLimitStr := request.FormValue("defaultTotalSizeLimit")
 	allowRegisterStr := request.FormValue("allowRegister")
 
+	if name == "" {
+		panic(result.BadRequest("name cannot be null"))
+	}
+
 	var downloadDirMaxSize int64 = 0
 	if downloadDirMaxSizeStr == "" {
-		panic("文件下载大小限制必填！")
+		panic(result.BadRequest("downloadDirMaxSize cannot be null"))
 	} else {
 		intDownloadDirMaxSize, err := strconv.Atoi(downloadDirMaxSizeStr)
 		this.PanicError(err)
@@ -85,7 +83,7 @@ func (this *PreferenceController) Edit(writer http.ResponseWriter, request *http
 
 	var downloadDirMaxNum int64 = 0
 	if downloadDirMaxNumStr == "" {
-		panic("文件下载数量限制必填！")
+		panic(result.BadRequest("downloadDirMaxNum cannot be null"))
 	} else {
 		intDownloadDirMaxNum, err := strconv.Atoi(downloadDirMaxNumStr)
 		this.PanicError(err)
@@ -94,7 +92,7 @@ func (this *PreferenceController) Edit(writer http.ResponseWriter, request *http
 
 	var defaultTotalSizeLimit int64 = 0
 	if defaultTotalSizeLimitStr == "" {
-		panic("用户默认总限制！")
+		panic(result.BadRequest("defaultTotalSizeLimit cannot be null"))
 	} else {
 		intDefaultTotalSizeLimit, err := strconv.Atoi(defaultTotalSizeLimitStr)
 		this.PanicError(err)
@@ -119,13 +117,13 @@ func (this *PreferenceController) Edit(writer http.ResponseWriter, request *http
 
 	preference = this.preferenceDao.Save(preference)
 
-	//重置缓存中的偏好
+	//reset the preference cache
 	this.preferenceService.Reset()
 
 	return this.Success(preference)
 }
 
-//清扫系统，所有数据全部丢失。一定要非常慎点，非常慎点！只在系统初始化的时候点击！
+//cleanup system data.
 func (this *PreferenceController) SystemCleanup(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	user := this.checkUser(request)
@@ -135,7 +133,7 @@ func (this *PreferenceController) SystemCleanup(writer http.ResponseWriter, requ
 		panic(result.BadRequest("password error"))
 	}
 
-	//清空系统
+	//this will trigger every bean to cleanup.
 	core.CONTEXT.Cleanup()
 
 	return this.Success("OK")

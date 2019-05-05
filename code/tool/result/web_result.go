@@ -37,7 +37,6 @@ var (
 	UNKNOWN               = &CodeWrapper{Code: "UNKNOWN", HttpStatus: http.StatusInternalServerError, Description: "server unknow error"}
 )
 
-//根据 CodeWrapper来获取对应的HttpStatus
 func FetchHttpStatus(code string) int {
 	if code == OK.Code {
 		return OK.HttpStatus
@@ -75,6 +74,12 @@ func ConstWebResult(codeWrapper *CodeWrapper) *WebResult {
 	return wr
 }
 
+func CustomWebResultI18n(request *http.Request, codeWrapper *CodeWrapper, item *i18n.Item, v ...interface{}) *WebResult {
+
+	return CustomWebResult(codeWrapper, fmt.Sprintf(item.Message(request), v...))
+
+}
+
 func CustomWebResult(codeWrapper *CodeWrapper, description string) *WebResult {
 
 	if description == "" {
@@ -91,28 +96,25 @@ func BadRequestI18n(request *http.Request, item *i18n.Item, v ...interface{}) *W
 	return CustomWebResult(BAD_REQUEST, fmt.Sprintf(item.Message(request), v...))
 }
 
-//没有权限
 func BadRequest(format string, v ...interface{}) *WebResult {
 	return CustomWebResult(BAD_REQUEST, fmt.Sprintf(format, v...))
 }
 
-//没有权限
 func Unauthorized(format string, v ...interface{}) *WebResult {
 	return CustomWebResult(UNAUTHORIZED, fmt.Sprintf(format, v...))
 }
 
-//没有找到
 func NotFound(format string, v ...interface{}) *WebResult {
 	return CustomWebResult(NOT_FOUND, fmt.Sprintf(format, v...))
 
 }
 
-//服务器内部出问题
+//sever inner error
 func Server(format string, v ...interface{}) *WebResult {
 	return CustomWebResult(SERVER, fmt.Sprintf(format, v...))
 }
 
-//所有的数据库错误情况
+//db error.
 var (
 	DB_ERROR_DUPLICATE_KEY  = "Error 1062: Duplicate entry"
 	DB_ERROR_NOT_FOUND      = "record not found"
