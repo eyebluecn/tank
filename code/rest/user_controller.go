@@ -47,6 +47,10 @@ func (this *UserController) RegisterRoutes() map[string]func(writer http.Respons
 
 func (this *UserController) innerLogin(writer http.ResponseWriter, request *http.Request, user *User) {
 
+	if user.Status == USER_STATUS_DISABLED {
+		panic(result.BadRequestI18n(request, i18n.UserDisabled))
+	}
+
 	//set cookie. expire after 30 days.
 	expiration := time.Now()
 	expiration = expiration.AddDate(0, 0, 30)
@@ -160,12 +164,15 @@ func (this *UserController) Register(writer http.ResponseWriter, request *http.R
 
 func (this *UserController) Edit(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
-	avatarUrl := request.FormValue("avatarUrl")
 	uuid := request.FormValue("uuid")
+	avatarUrl := request.FormValue("avatarUrl")
 	sizeLimitStr := request.FormValue("sizeLimit")
+	totalSizeLimitStr := request.FormValue("totalSizeLimit")
 
 	user := this.checkUser(request)
 	currentUser := this.userDao.CheckByUuid(uuid)
+
+	currentUser.AvatarUrl = avatarUrl
 
 	if user.Role == USER_ROLE_ADMINISTRATOR {
 		//only admin can edit user's sizeLimit
@@ -180,11 +187,22 @@ func (this *UserController) Edit(writer http.ResponseWriter, request *http.Reque
 			sizeLimit = int64(intSizeLimit)
 		}
 		currentUser.SizeLimit = sizeLimit
+
+		var totalSizeLimit int64 = 0
+		if totalSizeLimitStr == "" {
+			panic("user's total limit size is required")
+		} else {
+			intTotalSizeLimit, err := strconv.Atoi(totalSizeLimitStr)
+			if err != nil {
+				this.PanicError(err)
+			}
+			totalSizeLimit = int64(intTotalSizeLimit)
+		}
+		currentUser.TotalSizeLimit = totalSizeLimit
+
 	} else if user.Uuid != uuid {
 		panic(result.UNAUTHORIZED)
 	}
-
-	currentUser.AvatarUrl = avatarUrl
 
 	currentUser = this.userDao.Save(currentUser)
 

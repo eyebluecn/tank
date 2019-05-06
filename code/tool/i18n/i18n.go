@@ -30,6 +30,7 @@ var (
 	UserRegisterNotAllowd          = &Item{English: `admin has banned register`, Chinese: `管理员已禁用自主注册`}
 	UserPasswordLengthError        = &Item{English: `password at least 6 chars`, Chinese: `密码长度至少为6位`}
 	UserOldPasswordError           = &Item{English: `old password error`, Chinese: `旧密码不正确`}
+	UserDisabled                   = &Item{English: `user has been disabled`, Chinese: `用户已经被禁用了`}
 	MatterDestinationMustDirectory = &Item{English: `destination must be directory'`, Chinese: `目标对象只能是文件夹。`}
 	MatterExist                    = &Item{English: `"%s" already exists, invalid operation`, Chinese: `"%s" 已经存在了，操作无效`}
 	MatterDepthExceedLimit         = &Item{English: `directory's depth exceed the limit %d > %d`, Chinese: `文件加层数超过限制 %d > %d `}
@@ -37,6 +38,7 @@ var (
 	MatterSelectNumExceedLimit     = &Item{English: `selected files' num exceed the limit %d > %d`, Chinese: `选择的文件数量超出限制了 %d > %d `}
 	MatterSelectSizeExceedLimit    = &Item{English: `selected files' size exceed the limit %s > %s`, Chinese: `选择的文件大小超出限制了 %s > %s `}
 	MatterSizeExceedLimit          = &Item{English: `uploaded file's size exceed the size limit %s > %s `, Chinese: `上传的文件超过了限制 %s > %s `}
+	MatterSizeExceedTotalLimit     = &Item{English: `file's size exceed the total size limit %s > %s `, Chinese: `上传的文件超过了总大小限制 %s > %s `}
 	MatterNameContainSpecialChars  = &Item{English: `file name cannot contain special chars \ / : * ? " < > |"`, Chinese: `名称中不能包含以下特殊符号：\ / : * ? " < > |`}
 	MatterMoveRecursive            = &Item{English: `directory cannot be moved to itself or its children`, Chinese: `文件夹不能把自己移入到自己中，也不可以移入到自己的子文件夹下。`}
 	MatterNameNoChange             = &Item{English: `filename not change, invalid operation`, Chinese: `文件名没有改变，操作无效！`}

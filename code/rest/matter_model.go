@@ -25,7 +25,7 @@ const (
 )
 
 /**
- * file
+ * file is too common. so we use matter as file.
  */
 type Matter struct {
 	Base

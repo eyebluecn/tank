@@ -225,7 +225,7 @@ func (this *DavService) HandlePut(writer http.ResponseWriter, request *http.Requ
 	//if exist delete it.
 	srcMatter := this.matterDao.findByUserUuidAndPath(user.Uuid, subPath)
 	if srcMatter != nil {
-		this.matterService.AtomicDelete(request, srcMatter)
+		this.matterService.AtomicDelete(request, srcMatter, user)
 	}
 
 	this.matterService.Upload(request, request.Body, user, dirMatter, filename, true)
@@ -239,7 +239,7 @@ func (this *DavService) HandleDelete(writer http.ResponseWriter, request *http.R
 
 	matter := this.matterDao.CheckWithRootByPath(subPath, user)
 
-	this.matterService.AtomicDelete(request, matter)
+	this.matterService.AtomicDelete(request, matter, user)
 }
 
 //crate a directory
@@ -369,7 +369,7 @@ func (this *DavService) HandleMove(writer http.ResponseWriter, request *http.Req
 		//if destination path not change. it means rename.
 		this.matterService.AtomicRename(request, srcMatter, destinationName, user)
 	} else {
-		this.matterService.AtomicMove(request, srcMatter, destDirMatter, overwrite)
+		this.matterService.AtomicMove(request, srcMatter, destDirMatter, overwrite, user)
 	}
 
 	this.logger.Info("finish moving %s => %s", subPath, destDirMatter.Path)
@@ -383,7 +383,7 @@ func (this *DavService) HandleCopy(writer http.ResponseWriter, request *http.Req
 	srcMatter, destDirMatter, _, _, destinationName, overwrite := this.prepareMoveCopy(writer, request, user, subPath)
 
 	//copy to the new directory
-	this.matterService.AtomicCopy(request, srcMatter, destDirMatter, destinationName, overwrite)
+	this.matterService.AtomicCopy(request, srcMatter, destDirMatter, destinationName, overwrite, user)
 
 	this.logger.Info("finish copying %s => %s", subPath, destDirMatter.Path)
 

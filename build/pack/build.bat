@@ -11,7 +11,7 @@
 @REM prepare the variables.
 
 @REM  version name
-SET VERSION_NAME=tank-3.0.0.beta1
+SET VERSION_NAME=tank-3.0.0.beta2
 @REM  assign variable like Linux GOARCH=$(go env GOARCH) eg. amd64
 FOR /f %%i IN ('go env GOARCH') DO SET GOARCH=%%i
 ECHO GOARCH: %GOARCH%
@@ -33,16 +33,16 @@ FOR %%F IN (%BUILD_DIR%) DO SET PROJECT_DIR_SLASH=%%~dpF
 SET PROJECT_DIR=%PROJECT_DIR_SLASH:~0,-1%
 ECHO PROJECT_DIR: %PROJECT_DIR%
 
-@REM  final zip file name. eg. tank-3.0.0.beta1.windows-amd64.zip
+@REM  final zip file name. eg. tank-x.x.x.windows-amd64.zip
 SET FILE_NAME=%VERSION_NAME%.%GOOS%-%GOARCH%.zip
 ECHO FILE_NAME: %FILE_NAME%
 @REM  zip dist dir eg. D:\Group\eyeblue\tank\tmp\dist
 SET DIST_DIR=%PROJECT_DIR%\tmp\dist
 ECHO DIST_DIR: %DIST_DIR%
-@REM  component dir eg. D:\Group\eyeblue\tank\tmp\dist\tank-3.0.0.beta1
+@REM  component dir eg. D:\Group\eyeblue\tank\tmp\dist\tank-x.x.x
 SET COMPONENT_DIR=%DIST_DIR%\%VERSION_NAME%
 ECHO COMPONENT_DIR: %COMPONENT_DIR%
-@REM  final dist path eg. D:\Group\eyeblue\tank\tmp\dist\tank-3.0.0.beta1.windows-amd64.zip
+@REM  final dist path eg. D:\Group\eyeblue\tank\tmp\dist\tank-x.x.x.windows-amd64.zip
 SET DIST_PATH=%DIST_DIR%\%FILE_NAME%
 ECHO DIST_PATH: %DIST_PATH%
 

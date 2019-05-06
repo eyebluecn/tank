@@ -294,7 +294,7 @@ func (this *MatterController) Delete(writer http.ResponseWriter, request *http.R
 		panic(result.UNAUTHORIZED)
 	}
 
-	this.matterService.AtomicDelete(request, matter)
+	this.matterService.AtomicDelete(request, matter, user)
 
 	return this.Success("OK")
 }
@@ -322,7 +322,7 @@ func (this *MatterController) DeleteBatch(writer http.ResponseWriter, request *h
 			panic(result.UNAUTHORIZED)
 		}
 
-		this.matterService.AtomicDelete(request, matter)
+		this.matterService.AtomicDelete(request, matter, user)
 
 	}
 
@@ -417,7 +417,7 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 		srcMatters = append(srcMatters, srcMatter)
 	}
 
-	this.matterService.AtomicMoveBatch(request, srcMatters, destMatter)
+	this.matterService.AtomicMoveBatch(request, srcMatters, destMatter, user)
 
 	return this.Success(nil)
 }

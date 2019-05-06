@@ -3,6 +3,7 @@ package rest
 import (
 	"fmt"
 	"github.com/eyebluecn/tank/code/core"
+	"github.com/eyebluecn/tank/code/tool/i18n"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
 	"github.com/json-iterator/go"
@@ -55,7 +56,7 @@ func (this *BaseController) Wrap(f func(writer http.ResponseWriter, request *htt
 
 			if user.Status == USER_STATUS_DISABLED {
 				//check user's status
-				webResult = result.ConstWebResult(result.USER_DISABLED)
+				webResult = result.CustomWebResultI18n(request, result.USER_DISABLED, i18n.UserDisabled)
 			} else {
 				if qualifiedRole == USER_ROLE_ADMINISTRATOR && user.Role != USER_ROLE_ADMINISTRATOR {
 					webResult = result.ConstWebResult(result.UNAUTHORIZED)

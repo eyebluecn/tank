@@ -103,10 +103,14 @@ var LivePropMap = map[xml.Name]LiveProp{
 	{Space: "DAV:", Local: "quota-available-bytes"}: {
 		findFn: func(user *User, matter *Matter) string {
 			var size int64 = 0
-			if user.SizeLimit >= 0 {
-				size = user.SizeLimit
+			if user.TotalSizeLimit >= 0 {
+				if user.TotalSizeLimit-user.TotalSize > 0 {
+					size = user.TotalSizeLimit - user.TotalSize
+				} else {
+					size = 0
+				}
 			} else {
-				//TODO: no limit, default 100G.
+				// no limit, default 100G.
 				size = 100 * 1024 * 1024 * 1024
 			}
 			return fmt.Sprintf(`%d`, size)
@@ -115,8 +119,7 @@ var LivePropMap = map[xml.Name]LiveProp{
 	},
 	{Space: "DAV:", Local: "quota-used-bytes"}: {
 		findFn: func(user *User, matter *Matter) string {
-			//TODO: default 0
-			return fmt.Sprintf(`%d`, 0)
+			return fmt.Sprintf(`%d`, user.TotalSize)
 		},
 		dir: true,
 	},

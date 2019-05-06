@@ -332,39 +332,6 @@ func (this *MatterDao) SizeByPuuidAndUserUuid(matterUuid string, userUuid string
 	return sumSize
 }
 
-// compute route size. It will compute upward until root directory
-func (this *MatterDao) ComputeRouteSize(matterUuid string, userUuid string) {
-
-	//if to root directory, then update to user's info.
-	if matterUuid == MATTER_ROOT {
-
-		size := this.SizeByPuuidAndUserUuid(MATTER_ROOT, userUuid)
-
-		db := core.CONTEXT.GetDB().Model(&User{}).Where("uuid = ?", userUuid).Update("total_size", size)
-		this.PanicError(db.Error)
-
-		return
-	}
-
-	matter := this.CheckByUuid(matterUuid)
-
-	//only compute dir
-	if matter.Dir {
-		//compute the total size.
-		size := this.SizeByPuuidAndUserUuid(matterUuid, userUuid)
-
-		//when changed, we update
-		if matter.Size != size {
-			db := core.CONTEXT.GetDB().Model(&Matter{}).Where("uuid = ?", matterUuid).Update("size", size)
-			this.PanicError(db.Error)
-		}
-
-	}
-
-	//update parent recursively.
-	this.ComputeRouteSize(matter.Puuid, userUuid)
-}
-
 //delete a file from db and disk.
 func (this *MatterDao) Delete(matter *Matter) {
 

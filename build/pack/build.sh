@@ -9,7 +9,7 @@
 #prepare the variables.
 
 # version name
-VERSION_NAME=tank-3.0.0.beta1
+VERSION_NAME=tank-3.0.0.beta2
 echo "VERSION_NAME: ${VERSION_NAME}"
 # eg. amd64
 GOARCH=$(go env GOARCH)
@@ -35,10 +35,10 @@ echo "FILE_NAME: ${FILE_NAME}"
 # zip dist dir eg. /data/tank/tmp/dist
 DIST_DIR=${PROJECT_DIR}/tmp/dist
 echo "DIST_DIR: ${DIST_DIR}"
-# component dir eg. /data/tank/tmp/dist/tank-3.0.0.beta1
+# component dir eg. /data/tank/tmp/dist/tank-x.x.x
 COMPONENT_DIR=${DIST_DIR}/${VERSION_NAME}
 echo "COMPONENT_DIR: ${COMPONENT_DIR}"
-# final dist path eg. /data/tank/tmp/dist/tank-3.0.0.beta1.darwin-amd64.tar.gz
+# final dist path eg. /data/tank/tmp/dist/tank-x.x.x.darwin-amd64.tar.gz
 DIST_PATH=${DIST_DIR}/${FILE_NAME}
 echo "DIST_PATH: ${DIST_PATH}"
 

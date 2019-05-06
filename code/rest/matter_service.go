@@ -242,7 +242,7 @@ func (this *MatterService) zipMatters(request *http.Request, matters []*Matter, 
 }
 
 //delete files.
-func (this *MatterService) Delete(request *http.Request, matter *Matter) {
+func (this *MatterService) Delete(request *http.Request, matter *Matter, user *User) {
 
 	if matter == nil {
 		panic(result.BadRequest("matter cannot be nil"))
@@ -251,11 +251,11 @@ func (this *MatterService) Delete(request *http.Request, matter *Matter) {
 	this.matterDao.Delete(matter)
 
 	//re compute the size of Route.
-	this.matterDao.ComputeRouteSize(matter.Puuid, matter.UserUuid)
+	this.ComputeRouteSize(matter.Puuid, user)
 }
 
 //atomic delete files
-func (this *MatterService) AtomicDelete(request *http.Request, matter *Matter) {
+func (this *MatterService) AtomicDelete(request *http.Request, matter *Matter, user *User) {
 
 	if matter == nil {
 		panic(result.BadRequest("matter cannot be nil"))
@@ -265,7 +265,7 @@ func (this *MatterService) AtomicDelete(request *http.Request, matter *Matter) {
 	this.userService.MatterLock(matter.UserUuid)
 	defer this.userService.MatterUnlock(matter.UserUuid)
 
-	this.Delete(request, matter)
+	this.Delete(request, matter, user)
 }
 
 //upload files.
@@ -283,12 +283,19 @@ func (this *MatterService) Upload(request *http.Request, file io.Reader, user *U
 		panic(result.BadRequestI18n(request, i18n.MatterNameLengthExceedLimit, len(filename), MATTER_NAME_MAX_LENGTH))
 	}
 
+	//check the total size limit.
+	if user.TotalSizeLimit >= 0 {
+		if user.TotalSize > user.TotalSizeLimit {
+			panic(result.BadRequestI18n(request, i18n.MatterSizeExceedTotalLimit, util.HumanFileSize(user.TotalSize), util.HumanFileSize(user.TotalSizeLimit)))
+		}
+	}
+
 	dirAbsolutePath := dirMatter.AbsolutePath()
 	dirRelativePath := dirMatter.Path
 
 	count := this.matterDao.CountByUserUuidAndPuuidAndDirAndName(user.Uuid, dirMatter.Uuid, false, filename)
 	if count > 0 {
-		panic(result.BadRequest("%s already exists", filename))
+		panic(result.BadRequestI18n(request, i18n.MatterExist, filename))
 	}
 
 	fileAbsolutePath := dirAbsolutePath + "/" + filename
@@ -344,10 +351,46 @@ func (this *MatterService) Upload(request *http.Request, file io.Reader, user *U
 
 	//compute the size of directory
 	go core.RunWithRecovery(func() {
-		this.matterDao.ComputeRouteSize(dirMatter.Uuid, user.Uuid)
+		this.ComputeRouteSize(dirMatter.Uuid, user)
 	})
 
 	return matter
+}
+
+// compute route size. It will compute upward until root directory
+func (this *MatterService) ComputeRouteSize(matterUuid string, user *User) {
+
+	//if to root directory, then update to user's info.
+	if matterUuid == MATTER_ROOT {
+
+		size := this.matterDao.SizeByPuuidAndUserUuid(MATTER_ROOT, user.Uuid)
+
+		db := core.CONTEXT.GetDB().Model(&User{}).Where("uuid = ?", user.Uuid).Update("total_size", size)
+		this.PanicError(db.Error)
+
+		//update user total size info in cache.
+		user.TotalSize = size
+
+		return
+	}
+
+	matter := this.matterDao.CheckByUuid(matterUuid)
+
+	//only compute dir
+	if matter.Dir {
+		//compute the total size.
+		size := this.matterDao.SizeByPuuidAndUserUuid(matterUuid, user.Uuid)
+
+		//when changed, we update
+		if matter.Size != size {
+			db := core.CONTEXT.GetDB().Model(&Matter{}).Where("uuid = ?", matterUuid).Update("size", size)
+			this.PanicError(db.Error)
+		}
+
+	}
+
+	//update parent recursively.
+	this.ComputeRouteSize(matter.Puuid, user)
 }
 
 //inner create directory.
@@ -427,14 +470,14 @@ func (this *MatterService) AtomicCreateDirectory(request *http.Request, dirMatte
 }
 
 //copy or move may overwrite.
-func (this *MatterService) handleOverwrite(request *http.Request, userUuid string, destinationPath string, overwrite bool) {
+func (this *MatterService) handleOverwrite(request *http.Request, user *User, destinationPath string, overwrite bool) {
 
-	destMatter := this.matterDao.findByUserUuidAndPath(userUuid, destinationPath)
+	destMatter := this.matterDao.findByUserUuidAndPath(user.Uuid, destinationPath)
 	if destMatter != nil {
 		//if exist
 		if overwrite {
 			//delete.
-			this.Delete(request, destMatter)
+			this.Delete(request, destMatter, user)
 		} else {
 			panic(result.BadRequestI18n(request, i18n.MatterExist, destMatter.Path))
 		}
@@ -443,7 +486,7 @@ func (this *MatterService) handleOverwrite(request *http.Request, userUuid strin
 }
 
 //move srcMatter to destMatter. invoker must handled the overwrite and lock.
-func (this *MatterService) move(request *http.Request, srcMatter *Matter, destDirMatter *Matter) {
+func (this *MatterService) move(request *http.Request, srcMatter *Matter, destDirMatter *Matter, user *User) {
 
 	if srcMatter == nil {
 		panic(result.BadRequest("srcMatter cannot be nil."))
@@ -453,7 +496,6 @@ func (this *MatterService) move(request *http.Request, srcMatter *Matter, destDi
 		panic(result.BadRequestI18n(request, i18n.MatterDestinationMustDirectory))
 	}
 
-	userUuid := srcMatter.UserUuid
 	srcPuuid := srcMatter.Puuid
 	destDirUuid := destDirMatter.Uuid
 
@@ -499,13 +541,13 @@ func (this *MatterService) move(request *http.Request, srcMatter *Matter, destDi
 	}
 
 	//reCompute the size of src and dest.
-	this.matterDao.ComputeRouteSize(srcPuuid, userUuid)
-	this.matterDao.ComputeRouteSize(destDirUuid, userUuid)
+	this.ComputeRouteSize(srcPuuid, user)
+	this.ComputeRouteSize(destDirUuid, user)
 
 }
 
 //move srcMatter to destMatter(must be dir)
-func (this *MatterService) AtomicMove(request *http.Request, srcMatter *Matter, destDirMatter *Matter, overwrite bool) {
+func (this *MatterService) AtomicMove(request *http.Request, srcMatter *Matter, destDirMatter *Matter, overwrite bool, user *User) {
 
 	if srcMatter == nil {
 		panic(result.BadRequest("srcMatter cannot be nil."))
@@ -533,14 +575,14 @@ func (this *MatterService) AtomicMove(request *http.Request, srcMatter *Matter, 
 
 	//handle the overwrite
 	destinationPath := destDirMatter.Path + "/" + srcMatter.Name
-	this.handleOverwrite(request, srcMatter.UserUuid, destinationPath, overwrite)
+	this.handleOverwrite(request, user, destinationPath, overwrite)
 
 	//do the move operation.
-	this.move(request, srcMatter, destDirMatter)
+	this.move(request, srcMatter, destDirMatter, user)
 }
 
 //move srcMatters to destMatter(must be dir)
-func (this *MatterService) AtomicMoveBatch(request *http.Request, srcMatters []*Matter, destDirMatter *Matter) {
+func (this *MatterService) AtomicMoveBatch(request *http.Request, srcMatters []*Matter, destDirMatter *Matter, user *User) {
 
 	if destDirMatter == nil {
 		panic(result.BadRequest("destDirMatter cannot be nil."))
@@ -571,7 +613,7 @@ func (this *MatterService) AtomicMoveBatch(request *http.Request, srcMatters []*
 	}
 
 	for _, srcMatter := range srcMatters {
-		this.move(request, srcMatter, destDirMatter)
+		this.move(request, srcMatter, destDirMatter, user)
 	}
 
 }
@@ -626,7 +668,7 @@ func (this *MatterService) copy(request *http.Request, srcMatter *Matter, destDi
 }
 
 //copy srcMatter to destMatter.
-func (this *MatterService) AtomicCopy(request *http.Request, srcMatter *Matter, destDirMatter *Matter, name string, overwrite bool) {
+func (this *MatterService) AtomicCopy(request *http.Request, srcMatter *Matter, destDirMatter *Matter, name string, overwrite bool, user *User) {
 
 	if srcMatter == nil {
 		panic(result.BadRequest("srcMatter cannot be nil."))
@@ -640,7 +682,7 @@ func (this *MatterService) AtomicCopy(request *http.Request, srcMatter *Matter, 
 	}
 
 	destinationPath := destDirMatter.Path + "/" + name
-	this.handleOverwrite(request, srcMatter.UserUuid, destinationPath, overwrite)
+	this.handleOverwrite(request, user, destinationPath, overwrite)
 
 	this.copy(request, srcMatter, destDirMatter, name)
 }
@@ -785,7 +827,7 @@ func (this *MatterService) mirror(request *http.Request, srcPath string, destDir
 		if matter != nil {
 			//如果是覆盖，那么删除之前的文件
 			if overwrite {
-				this.Delete(request, matter)
+				this.Delete(request, matter, user)
 			} else {
 				//直接完成。
 				return
