@@ -11,7 +11,7 @@
 @REM prepare the variables.
 
 @REM  version name
-SET VERSION_NAME=tank-3.0.0.beta2
+SET VERSION_NAME=tank-3.0.0.beta3
 @REM  assign variable like Linux GOARCH=$(go env GOARCH) eg. amd64
 FOR /f %%i IN ('go env GOARCH') DO SET GOARCH=%%i
 ECHO GOARCH: %GOARCH%
