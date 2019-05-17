@@ -42,6 +42,15 @@ func GetMysqlUrl(
 	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8&parseTime=True&loc=Local", mysqlUsername, mysqlPassword, mysqlHost, mysqlPort, mysqlSchema)
 }
 
+func GetPGsqlUrl(
+	mysqlPort int,
+	mysqlHost string,
+	mysqlSchema string,
+	mysqlUsername string,
+	mysqlPassword string) string {
+	return fmt.Sprintf("user=%s password=%s host=%s port=%d dbname=%s sslmode=disable", mysqlUsername, mysqlPassword, mysqlHost, mysqlPort, mysqlSchema)
+}
+
 //get random number 4.
 func RandomNumber4() string {
 	return fmt.Sprintf("%04v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31()%10000)

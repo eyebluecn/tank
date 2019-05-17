@@ -92,7 +92,8 @@ func (this *InstallController) RegisterRoutes() map[string]func(writer http.Resp
 }
 
 func (this *InstallController) openDbConnection(writer http.ResponseWriter, request *http.Request) *gorm.DB {
-	mysqlPortStr := request.FormValue("mysqlPort")
+	mysqlTypeStr := request.FormValue("sqlType")
+  mysqlPortStr := request.FormValue("mysqlPort")
 	mysqlHost := request.FormValue("mysqlHost")
 	mysqlSchema := request.FormValue("mysqlSchema")
 	mysqlUsername := request.FormValue("mysqlUsername")
@@ -104,13 +105,19 @@ func (this *InstallController) openDbConnection(writer http.ResponseWriter, requ
 		this.PanicError(err)
 		mysqlPort = tmp
 	}
-
-	mysqlUrl := util.GetMysqlUrl(mysqlPort, mysqlHost, mysqlSchema, mysqlUsername, mysqlPassword)
-
-	this.logger.Info("Connect MySQL %s", mysqlUrl)
+  mysqlUrl := util.GetMysqlUrl(mysqlPort, mysqlHost, mysqlSchema, mysqlUsername, mysqlPassword)
+  if mysqlTypeStr == "PgSQL" {
+	  mysqlUrl = util.GetPGsqlUrl(mysqlPort, mysqlHost, mysqlSchema, mysqlUsername, mysqlPassword)
+  }
+	this.logger.Info("Connect SQL1 %s", mysqlUrl)
 
 	var err error = nil
-	db, err := gorm.Open("mysql", mysqlUrl)
+  var db *gorm.DB = nil
+  if mysqlTypeStr == "PgSQL" {
+	  db, err = gorm.Open("postgres", mysqlUrl)
+  } else {
+	  db, err = gorm.Open("mysql", mysqlUrl)
+  }
 	this.PanicError(err)
 
 	db.LogMode(false)

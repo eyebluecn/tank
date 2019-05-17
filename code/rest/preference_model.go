@@ -9,10 +9,10 @@ type Preference struct {
 	FaviconUrl            string `json:"faviconUrl" gorm:"type:varchar(255)"`
 	Copyright             string `json:"copyright" gorm:"type:varchar(1024)"`
 	Record                string `json:"record" gorm:"type:varchar(1024)"`
-	DownloadDirMaxSize    int64  `json:"downloadDirMaxSize" gorm:"type:bigint(20) not null;default:-1"`
-	DownloadDirMaxNum     int64  `json:"downloadDirMaxNum" gorm:"type:bigint(20) not null;default:-1"`
-	DefaultTotalSizeLimit int64  `json:"defaultTotalSizeLimit" gorm:"type:bigint(20) not null;default:-1"`
-	AllowRegister         bool   `json:"allowRegister" gorm:"type:tinyint(1) not null;default:0"`
+	DownloadDirMaxSize    int64  `json:"downloadDirMaxSize" gorm:"type:bigint not null;default:-1"`
+	DownloadDirMaxNum     int64  `json:"downloadDirMaxNum" gorm:"type:bigint not null;default:-1"`
+	DefaultTotalSizeLimit int64  `json:"defaultTotalSizeLimit" gorm:"type:bigint not null;default:-1"`
+	AllowRegister         bool   `json:"allowRegister" gorm:"type:bool not null;default:false"`
 	Version               string `json:"version" gorm:"-"`
 }
 

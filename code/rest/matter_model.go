@@ -32,13 +32,13 @@ type Matter struct {
 	Puuid    string    `json:"puuid" gorm:"type:char(36);index:idx_puuid"`
 	UserUuid string    `json:"userUuid" gorm:"type:char(36);index:idx_uu"`
 	Username string    `json:"username" gorm:"type:varchar(45) not null"`
-	Dir      bool      `json:"dir" gorm:"type:tinyint(1) not null;default:0"`
+	Dir      bool      `json:"dir" gorm:"type:bool not null;default:false"`
 	Name     string    `json:"name" gorm:"type:varchar(255) not null"`
 	Md5      string    `json:"md5" gorm:"type:varchar(45)"`
-	Size     int64     `json:"size" gorm:"type:bigint(20) not null;default:0"`
-	Privacy  bool      `json:"privacy" gorm:"type:tinyint(1) not null;default:0"`
+	Size     int64     `json:"size" gorm:"type:bigint not null;default:0"`
+	Privacy  bool      `json:"privacy" gorm:"type:bool not null;default:false"`
 	Path     string    `json:"path" gorm:"type:varchar(1024)"`
-	Times    int64     `json:"times" gorm:"type:bigint(20) not null;default:0"`
+	Times    int64     `json:"times" gorm:"type:bigint not null;default:0"`
 	Parent   *Matter   `json:"parent" gorm:"-"`
 	Children []*Matter `json:"-" gorm:"-"`
 }

@@ -12,8 +12,8 @@ type Footprint struct {
 	Host     string `json:"host" gorm:"type:varchar(45) not null"`
 	Uri      string `json:"uri" gorm:"type:varchar(255) not null"`
 	Params   string `json:"params" gorm:"type:text"`
-	Cost     int64  `json:"cost" gorm:"type:bigint(20) not null;default:0"`
-	Success  bool   `json:"success" gorm:"type:tinyint(1) not null;default:0"`
+	Cost     int64  `json:"cost" gorm:"type:bigint not null;default:0"`
+	Success  bool   `json:"success" gorm:"type:bool not null;default:false"`
 }
 
 // set File's table name to be `profiles`

@@ -71,7 +71,9 @@ func (this *TankContext) ServeHTTP(writer http.ResponseWriter, request *http.Req
 func (this *TankContext) OpenDb() {
 
 	var err error = nil
-	this.db, err = gorm.Open("mysql", core.CONFIG.MysqlUrl())
+  //todo: 这里需要判断一下数据库类型
+	//this.db, err = gorm.Open("mysql", core.CONFIG.MysqlUrl())
+	this.db, err = gorm.Open("postgres", core.CONFIG.MysqlUrl())
 
 	if err != nil {
 		core.LOGGER.Panic("failed to connect mysql database")

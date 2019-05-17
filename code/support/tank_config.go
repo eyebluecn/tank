@@ -143,8 +143,11 @@ func (this *TankConfig) ReadFromConfigFile() {
 		if this.item.ServerPort != 0 {
 			this.serverPort = this.item.ServerPort
 		}
-
-		this.mysqlUrl = util.GetMysqlUrl(this.item.MysqlPort, this.item.MysqlHost, this.item.MysqlSchema, this.item.MysqlUsername, this.item.MysqlPassword)
+    if this.item.MysqlType == 'PgSQL' {
+		  this.mysqlUrl = util.GetPGsqlUrl(this.item.MysqlPort, this.item.MysqlHost, this.item.MysqlSchema, this.item.MysqlUsername, this.item.MysqlPassword)
+    } else {
+      this.mysqlUrl = util.GetMysqlUrl(this.item.MysqlPort, this.item.MysqlHost, this.item.MysqlSchema, this.item.MysqlUsername, this.item.MysqlPassword)
+    }
 		this.installed = true
 
 		core.LOGGER.Info("use config file: %s", filePath)

@@ -35,9 +35,9 @@ type User struct {
 	AvatarUrl      string    `json:"avatarUrl" gorm:"type:varchar(255)"`
 	LastIp         string    `json:"lastIp" gorm:"type:varchar(128)"`
 	LastTime       time.Time `json:"lastTime" gorm:"type:timestamp not null;default:'2018-01-01 00:00:00'"`
-	SizeLimit      int64     `json:"sizeLimit" gorm:"type:bigint(20) not null;default:-1"`
-	TotalSizeLimit int64     `json:"totalSizeLimit" gorm:"type:bigint(20) not null;default:-1"`
-	TotalSize      int64     `json:"totalSize" gorm:"type:bigint(20) not null;default:0"`
+	SizeLimit      int64     `json:"sizeLimit" gorm:"type:bigint not null;default:-1"`
+	TotalSizeLimit int64     `json:"totalSizeLimit" gorm:"type:bigint not null;default:-1"`
+	TotalSize      int64     `json:"totalSize" gorm:"type:bigint not null;default:0"`
 	Status         string    `json:"status" gorm:"type:varchar(45)"`
 }
 
