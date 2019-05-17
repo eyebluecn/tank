@@ -25,6 +25,8 @@ type TankConfig struct {
 
 //tank.json config items.
 type ConfigItem struct {
+  //server type
+  MysqlType string
 	//server port
 	ServerPort int
 	//file storage location. eg./var/www/matter
@@ -143,7 +145,7 @@ func (this *TankConfig) ReadFromConfigFile() {
 		if this.item.ServerPort != 0 {
 			this.serverPort = this.item.ServerPort
 		}
-    if this.item.MysqlType == 'PgSQL' {
+    if this.item.MysqlType == "PgSQL" {
 		  this.mysqlUrl = util.GetPGsqlUrl(this.item.MysqlPort, this.item.MysqlHost, this.item.MysqlSchema, this.item.MysqlUsername, this.item.MysqlPassword)
     } else {
       this.mysqlUrl = util.GetMysqlUrl(this.item.MysqlPort, this.item.MysqlHost, this.item.MysqlSchema, this.item.MysqlUsername, this.item.MysqlPassword)
