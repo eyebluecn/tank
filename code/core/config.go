@@ -12,7 +12,7 @@ const (
 	//db table's prefix. tank30_ means current version is tank:3.0.x
 	TABLE_PREFIX = "tank30_"
 
-	VERSION = "3.0.0.beta3"
+	VERSION = "3.0.0.beta4"
 )
 
 type Config interface {
