@@ -195,12 +195,11 @@ func (this *TankRouter) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 		//static file.
 		dir := util.GetHtmlPath()
 
-		requestURI := request.RequestURI
-		if requestURI == "" || request.RequestURI == "/" {
-			requestURI = "index.html"
+		if path == "" || path == "/" {
+			path = "index.html"
 		}
 
-		filePath := dir + requestURI
+		filePath := dir + path
 		exists := util.PathExists(filePath)
 		if !exists {
 			filePath = dir + "/index.html"

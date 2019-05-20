@@ -11,8 +11,8 @@ import (
 type PreferenceController struct {
 	BaseController
 	preferenceDao     *PreferenceDao
+	matterDao         *MatterDao
 	preferenceService *PreferenceService
-	migrating         bool
 }
 
 func (this *PreferenceController) Init() {
@@ -23,6 +23,10 @@ func (this *PreferenceController) Init() {
 		this.preferenceDao = b
 	}
 
+	b = core.CONTEXT.GetBean(this.matterDao)
+	if b, ok := b.(*MatterDao); ok {
+		this.matterDao = b
+	}
 	b = core.CONTEXT.GetBean(this.preferenceService)
 	if b, ok := b.(*PreferenceService); ok {
 		this.preferenceService = b
@@ -125,44 +129,6 @@ func (this *PreferenceController) Edit(writer http.ResponseWriter, request *http
 	return this.Success(preference)
 }
 
-//migrate 2.0's db data and file data to 3.0
-func (this *PreferenceController) Migrate20to30(writer http.ResponseWriter, request *http.Request) *result.WebResult {
-
-	this.logger.Info("start migrating from 2.0 to 3.0")
-
-	if this.migrating {
-		panic(result.BadRequest("migrating work is processing"))
-	} else {
-		this.migrating = true
-	}
-	defer func() {
-		this.migrating = false
-	}()
-
-	migrateDashboardSql := "INSERT INTO `tank`.`tank30_download_token` ( `uuid`, `sort`, `update_time`, `create_time`, `user_uuid`, `matter_uuid`, `expire_time`, `ip` ) ( SELECT `uuid`, `sort`, `update_time`, `create_time`, `user_uuid`, `matter_uuid`, `expire_time`, `ip` FROM `tank`.`tank20_download_token`)"
-	this.logger.Info(migrateDashboardSql)
-	core.CONTEXT.GetDB().Exec(migrateDashboardSql)
-
-	migrateDownloadTokenSql := "INSERT INTO `tank`.`tank30_dashboard` ( `uuid`, `sort`, `update_time`, `create_time`, `invoke_num`, `total_invoke_num`, `uv`, `total_uv`, `matter_num`, `total_matter_num`, `file_size`, `total_file_size`, `avg_cost`, `dt` ) ( SELECT `uuid`, `sort`, `update_time`, `create_time`, `invoke_num`, `total_invoke_num`, `uv`, `total_uv`, `matter_num`, `total_matter_num`, `file_size`, `total_file_size`, `avg_cost`, `dt` FROM `tank`.`tank20_dashboard` )"
-	this.logger.Info(migrateDownloadTokenSql)
-	core.CONTEXT.GetDB().Exec(migrateDownloadTokenSql)
-
-	migrateMatterSql := "INSERT INTO `tank`.`tank30_matter` ( `uuid`, `sort`, `update_time`, `create_time`, `puuid`, `user_uuid`, `username`, `dir`, `name`, `md5`, `size`, `privacy`, `path`, `times` ) ( SELECT `uuid`, `sort`, `update_time`, `create_time`, `puuid`, `user_uuid`, '', `dir`, `name`, `md5`, `size`, `privacy`, `path`, `times` FROM `tank`.`tank20_matter` ) "
-	this.logger.Info(migrateMatterSql)
-	core.CONTEXT.GetDB().Exec(migrateMatterSql)
-
-	migrateUploadTokenSql := "INSERT INTO `tank`.`tank30_upload_token` ( `uuid`, `sort`, `update_time`, `create_time`, `user_uuid`, `folder_uuid`, `matter_uuid`, `expire_time`, `filename`, `privacy`, `size`, `ip` ) ( SELECT `uuid`, `sort`, `update_time`, `create_time`, `user_uuid`, `folder_uuid`, `matter_uuid`, `expire_time`, `filename`, `privacy`, `size`, `ip` FROM `tank`.`tank20_upload_token` ) "
-	this.logger.Info(migrateUploadTokenSql)
-	core.CONTEXT.GetDB().Exec(migrateUploadTokenSql)
-
-	//username in tank2.0 add _20.
-	migrateUserSql := "INSERT INTO `tank`.`tank30_user` ( `uuid`, `sort`, `update_time`, `create_time`, `role`, `username`, `password`, `avatar_url`, `last_ip`, `last_time`, `size_limit`, `total_size_limit`, `total_size`, `status` ) ( SELECT `uuid`, `sort`, `update_time`, `create_time`, `role`, CONCAT(`username`,'_20') as `username`, `password`, `avatar_url`, `last_ip`, `last_time`, `size_limit`, -1, 0, `status` FROM `tank`.`tank20_user` )"
-	this.logger.Info(migrateUserSql)
-	core.CONTEXT.GetDB().Exec(migrateUserSql)
-
-	return this.Success("OK")
-}
-
 //cleanup system data.
 func (this *PreferenceController) SystemCleanup(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
@@ -176,5 +142,14 @@ func (this *PreferenceController) SystemCleanup(writer http.ResponseWriter, requ
 	//this will trigger every bean to cleanup.
 	core.CONTEXT.Cleanup()
 
+	return this.Success("OK")
+}
+
+//migrate 2.0's db data and file data to 3.0
+func (this *PreferenceController) Migrate20to30(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+
+	this.logger.Info("start migrating from 2.0 to 3.0")
+
+	this.preferenceService.Migrate20to30(writer, request)
 	return this.Success("OK")
 }

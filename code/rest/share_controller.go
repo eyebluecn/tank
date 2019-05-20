@@ -293,7 +293,7 @@ func (this *ShareController) Browse(writer http.ResponseWriter, request *http.Re
 					Value: DIRECTION_DESC,
 				},
 			}
-			matters = this.matterDao.ListByUuids(uuids, sortArray)
+			matters = this.matterDao.FindByUuids(uuids, sortArray)
 
 			share.Matters = matters
 		}
@@ -358,7 +358,7 @@ func (this *ShareController) Zip(writer http.ResponseWriter, request *http.Reque
 		for _, bridge := range bridges {
 			matterUuids = append(matterUuids, bridge.MatterUuid)
 		}
-		matters := this.matterDao.ListByUuids(matterUuids, nil)
+		matters := this.matterDao.FindByUuids(matterUuids, nil)
 		this.matterService.DownloadZip(writer, request, matters)
 
 	} else {

@@ -130,6 +130,25 @@ func (this *UserDao) Save(user *User) *User {
 	return user
 }
 
+//find all 2.0 users.
+func (this *UserDao) FindUsers20() []*User {
+	var users []*User
+	var wp = &builder.WherePair{}
+	wp = wp.And(&builder.WherePair{Query: "username like ?", Args: []interface{}{"%_20"}})
+
+	db := core.CONTEXT.GetDB().Model(&User{}).Where(wp.Query, wp.Args...).Find(&users)
+	this.PanicError(db.Error)
+	return users
+}
+
+func (this *UserDao) DeleteUsers20() {
+	var wp = &builder.WherePair{}
+	wp = wp.And(&builder.WherePair{Query: "username like ?", Args: []interface{}{"%_20"}})
+
+	db := core.CONTEXT.GetDB().Where(wp.Query, wp.Args...).Delete(User{})
+	this.PanicError(db.Error)
+}
+
 //System cleanup.
 func (this *UserDao) Cleanup() {
 	this.logger.Info("[UserDao] clean up. Delete all User")

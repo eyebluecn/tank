@@ -456,7 +456,7 @@ func (this *MatterController) Zip(writer http.ResponseWriter, request *http.Requ
 
 	uuidArray := strings.Split(uuids, ",")
 
-	matters := this.matterDao.ListByUuids(uuidArray, nil)
+	matters := this.matterDao.FindByUuids(uuidArray, nil)
 
 	if matters == nil || len(matters) == 0 {
 		panic(result.BadRequest("matters cannot be nil."))

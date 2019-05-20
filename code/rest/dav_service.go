@@ -166,7 +166,7 @@ func (this *DavService) HandlePropfind(writer http.ResponseWriter, request *http
 		matters = []*Matter{matter}
 	} else {
 		// len(matters) == 0 means empty directory
-		matters = this.matterDao.ListByPuuidAndUserUuid(matter.Uuid, user.Uuid, nil)
+		matters = this.matterDao.FindByPuuidAndUserUuid(matter.Uuid, user.Uuid, nil)
 
 		//add this matter to head.
 		matters = append([]*Matter{matter}, matters...)

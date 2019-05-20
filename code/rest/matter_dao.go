@@ -120,6 +120,30 @@ func (this *MatterDao) FindByUserUuidAndPuuidAndNameAndDirTrue(userUuid string, 
 	return matter
 }
 
+func (this *MatterDao) FindByUserUuidAndPuuidAndDirTrue(userUuid string, puuid string) []*Matter {
+
+	var wp = &builder.WherePair{}
+
+	if userUuid != "" {
+		wp = wp.And(&builder.WherePair{Query: "user_uuid = ?", Args: []interface{}{userUuid}})
+	}
+
+	if puuid != "" {
+		wp = wp.And(&builder.WherePair{Query: "puuid = ?", Args: []interface{}{puuid}})
+	}
+
+	wp = wp.And(&builder.WherePair{Query: "dir = ?", Args: []interface{}{1}})
+
+	var matters []*Matter
+	db := core.CONTEXT.GetDB().Model(&Matter{}).Where(wp.Query, wp.Args...).First(&matters)
+
+	if db.Error != nil {
+		return nil
+	}
+
+	return matters
+}
+
 func (this *MatterDao) CheckByUuidAndUserUuid(uuid string, userUuid string) *Matter {
 
 	var matter = &Matter{}
@@ -193,20 +217,11 @@ func (this *MatterDao) FindByUserUuidAndPuuidAndDirAndName(userUuid string, puui
 	return matter
 }
 
-func (this *MatterDao) ListByUserUuidAndPuuidAndDirAndName(userUuid string, puuid string, dir bool, name string) []*Matter {
-
+func (this *MatterDao) FindByPuuidAndUserUuid(puuid string, userUuid string, sortArray []builder.OrderPair) []*Matter {
 	var matters []*Matter
 
-	db := core.CONTEXT.GetDB().
-		Where(Matter{UserUuid: userUuid, Puuid: puuid, Dir: dir, Name: name}).
-		Find(&matters)
-	this.PanicError(db.Error)
-
-	return matters
-}
-
-func (this *MatterDao) ListByPuuidAndUserUuid(puuid string, userUuid string, sortArray []builder.OrderPair) []*Matter {
-	var matters []*Matter
+	var wp = &builder.WherePair{}
+	wp = wp.And(&builder.WherePair{Query: "puuid = ? AND user_uuid = ?", Args: []interface{}{puuid, userUuid}})
 
 	if sortArray == nil {
 
@@ -222,13 +237,13 @@ func (this *MatterDao) ListByPuuidAndUserUuid(puuid string, userUuid string, sor
 		}
 	}
 
-	db := core.CONTEXT.GetDB().Where(Matter{UserUuid: userUuid, Puuid: puuid}).Order(this.GetSortString(sortArray)).Find(&matters)
+	db := core.CONTEXT.GetDB().Model(&Matter{}).Where(wp.Query, wp.Args...).Order(this.GetSortString(sortArray)).Find(&matters)
 	this.PanicError(db.Error)
 
 	return matters
 }
 
-func (this *MatterDao) ListByUuids(uuids []string, sortArray []builder.OrderPair) []*Matter {
+func (this *MatterDao) FindByUuids(uuids []string, sortArray []builder.OrderPair) []*Matter {
 	var matters []*Matter
 
 	db := core.CONTEXT.GetDB().Where(uuids).Order(this.GetSortString(sortArray)).Find(&matters)
@@ -236,8 +251,7 @@ func (this *MatterDao) ListByUuids(uuids []string, sortArray []builder.OrderPair
 
 	return matters
 }
-
-func (this *MatterDao) Page(page int, pageSize int, puuid string, userUuid string, name string, dir string, extensions []string, sortArray []builder.OrderPair) *Pager {
+func (this *MatterDao) PlainPage(page int, pageSize int, puuid string, userUuid string, name string, dir string, extensions []string, sortArray []builder.OrderPair) (int, []*Matter) {
 
 	var wp = &builder.WherePair{}
 
@@ -279,6 +293,12 @@ func (this *MatterDao) Page(page int, pageSize int, puuid string, userUuid strin
 	var matters []*Matter
 	db = conditionDB.Order(this.GetSortString(sortArray)).Offset(page * pageSize).Limit(pageSize).Find(&matters)
 	this.PanicError(db.Error)
+
+	return count, matters
+}
+func (this *MatterDao) Page(page int, pageSize int, puuid string, userUuid string, name string, dir string, extensions []string, sortArray []builder.OrderPair) *Pager {
+
+	count, matters := this.PlainPage(page, pageSize, puuid, userUuid, name, dir, extensions, sortArray)
 	pager := NewPager(page, pageSize, count, matters)
 
 	return pager
@@ -337,7 +357,7 @@ func (this *MatterDao) Delete(matter *Matter) {
 
 	// recursive if dir
 	if matter.Dir {
-		matters := this.ListByPuuidAndUserUuid(matter.Uuid, matter.UserUuid, nil)
+		matters := this.FindByPuuidAndUserUuid(matter.Uuid, matter.UserUuid, nil)
 
 		for _, f := range matters {
 			this.Delete(f)
@@ -455,6 +475,17 @@ func (this *MatterDao) CountByUserUuidAndPath(userUuid string, path string) int6
 
 	var count int64
 	db := core.CONTEXT.GetDB().Model(&Matter{}).Where(wp.Query, wp.Args...).Count(&count)
+	core.PanicError(db.Error)
+
+	return count
+
+}
+
+//统计总共有多少条。
+func (this *MatterDao) Count() int64 {
+
+	var count int64
+	db := core.CONTEXT.GetDB().Model(&Matter{}).Count(&count)
 	core.PanicError(db.Error)
 
 	return count

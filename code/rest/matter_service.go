@@ -393,6 +393,50 @@ func (this *MatterService) ComputeRouteSize(matterUuid string, user *User) {
 	this.ComputeRouteSize(matter.Puuid, user)
 }
 
+// compute all dir's size.
+func (this *MatterService) ComputeAllDirSize(user *User) {
+
+	this.logger.Info("Compute all dir's size for user %s %s", user.Uuid, user.Username)
+
+	rootMatter := NewRootMatter(user)
+	this.ComputeDirSize(rootMatter, user)
+}
+
+// compute a dir's size.
+func (this *MatterService) ComputeDirSize(dirMatter *Matter, user *User) {
+
+	this.logger.Info("Compute dir's size %s %s", dirMatter.Uuid, dirMatter.Name)
+
+	//update sub dir first
+	childrenDirMatters := this.matterDao.FindByUserUuidAndPuuidAndDirTrue(user.Uuid, dirMatter.Uuid)
+	for _, childrenDirMatter := range childrenDirMatters {
+		this.ComputeDirSize(childrenDirMatter, user)
+	}
+
+	//if to root directory, then update to user's info.
+	if dirMatter.Uuid == MATTER_ROOT {
+
+		size := this.matterDao.SizeByPuuidAndUserUuid(MATTER_ROOT, user.Uuid)
+
+		db := core.CONTEXT.GetDB().Model(&User{}).Where("uuid = ?", user.Uuid).Update("total_size", size)
+		this.PanicError(db.Error)
+
+		//update user total size info in cache.
+		user.TotalSize = size
+	} else {
+
+		//compute self.
+		size := this.matterDao.SizeByPuuidAndUserUuid(dirMatter.Uuid, user.Uuid)
+
+		//when changed, we update
+		if dirMatter.Size != size {
+			db := core.CONTEXT.GetDB().Model(&Matter{}).Where("uuid = ?", dirMatter.Uuid).Update("size", size)
+			this.PanicError(db.Error)
+		}
+	}
+
+}
+
 //inner create directory.
 func (this *MatterService) createDirectory(request *http.Request, dirMatter *Matter, name string, user *User) *Matter {
 
@@ -515,7 +559,7 @@ func (this *MatterService) move(request *http.Request, srcMatter *Matter, destDi
 		srcMatter = this.matterDao.Save(srcMatter)
 
 		//reCompute the path.
-		matters := this.matterDao.ListByPuuidAndUserUuid(srcMatter.Uuid, srcMatter.UserUuid, nil)
+		matters := this.matterDao.FindByPuuidAndUserUuid(srcMatter.Uuid, srcMatter.UserUuid, nil)
 		for _, m := range matters {
 			this.adjustPath(m, srcMatter)
 		}
@@ -638,7 +682,7 @@ func (this *MatterService) copy(request *http.Request, srcMatter *Matter, destDi
 		newMatter = this.matterDao.Create(newMatter)
 
 		//copy children
-		matters := this.matterDao.ListByPuuidAndUserUuid(srcMatter.Uuid, srcMatter.UserUuid, nil)
+		matters := this.matterDao.FindByPuuidAndUserUuid(srcMatter.Uuid, srcMatter.UserUuid, nil)
 		for _, m := range matters {
 			this.copy(request, m, newMatter, m.Name)
 		}
@@ -729,7 +773,7 @@ func (this *MatterService) AtomicRename(request *http.Request, matter *Matter, n
 		matter = this.matterDao.Save(matter)
 
 		//调整该文件夹下文件的Path.
-		matters := this.matterDao.ListByPuuidAndUserUuid(matter.Uuid, matter.UserUuid, nil)
+		matters := this.matterDao.FindByPuuidAndUserUuid(matter.Uuid, matter.UserUuid, nil)
 		for _, m := range matters {
 			this.adjustPath(m, matter)
 		}
@@ -917,7 +961,7 @@ func (this *MatterService) WrapChildrenDetail(request *http.Request, matter *Mat
 
 	if matter.Dir {
 
-		children := this.matterDao.ListByPuuidAndUserUuid(matter.Uuid, matter.UserUuid, nil)
+		children := this.matterDao.FindByPuuidAndUserUuid(matter.Uuid, matter.UserUuid, nil)
 		matter.Children = children
 
 		for _, child := range matter.Children {
@@ -967,7 +1011,7 @@ func (this *MatterService) adjustPath(matter *Matter, parentMatter *Matter) {
 		matter = this.matterDao.Save(matter)
 
 		//adjust children.
-		matters := this.matterDao.ListByPuuidAndUserUuid(matter.Uuid, matter.UserUuid, nil)
+		matters := this.matterDao.FindByPuuidAndUserUuid(matter.Uuid, matter.UserUuid, nil)
 		for _, m := range matters {
 			this.adjustPath(m, matter)
 		}
