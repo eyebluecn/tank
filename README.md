@@ -2,9 +2,9 @@
 
 [English Version](./README_EN.md)
 
-# 蓝眼云盘（2.0.0）
+# 蓝眼云盘（3.0.0）
 
-[在线Demo](https://tank.eyeblue.cn) (体验账号： demo@tank.eyeblue.cn 密码：123456)
+[在线Demo](https://tank.eyeblue.cn) (体验账号： demo 密码：123456)
 
 ![](https://tank.eyeblue.cn/api/alien/download/df372827-ba56-415e-42d1-0e3a34fdb2a1/github20x20.png "github20x20.png") [后端tank地址](https://github.com/eyebluecn/tank)
 
@@ -83,7 +83,7 @@
 ![](./build/doc/img/mobile.png)
 
 
-### Docker安装
+### Docker安装（3.0.0版本即将发布docker）
 
 ##### a) 启动
 ```
