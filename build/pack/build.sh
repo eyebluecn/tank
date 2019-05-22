@@ -9,7 +9,7 @@
 #prepare the variables.
 
 # version name
-VERSION_NAME=tank-3.0.0.beta4
+VERSION_NAME=tank-3.0.0
 echo "VERSION_NAME: ${VERSION_NAME}"
 # eg. amd64
 GOARCH=$(go env GOARCH)

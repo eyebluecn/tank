@@ -168,6 +168,7 @@ func (this *UserController) Edit(writer http.ResponseWriter, request *http.Reque
 	avatarUrl := request.FormValue("avatarUrl")
 	sizeLimitStr := request.FormValue("sizeLimit")
 	totalSizeLimitStr := request.FormValue("totalSizeLimit")
+	role := request.FormValue("role")
 
 	user := this.checkUser(request)
 	currentUser := this.userDao.CheckByUuid(uuid)
@@ -199,6 +200,10 @@ func (this *UserController) Edit(writer http.ResponseWriter, request *http.Reque
 			totalSizeLimit = int64(intTotalSizeLimit)
 		}
 		currentUser.TotalSizeLimit = totalSizeLimit
+
+		if role == USER_ROLE_USER || role == USER_ROLE_ADMINISTRATOR {
+			currentUser.Role = role
+		}
 
 	} else if user.Uuid != uuid {
 		panic(result.UNAUTHORIZED)
