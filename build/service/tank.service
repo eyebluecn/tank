@@ -1,0 +1,15 @@
+[Unit]
+Description=EyeblueTank
+Documentation=https://tank-doc.eyeblue.cn
+Wants=network.target
+After=network.target
+
+[Service]
+Type=simple
+DynamicUser=yes
+ExecStart=/data/program/tank/tank
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
