@@ -6,6 +6,8 @@
 
 [在线Demo](https://tank.eyeblue.cn) (体验账号： demo 密码：123456)
 
+[文档](https://tank-doc.eyeblue.cn/)
+
 ![](https://tank.eyeblue.cn/api/alien/download/df372827-ba56-415e-42d1-0e3a34fdb2a1/github20x20.png "github20x20.png") [后端tank地址](https://github.com/eyebluecn/tank)
 
 ![](https://tank.eyeblue.cn/api/alien/download/df372827-ba56-415e-42d1-0e3a34fdb2a1/github20x20.png "github20x20.png") [前端tank-front地址](https://github.com/eyebluecn/tank-front)

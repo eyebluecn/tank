@@ -33,7 +33,8 @@ docker container prune
 # 构建新版本 (最后的.不能少)
 docker build -t eyeblue/tank:x.x.x .
 # 本地测试
-docker run --name tank -p 6010:6010 -d eyeblue/tank:x.x.x
+docker run --name dockermysql -p 13306:3306 -e MYSQL_ROOT_PASSWORD=123456 -e MYSQL_DATABASE=tank -e MYSQL_USER=tank -e MYSQL_PASSWORD=tank123 -v ~/data/dockermysql:/var/lib/mysql -d mysql:5.7
+docker run --name tank -p 6010:6010 --link dockermysql:mysql -v ~/data/dockermatter:/data/matter -d eyeblue/tank:x.x.x
 # 没问题后，推送到远程
 docker push eyeblue/tank:x.x.x
 ```
@@ -49,6 +50,22 @@ c. 在github上发布新版本。
 a. 执行`src/tank/build/pack/build.bat`脚本
 b. 上传 tank-x.x.x.windows-x86_64.zip 到蓝眼云盘
 c. 在github上发布新版本。
+
+
+2019-05-23
+tank-3.0.0
+1. 分享文件夹
+2. 使用口令提取分享的文件
+3. 允许用户自行注册
+4. 本地文件映射功能
+5. 存放的物理文件，按照物理目录排布
+6. 允许用户名进行登录
+7. 访问日志只保留7天数据
+8. 下载文件夹，下载文件夹大小设上限
+9. 支持Webdav
+10. 增加用户文件总大小，增加用户文件总大小限制
+11. 加入管理员变身功能。使用用户的身份进行登录。
+12. i18n
 
 
 2019-01-07
