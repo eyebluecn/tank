@@ -14,7 +14,7 @@ COPY . /data
 VOLUME /data/build/matter
 
 # proxy
-ENV GOPROXY=https://goproxy.io
+ENV GOPROXY=https://athens.azurefd.net
 
 # prepare the config file
 RUN go build -mod=readonly \

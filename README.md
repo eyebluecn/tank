@@ -8,64 +8,6 @@
 
 [文档](https://tank-doc.eyeblue.cn/)
 
-![](https://tank.eyeblue.cn/api/alien/download/df372827-ba56-415e-42d1-0e3a34fdb2a1/github20x20.png "github20x20.png") [后端tank地址](https://github.com/eyebluecn/tank)
-
-![](https://tank.eyeblue.cn/api/alien/download/df372827-ba56-415e-42d1-0e3a34fdb2a1/github20x20.png "github20x20.png") [前端tank-front地址](https://github.com/eyebluecn/tank-front)
-
-### 简介
-蓝眼云盘是 [蓝眼系列开源软件](https://github.com/eyebluecn) 之一，也是蓝眼系列其他软件的基础服务软件。蓝眼云盘具有以下几大特色：
-
-**1. 软件氛围友好**
-
-- 作者比较佛系，开发的软件也比较佛系，只保留最核心大家最常使用的功能，开发这个软件纯靠兴趣，不为任何盈利
-
-- 文末有钉钉群，欢迎加入。你的任何合理需求，我都会尽量满足
-
-**2. 软件体积小，跨平台，运行简单，自带UI引导安装**
-
-- 支持docker安装，蓝眼云盘的docker镜像已经发布到了Docker Hub，可以一行指令运行。
-
-- 蓝眼云盘[安装包](https://github.com/eyebluecn/tank/releases) 10M左右，在`windows`  `linux`  `mac OS`操作系统中均可安装运行；
-
-- 蓝眼云盘为绿色软件，将安装包解压缩，一行命令立即运行。
-
-**3. 使用方便，核心功能齐全**
-
-- 蓝眼云盘主要支持pc web端，同时手机web也具有不错的响应性支持。
-
-- 蓝眼云盘实现了云盘（如：[百度云盘](https://pan.baidu.com/)，[微云](https://www.weiyun.com/))的核心功能：文件夹管理，文件管理，上传文件，下载文件，文件分享等。
-
-- 蓝眼云盘提供能账号管理系统，超级管理员可以管理用户，查看用户文件，普通用户只能查看自己的文件，修改自己的资料。上面提供的体验账号就是一个普通用户的账号。
-
-**4. 支持接口编程**
-
-- 蓝眼云盘提供了[编程接口](https://github.com/eyebluecn/tank/blob/master/build/doc/alien_zh.md)，实现了云存储（如：[七牛云](https://www.qiniu.com)，[阿里云OSS](https://www.aliyun.com/product/oss)）的核心功能
-
-- 可以使用编程接口上传文件，作为其他网站、系统、app的资源存储器。可以在下载图片时对图片做缩放裁剪处理，可以有效地节省客户端流量。同时对于缩略图有缓存策略，全面提升资源访问速度。
-
-- 蓝眼系列开源软件之二的[《蓝眼博客》](https://github.com/eyebluecn/blog)正是使用蓝眼博客作为第三方资源存储器。蓝眼博客中的所有图片，附件均是存储在蓝眼云盘中。
-
-**5. 前后端分离，文档丰富**
-
-- 项目后端使用golang开发，前端使用vue套件开发。
-
-- 蓝眼云盘有详细的[后台api文档](https://github.com/eyebluecn/tank/blob/master/build/doc/api_zh.md)，对于学习前端的童鞋而言可以快速部署一个正式而又具有丰富接口的后端供学习使用。
-
-- 后端技术栈使用 `golang`，没有使用任何web框架；初始化安装，生命周期控制，路由管理，路由匹配，日志管理，依赖注入，错误处理，panic拦截，打包，安装脚本等功能全采用纯手动打造，绿色环保，因此代码更精炼，更具有探讨学习的价值。
-
-**6. 2.x版本人性化的升级**
-
-- 新增了监控大盘，一个页面查看云盘访问情况，热门文件一目了然
-
-- 常用文件(doc,ppt,xls,pdf,mp3,mp4,jpg,png等格式)一键预览，方便快捷
-
-- UI 全面升级，颜色更加沉稳大气，布局更加紧凑，文件上传最多支持1000个同时进行
-
-- mysql支持到5.5，后端代码架构全新迭代升级，日志异常离线任务更加强健
-
-
-如果您觉得蓝眼云盘对您有帮助，请不要吝惜您的star ⭐
-
 ### 软件截图
 
 #### PC端截图
@@ -84,64 +26,65 @@
 
 ![](./build/doc/img/mobile.png)
 
+[安装文档](https://tank-doc.eyeblue.cn/zh/basic/install.html)
 
-### Docker安装（3.0.0版本即将发布docker）
+## Windows
+1. 安装MySQL(使用UTF-8编码)
+2. 下载最新版本的蓝眼云盘，[去下载](./download.md)
+3. 解压，双击根目录下的`tank.exe`运行
+4. 打开 `http://127.0.0.1:6010` 看到安装引导页面即表示软件安装成功。接着按照UI引导安装蓝眼云盘即可。
 
-##### a) 启动
-```
-docker run --name tank -p 6010:6010 -d eyeblue/tank:2.0.0
-```
-如果你的mysql也希望用docker运行，可以使用这句话
-```
-docker run --name mysql4tank -p 3306:3306 -e MYSQL_ROOT_PASSWORD=123456 -e MYSQL_DATABASE=tank -e MYSQL_USER=tank -e MYSQL_PASSWORD=tank123 -v ~/data/mysqldemo1:/var/lib/mysql -d mysql:5.7
-```
-如果mysql是docker启动的，那么在填写mysql host的时候不能用 127.0.0.1，要用局域网ip。 或者你可以在tank的镜像启动中使用 --link=mysql4tank:mysql4tank 从而填写 mysql4tank 作为mysql的host.
 
-##### b) 验证
-浏览器中打开 http://127.0.0.1:6010 看到PC截图最后一张的安装引导页面即表示成功。
-
-### 常规安装(windows/linux方法基本一致)
-
-##### a) 准备工作
-
-1. 一台windows/linux服务器，当然你可以使用自己的电脑充当这台服务器
-
-2. [安装好Mysql数据库](https://www.mysql.com/downloads/) (请使用utf8编码)
-
-3. [在这里](https://github.com/eyebluecn/tank/releases)下载服务器对应的安装包
-
-4. 在服务器上解压缩
-
-##### b) 运行
-
-- windows平台直接双击应用目录下的`tank.exe`。
-
-- linux平台执行 
-
-```
-cd 应用目录路径
+## Linux
+1. 安装MySQL(使用UTF-8编码)
+2. 下载最新版本的蓝眼云盘，[去下载](./download.md)
+3. 解压，运行根目录下`tank`
+```shell
 ./tank
 ```
+4. 打开 `http://127.0.0.1:6010` 看到安装引导页面即表示软件安装成功。接着按照UI引导安装蓝眼云盘即可。
 
-如果你希望关闭shell窗口后，应用依然运行，请使用以下脚本启动和停止
+## macOS
+1. 安装MySQL(使用UTF-8编码)
+2. 下载最新版本的蓝眼云盘，[去下载](./download.md)
+3. 解压，运行根目录下`tank`
 ```shell
-# 启动应用
-cd 应用目录路径/service
-./startup.sh
-
-# 停止应用
-cd 应用目录路径/service
-./shutdown.sh
-
+./tank
 ```
+4. 打开 `http://127.0.0.1:6010` 看到安装引导页面即表示软件安装成功。接着按照UI引导安装蓝眼云盘即可。
 
-##### c) 验证
+## docker
 
-浏览器中打开 http://127.0.0.1:6010 
 
-(127.0.0.1请使用服务器所在ip，6010请使用`tank.json`中配置的`ServerPort`) 
+1. Docker中启动mysql
+```shell
+docker run --name dockermysql -p 13306:3306 -e MYSQL_ROOT_PASSWORD=123456 -e MYSQL_DATABASE=tank -e MYSQL_USER=tank -e MYSQL_PASSWORD=tank123 -v ~/data/dockermysql:/var/lib/mysql -d mysql:5.7
+```
+::: tip 提示
+容器名称为`dockermysql`，占用宿主13306端口，root密码123456，创建了一个`tank`数据库，用户名`tank`，密码`tank123` ，将文件挂载于宿主的`~/data/dockermysql`文件夹。
+:::
 
-可以看到安装引导页面（见上文PC截图最后一张）即表示安装成功。然后按照引导逐步配置即可。
+2. Docker中启动蓝眼云盘
+```shell
+docker run --name tank -p 6010:6010 --link dockermysql:mysql -v ~/data/dockermatter:/data/matter -d eyeblue/tank:3.0.0
+```
+::: tip 提示
+容器名称为`tank`，占用宿主6010端口，链接数据库为`mysql`，即通过`mysql`可以访问到步骤1中mysql的地址，将文件挂载于宿主的`~/data/dockermatter`文件夹。
+:::
+
+3. 打开 `http://127.0.0.1:6010` 看到安装引导页面即表示软件安装成功。
+
+::: tip 提示
+MySQL Host => `mysql`
+
+MySQL 端口 => `3306` 
+
+MySQL 库名 => `tank` 
+
+MySQL 用户名 => `tank` 
+
+MySQL 密码 => `tank123` 
+:::
 
 
 ### 使用源代码自行打包
