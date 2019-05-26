@@ -136,3 +136,25 @@ func (this *UserService) PreHandle(writer http.ResponseWriter, request *http.Req
 	}
 
 }
+
+//find a cache user by its userUuid
+func (this *UserService) FindCacheUsersByUuid(userUuid string) []*User {
+
+	var users []*User
+	//let session user work.
+	core.CONTEXT.GetSessionCache().Foreach(func(key interface{}, cacheItem *cache.Item) {
+		if cacheItem == nil || cacheItem.Data() == nil {
+			return
+		}
+		if value, ok := cacheItem.Data().(*User); ok {
+			var user = value
+			if user.Uuid == userUuid {
+				users = append(users, user)
+			}
+		} else {
+			this.logger.Error("cache item not store the *User")
+		}
+	})
+
+	return users
+}

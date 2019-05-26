@@ -52,6 +52,13 @@ b. 上传 tank-x.x.x.windows-x86_64.zip 到蓝眼云盘
 c. 在github上发布新版本。
 
 
+2019-05-27
+tank-3.0.2
+1. fix https://github.com/eyebluecn/tank/issues/51
+2. fix https://github.com/eyebluecn/tank/issues/52
+3. fix i18n issue for moving files.
+
+
 2019-05-23
 tank-3.0.0
 1. 分享文件夹

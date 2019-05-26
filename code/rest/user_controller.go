@@ -15,6 +15,7 @@ import (
 type UserController struct {
 	BaseController
 	preferenceService *PreferenceService
+	userService       *UserService
 }
 
 func (this *UserController) Init() {
@@ -24,6 +25,12 @@ func (this *UserController) Init() {
 	if b, ok := b.(*PreferenceService); ok {
 		this.preferenceService = b
 	}
+
+	b = core.CONTEXT.GetBean(this.userService)
+	if b, ok := b.(*UserService); ok {
+		this.userService = b
+	}
+
 }
 
 func (this *UserController) RegisterRoutes() map[string]func(writer http.ResponseWriter, request *http.Request) {
@@ -226,12 +233,11 @@ func (this *UserController) Detail(writer http.ResponseWriter, request *http.Req
 
 func (this *UserController) Logout(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
-	//expire session.
-	sessionCookie, err := request.Cookie(core.COOKIE_AUTH_KEY)
-	if err != nil {
-		return this.Success("OK")
+	//try to find from SessionCache.
+	sessionId := util.GetSessionUuidFromRequest(request, core.COOKIE_AUTH_KEY)
+	if sessionId == "" {
+		return nil
 	}
-	sessionId := sessionCookie.Value
 
 	user := this.findUser(request)
 	if user != nil {
@@ -241,7 +247,7 @@ func (this *UserController) Logout(writer http.ResponseWriter, request *http.Req
 	}
 
 	//delete session.
-	_, err = core.CONTEXT.GetSessionCache().Delete(sessionId)
+	_, err := core.CONTEXT.GetSessionCache().Delete(sessionId)
 	if err != nil {
 		this.logger.Error("error while deleting session.")
 	}
@@ -326,6 +332,12 @@ func (this *UserController) ToggleStatus(writer http.ResponseWriter, request *ht
 	}
 
 	currentUser = this.userDao.Save(currentUser)
+
+	cacheUsers := this.userService.FindCacheUsersByUuid(currentUser.Uuid)
+	this.logger.Info("find %d cache users", len(cacheUsers))
+	for _, u := range cacheUsers {
+		u.Status = currentUser.Status
+	}
 
 	return this.Success(currentUser)
 
