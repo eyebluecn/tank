@@ -11,6 +11,9 @@
 # version name
 VERSION_NAME=tank-3.0.2
 echo "VERSION_NAME: ${VERSION_NAME}"
+#  golang proxy
+GOPROXY=https://athens.azurefd.net
+echo "GOPROXY: ${GOPROXY}"
 # eg. amd64
 GOARCH=$(go env GOARCH)
 echo "GOARCH: ${GOARCH}"

@@ -12,6 +12,10 @@
 
 @REM  version name
 SET VERSION_NAME=tank-3.0.2
+ECHO VERSION_NAME: %VERSION_NAME%
+@REM  golang proxy
+SET GOPROXY=https://athens.azurefd.net
+ECHO GOPROXY: %GOPROXY%
 @REM  assign variable like Linux GOARCH=$(go env GOARCH) eg. amd64
 FOR /f %%i IN ('go env GOARCH') DO SET GOARCH=%%i
 ECHO GOARCH: %GOARCH%
