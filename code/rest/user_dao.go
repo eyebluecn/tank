@@ -72,20 +72,12 @@ func (this *UserDao) FindByUsername(username string) *User {
 	return user
 }
 
-func (this *UserDao) Page(page int, pageSize int, username string, email string, phone string, status string, sortArray []builder.OrderPair) *Pager {
+func (this *UserDao) Page(page int, pageSize int, username string, status string, sortArray []builder.OrderPair) *Pager {
 
 	var wp = &builder.WherePair{}
 
 	if username != "" {
 		wp = wp.And(&builder.WherePair{Query: "username LIKE ?", Args: []interface{}{"%" + username + "%"}})
-	}
-
-	if email != "" {
-		wp = wp.And(&builder.WherePair{Query: "email LIKE ?", Args: []interface{}{"%" + email + "%"}})
-	}
-
-	if phone != "" {
-		wp = wp.And(&builder.WherePair{Query: "phone = ?", Args: []interface{}{phone}})
 	}
 
 	if status != "" {

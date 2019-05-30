@@ -274,8 +274,6 @@ func (this *UserController) Page(writer http.ResponseWriter, request *http.Reque
 	orderSort := request.FormValue("orderSort")
 
 	username := request.FormValue("username")
-	email := request.FormValue("email")
-	phone := request.FormValue("phone")
 	status := request.FormValue("status")
 	orderLastTime := request.FormValue("orderLastTime")
 
@@ -311,7 +309,7 @@ func (this *UserController) Page(writer http.ResponseWriter, request *http.Reque
 		},
 	}
 
-	pager := this.userDao.Page(page, pageSize, username, email, phone, status, sortArray)
+	pager := this.userDao.Page(page, pageSize, username, status, sortArray)
 
 	return this.Success(pager)
 }

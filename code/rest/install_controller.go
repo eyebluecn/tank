@@ -226,8 +226,8 @@ func (this *InstallController) CreateTable(writer http.ResponseWriter, request *
 
 	for _, iBase := range this.tableNames {
 
-		//complete the missing fields or create table.
-		db1 := db.AutoMigrate(iBase)
+		//complete the missing fields or create table. use utf8 charset
+		db1 := db.Set("gorm:table_options", "CHARSET=utf8").AutoMigrate(iBase)
 		this.PanicError(db1.Error)
 
 		exist, allFields, missingFields := this.getTableMeta(db, iBase)
