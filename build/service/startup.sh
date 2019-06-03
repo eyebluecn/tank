@@ -8,7 +8,7 @@ EXE_PATH=$TANK_DIR/tank
 
 if [ -f "$EXE_PATH" ]; then
  nohup $EXE_PATH >/dev/null 2>&1 &
- echo 'Start tank successfully! http://127.0.0.1:6010'
+ echo 'Start tank successfully! Default value http://127.0.0.1:6010'
 else
  echo 'Cannot find $EXE_PATH.'
  exit 1

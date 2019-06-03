@@ -40,6 +40,7 @@ func (this *UserController) RegisterRoutes() map[string]func(writer http.Respons
 	routeMap["/api/user/login"] = this.Wrap(this.Login, USER_ROLE_GUEST)
 	routeMap["/api/user/authentication/login"] = this.Wrap(this.AuthenticationLogin, USER_ROLE_GUEST)
 	routeMap["/api/user/register"] = this.Wrap(this.Register, USER_ROLE_GUEST)
+	routeMap["/api/user/create"] = this.Wrap(this.Create, USER_ROLE_ADMINISTRATOR)
 	routeMap["/api/user/edit"] = this.Wrap(this.Edit, USER_ROLE_USER)
 	routeMap["/api/user/detail"] = this.Wrap(this.Detail, USER_ROLE_USER)
 	routeMap["/api/user/logout"] = this.Wrap(this.Logout, USER_ROLE_GUEST)
@@ -165,6 +166,67 @@ func (this *UserController) Register(writer http.ResponseWriter, request *http.R
 
 	//auto login
 	this.innerLogin(writer, request, user)
+
+	return this.Success(user)
+}
+
+func (this *UserController) Create(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+
+	username := request.FormValue("username")
+	password := request.FormValue("password")
+	role := request.FormValue("role")
+	sizeLimitStr := request.FormValue("sizeLimit")
+	totalSizeLimitStr := request.FormValue("totalSizeLimit")
+
+	//only admin can edit user's sizeLimit
+	var sizeLimit int64 = 0
+	if sizeLimitStr == "" {
+		panic("user's limit size is required")
+	} else {
+		intSizeLimit, err := strconv.Atoi(sizeLimitStr)
+		if err != nil {
+			this.PanicError(err)
+		}
+		sizeLimit = int64(intSizeLimit)
+	}
+
+	var totalSizeLimit int64 = 0
+	if totalSizeLimitStr == "" {
+		panic("user's total limit size is required")
+	} else {
+		intTotalSizeLimit, err := strconv.Atoi(totalSizeLimitStr)
+		if err != nil {
+			this.PanicError(err)
+		}
+		totalSizeLimit = int64(intTotalSizeLimit)
+	}
+
+	if m, _ := regexp.MatchString(USERNAME_PATTERN, username); !m {
+		panic(result.BadRequestI18n(request, i18n.UsernameError))
+	}
+
+	if len(password) < 6 {
+		panic(result.BadRequestI18n(request, i18n.UserPasswordLengthError))
+	}
+
+	if this.userDao.CountByUsername(username) > 0 {
+		panic(result.BadRequestI18n(request, i18n.UsernameExist, username))
+	}
+
+	if role != USER_ROLE_USER && role != USER_ROLE_ADMINISTRATOR {
+		role = USER_ROLE_USER
+	}
+
+	user := &User{
+		Username:       username,
+		Password:       util.GetBcrypt(password),
+		Role:           role,
+		SizeLimit:      sizeLimit,
+		TotalSizeLimit: totalSizeLimit,
+		Status:         USER_STATUS_OK,
+	}
+
+	user = this.userDao.Create(user)
 
 	return this.Success(user)
 }

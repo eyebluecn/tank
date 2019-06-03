@@ -123,6 +123,11 @@ func (this *TankConfig) ReadFromConfigFile() {
 			return
 		}
 
+		//use default server port
+		if this.item.ServerPort != 0 {
+			this.serverPort = this.item.ServerPort
+		}
+
 		//check the integrity
 		itemValidate := this.item.validate()
 		if !itemValidate {
@@ -138,11 +143,6 @@ func (this *TankConfig) ReadFromConfigFile() {
 			this.matterPath = util.UniformPath(this.item.MatterPath)
 		}
 		util.MakeDirAll(this.matterPath)
-
-		//use default server port
-		if this.item.ServerPort != 0 {
-			this.serverPort = this.item.ServerPort
-		}
 
 		this.mysqlUrl = util.GetMysqlUrl(this.item.MysqlPort, this.item.MysqlHost, this.item.MysqlSchema, this.item.MysqlUsername, this.item.MysqlPassword)
 		this.installed = true
