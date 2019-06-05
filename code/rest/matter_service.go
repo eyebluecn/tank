@@ -283,13 +283,6 @@ func (this *MatterService) Upload(request *http.Request, file io.Reader, user *U
 		panic(result.BadRequestI18n(request, i18n.MatterNameLengthExceedLimit, len(filename), MATTER_NAME_MAX_LENGTH))
 	}
 
-	//check the total size limit.
-	if user.TotalSizeLimit >= 0 {
-		if user.TotalSize > user.TotalSizeLimit {
-			panic(result.BadRequestI18n(request, i18n.MatterSizeExceedTotalLimit, util.HumanFileSize(user.TotalSize), util.HumanFileSize(user.TotalSizeLimit)))
-		}
-	}
-
 	dirAbsolutePath := dirMatter.AbsolutePath()
 	dirRelativePath := dirMatter.Path
 
@@ -332,6 +325,18 @@ func (this *MatterService) Upload(request *http.Request, file io.Reader, user *U
 			this.PanicError(err)
 
 			panic(result.BadRequestI18n(request, i18n.MatterSizeExceedLimit, util.HumanFileSize(fileSize), util.HumanFileSize(user.SizeLimit)))
+		}
+	}
+
+	//check total size.
+	if user.TotalSizeLimit >= 0 {
+		if user.TotalSize+fileSize > user.TotalSizeLimit {
+
+			//delete the file on disk.
+			err = os.Remove(fileAbsolutePath)
+			this.PanicError(err)
+
+			panic(result.BadRequestI18n(request, i18n.MatterSizeExceedTotalLimit, util.HumanFileSize(user.TotalSize), util.HumanFileSize(user.TotalSizeLimit)))
 		}
 	}
 
