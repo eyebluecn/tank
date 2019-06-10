@@ -50,6 +50,12 @@ c. 在github上发布新版本。
 
 3.更新tank-doc 下载内容
 
+2019-06-11
+tank-3.0.4
+1. Use relative assets in tank-front.
+2. Fix the total size check bug.
+3. Add feature. Creating user.
+
 2019-05-31
 tank-3.0.3
 1. Add default utf8 charset when creating tables.
