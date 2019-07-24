@@ -27,18 +27,8 @@
 ![](./build/doc/img/mobile.png)
 
 
-#### [安装文档](https://tank-doc.eyeblue.cn/zh/basic/install.html)
+## [安装文档](https://tank-doc.eyeblue.cn/zh/basic/install.html)
 
-
-### 相关文档
-
-[蓝眼云盘后端api](https://github.com/eyebluecn/tank/blob/master/build/doc/api_zh.md)
-
-[蓝眼云盘编程接口](https://github.com/eyebluecn/tank/blob/master/build/doc/alien_zh.md)
-
-[快速使用Let's Encrypt开启个人网站的https](https://blog.eyeblue.cn/home/article/9f580b3f-5679-4a9d-be6f-4d9f0dd417af) 
-
- [Docker 化你的开源项目](https://blog.eyeblue.cn/home/article/510f9316-9ca1-40fe-b1b3-5285505a527d)  
 
 ### Contribution
 
