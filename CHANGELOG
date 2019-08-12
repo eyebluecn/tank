@@ -50,6 +50,11 @@ c. 在github上发布新版本。
 
 3.更新tank-doc 下载内容
 
+
+2019-08-13
+tank-3.0.5
+1. Fix the Bug of sharing. [#56](https://github.com/eyebluecn/tank/issues/56)
+
 2019-06-11
 tank-3.0.4
 1. Use relative assets in tank-front.

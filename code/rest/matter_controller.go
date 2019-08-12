@@ -143,7 +143,7 @@ func (this *MatterController) Page(writer http.ResponseWriter, request *http.Req
 		user := this.findUser(request)
 
 		this.shareService.ValidateMatter(request, shareUuid, shareCode, user, shareRootUuid, dirMatter)
-		userUuid = dirMatter.Uuid
+		puuid = dirMatter.Uuid
 
 	} else {
 		//if cannot auth by share. Then login is required.
