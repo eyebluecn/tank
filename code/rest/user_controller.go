@@ -158,7 +158,7 @@ func (this *UserController) Register(writer http.ResponseWriter, request *http.R
 		Role:      USER_ROLE_USER,
 		Username:  username,
 		Password:  util.GetBcrypt(password),
-		SizeLimit: preference.DefaultTotalSizeLimit,
+		TotalSizeLimit: preference.DefaultTotalSizeLimit,
 		Status:    USER_STATUS_OK,
 	}
 
