@@ -2,7 +2,7 @@
 
 [English Version](./README_EN.md)
 
-# 蓝眼云盘（3.0.5）
+# 蓝眼云盘（3.0.6）
 
 [在线Demo](https://tank.eyeblue.cn) (体验账号： demo 密码：123456)
 

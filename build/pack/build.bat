@@ -11,7 +11,7 @@
 @REM prepare the variables.
 
 @REM  version name
-SET VERSION_NAME=tank-3.0.5
+SET VERSION_NAME=tank-3.0.6
 ECHO VERSION_NAME: %VERSION_NAME%
 @REM  golang proxy
 SET GOPROXY=https://athens.azurefd.net
