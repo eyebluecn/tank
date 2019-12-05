@@ -51,7 +51,7 @@ type Preference struct {
 
 #### Matter
 
-`Matter`是代表文件（文件夹是一种特殊的文件），为了和系统的`file`重复，这里使用`matter`，这个实体是蓝眼云盘最重要的实体：
+`Matter`是代表文件（文件夹是一种特殊的文件），为了避免和系统的`file`重复，这里使用`matter`，这个实体是蓝眼云盘最重要的实体：
 
 ```
 type Matter struct {
