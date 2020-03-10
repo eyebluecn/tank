@@ -18,7 +18,7 @@ import (
  * WebDav document
  * https://tools.ietf.org/html/rfc4918
  * http://www.webdav.org/specs/rfc4918.html
- *
+ * test machine: http://www.webdav.org/neon/litmus/
  */
 
 type DavController struct {
@@ -145,7 +145,7 @@ func (this *DavController) debug(writer http.ResponseWriter, request *http.Reque
 
 	bodyBytes, err := ioutil.ReadAll(request.Body)
 	if err != nil {
-		fmt.Println("读取body时出错" + err.Error())
+		fmt.Println("occur error when reading body: " + err.Error())
 	}
 	fmt.Println(string(bodyBytes))
 
@@ -162,7 +162,8 @@ func (this *DavController) debug(writer http.ResponseWriter, request *http.Reque
 
 func (this *DavController) Index(writer http.ResponseWriter, request *http.Request, subPath string) {
 
-	//this.debug(writer, request, subPath)
+	//when debugging. open it.
+	this.debug(writer, request, subPath)
 
 	user := this.CheckCurrentUser(writer, request)
 

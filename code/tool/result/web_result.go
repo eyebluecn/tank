@@ -23,18 +23,21 @@ type CodeWrapper struct {
 }
 
 var (
-	OK                    = &CodeWrapper{Code: "OK", HttpStatus: http.StatusOK, Description: "ok"}
-	BAD_REQUEST           = &CodeWrapper{Code: "BAD_REQUEST", HttpStatus: http.StatusBadRequest, Description: "bad request"}
-	NEED_SHARE_CODE       = &CodeWrapper{Code: "NEED_SHARE_CODE", HttpStatus: http.StatusUnauthorized, Description: "share code required"}
-	SHARE_CODE_ERROR      = &CodeWrapper{Code: "SHARE_CODE_ERROR", HttpStatus: http.StatusUnauthorized, Description: "share code error"}
-	LOGIN                 = &CodeWrapper{Code: "LOGIN", HttpStatus: http.StatusUnauthorized, Description: "not login"}
-	USER_DISABLED         = &CodeWrapper{Code: "USER_DISABLED", HttpStatus: http.StatusForbidden, Description: "user disabled"}
-	UNAUTHORIZED          = &CodeWrapper{Code: "UNAUTHORIZED", HttpStatus: http.StatusUnauthorized, Description: "unauthorized"}
-	NOT_FOUND             = &CodeWrapper{Code: "NOT_FOUND", HttpStatus: http.StatusNotFound, Description: "404 not found"}
-	RANGE_NOT_SATISFIABLE = &CodeWrapper{Code: "RANGE_NOT_SATISFIABLE", HttpStatus: http.StatusRequestedRangeNotSatisfiable, Description: "range not satisfiable"}
-	NOT_INSTALLED         = &CodeWrapper{Code: "NOT_INSTALLED", HttpStatus: http.StatusInternalServerError, Description: "application not installed"}
-	SERVER                = &CodeWrapper{Code: "SERVER", HttpStatus: http.StatusInternalServerError, Description: "server error"}
-	UNKNOWN               = &CodeWrapper{Code: "UNKNOWN", HttpStatus: http.StatusInternalServerError, Description: "server unknow error"}
+	OK                     = &CodeWrapper{Code: "OK", HttpStatus: http.StatusOK, Description: "ok"}
+	BAD_REQUEST            = &CodeWrapper{Code: "BAD_REQUEST", HttpStatus: http.StatusBadRequest, Description: "bad request"}
+	NEED_SHARE_CODE        = &CodeWrapper{Code: "NEED_SHARE_CODE", HttpStatus: http.StatusUnauthorized, Description: "share code required"}
+	SHARE_CODE_ERROR       = &CodeWrapper{Code: "SHARE_CODE_ERROR", HttpStatus: http.StatusUnauthorized, Description: "share code error"}
+	LOGIN                  = &CodeWrapper{Code: "LOGIN", HttpStatus: http.StatusUnauthorized, Description: "not login"}
+	USER_DISABLED          = &CodeWrapper{Code: "USER_DISABLED", HttpStatus: http.StatusForbidden, Description: "user disabled"}
+	UNAUTHORIZED           = &CodeWrapper{Code: "UNAUTHORIZED", HttpStatus: http.StatusUnauthorized, Description: "unauthorized"}
+	NOT_FOUND              = &CodeWrapper{Code: "NOT_FOUND", HttpStatus: http.StatusNotFound, Description: "404 not found"}
+	METHOD_NOT_ALLOWED     = &CodeWrapper{Code: "METHOD_NOT_ALLOWED", HttpStatus: http.StatusMethodNotAllowed, Description: "405 method not allowed"}
+	CONFLICT               = &CodeWrapper{Code: "CONFLICT", HttpStatus: http.StatusConflict, Description: "409 conflict"}
+	UNSUPPORTED_MEDIA_TYPE = &CodeWrapper{Code: "UNSUPPORTED_MEDIA_TYPE", HttpStatus: http.StatusUnsupportedMediaType, Description: "415 conflict"}
+	RANGE_NOT_SATISFIABLE  = &CodeWrapper{Code: "RANGE_NOT_SATISFIABLE", HttpStatus: http.StatusRequestedRangeNotSatisfiable, Description: "range not satisfiable"}
+	NOT_INSTALLED          = &CodeWrapper{Code: "NOT_INSTALLED", HttpStatus: http.StatusInternalServerError, Description: "application not installed"}
+	SERVER                 = &CodeWrapper{Code: "SERVER", HttpStatus: http.StatusInternalServerError, Description: "server error"}
+	UNKNOWN                = &CodeWrapper{Code: "UNKNOWN", HttpStatus: http.StatusInternalServerError, Description: "server unknow error"}
 )
 
 func FetchHttpStatus(code string) int {
@@ -54,6 +57,12 @@ func FetchHttpStatus(code string) int {
 		return UNAUTHORIZED.HttpStatus
 	} else if code == NOT_FOUND.Code {
 		return NOT_FOUND.HttpStatus
+	} else if code == METHOD_NOT_ALLOWED.Code {
+		return METHOD_NOT_ALLOWED.HttpStatus
+	} else if code == CONFLICT.Code {
+		return CONFLICT.HttpStatus
+	} else if code == UNSUPPORTED_MEDIA_TYPE.Code {
+		return UNSUPPORTED_MEDIA_TYPE.HttpStatus
 	} else if code == RANGE_NOT_SATISFIABLE.Code {
 		return RANGE_NOT_SATISFIABLE.HttpStatus
 	} else if code == NOT_INSTALLED.Code {

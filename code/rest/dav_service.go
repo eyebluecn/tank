@@ -7,6 +7,7 @@ import (
 	"github.com/eyebluecn/tank/code/tool/dav/xml"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"path"
@@ -230,6 +231,9 @@ func (this *DavService) HandlePut(writer http.ResponseWriter, request *http.Requ
 
 	this.matterService.Upload(request, request.Body, user, dirMatter, filename, true)
 
+	//set the status code 201
+	writer.WriteHeader(http.StatusCreated)
+
 }
 
 //delete file
@@ -247,10 +251,37 @@ func (this *DavService) HandleMkcol(writer http.ResponseWriter, request *http.Re
 
 	fmt.Printf("MKCOL %s\n", subPath)
 
+	//the body of MKCOL request MUST be empty. (RFC2518:8.3.1)
+	bodyBytes, err := ioutil.ReadAll(request.Body)
+	if err != nil {
+		fmt.Println("occur error when reading body: " + err.Error())
+	} else {
+		if len(bodyBytes) != 0 {
+			//throw conflict error
+			panic(result.CustomWebResult(result.UNSUPPORTED_MEDIA_TYPE, fmt.Sprintf("%s MKCOL should NO body", subPath)))
+		}
+	}
+
 	thisDirName := util.GetFilenameOfPath(subPath)
 	dirPath := util.GetDirOfPath(subPath)
 
-	dirMatter := this.matterDao.CheckWithRootByPath(dirPath, user)
+	dirMatter := this.matterDao.FindWithRootByPath(dirPath, user)
+	if dirMatter == nil {
+		//throw conflict error
+		panic(result.CustomWebResult(result.CONFLICT, fmt.Sprintf("%s not exist", dirPath)))
+	}
+
+	//check whether col exists. (RFC2518:8.3.1)
+	dbMatter := this.matterDao.FindByUserUuidAndPuuidAndDirAndName(user.Uuid, dirMatter.Uuid, true, thisDirName)
+	if dbMatter != nil {
+		panic(result.CustomWebResult(result.METHOD_NOT_ALLOWED, fmt.Sprintf("%s already exists", dirPath)))
+	}
+
+	//check whether file exists. (RFC2518:8.3.1)
+	fileMatter := this.matterDao.FindByUserUuidAndPuuidAndDirAndName(user.Uuid, dirMatter.Uuid, false, thisDirName)
+	if fileMatter != nil {
+		panic(result.CustomWebResult(result.METHOD_NOT_ALLOWED, fmt.Sprintf("%s file already exists", dirPath)))
+	}
 
 	this.matterService.AtomicCreateDirectory(request, dirMatter, thisDirName, user)
 

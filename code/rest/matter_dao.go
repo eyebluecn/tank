@@ -92,6 +92,24 @@ func (this *MatterDao) CheckWithRootByPath(path string, user *User) *Matter {
 	return matter
 }
 
+// find by path. if path=/, then return the Root Matter
+func (this *MatterDao) FindWithRootByPath(path string, user *User) *Matter {
+
+	var matter *Matter
+
+	if user == nil {
+		panic(result.BadRequest("user cannot be null."))
+	}
+
+	if path == "" || path == "/" {
+		matter = NewRootMatter(user)
+	} else {
+		matter = this.findByUserUuidAndPath(user.Uuid, path)
+	}
+
+	return matter
+}
+
 func (this *MatterDao) FindByUserUuidAndPuuidAndNameAndDirTrue(userUuid string, puuid string, name string) *Matter {
 
 	var wp = &builder.WherePair{}
@@ -417,6 +435,7 @@ func (this *MatterDao) SizeBetweenTime(startTime time.Time, endTime time.Time) i
 	return size
 }
 
+//find by userUuid and path. if not found, return nil
 func (this *MatterDao) findByUserUuidAndPath(userUuid string, path string) *Matter {
 
 	var wp = &builder.WherePair{Query: "user_uuid = ? AND path = ?", Args: []interface{}{userUuid, path}}
@@ -435,6 +454,7 @@ func (this *MatterDao) findByUserUuidAndPath(userUuid string, path string) *Matt
 	return matter
 }
 
+//find by userUuid and path. if not found, panic
 func (this *MatterDao) checkByUserUuidAndPath(userUuid string, path string) *Matter {
 
 	if path == "" {
