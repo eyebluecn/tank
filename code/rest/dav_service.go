@@ -416,7 +416,7 @@ func (this *DavService) HandleCopy(writer http.ResponseWriter, request *http.Req
 	fmt.Printf("COPY %s\n", subPath)
 
 	//debug point
-	if request.Header.Get("X-Litmus") == "copymove: 5 (copy_nodestcoll)" {
+	if request.Header.Get("X-Litmus") == "copymove: 7 (copy_coll)" {
 		fmt.Println("stop here")
 	}
 

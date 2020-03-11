@@ -671,6 +671,8 @@ func (this *MatterService) AtomicMoveBatch(request *http.Request, srcMatters []*
 //copy srcMatter to destMatter. invoker must handled the overwrite and lock.
 func (this *MatterService) copy(request *http.Request, srcMatter *Matter, destDirMatter *Matter, name string) {
 
+	this.logger.Info("copy srcPath = %s destPath = %s/%s", srcMatter.Path, destDirMatter.Path, name)
+
 	if srcMatter.Dir {
 
 		newMatter := &Matter{
@@ -686,6 +688,9 @@ func (this *MatterService) copy(request *http.Request, srcMatter *Matter, destDi
 		}
 
 		newMatter = this.matterDao.Create(newMatter)
+
+		//make the dir
+		util.MakeDirAll(newMatter.AbsolutePath())
 
 		//copy children
 		matters := this.matterDao.FindByPuuidAndUserUuid(srcMatter.Uuid, srcMatter.UserUuid, nil)
