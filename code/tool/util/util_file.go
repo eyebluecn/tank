@@ -128,7 +128,11 @@ func GetFilenameOfPath(fullPath string) string {
 func DeleteEmptyDir(dirPath string) bool {
 	dir, err := ioutil.ReadDir(dirPath)
 	if err != nil {
-		panic(result.BadRequest("occur error while reading %s %s", dirPath, err.Error()))
+		if strings.Contains(err.Error(), "The system cannot find") {
+			return false
+		} else {
+			panic(result.BadRequest("occur error while reading %s %s", dirPath, err.Error()))
+		}
 	}
 	if len(dir) == 0 {
 		//empty dir

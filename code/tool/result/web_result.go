@@ -33,6 +33,7 @@ var (
 	NOT_FOUND              = &CodeWrapper{Code: "NOT_FOUND", HttpStatus: http.StatusNotFound, Description: "404 not found"}
 	METHOD_NOT_ALLOWED     = &CodeWrapper{Code: "METHOD_NOT_ALLOWED", HttpStatus: http.StatusMethodNotAllowed, Description: "405 method not allowed"}
 	CONFLICT               = &CodeWrapper{Code: "CONFLICT", HttpStatus: http.StatusConflict, Description: "409 conflict"}
+	PRECONDITION_FAILED    = &CodeWrapper{Code: "PRECONDITION_FAILED", HttpStatus: http.StatusPreconditionFailed, Description: "412 precondition failed"}
 	UNSUPPORTED_MEDIA_TYPE = &CodeWrapper{Code: "UNSUPPORTED_MEDIA_TYPE", HttpStatus: http.StatusUnsupportedMediaType, Description: "415 conflict"}
 	RANGE_NOT_SATISFIABLE  = &CodeWrapper{Code: "RANGE_NOT_SATISFIABLE", HttpStatus: http.StatusRequestedRangeNotSatisfiable, Description: "range not satisfiable"}
 	NOT_INSTALLED          = &CodeWrapper{Code: "NOT_INSTALLED", HttpStatus: http.StatusInternalServerError, Description: "application not installed"}
@@ -61,6 +62,8 @@ func FetchHttpStatus(code string) int {
 		return METHOD_NOT_ALLOWED.HttpStatus
 	} else if code == CONFLICT.Code {
 		return CONFLICT.HttpStatus
+	} else if code == PRECONDITION_FAILED.Code {
+		return PRECONDITION_FAILED.HttpStatus
 	} else if code == UNSUPPORTED_MEDIA_TYPE.Code {
 		return UNSUPPORTED_MEDIA_TYPE.HttpStatus
 	} else if code == RANGE_NOT_SATISFIABLE.Code {

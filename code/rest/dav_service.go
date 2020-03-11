@@ -383,7 +383,11 @@ func (this *DavService) prepareMoveCopy(
 		panic(result.BadRequest("you cannot move the root directory"))
 	}
 
-	destDirMatter = this.matterDao.CheckWithRootByPath(destinationDirPath, user)
+	destDirMatter = this.matterDao.FindWithRootByPath(destinationDirPath, user)
+	if destDirMatter == nil {
+		//throw conflict error
+		panic(result.CustomWebResult(result.CONFLICT, fmt.Sprintf("%s not exist", destinationDirPath)))
+	}
 
 	return srcMatter, destDirMatter, srcDirPath, destinationDirPath, destinationName, overwrite
 
@@ -411,12 +415,25 @@ func (this *DavService) HandleCopy(writer http.ResponseWriter, request *http.Req
 
 	fmt.Printf("COPY %s\n", subPath)
 
+	//debug point
+	if request.Header.Get("X-Litmus") == "copymove: 5 (copy_nodestcoll)" {
+		fmt.Println("stop here")
+	}
+
 	srcMatter, destDirMatter, _, _, destinationName, overwrite := this.prepareMoveCopy(writer, request, user, subPath)
 
 	//copy to the new directory
 	this.matterService.AtomicCopy(request, srcMatter, destDirMatter, destinationName, overwrite, user)
 
 	this.logger.Info("finish copying %s => %s", subPath, destDirMatter.Path)
+
+	if overwrite {
+		//overwrite old. set the status code 204
+		writer.WriteHeader(http.StatusNoContent)
+	} else {
+		//copy new. set the status code 201
+		writer.WriteHeader(http.StatusCreated)
+	}
 
 }
 

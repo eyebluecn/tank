@@ -528,7 +528,8 @@ func (this *MatterService) handleOverwrite(request *http.Request, user *User, de
 			//delete.
 			this.Delete(request, destMatter, user)
 		} else {
-			panic(result.BadRequestI18n(request, i18n.MatterExist, destMatter.Path))
+			//throw precondition failed. (RFC4918:10.6)
+			panic(result.CustomWebResult(result.PRECONDITION_FAILED, fmt.Sprintf("%s exists", destMatter.Path)))
 		}
 	}
 
