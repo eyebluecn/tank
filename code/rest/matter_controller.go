@@ -342,7 +342,7 @@ func (this *MatterController) Rename(writer http.ResponseWriter, request *http.R
 		panic(result.UNAUTHORIZED)
 	}
 
-	this.matterService.AtomicRename(request, matter, name, user)
+	this.matterService.AtomicRename(request, matter, name, false, user)
 
 	return this.Success(matter)
 }

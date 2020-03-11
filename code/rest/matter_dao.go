@@ -110,34 +110,6 @@ func (this *MatterDao) FindWithRootByPath(path string, user *User) *Matter {
 	return matter
 }
 
-func (this *MatterDao) FindByUserUuidAndPuuidAndNameAndDirTrue(userUuid string, puuid string, name string) *Matter {
-
-	var wp = &builder.WherePair{}
-
-	if userUuid != "" {
-		wp = wp.And(&builder.WherePair{Query: "user_uuid = ?", Args: []interface{}{userUuid}})
-	}
-
-	if puuid != "" {
-		wp = wp.And(&builder.WherePair{Query: "puuid = ?", Args: []interface{}{puuid}})
-	}
-
-	if name != "" {
-		wp = wp.And(&builder.WherePair{Query: "name = ?", Args: []interface{}{name}})
-	}
-
-	wp = wp.And(&builder.WherePair{Query: "dir = ?", Args: []interface{}{1}})
-
-	var matter = &Matter{}
-	db := core.CONTEXT.GetDB().Model(&Matter{}).Where(wp.Query, wp.Args...).First(matter)
-
-	if db.Error != nil {
-		return nil
-	}
-
-	return matter
-}
-
 func (this *MatterDao) FindByUserUuidAndPuuidAndDirTrue(userUuid string, puuid string) []*Matter {
 
 	var wp = &builder.WherePair{}
@@ -202,7 +174,7 @@ func (this *MatterDao) CountByUserUuidAndPuuidAndDirAndName(userUuid string, puu
 	return count
 }
 
-func (this *MatterDao) FindByUserUuidAndPuuidAndDirAndName(userUuid string, puuid string, dir bool, name string) *Matter {
+func (this *MatterDao) FindByUserUuidAndPuuidAndDirAndName(userUuid string, puuid string, dir string, name string) *Matter {
 
 	var matter = &Matter{}
 
@@ -220,7 +192,11 @@ func (this *MatterDao) FindByUserUuidAndPuuidAndDirAndName(userUuid string, puui
 		wp = wp.And(&builder.WherePair{Query: "name = ?", Args: []interface{}{name}})
 	}
 
-	wp = wp.And(&builder.WherePair{Query: "dir = ?", Args: []interface{}{dir}})
+	if dir == TRUE {
+		wp = wp.And(&builder.WherePair{Query: "dir = ?", Args: []interface{}{true}})
+	} else if dir == FALSE {
+		wp = wp.And(&builder.WherePair{Query: "dir = ?", Args: []interface{}{false}})
+	}
 
 	db := core.CONTEXT.GetDB().Where(wp.Query, wp.Args...).First(matter)
 

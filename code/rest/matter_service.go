@@ -474,7 +474,7 @@ func (this *MatterService) createDirectory(request *http.Request, dirMatter *Mat
 	}
 
 	//if exist. return.
-	matter := this.matterDao.FindByUserUuidAndPuuidAndDirAndName(user.Uuid, dirMatter.Uuid, true, name)
+	matter := this.matterDao.FindByUserUuidAndPuuidAndDirAndName(user.Uuid, dirMatter.Uuid, TRUE, name)
 	if matter != nil {
 		return matter
 	}
@@ -743,7 +743,9 @@ func (this *MatterService) AtomicCopy(request *http.Request, srcMatter *Matter, 
 }
 
 //rename matter to name
-func (this *MatterService) AtomicRename(request *http.Request, matter *Matter, name string, user *User) {
+func (this *MatterService) AtomicRename(request *http.Request, matter *Matter, name string, overwrite bool, user *User) {
+
+	this.logger.Info("Try to rename srcPath = %s to name = %s", matter.Path, name)
 
 	if user == nil {
 		panic(result.BadRequest("user cannot be nil"))
@@ -758,12 +760,16 @@ func (this *MatterService) AtomicRename(request *http.Request, matter *Matter, n
 		panic(result.BadRequestI18n(request, i18n.MatterNameNoChange))
 	}
 
-	//判断同级文件夹中是否有同名的文件
-	count := this.matterDao.CountByUserUuidAndPuuidAndDirAndName(user.Uuid, matter.Puuid, matter.Dir, name)
+	//check whether the name used by another matter.
+	oldMatter := this.matterDao.FindByUserUuidAndPuuidAndDirAndName(user.Uuid, matter.Puuid, "", name)
+	if oldMatter != nil {
+		if overwrite {
+			//delete this one.
+			this.Delete(request, oldMatter, user)
+		} else {
+			panic(result.CustomWebResult(result.PRECONDITION_FAILED, fmt.Sprintf("%s already exists", name)))
+		}
 
-	if count > 0 {
-
-		panic(result.BadRequestI18n(request, i18n.MatterExist, name))
 	}
 
 	if matter.Dir {
@@ -859,7 +865,7 @@ func (this *MatterService) mirror(request *http.Request, srcPath string, destDir
 	if fileStat.IsDir() {
 
 		//判断当前文件夹下，文件是否已经存在了。
-		srcDirMatter := this.matterDao.FindByUserUuidAndPuuidAndDirAndName(user.Uuid, destDirMatter.Uuid, true, fileStat.Name())
+		srcDirMatter := this.matterDao.FindByUserUuidAndPuuidAndDirAndName(user.Uuid, destDirMatter.Uuid, TRUE, fileStat.Name())
 
 		if srcDirMatter == nil {
 			srcDirMatter = this.createDirectory(request, destDirMatter, fileStat.Name(), user)
@@ -878,7 +884,7 @@ func (this *MatterService) mirror(request *http.Request, srcPath string, destDir
 	} else {
 
 		//判断当前文件夹下，文件是否已经存在了。
-		matter := this.matterDao.FindByUserUuidAndPuuidAndDirAndName(user.Uuid, destDirMatter.Uuid, false, fileStat.Name())
+		matter := this.matterDao.FindByUserUuidAndPuuidAndDirAndName(user.Uuid, destDirMatter.Uuid, FALSE, fileStat.Name())
 		if matter != nil {
 			//如果是覆盖，那么删除之前的文件
 			if overwrite {

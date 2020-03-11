@@ -272,13 +272,13 @@ func (this *DavService) HandleMkcol(writer http.ResponseWriter, request *http.Re
 	}
 
 	//check whether col exists. (RFC2518:8.3.1)
-	dbMatter := this.matterDao.FindByUserUuidAndPuuidAndDirAndName(user.Uuid, dirMatter.Uuid, true, thisDirName)
+	dbMatter := this.matterDao.FindByUserUuidAndPuuidAndDirAndName(user.Uuid, dirMatter.Uuid, TRUE, thisDirName)
 	if dbMatter != nil {
 		panic(result.CustomWebResult(result.METHOD_NOT_ALLOWED, fmt.Sprintf("%s already exists", dirPath)))
 	}
 
 	//check whether file exists. (RFC2518:8.3.1)
-	fileMatter := this.matterDao.FindByUserUuidAndPuuidAndDirAndName(user.Uuid, dirMatter.Uuid, false, thisDirName)
+	fileMatter := this.matterDao.FindByUserUuidAndPuuidAndDirAndName(user.Uuid, dirMatter.Uuid, FALSE, thisDirName)
 	if fileMatter != nil {
 		panic(result.CustomWebResult(result.METHOD_NOT_ALLOWED, fmt.Sprintf("%s file already exists", dirPath)))
 	}
@@ -399,26 +399,30 @@ func (this *DavService) HandleMove(writer http.ResponseWriter, request *http.Req
 	fmt.Printf("MOVE %s\n", subPath)
 
 	srcMatter, destDirMatter, srcDirPath, destinationDirPath, destinationName, overwrite := this.prepareMoveCopy(writer, request, user, subPath)
+
 	//move to the new directory
 	if destinationDirPath == srcDirPath {
 		//if destination path not change. it means rename.
-		this.matterService.AtomicRename(request, srcMatter, destinationName, user)
+		this.matterService.AtomicRename(request, srcMatter, destinationName, overwrite, user)
 	} else {
 		this.matterService.AtomicMove(request, srcMatter, destDirMatter, overwrite, user)
 	}
 
 	this.logger.Info("finish moving %s => %s", subPath, destDirMatter.Path)
+
+	if overwrite {
+		//overwrite old. set the status code 204
+		writer.WriteHeader(http.StatusNoContent)
+	} else {
+		//copy new. set the status code 201
+		writer.WriteHeader(http.StatusCreated)
+	}
 }
 
 //copy file/directory
 func (this *DavService) HandleCopy(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
 
 	fmt.Printf("COPY %s\n", subPath)
-
-	//debug point
-	if request.Header.Get("X-Litmus") == "copymove: 7 (copy_coll)" {
-		fmt.Println("stop here")
-	}
 
 	srcMatter, destDirMatter, _, _, destinationName, overwrite := this.prepareMoveCopy(writer, request, user, subPath)
 
