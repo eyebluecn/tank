@@ -9,10 +9,10 @@ const (
 
 	DEFAULT_SERVER_PORT = 6010
 
-	//db table's prefix. tank30_ means current version is tank:3.0.x
-	TABLE_PREFIX = "tank30_"
+	//db table's prefix. tank31_ means current version is tank:3.1.x
+	TABLE_PREFIX = "tank31_"
 
-	VERSION = "3.0.6"
+	VERSION = "3.1.0"
 )
 
 type Config interface {

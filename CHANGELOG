@@ -51,6 +51,21 @@ c. 在github上发布新版本。
 3.更新tank-doc 下载内容
 
 
+TO RELEASE
+tank-3.1.0
+1. Add prop column into tank31_matter
+
+
+ALTER TABLE `tank`.`tank30_matter`
+ADD COLUMN `prop` VARCHAR(1024) NULL DEFAULT '{}' AFTER `times`;
+
+2. Remove Migrate  20To30
+
+
+
+
+
+
 2019-10-13
 tank-3.0.6
 1. Fix the Bug of limit size.

@@ -42,7 +42,6 @@ func (this *PreferenceController) RegisterRoutes() map[string]func(writer http.R
 	routeMap["/api/preference/fetch"] = this.Wrap(this.Fetch, USER_ROLE_GUEST)
 	routeMap["/api/preference/edit"] = this.Wrap(this.Edit, USER_ROLE_ADMINISTRATOR)
 	routeMap["/api/preference/system/cleanup"] = this.Wrap(this.SystemCleanup, USER_ROLE_ADMINISTRATOR)
-	routeMap["/api/preference/migrate20to30"] = this.Wrap(this.Migrate20to30, USER_ROLE_ADMINISTRATOR)
 
 	return routeMap
 }
@@ -142,14 +141,5 @@ func (this *PreferenceController) SystemCleanup(writer http.ResponseWriter, requ
 	//this will trigger every bean to cleanup.
 	core.CONTEXT.Cleanup()
 
-	return this.Success("OK")
-}
-
-//migrate 2.0's db data and file data to 3.0
-func (this *PreferenceController) Migrate20to30(writer http.ResponseWriter, request *http.Request) *result.WebResult {
-
-	this.logger.Info("start migrating from 2.0 to 3.0")
-
-	this.preferenceService.Migrate20to30(writer, request)
 	return this.Success("OK")
 }

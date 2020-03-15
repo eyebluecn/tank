@@ -25,8 +25,6 @@ const (
 	MODE_CRAWL = "crawl"
 	//Current version.
 	MODE_VERSION = "version"
-	//migrate 2.0 to 3.0
-	MODE_MIGRATE_20_TO_30 = "migrate20to30"
 )
 
 type TankApplication struct {
@@ -119,10 +117,6 @@ func (this *TankApplication) Start() {
 		if strings.ToLower(this.mode) == MODE_MIRROR {
 
 			this.HandleMirror()
-
-		} else if strings.ToLower(this.mode) == MODE_MIGRATE_20_TO_30 {
-
-			this.HandleMigrate20to30()
 
 		} else if strings.ToLower(this.mode) == MODE_CRAWL {
 
@@ -258,43 +252,5 @@ func (this *TankApplication) HandleCrawl() {
 func (this *TankApplication) HandleVersion() {
 
 	fmt.Printf("EyeblueTank %s\r\n", core.VERSION)
-
-}
-
-//migrate 2.0 to 3.0
-func (this *TankApplication) HandleMigrate20to30() {
-
-	if this.src == "" {
-		panic("src is required")
-	}
-
-	fmt.Printf("start migrating 2.0 to 3.0. MatterPath2.0 = %s \r\n", this.src)
-
-	urlString := fmt.Sprintf("%s/api/preference/migrate20to30", this.host)
-
-	params := url.Values{
-		"matterPath":      {this.src},
-		core.USERNAME_KEY: {this.username},
-		core.PASSWORD_KEY: {this.password},
-	}
-
-	response, err := http.PostForm(urlString, params)
-	core.PanicError(err)
-
-	bodyBytes, err := ioutil.ReadAll(response.Body)
-
-	webResult := &result.WebResult{}
-
-	err = jsoniter.ConfigCompatibleWithStandardLibrary.Unmarshal(bodyBytes, webResult)
-	if err != nil {
-		fmt.Printf("error response format %s \r\n", err.Error())
-		return
-	}
-
-	if webResult.Code == result.OK.Code {
-		fmt.Println("success")
-	} else {
-		fmt.Printf("error %s\r\n", webResult.Msg)
-	}
 
 }

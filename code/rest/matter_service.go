@@ -351,6 +351,7 @@ func (this *MatterService) Upload(request *http.Request, file io.Reader, user *U
 		Size:     fileSize,
 		Privacy:  privacy,
 		Path:     fileRelativePath,
+		Prop:     EMPTY_JSON_MAP,
 	}
 	matter = this.matterDao.Create(matter)
 
@@ -685,6 +686,7 @@ func (this *MatterService) copy(request *http.Request, srcMatter *Matter, destDi
 			Size:     srcMatter.Size,
 			Privacy:  srcMatter.Privacy,
 			Path:     destDirMatter.Path + "/" + name,
+			Prop:     EMPTY_JSON_MAP,
 		}
 
 		newMatter = this.matterDao.Create(newMatter)
@@ -716,6 +718,7 @@ func (this *MatterService) copy(request *http.Request, srcMatter *Matter, destDi
 			Size:     srcMatter.Size,
 			Privacy:  srcMatter.Privacy,
 			Path:     destDirMatter.Path + "/" + name,
+			Prop:     EMPTY_JSON_MAP,
 		}
 		newMatter = this.matterDao.Create(newMatter)
 

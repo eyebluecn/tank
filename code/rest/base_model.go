@@ -11,6 +11,9 @@ const (
 
 	DIRECTION_ASC  = "ASC"
 	DIRECTION_DESC = "DESC"
+
+	EMPTY_JSON_MAP   = "{}"
+	EMPTY_JSON_ARRAY = "[]"
 )
 
 type IBase interface {
