@@ -41,7 +41,7 @@ type Matter struct {
 	Times    int64     `json:"times" gorm:"type:bigint(20) not null;default:0"`
 	Parent   *Matter   `json:"parent" gorm:"-"`
 	Children []*Matter `json:"-" gorm:"-"`
-	Prop     string    `json:"prop" gorm:"type:varchar(1024) not null;default:''{}''"`
+	Prop     string    `json:"prop" gorm:"type:varchar(1024) not null;default:'{}'"`
 }
 
 // set File's table name to be `profiles`
