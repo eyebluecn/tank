@@ -155,6 +155,7 @@ func (this *DavService) HandlePropfind(writer http.ResponseWriter, request *http
 
 	fmt.Printf("PROPFIND %s\n", subPath)
 
+	// read depth
 	depth := this.ParseDepth(request)
 
 	propfind := dav.ReadPropfind(request.Body)

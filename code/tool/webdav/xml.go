@@ -134,13 +134,13 @@ func next(d *ixml.Decoder) (ixml.Token, error) {
 }
 
 // http://www.webdav.org/specs/rfc4918.html#ELEMENT_prop (for propfind)
-type propfindProps []xml.Name
+type PropfindProps []xml.Name
 
 // UnmarshalXML appends the property names enclosed within start to pn.
 //
 // It returns an error if start does not contain any properties or if
 // properties contain values. Character data between properties is ignored.
-func (pn *propfindProps) UnmarshalXML(d *ixml.Decoder, start ixml.StartElement) error {
+func (pn *PropfindProps) UnmarshalXML(d *ixml.Decoder, start ixml.StartElement) error {
 	for {
 		t, err := next(d)
 		if err != nil {
@@ -167,39 +167,39 @@ func (pn *propfindProps) UnmarshalXML(d *ixml.Decoder, start ixml.StartElement) 
 }
 
 // http://www.webdav.org/specs/rfc4918.html#ELEMENT_propfind
-type propfind struct {
+type Propfind struct {
 	XMLName  ixml.Name     `xml:"DAV: propfind"`
 	Allprop  *struct{}     `xml:"DAV: allprop"`
 	Propname *struct{}     `xml:"DAV: propname"`
-	Prop     propfindProps `xml:"DAV: prop"`
-	Include  propfindProps `xml:"DAV: include"`
+	Prop     PropfindProps `xml:"DAV: prop"`
+	Include  PropfindProps `xml:"DAV: include"`
 }
 
-func readPropfind(r io.Reader) (pf propfind, status int, err error) {
+func ReadPropfind(r io.Reader) (pf Propfind, status int, err error) {
 	c := countingReader{r: r}
 	if err = ixml.NewDecoder(&c).Decode(&pf); err != nil {
 		if err == io.EOF {
 			if c.n == 0 {
 				// An empty body means to propfind allprop.
 				// http://www.webdav.org/specs/rfc4918.html#METHOD_PROPFIND
-				return propfind{Allprop: new(struct{})}, 0, nil
+				return Propfind{Allprop: new(struct{})}, 0, nil
 			}
 			err = errInvalidPropfind
 		}
-		return propfind{}, http.StatusBadRequest, err
+		return Propfind{}, http.StatusBadRequest, err
 	}
 
 	if pf.Allprop == nil && pf.Include != nil {
-		return propfind{}, http.StatusBadRequest, errInvalidPropfind
+		return Propfind{}, http.StatusBadRequest, errInvalidPropfind
 	}
 	if pf.Allprop != nil && (pf.Prop != nil || pf.Propname != nil) {
-		return propfind{}, http.StatusBadRequest, errInvalidPropfind
+		return Propfind{}, http.StatusBadRequest, errInvalidPropfind
 	}
 	if pf.Prop != nil && pf.Propname != nil {
-		return propfind{}, http.StatusBadRequest, errInvalidPropfind
+		return Propfind{}, http.StatusBadRequest, errInvalidPropfind
 	}
 	if pf.Propname == nil && pf.Allprop == nil && pf.Prop == nil {
-		return propfind{}, http.StatusBadRequest, errInvalidPropfind
+		return Propfind{}, http.StatusBadRequest, errInvalidPropfind
 	}
 	return pf, 0, nil
 }

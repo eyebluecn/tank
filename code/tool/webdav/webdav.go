@@ -526,7 +526,7 @@ func (h *Handler) handlePropfind(w http.ResponseWriter, r *http.Request) (status
 			return http.StatusBadRequest, errInvalidDepth
 		}
 	}
-	pf, status, err := readPropfind(r.Body)
+	pf, status, err := ReadPropfind(r.Body)
 	if err != nil {
 		return status, err
 	}

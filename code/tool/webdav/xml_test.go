@@ -139,7 +139,7 @@ func TestReadPropfind(t *testing.T) {
 	testCases := []struct {
 		desc       string
 		input      string
-		wantPF     propfind
+		wantPF     Propfind
 		wantStatus int
 	}{{
 		desc: "propfind: propname",
@@ -147,14 +147,14 @@ func TestReadPropfind(t *testing.T) {
 			"<A:propfind xmlns:A='DAV:'>\n" +
 			"  <A:propname/>\n" +
 			"</A:propfind>",
-		wantPF: propfind{
+		wantPF: Propfind{
 			XMLName:  ixml.Name{Space: "DAV:", Local: "propfind"},
 			Propname: new(struct{}),
 		},
 	}, {
 		desc:  "propfind: empty body means allprop",
 		input: "",
-		wantPF: propfind{
+		wantPF: Propfind{
 			Allprop: new(struct{}),
 		},
 	}, {
@@ -163,7 +163,7 @@ func TestReadPropfind(t *testing.T) {
 			"<A:propfind xmlns:A='DAV:'>\n" +
 			"   <A:allprop/>\n" +
 			"</A:propfind>",
-		wantPF: propfind{
+		wantPF: Propfind{
 			XMLName: ixml.Name{Space: "DAV:", Local: "propfind"},
 			Allprop: new(struct{}),
 		},
@@ -174,10 +174,10 @@ func TestReadPropfind(t *testing.T) {
 			"  <A:allprop/>\n" +
 			"  <A:include><A:displayname/></A:include>\n" +
 			"</A:propfind>",
-		wantPF: propfind{
+		wantPF: Propfind{
 			XMLName: ixml.Name{Space: "DAV:", Local: "propfind"},
 			Allprop: new(struct{}),
-			Include: propfindProps{xml.Name{Space: "DAV:", Local: "displayname"}},
+			Include: PropfindProps{xml.Name{Space: "DAV:", Local: "displayname"}},
 		},
 	}, {
 		desc: "propfind: include followed by allprop",
@@ -186,10 +186,10 @@ func TestReadPropfind(t *testing.T) {
 			"  <A:include><A:displayname/></A:include>\n" +
 			"  <A:allprop/>\n" +
 			"</A:propfind>",
-		wantPF: propfind{
+		wantPF: Propfind{
 			XMLName: ixml.Name{Space: "DAV:", Local: "propfind"},
 			Allprop: new(struct{}),
-			Include: propfindProps{xml.Name{Space: "DAV:", Local: "displayname"}},
+			Include: PropfindProps{xml.Name{Space: "DAV:", Local: "displayname"}},
 		},
 	}, {
 		desc: "propfind: propfind",
@@ -197,9 +197,9 @@ func TestReadPropfind(t *testing.T) {
 			"<A:propfind xmlns:A='DAV:'>\n" +
 			"  <A:prop><A:displayname/></A:prop>\n" +
 			"</A:propfind>",
-		wantPF: propfind{
+		wantPF: Propfind{
 			XMLName: ixml.Name{Space: "DAV:", Local: "propfind"},
-			Prop:    propfindProps{xml.Name{Space: "DAV:", Local: "displayname"}},
+			Prop:    PropfindProps{xml.Name{Space: "DAV:", Local: "displayname"}},
 		},
 	}, {
 		desc: "propfind: prop with ignored comments",
@@ -210,9 +210,9 @@ func TestReadPropfind(t *testing.T) {
 			"    <A:displayname><!-- ignore --></A:displayname>\n" +
 			"  </A:prop>\n" +
 			"</A:propfind>",
-		wantPF: propfind{
+		wantPF: Propfind{
 			XMLName: ixml.Name{Space: "DAV:", Local: "propfind"},
-			Prop:    propfindProps{xml.Name{Space: "DAV:", Local: "displayname"}},
+			Prop:    PropfindProps{xml.Name{Space: "DAV:", Local: "displayname"}},
 		},
 	}, {
 		desc: "propfind: propfind with ignored whitespace",
@@ -220,9 +220,9 @@ func TestReadPropfind(t *testing.T) {
 			"<A:propfind xmlns:A='DAV:'>\n" +
 			"  <A:prop>   <A:displayname/></A:prop>\n" +
 			"</A:propfind>",
-		wantPF: propfind{
+		wantPF: Propfind{
 			XMLName: ixml.Name{Space: "DAV:", Local: "propfind"},
-			Prop:    propfindProps{xml.Name{Space: "DAV:", Local: "displayname"}},
+			Prop:    PropfindProps{xml.Name{Space: "DAV:", Local: "displayname"}},
 		},
 	}, {
 		desc: "propfind: propfind with ignored mixed-content",
@@ -230,9 +230,9 @@ func TestReadPropfind(t *testing.T) {
 			"<A:propfind xmlns:A='DAV:'>\n" +
 			"  <A:prop>foo<A:displayname/>bar</A:prop>\n" +
 			"</A:propfind>",
-		wantPF: propfind{
+		wantPF: Propfind{
 			XMLName: ixml.Name{Space: "DAV:", Local: "propfind"},
-			Prop:    propfindProps{xml.Name{Space: "DAV:", Local: "displayname"}},
+			Prop:    PropfindProps{xml.Name{Space: "DAV:", Local: "displayname"}},
 		},
 	}, {
 		desc: "propfind: propname with ignored element (section A.4)",
@@ -241,7 +241,7 @@ func TestReadPropfind(t *testing.T) {
 			"  <A:propname/>\n" +
 			"  <E:leave-out xmlns:E='E:'>*boss*</E:leave-out>\n" +
 			"</A:propfind>",
-		wantPF: propfind{
+		wantPF: Propfind{
 			XMLName:  ixml.Name{Space: "DAV:", Local: "propfind"},
 			Propname: new(struct{}),
 		},
@@ -330,7 +330,7 @@ func TestReadPropfind(t *testing.T) {
 	}}
 
 	for _, tc := range testCases {
-		pf, status, err := readPropfind(strings.NewReader(tc.input))
+		pf, status, err := ReadPropfind(strings.NewReader(tc.input))
 		if tc.wantStatus != 0 {
 			if err == nil {
 				t.Errorf("%s: got nil error, want non-nil", tc.desc)
