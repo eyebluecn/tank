@@ -493,7 +493,7 @@ type propertyupdate struct {
 	SetRemove []setRemove `xml:",any"`
 }
 
-func readProppatch(r io.Reader) (patches []Proppatch, status int, err error) {
+func ReadProppatch(r io.Reader) (patches []Proppatch, status int, err error) {
 	var pu propertyupdate
 	if err = ixml.NewDecoder(r).Decode(&pu); err != nil {
 		return nil, http.StatusBadRequest, err

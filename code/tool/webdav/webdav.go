@@ -593,7 +593,7 @@ func (h *Handler) handleProppatch(w http.ResponseWriter, r *http.Request) (statu
 		}
 		return http.StatusMethodNotAllowed, err
 	}
-	patches, status, err := readProppatch(r.Body)
+	patches, status, err := ReadProppatch(r.Body)
 	if err != nil {
 		return status, err
 	}

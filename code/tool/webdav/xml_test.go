@@ -705,7 +705,7 @@ func TestReadProppatch(t *testing.T) {
 	}}
 
 	for _, tc := range testCases {
-		pp, status, err := readProppatch(strings.NewReader(tc.input))
+		pp, status, err := ReadProppatch(strings.NewReader(tc.input))
 		if tc.wantStatus != 0 {
 			if err == nil {
 				t.Errorf("%s: got nil error, want non-nil", tc.desc)

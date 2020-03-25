@@ -7,6 +7,7 @@ import (
 	"github.com/eyebluecn/tank/code/tool/dav/xml"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
+	"github.com/eyebluecn/tank/code/tool/webdav"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -193,6 +194,54 @@ func (this *DavService) HandlePropfind(writer http.ResponseWriter, request *http
 	this.PanicError(err)
 
 	fmt.Printf("%v %v \n", subPath, propfind.Prop)
+
+}
+
+//change the file's property
+func (this *DavService) HandleProppatch(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
+
+	fmt.Printf("PROPPATCH %s\n", subPath)
+
+	matter := this.matterDao.checkByUserUuidAndPath(user.Uuid, subPath)
+
+	patches, status, err := webdav.ReadProppatch(request.Body)
+	this.PanicError(err)
+
+	fmt.Println("status:%v", status)
+
+	//prepare a multiStatusWriter.
+	multiStatusWriter := &dav.MultiStatusWriter{Writer: writer}
+
+	propstats := make([]dav.Propstat, 0)
+	propMap := matter.FetchPropMap()
+	for _, patch := range patches {
+		propStat := dav.Propstat{Status: http.StatusOK}
+		if patch.Remove {
+
+		} else {
+			for _, prop := range patch.Props {
+				propMap[prop.XMLName.Local] = string(prop.InnerXML)
+
+				propStat.Props = append(propStat.Props, dav.Property{XMLName: xml.Name{Space: prop.XMLName.Space, Local: prop.XMLName.Local}})
+
+			}
+		}
+
+		propstats = append(propstats, propStat)
+
+	}
+	matter.SetPropMap(propMap)
+	// update the matter
+	this.matterDao.Save(matter)
+
+	visitPath := fmt.Sprintf("%s%s", WEBDAV_PREFIX, matter.Path)
+	response := this.makePropstatResponse(visitPath, propstats)
+
+	err1 := multiStatusWriter.Write(response)
+	this.PanicError(err1)
+
+	err2 := multiStatusWriter.Close()
+	this.PanicError(err2)
 
 }
 
@@ -452,12 +501,6 @@ func (this *DavService) HandleLock(writer http.ResponseWriter, request *http.Req
 func (this *DavService) HandleUnlock(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
 
 	panic(result.BadRequest("not support UNLOCK yet."))
-}
-
-//change the file's property
-func (this *DavService) HandleProppatch(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
-
-	panic(result.BadRequest("not support PROPPATCH yet."))
 }
 
 //hanle all the request.

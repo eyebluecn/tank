@@ -6,6 +6,7 @@ import (
 	"github.com/eyebluecn/tank/code/tool/i18n"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
+	jsoniter "github.com/json-iterator/go"
 	"net/http"
 	"regexp"
 	"strings"
@@ -113,4 +114,32 @@ func CheckMatterName(request *http.Request, name string) string {
 		panic(result.BadRequestI18n(request, i18n.MatterNameLengthExceedLimit, len(name), MATTER_NAME_MAX_LENGTH))
 	}
 	return name
+}
+
+//fetch the props
+func (this *Matter) FetchPropMap() map[string]string {
+
+	m := make(map[string]string)
+	json := this.Prop
+	if json == "" {
+		json = EMPTY_JSON_MAP
+	}
+
+	err := jsoniter.ConfigCompatibleWithStandardLibrary.Unmarshal([]byte(json), &m)
+	if err != nil {
+		panic(err)
+	}
+
+	return m
+}
+
+//fetch the props
+func (this *Matter) SetPropMap(propMap map[string]string) {
+
+	b, err := jsoniter.ConfigCompatibleWithStandardLibrary.Marshal(propMap)
+	if err != nil {
+		panic(err)
+	}
+
+	this.Prop = string(b)
 }
