@@ -467,7 +467,7 @@ func testFS(t *testing.T, fs FileSystem) {
 			case "copy__":
 				depth := 0
 				if parts[1] == "d=∞" {
-					depth = infiniteDepth
+					depth = InfiniteDepth
 				}
 				_, opErr = copyFiles(ctx, fs, parts[2], parts[3], parts[0] == "o=T", depth, 0)
 			case "mk-dir":
@@ -913,7 +913,7 @@ func TestCopyMoveProps(t *testing.T) {
 	if err := patch("/src", Proppatch{Props: []Property{p0, p1}}); err != nil {
 		t.Fatalf("patch /src +p0 +p1: %v", err)
 	}
-	if _, err := copyFiles(ctx, fs, "/src", "/tmp", true, infiniteDepth, 0); err != nil {
+	if _, err := copyFiles(ctx, fs, "/src", "/tmp", true, InfiniteDepth, 0); err != nil {
 		t.Fatalf("copyFiles /src /tmp: %v", err)
 	}
 	if _, err := moveFiles(ctx, fs, "/tmp", "/dst", true); err != nil {
@@ -969,7 +969,7 @@ func TestWalkFS(t *testing.T) {
 		"just root",
 		[]string{},
 		"/",
-		infiniteDepth,
+		InfiniteDepth,
 		nil,
 		[]string{
 			"/",
@@ -985,7 +985,7 @@ func TestWalkFS(t *testing.T) {
 			"touch /f",
 		},
 		"/",
-		infiniteDepth,
+		InfiniteDepth,
 		nil,
 		[]string{
 			"/",
@@ -1007,7 +1007,7 @@ func TestWalkFS(t *testing.T) {
 			"touch /f",
 		},
 		"/a",
-		infiniteDepth,
+		InfiniteDepth,
 		nil,
 		[]string{
 			"/a",
@@ -1096,7 +1096,7 @@ func TestWalkFS(t *testing.T) {
 			"touch /a/b/z",
 		},
 		"/",
-		infiniteDepth,
+		InfiniteDepth,
 		func(path string, info os.FileInfo, err error) error {
 			if path == "/a/b/g" {
 				return filepath.SkipDir

@@ -522,7 +522,7 @@ func TestMemPS(t *testing.T) {
 			var propstats []Propstat
 			switch op.op {
 			case "propname":
-				pnames, err := propnames(ctx, fs, ls, op.name)
+				pnames, err := PropNames(ctx, fs, ls, op.name)
 				if err != nil {
 					t.Errorf("%s: got error %v, want nil", desc, err)
 					continue
@@ -534,9 +534,9 @@ func TestMemPS(t *testing.T) {
 				}
 				continue
 			case "allprop":
-				propstats, err = allprop(ctx, fs, ls, op.name, op.pnames)
+				propstats, err = Allprop(ctx, fs, ls, op.name, op.pnames)
 			case "propfind":
-				propstats, err = props(ctx, fs, ls, op.name, op.pnames)
+				propstats, err = Props(ctx, fs, ls, op.name, op.pnames)
 			case "proppatch":
 				propstats, err = patch(ctx, fs, ls, op.name, op.patches)
 			default:
@@ -546,7 +546,7 @@ func TestMemPS(t *testing.T) {
 				t.Errorf("%s: got error %v, want nil", desc, err)
 				continue
 			}
-			// Compare return values from allprop, propfind or proppatch.
+			// Compare return values from Allprop, propfind or proppatch.
 			for _, pst := range propstats {
 				sort.Sort(byPropname(pst.Props))
 			}

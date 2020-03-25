@@ -360,10 +360,10 @@ func (h *Handler) handleCopyMove(w http.ResponseWriter, r *http.Request) (status
 
 		// Section 9.8.3 says that "The COPY method on a collection without a Depth
 		// header must act as if a Depth header with value "infinity" was included".
-		depth := infiniteDepth
+		depth := InfiniteDepth
 		if hdr := r.Header.Get("Depth"); hdr != "" {
-			depth = parseDepth(hdr)
-			if depth != 0 && depth != infiniteDepth {
+			depth = ParseDepth(hdr)
+			if depth != 0 && depth != InfiniteDepth {
 				// Section 9.8.3 says that "A client may submit a Depth header on a
 				// COPY on a collection with a value of "0" or "infinity"."
 				return http.StatusBadRequest, errInvalidDepth
@@ -382,7 +382,7 @@ func (h *Handler) handleCopyMove(w http.ResponseWriter, r *http.Request) (status
 	// a "Depth: infinity" header was used on it. A client must not submit a
 	// Depth header on a MOVE on a collection with any value but "infinity"."
 	if hdr := r.Header.Get("Depth"); hdr != "" {
-		if parseDepth(hdr) != infiniteDepth {
+		if ParseDepth(hdr) != InfiniteDepth {
 			return http.StatusBadRequest, errInvalidDepth
 		}
 	}
@@ -424,10 +424,10 @@ func (h *Handler) handleLock(w http.ResponseWriter, r *http.Request) (retStatus 
 	} else {
 		// Section 9.10.3 says that "If no Depth header is submitted on a LOCK request,
 		// then the request MUST act as if a "Depth:infinity" had been submitted."
-		depth := infiniteDepth
+		depth := InfiniteDepth
 		if hdr := r.Header.Get("Depth"); hdr != "" {
-			depth = parseDepth(hdr)
-			if depth != 0 && depth != infiniteDepth {
+			depth = ParseDepth(hdr)
+			if depth != 0 && depth != InfiniteDepth {
 				// Section 9.10.3 says that "Values other than 0 or infinity must not be
 				// used with the Depth header on a LOCK method".
 				return http.StatusBadRequest, errInvalidDepth
@@ -519,10 +519,10 @@ func (h *Handler) handlePropfind(w http.ResponseWriter, r *http.Request) (status
 		}
 		return http.StatusMethodNotAllowed, err
 	}
-	depth := infiniteDepth
+	depth := InfiniteDepth
 	if hdr := r.Header.Get("Depth"); hdr != "" {
-		depth = parseDepth(hdr)
-		if depth == invalidDepth {
+		depth = ParseDepth(hdr)
+		if depth == InvalidDepth {
 			return http.StatusBadRequest, errInvalidDepth
 		}
 	}
@@ -531,7 +531,7 @@ func (h *Handler) handlePropfind(w http.ResponseWriter, r *http.Request) (status
 		return status, err
 	}
 
-	mw := multistatusWriter{w: w}
+	mw := MultiStatusWriter{Writer: w}
 
 	walkFn := func(reqPath string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -539,7 +539,7 @@ func (h *Handler) handlePropfind(w http.ResponseWriter, r *http.Request) (status
 		}
 		var pstats []Propstat
 		if pf.Propname != nil {
-			pnames, err := propnames(ctx, h.FileSystem, h.LockSystem, reqPath)
+			pnames, err := PropNames(ctx, h.FileSystem, h.LockSystem, reqPath)
 			if err != nil {
 				return err
 			}
@@ -549,9 +549,9 @@ func (h *Handler) handlePropfind(w http.ResponseWriter, r *http.Request) (status
 			}
 			pstats = append(pstats, pstat)
 		} else if pf.Allprop != nil {
-			pstats, err = allprop(ctx, h.FileSystem, h.LockSystem, reqPath, pf.Prop)
+			pstats, err = Allprop(ctx, h.FileSystem, h.LockSystem, reqPath, pf.Prop)
 		} else {
-			pstats, err = props(ctx, h.FileSystem, h.LockSystem, reqPath, pf.Prop)
+			pstats, err = Props(ctx, h.FileSystem, h.LockSystem, reqPath, pf.Prop)
 		}
 		if err != nil {
 			return err
@@ -560,7 +560,7 @@ func (h *Handler) handlePropfind(w http.ResponseWriter, r *http.Request) (status
 		if href != "/" && info.IsDir() {
 			href += "/"
 		}
-		return mw.write(makePropstatResponse(href, pstats))
+		return mw.write(MakePropstatResponse(href, pstats))
 	}
 
 	walkErr := walkFS(ctx, h.FileSystem, depth, reqPath, fi, walkFn)
@@ -601,8 +601,8 @@ func (h *Handler) handleProppatch(w http.ResponseWriter, r *http.Request) (statu
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
-	mw := multistatusWriter{w: w}
-	writeErr := mw.write(makePropstatResponse(r.URL.Path, pstats))
+	mw := MultiStatusWriter{Writer: w}
+	writeErr := mw.write(MakePropstatResponse(r.URL.Path, pstats))
 	closeErr := mw.close()
 	if writeErr != nil {
 		return http.StatusInternalServerError, writeErr
@@ -613,7 +613,7 @@ func (h *Handler) handleProppatch(w http.ResponseWriter, r *http.Request) (statu
 	return 0, nil
 }
 
-func makePropstatResponse(href string, pstats []Propstat) *response {
+func MakePropstatResponse(href string, pstats []Propstat) *response {
 	resp := response{
 		Href:     []string{(&url.URL{Path: href}).EscapedPath()},
 		Propstat: make([]propstat, 0, len(pstats)),
@@ -634,12 +634,12 @@ func makePropstatResponse(href string, pstats []Propstat) *response {
 }
 
 const (
-	infiniteDepth = -1
-	invalidDepth  = -2
+	InfiniteDepth = -1
+	InvalidDepth  = -2
 )
 
-// parseDepth maps the strings "0", "1" and "infinity" to 0, 1 and
-// infiniteDepth. Parsing any other string returns invalidDepth.
+// ParseDepth maps the strings "0", "1" and "infinity" to 0, 1 and
+// InfiniteDepth. Parsing any other string returns InvalidDepth.
 //
 // Different WebDAV methods have further constraints on valid depths:
 //	- PROPFIND has no further restrictions, as per section 9.1.
@@ -647,16 +647,16 @@ const (
 //	- MOVE accepts only "infinity", as per section 9.9.2.
 //	- LOCK accepts only "0" or "infinity", as per section 9.10.3.
 // These constraints are enforced by the handleXxx methods.
-func parseDepth(s string) int {
+func ParseDepth(s string) int {
 	switch s {
 	case "0":
 		return 0
 	case "1":
 		return 1
 	case "infinity":
-		return infiniteDepth
+		return InfiniteDepth
 	}
-	return invalidDepth
+	return InvalidDepth
 }
 
 // http://www.webdav.org/specs/rfc4918.html#status.code.extensions.to.http11

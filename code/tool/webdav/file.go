@@ -697,7 +697,7 @@ func copyFiles(ctx context.Context, fs FileSystem, src, dst string, overwrite bo
 		if err := fs.Mkdir(ctx, dst, srcPerm); err != nil {
 			return http.StatusForbidden, err
 		}
-		if depth == infiniteDepth {
+		if depth == InfiniteDepth {
 			children, err := srcFile.Readdir(-1)
 			if err != nil {
 				return http.StatusForbidden, err
@@ -745,7 +745,7 @@ func copyFiles(ctx context.Context, fs FileSystem, src, dst string, overwrite bo
 
 // walkFS traverses filesystem fs starting at name up to depth levels.
 //
-// Allowed values for depth are 0, 1 or infiniteDepth. For each visited node,
+// Allowed values for depth are 0, 1 or InfiniteDepth. For each visited node,
 // walkFS calls walkFn. If a visited file system node is a directory and
 // walkFn returns filepath.SkipDir, walkFS will skip traversal of this node.
 func walkFS(ctx context.Context, fs FileSystem, depth int, name string, info os.FileInfo, walkFn filepath.WalkFunc) error {
