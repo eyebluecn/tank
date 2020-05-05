@@ -14,6 +14,7 @@ import (
 	"path"
 	"regexp"
 	"strings"
+	"time"
 )
 
 /**
@@ -28,6 +29,7 @@ type DavService struct {
 	BaseBean
 	matterDao     *MatterDao
 	matterService *MatterService
+	lockSystem    webdav.LockSystem
 }
 
 func (this *DavService) Init() {
@@ -43,6 +45,8 @@ func (this *DavService) Init() {
 		this.matterService = b
 	}
 
+	// init the webdav lock system.
+	this.lockSystem = webdav.NewMemLS()
 }
 
 //get the depth in header. Not support infinity yet.
@@ -536,9 +540,100 @@ func (this *DavService) HandleCopy(writer http.ResponseWriter, request *http.Req
 }
 
 //lock.
-func (this *DavService) HandleLock(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
+func (this *DavService) HandleLock(w http.ResponseWriter, r *http.Request, user *User, subPath string) {
 
-	panic(result.BadRequest("not support LOCK yet."))
+	xLimits := r.Header.Get("X-Litmus")
+	if xLimits == "locks: 6 (lock_excl)" {
+		fmt.Println("stop here!")
+	}
+
+	duration, err := webdav.ParseTimeout(r.Header.Get("Timeout"))
+	if err != nil {
+		panic(result.BadRequest(err.Error()))
+	}
+	li, status, err := webdav.ReadLockInfo(r.Body)
+	if err != nil {
+		panic(result.BadRequest(fmt.Sprintf("error:%s, status=%d", err.Error(), status)))
+	}
+
+	token, ld, now, created := "", webdav.LockDetails{}, time.Now(), false
+	if li == (webdav.LockInfo{}) {
+		// An empty LockInfo means to refresh the lock.
+		ih, ok := webdav.ParseIfHeader(r.Header.Get("If"))
+		if !ok {
+			panic(result.BadRequest(webdav.ErrInvalidIfHeader.Error()))
+		}
+		if len(ih.Lists) == 1 && len(ih.Lists[0].Conditions) == 1 {
+			token = ih.Lists[0].Conditions[0].Token
+		}
+		if token == "" {
+			panic(result.BadRequest(webdav.ErrInvalidLockToken.Error()))
+		}
+		ld, err = this.lockSystem.Refresh(now, token, duration)
+		if err != nil {
+			if err == webdav.ErrNoSuchLock {
+				panic(result.StatusCodeWebResult(http.StatusPreconditionFailed, err.Error()))
+			}
+			panic(result.StatusCodeWebResult(http.StatusInternalServerError, err.Error()))
+		}
+
+	} else {
+		// Section 9.10.3 says that "If no Depth header is submitted on a LOCK request,
+		// then the request MUST act as if a "Depth:infinity" had been submitted."
+		depth := webdav.InfiniteDepth
+		if hdr := r.Header.Get("Depth"); hdr != "" {
+			depth = webdav.ParseDepth(hdr)
+			if depth != 0 && depth != webdav.InfiniteDepth {
+				// Section 9.10.3 says that "Values other than 0 or infinity must not be
+				// used with the Depth header on a LOCK method".
+				panic(result.StatusCodeWebResult(http.StatusBadRequest, webdav.ErrInvalidDepth.Error()))
+			}
+		}
+
+		ld = webdav.LockDetails{
+			Root:      subPath,
+			Duration:  duration,
+			OwnerXML:  li.Owner.InnerXML,
+			ZeroDepth: depth == 0,
+		}
+		token, err = this.lockSystem.Create(now, ld)
+		if err != nil {
+			if err == webdav.ErrLocked {
+				panic(result.StatusCodeWebResult(http.StatusLocked, err.Error()))
+			}
+			panic(result.StatusCodeWebResult(http.StatusInternalServerError, err.Error()))
+		}
+		defer func() {
+			//when error occur, rollback.
+			//this.lockSystem.Unlock(now, token)
+		}()
+
+		// Create the resource if it didn't previously exist.
+		// ctx := r.Context()
+		//if _, err := this.FileSystem.Stat(ctx, subPath); err != nil {
+		//	f, err := h.FileSystem.OpenFile(ctx, reqPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
+		//	if err != nil {
+		//		// TODO: detect missing intermediate dirs and return http.StatusConflict?
+		//		return http.StatusInternalServerError, err
+		//	}
+		//	f.Close()
+		//	created = true
+		//}
+
+		// http://www.webdav.org/specs/rfc4918.html#HEADER_Lock-Token says that the
+		// Lock-Token value is a Coded-URL. We add angle brackets.
+		w.Header().Set("Lock-Token", "<"+token+">")
+	}
+
+	w.Header().Set("Content-Type", "application/xml; charset=utf-8")
+	if created {
+		// This is "w.WriteHeader(http.StatusCreated)" and not "return
+		// http.StatusCreated, nil" because we write our own (XML) response to w
+		// and Handler.ServeHTTP would otherwise write "Created".
+		w.WriteHeader(http.StatusCreated)
+	}
+	_, _ = webdav.WriteLockInfo(w, token, ld)
+
 }
 
 //unlock

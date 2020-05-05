@@ -97,7 +97,7 @@ func lockTestZeroDepth(name string) bool {
 
 func TestMemLSCanCreate(t *testing.T) {
 	now := time.Unix(0, 0)
-	m := NewMemLS().(*memLS)
+	m := NewMemLS().(*MemLS)
 
 	for _, name := range lockTestNames {
 		_, err := m.Create(now, LockDetails{
@@ -157,7 +157,7 @@ func TestMemLSCanCreate(t *testing.T) {
 
 func TestMemLSLookup(t *testing.T) {
 	now := time.Unix(0, 0)
-	m := NewMemLS().(*memLS)
+	m := NewMemLS().(*MemLS)
 
 	badToken := m.nextToken()
 	t.Logf("badToken=%q", badToken)
@@ -206,7 +206,7 @@ func TestMemLSLookup(t *testing.T) {
 
 func TestMemLSConfirm(t *testing.T) {
 	now := time.Unix(0, 0)
-	m := NewMemLS().(*memLS)
+	m := NewMemLS().(*MemLS)
 	alice, err := m.Create(now, LockDetails{
 		Root:      "/alice",
 		Duration:  infiniteTimeout,
@@ -302,7 +302,7 @@ func TestMemLSConfirm(t *testing.T) {
 
 func TestMemLSNonCanonicalRoot(t *testing.T) {
 	now := time.Unix(0, 0)
-	m := NewMemLS().(*memLS)
+	m := NewMemLS().(*MemLS)
 	token, err := m.Create(now, LockDetails{
 		Root:     "/foo/./bar//",
 		Duration: 1 * time.Second,
@@ -322,7 +322,7 @@ func TestMemLSNonCanonicalRoot(t *testing.T) {
 }
 
 func TestMemLSExpiry(t *testing.T) {
-	m := NewMemLS().(*memLS)
+	m := NewMemLS().(*MemLS)
 	testCases := []string{
 		"setNow 0",
 		"create /a.5",
@@ -451,7 +451,7 @@ func TestMemLSExpiry(t *testing.T) {
 
 func TestMemLS(t *testing.T) {
 	now := time.Unix(0, 0)
-	m := NewMemLS().(*memLS)
+	m := NewMemLS().(*MemLS)
 	rng := rand.New(rand.NewSource(0))
 	tokens := map[string]string{}
 	nConfirm, nCreate, nRefresh, nUnlock := 0, 0, 0, 0
@@ -535,7 +535,7 @@ func TestMemLS(t *testing.T) {
 	}
 }
 
-func (m *memLS) consistent() error {
+func (m *MemLS) consistent() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -653,11 +653,11 @@ func TestParseTimeout(t *testing.T) {
 	}, {
 		"Infinitesimal",
 		0,
-		errInvalidTimeout,
+		ErrInvalidTimeout,
 	}, {
 		"infinite",
 		0,
-		errInvalidTimeout,
+		ErrInvalidTimeout,
 	}, {
 		"Second-0",
 		0 * time.Second,
@@ -677,31 +677,31 @@ func TestParseTimeout(t *testing.T) {
 	}, {
 		"junk",
 		0,
-		errInvalidTimeout,
+		ErrInvalidTimeout,
 	}, {
 		"Second-",
 		0,
-		errInvalidTimeout,
+		ErrInvalidTimeout,
 	}, {
 		"Second--1",
 		0,
-		errInvalidTimeout,
+		ErrInvalidTimeout,
 	}, {
 		"Second--123",
 		0,
-		errInvalidTimeout,
+		ErrInvalidTimeout,
 	}, {
 		"Second-+123",
 		0,
-		errInvalidTimeout,
+		ErrInvalidTimeout,
 	}, {
 		"Second-0x123",
 		0,
-		errInvalidTimeout,
+		ErrInvalidTimeout,
 	}, {
 		"second-123",
 		0,
-		errInvalidTimeout,
+		ErrInvalidTimeout,
 	}, {
 		"Second-4294967295",
 		4294967295 * time.Second,
@@ -711,7 +711,7 @@ func TestParseTimeout(t *testing.T) {
 		// must not be greater than 2^32-1."
 		"Second-4294967296",
 		0,
-		errInvalidTimeout,
+		ErrInvalidTimeout,
 	}, {
 		// This test case comes from section 9.10.9 of the spec. It says,
 		//
@@ -727,7 +727,7 @@ func TestParseTimeout(t *testing.T) {
 	}}
 
 	for _, tc := range testCases {
-		got, gotErr := parseTimeout(tc.s)
+		got, gotErr := ParseTimeout(tc.s)
 		if got != tc.want || gotErr != tc.wantErr {
 			t.Errorf("parsing %q:\ngot  %v, %v\nwant %v, %v", tc.s, got, gotErr, tc.want, tc.wantErr)
 		}

@@ -36,15 +36,15 @@ func (h *Handler) stripPrefix(p string) (string, int, error) {
 	if r := strings.TrimPrefix(p, h.Prefix); len(r) < len(p) {
 		return r, http.StatusOK, nil
 	}
-	return p, http.StatusNotFound, errPrefixMismatch
+	return p, http.StatusNotFound, ErrPrefixMismatch
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	status, err := http.StatusBadRequest, errUnsupportedMethod
+	status, err := http.StatusBadRequest, ErrUnsupportedMethod
 	if h.FileSystem == nil {
-		status, err = http.StatusInternalServerError, errNoFileSystem
+		status, err = http.StatusInternalServerError, ErrNoFileSystem
 	} else if h.LockSystem == nil {
-		status, err = http.StatusInternalServerError, errNoLockSystem
+		status, err = http.StatusInternalServerError, ErrNoLockSystem
 	} else {
 		switch r.Method {
 		case "OPTIONS":
@@ -131,13 +131,13 @@ func (h *Handler) confirmLocks(r *http.Request, src, dst string) (release func()
 		}, 0, nil
 	}
 
-	ih, ok := parseIfHeader(hdr)
+	ih, ok := ParseIfHeader(hdr)
 	if !ok {
-		return nil, http.StatusBadRequest, errInvalidIfHeader
+		return nil, http.StatusBadRequest, ErrInvalidIfHeader
 	}
-	// ih is a disjunction (OR) of ifLists, so any ifList will do.
-	for _, l := range ih.lists {
-		lsrc := l.resourceTag
+	// ih is a disjunction (OR) of ifLists, so any IfList will do.
+	for _, l := range ih.Lists {
+		lsrc := l.ResourceTag
 		if lsrc == "" {
 			lsrc = src
 		} else {
@@ -153,7 +153,7 @@ func (h *Handler) confirmLocks(r *http.Request, src, dst string) (release func()
 				return nil, status, err
 			}
 		}
-		release, err = h.LockSystem.Confirm(time.Now(), lsrc, dst, l.conditions...)
+		release, err = h.LockSystem.Confirm(time.Now(), lsrc, dst, l.Conditions...)
 		if err == ErrConfirmationFailed {
 			continue
 		}
@@ -317,14 +317,14 @@ func (h *Handler) handleMkcol(w http.ResponseWriter, r *http.Request) (status in
 func (h *Handler) handleCopyMove(w http.ResponseWriter, r *http.Request) (status int, err error) {
 	hdr := r.Header.Get("Destination")
 	if hdr == "" {
-		return http.StatusBadRequest, errInvalidDestination
+		return http.StatusBadRequest, ErrInvalidDestination
 	}
 	u, err := url.Parse(hdr)
 	if err != nil {
-		return http.StatusBadRequest, errInvalidDestination
+		return http.StatusBadRequest, ErrInvalidDestination
 	}
 	if u.Host != "" && u.Host != r.Host {
-		return http.StatusBadGateway, errInvalidDestination
+		return http.StatusBadGateway, ErrInvalidDestination
 	}
 
 	src, status, err := h.stripPrefix(r.URL.Path)
@@ -338,10 +338,10 @@ func (h *Handler) handleCopyMove(w http.ResponseWriter, r *http.Request) (status
 	}
 
 	if dst == "" {
-		return http.StatusBadGateway, errInvalidDestination
+		return http.StatusBadGateway, ErrInvalidDestination
 	}
 	if dst == src {
-		return http.StatusForbidden, errDestinationEqualsSource
+		return http.StatusForbidden, ErrDestinationEqualsSource
 	}
 
 	ctx := r.Context()
@@ -366,7 +366,7 @@ func (h *Handler) handleCopyMove(w http.ResponseWriter, r *http.Request) (status
 			if depth != 0 && depth != InfiniteDepth {
 				// Section 9.8.3 says that "A client may submit a Depth header on a
 				// COPY on a collection with a value of "0" or "infinity"."
-				return http.StatusBadRequest, errInvalidDepth
+				return http.StatusBadRequest, ErrInvalidDepth
 			}
 		}
 		return copyFiles(ctx, h.FileSystem, src, dst, r.Header.Get("Overwrite") != "F", depth, 0)
@@ -383,35 +383,35 @@ func (h *Handler) handleCopyMove(w http.ResponseWriter, r *http.Request) (status
 	// Depth header on a MOVE on a collection with any value but "infinity"."
 	if hdr := r.Header.Get("Depth"); hdr != "" {
 		if ParseDepth(hdr) != InfiniteDepth {
-			return http.StatusBadRequest, errInvalidDepth
+			return http.StatusBadRequest, ErrInvalidDepth
 		}
 	}
 	return moveFiles(ctx, h.FileSystem, src, dst, r.Header.Get("Overwrite") == "T")
 }
 
 func (h *Handler) handleLock(w http.ResponseWriter, r *http.Request) (retStatus int, retErr error) {
-	duration, err := parseTimeout(r.Header.Get("Timeout"))
+	duration, err := ParseTimeout(r.Header.Get("Timeout"))
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
-	li, status, err := readLockInfo(r.Body)
+	li, status, err := ReadLockInfo(r.Body)
 	if err != nil {
 		return status, err
 	}
 
 	ctx := r.Context()
 	token, ld, now, created := "", LockDetails{}, time.Now(), false
-	if li == (lockInfo{}) {
-		// An empty lockInfo means to refresh the lock.
-		ih, ok := parseIfHeader(r.Header.Get("If"))
+	if li == (LockInfo{}) {
+		// An empty LockInfo means to refresh the lock.
+		ih, ok := ParseIfHeader(r.Header.Get("If"))
 		if !ok {
-			return http.StatusBadRequest, errInvalidIfHeader
+			return http.StatusBadRequest, ErrInvalidIfHeader
 		}
-		if len(ih.lists) == 1 && len(ih.lists[0].conditions) == 1 {
-			token = ih.lists[0].conditions[0].Token
+		if len(ih.Lists) == 1 && len(ih.Lists[0].Conditions) == 1 {
+			token = ih.Lists[0].Conditions[0].Token
 		}
 		if token == "" {
-			return http.StatusBadRequest, errInvalidLockToken
+			return http.StatusBadRequest, ErrInvalidLockToken
 		}
 		ld, err = h.LockSystem.Refresh(now, token, duration)
 		if err != nil {
@@ -430,7 +430,7 @@ func (h *Handler) handleLock(w http.ResponseWriter, r *http.Request) (retStatus 
 			if depth != 0 && depth != InfiniteDepth {
 				// Section 9.10.3 says that "Values other than 0 or infinity must not be
 				// used with the Depth header on a LOCK method".
-				return http.StatusBadRequest, errInvalidDepth
+				return http.StatusBadRequest, ErrInvalidDepth
 			}
 		}
 		reqPath, status, err := h.stripPrefix(r.URL.Path)
@@ -479,7 +479,7 @@ func (h *Handler) handleLock(w http.ResponseWriter, r *http.Request) (retStatus 
 		// and Handler.ServeHTTP would otherwise write "Created".
 		w.WriteHeader(http.StatusCreated)
 	}
-	writeLockInfo(w, token, ld)
+	_, _ = WriteLockInfo(w, token, ld)
 	return 0, nil
 }
 
@@ -488,7 +488,7 @@ func (h *Handler) handleUnlock(w http.ResponseWriter, r *http.Request) (status i
 	// Lock-Token value is a Coded-URL. We strip its angle brackets.
 	t := r.Header.Get("Lock-Token")
 	if len(t) < 2 || t[0] != '<' || t[len(t)-1] != '>' {
-		return http.StatusBadRequest, errInvalidLockToken
+		return http.StatusBadRequest, ErrInvalidLockToken
 	}
 	t = t[1 : len(t)-1]
 
@@ -523,7 +523,7 @@ func (h *Handler) handlePropfind(w http.ResponseWriter, r *http.Request) (status
 	if hdr := r.Header.Get("Depth"); hdr != "" {
 		depth = ParseDepth(hdr)
 		if depth == InvalidDepth {
-			return http.StatusBadRequest, errInvalidDepth
+			return http.StatusBadRequest, ErrInvalidDepth
 		}
 	}
 	pf, status, err := ReadPropfind(r.Body)
@@ -685,22 +685,22 @@ func StatusText(code int) string {
 }
 
 var (
-	errDestinationEqualsSource = errors.New("webdav: destination equals source")
-	errDirectoryNotEmpty       = errors.New("webdav: directory not empty")
-	errInvalidDepth            = errors.New("webdav: invalid depth")
-	errInvalidDestination      = errors.New("webdav: invalid destination")
-	errInvalidIfHeader         = errors.New("webdav: invalid If header")
-	errInvalidLockInfo         = errors.New("webdav: invalid lock info")
-	errInvalidLockToken        = errors.New("webdav: invalid lock token")
-	errInvalidPropfind         = errors.New("webdav: invalid propfind")
-	errInvalidProppatch        = errors.New("webdav: invalid proppatch")
-	errInvalidResponse         = errors.New("webdav: invalid response")
-	errInvalidTimeout          = errors.New("webdav: invalid timeout")
-	errNoFileSystem            = errors.New("webdav: no file system")
-	errNoLockSystem            = errors.New("webdav: no lock system")
-	errNotADirectory           = errors.New("webdav: not a directory")
-	errPrefixMismatch          = errors.New("webdav: prefix mismatch")
-	errRecursionTooDeep        = errors.New("webdav: recursion too deep")
-	errUnsupportedLockInfo     = errors.New("webdav: unsupported lock info")
-	errUnsupportedMethod       = errors.New("webdav: unsupported method")
+	ErrDestinationEqualsSource = errors.New("webdav: destination equals source")
+	ErrDirectoryNotEmpty       = errors.New("webdav: directory not empty")
+	ErrInvalidDepth            = errors.New("webdav: invalid depth")
+	ErrInvalidDestination      = errors.New("webdav: invalid destination")
+	ErrInvalidIfHeader         = errors.New("webdav: invalid If header")
+	ErrInvalidLockInfo         = errors.New("webdav: invalid lock info")
+	ErrInvalidLockToken        = errors.New("webdav: invalid lock token")
+	ErrInvalidPropfind         = errors.New("webdav: invalid propfind")
+	ErrInvalidProppatch        = errors.New("webdav: invalid proppatch")
+	ErrInvalidResponse         = errors.New("webdav: invalid response")
+	ErrInvalidTimeout          = errors.New("webdav: invalid timeout")
+	ErrNoFileSystem            = errors.New("webdav: no file system")
+	ErrNoLockSystem            = errors.New("webdav: no lock system")
+	ErrNotADirectory           = errors.New("webdav: not a directory")
+	ErrPrefixMismatch          = errors.New("webdav: prefix mismatch")
+	ErrRecursionTooDeep        = errors.New("webdav: recursion too deep")
+	ErrUnsupportedLockInfo     = errors.New("webdav: unsupported lock info")
+	ErrUnsupportedMethod       = errors.New("webdav: unsupported method")
 )

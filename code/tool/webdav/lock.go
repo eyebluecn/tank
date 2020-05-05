@@ -37,7 +37,7 @@ type Condition struct {
 // of host operating system convention.
 type LockSystem interface {
 	// Confirm confirms that the caller can claim all of the locks specified by
-	// the given conditions, and that holding the union of all of those locks
+	// the given Conditions, and that holding the union of all of those locks
 	// gives exclusive access to all of the named resources. Up to two resources
 	// can be named. Empty names are ignored.
 	//
@@ -113,14 +113,14 @@ type LockDetails struct {
 
 // NewMemLS returns a new in-memory LockSystem.
 func NewMemLS() LockSystem {
-	return &memLS{
+	return &MemLS{
 		byName:  make(map[string]*memLSNode),
 		byToken: make(map[string]*memLSNode),
 		gen:     uint64(time.Now().Unix()),
 	}
 }
 
-type memLS struct {
+type MemLS struct {
 	mu      sync.Mutex
 	byName  map[string]*memLSNode
 	byToken map[string]*memLSNode
@@ -130,12 +130,12 @@ type memLS struct {
 	byExpiry byExpiry
 }
 
-func (m *memLS) nextToken() string {
+func (m *MemLS) nextToken() string {
 	m.gen++
 	return strconv.FormatUint(m.gen, 10)
 }
 
-func (m *memLS) collectExpiredNodes(now time.Time) {
+func (m *MemLS) collectExpiredNodes(now time.Time) {
 	for len(m.byExpiry) > 0 {
 		if now.Before(m.byExpiry[0].expiry) {
 			break
@@ -144,7 +144,7 @@ func (m *memLS) collectExpiredNodes(now time.Time) {
 	}
 }
 
-func (m *memLS) Confirm(now time.Time, name0, name1 string, conditions ...Condition) (func(), error) {
+func (m *MemLS) Confirm(now time.Time, name0, name1 string, conditions ...Condition) (func(), error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.collectExpiredNodes(now)
@@ -185,11 +185,11 @@ func (m *memLS) Confirm(now time.Time, name0, name1 string, conditions ...Condit
 }
 
 // lookup returns the node n that locks the named resource, provided that n
-// matches at least one of the given conditions and that lock isn't held by
+// matches at least one of the given Conditions and that lock isn't held by
 // another party. Otherwise, it returns nil.
 //
 // n may be a parent of the named resource, if n is an infinite depth lock.
-func (m *memLS) lookup(name string, conditions ...Condition) (n *memLSNode) {
+func (m *MemLS) lookup(name string, conditions ...Condition) (n *memLSNode) {
 	// TODO: support Condition.Not and Condition.ETag.
 	for _, c := range conditions {
 		n = m.byToken[c.Token]
@@ -209,9 +209,9 @@ func (m *memLS) lookup(name string, conditions ...Condition) (n *memLSNode) {
 	return nil
 }
 
-func (m *memLS) hold(n *memLSNode) {
+func (m *MemLS) hold(n *memLSNode) {
 	if n.held {
-		panic("webdav: memLS inconsistent held state")
+		panic("webdav: MemLS inconsistent held state")
 	}
 	n.held = true
 	if n.details.Duration >= 0 && n.byExpiryIndex >= 0 {
@@ -219,9 +219,9 @@ func (m *memLS) hold(n *memLSNode) {
 	}
 }
 
-func (m *memLS) unhold(n *memLSNode) {
+func (m *MemLS) unhold(n *memLSNode) {
 	if !n.held {
-		panic("webdav: memLS inconsistent held state")
+		panic("webdav: MemLS inconsistent held state")
 	}
 	n.held = false
 	if n.details.Duration >= 0 {
@@ -229,7 +229,7 @@ func (m *memLS) unhold(n *memLSNode) {
 	}
 }
 
-func (m *memLS) Create(now time.Time, details LockDetails) (string, error) {
+func (m *MemLS) Create(now time.Time, details LockDetails) (string, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.collectExpiredNodes(now)
@@ -249,7 +249,7 @@ func (m *memLS) Create(now time.Time, details LockDetails) (string, error) {
 	return n.token, nil
 }
 
-func (m *memLS) Refresh(now time.Time, token string, duration time.Duration) (LockDetails, error) {
+func (m *MemLS) Refresh(now time.Time, token string, duration time.Duration) (LockDetails, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.collectExpiredNodes(now)
@@ -272,7 +272,7 @@ func (m *memLS) Refresh(now time.Time, token string, duration time.Duration) (Lo
 	return n.details, nil
 }
 
-func (m *memLS) Unlock(now time.Time, token string) error {
+func (m *MemLS) Unlock(now time.Time, token string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.collectExpiredNodes(now)
@@ -288,7 +288,7 @@ func (m *memLS) Unlock(now time.Time, token string) error {
 	return nil
 }
 
-func (m *memLS) canCreate(name string, zeroDepth bool) bool {
+func (m *MemLS) canCreate(name string, zeroDepth bool) bool {
 	return walkToRoot(name, func(name0 string, first bool) bool {
 		n := m.byName[name0]
 		if n == nil {
@@ -312,7 +312,7 @@ func (m *memLS) canCreate(name string, zeroDepth bool) bool {
 	})
 }
 
-func (m *memLS) create(name string) (ret *memLSNode) {
+func (m *MemLS) create(name string) (ret *memLSNode) {
 	walkToRoot(name, func(name0 string, first bool) bool {
 		n := m.byName[name0]
 		if n == nil {
@@ -333,7 +333,7 @@ func (m *memLS) create(name string) (ret *memLSNode) {
 	return ret
 }
 
-func (m *memLS) remove(n *memLSNode) {
+func (m *MemLS) remove(n *memLSNode) {
 	delete(m.byToken, n.token)
 	n.token = ""
 	walkToRoot(n.details.Root, func(name0 string, first bool) bool {
@@ -376,7 +376,7 @@ type memLSNode struct {
 	refCount int
 	// expiry is when this node's lock expires.
 	expiry time.Time
-	// byExpiryIndex is the index of this node in memLS.byExpiry. It is -1
+	// byExpiryIndex is the index of this node in MemLS.byExpiry. It is -1
 	// if this node does not expire, or has expired.
 	byExpiryIndex int
 	// held is whether this node's lock is actively held by a Confirm call.
@@ -416,9 +416,9 @@ func (b *byExpiry) Pop() interface{} {
 
 const infiniteTimeout = -1
 
-// parseTimeout parses the Timeout HTTP header, as per section 10.7. If s is
+// ParseTimeout parses the Timeout HTTP header, as per section 10.7. If s is
 // empty, an infiniteTimeout is returned.
-func parseTimeout(s string) (time.Duration, error) {
+func ParseTimeout(s string) (time.Duration, error) {
 	if s == "" {
 		return infiniteTimeout, nil
 	}
@@ -431,15 +431,15 @@ func parseTimeout(s string) (time.Duration, error) {
 	}
 	const pre = "Second-"
 	if !strings.HasPrefix(s, pre) {
-		return 0, errInvalidTimeout
+		return 0, ErrInvalidTimeout
 	}
 	s = s[len(pre):]
 	if s == "" || s[0] < '0' || '9' < s[0] {
-		return 0, errInvalidTimeout
+		return 0, ErrInvalidTimeout
 	}
 	n, err := strconv.ParseInt(s, 10, 64)
 	if err != nil || 1<<32-1 < n {
-		return 0, errInvalidTimeout
+		return 0, ErrInvalidTimeout
 	}
 	return time.Duration(n) * time.Second, nil
 }

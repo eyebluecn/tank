@@ -11,39 +11,39 @@ import (
 	"strings"
 )
 
-// ifHeader is a disjunction (OR) of ifLists.
-type ifHeader struct {
-	lists []ifList
+// IfHeader is a disjunction (OR) of ifLists.
+type IfHeader struct {
+	Lists []IfList
 }
 
-// ifList is a conjunction (AND) of Conditions, and an optional resource tag.
-type ifList struct {
-	resourceTag string
-	conditions  []Condition
+// IfList is a conjunction (AND) of Conditions, and an optional resource tag.
+type IfList struct {
+	ResourceTag string
+	Conditions  []Condition
 }
 
-// parseIfHeader parses the "If: foo bar" HTTP header. The httpHeader string
+// ParseIfHeader parses the "If: foo bar" HTTP header. The httpHeader string
 // should omit the "If:" prefix and have any "\r\n"s collapsed to a " ", as is
 // returned by req.Header.Get("If") for a http.Request req.
-func parseIfHeader(httpHeader string) (h ifHeader, ok bool) {
+func ParseIfHeader(httpHeader string) (h IfHeader, ok bool) {
 	s := strings.TrimSpace(httpHeader)
 	switch tokenType, _, _ := lex(s); tokenType {
 	case '(':
-		return parseNoTagLists(s)
-	case angleTokenType:
-		return parseTaggedLists(s)
+		return ParseNoTagLists(s)
+	case AngleTokenType:
+		return ParseTaggedLists(s)
 	default:
-		return ifHeader{}, false
+		return IfHeader{}, false
 	}
 }
 
-func parseNoTagLists(s string) (h ifHeader, ok bool) {
+func ParseNoTagLists(s string) (h IfHeader, ok bool) {
 	for {
-		l, remaining, ok := parseList(s)
+		l, remaining, ok := ParseList(s)
 		if !ok {
-			return ifHeader{}, false
+			return IfHeader{}, false
 		}
-		h.lists = append(h.lists, l)
+		h.Lists = append(h.Lists, l)
 		if remaining == "" {
 			return h, true
 		}
@@ -51,67 +51,67 @@ func parseNoTagLists(s string) (h ifHeader, ok bool) {
 	}
 }
 
-func parseTaggedLists(s string) (h ifHeader, ok bool) {
+func ParseTaggedLists(s string) (h IfHeader, ok bool) {
 	resourceTag, n := "", 0
 	for first := true; ; first = false {
 		tokenType, tokenStr, remaining := lex(s)
 		switch tokenType {
-		case angleTokenType:
+		case AngleTokenType:
 			if !first && n == 0 {
-				return ifHeader{}, false
+				return IfHeader{}, false
 			}
 			resourceTag, n = tokenStr, 0
 			s = remaining
 		case '(':
 			n++
-			l, remaining, ok := parseList(s)
+			l, remaining, ok := ParseList(s)
 			if !ok {
-				return ifHeader{}, false
+				return IfHeader{}, false
 			}
-			l.resourceTag = resourceTag
-			h.lists = append(h.lists, l)
+			l.ResourceTag = resourceTag
+			h.Lists = append(h.Lists, l)
 			if remaining == "" {
 				return h, true
 			}
 			s = remaining
 		default:
-			return ifHeader{}, false
+			return IfHeader{}, false
 		}
 	}
 }
 
-func parseList(s string) (l ifList, remaining string, ok bool) {
+func ParseList(s string) (l IfList, remaining string, ok bool) {
 	tokenType, _, s := lex(s)
 	if tokenType != '(' {
-		return ifList{}, "", false
+		return IfList{}, "", false
 	}
 	for {
 		tokenType, _, remaining = lex(s)
 		if tokenType == ')' {
-			if len(l.conditions) == 0 {
-				return ifList{}, "", false
+			if len(l.Conditions) == 0 {
+				return IfList{}, "", false
 			}
 			return l, remaining, true
 		}
-		c, remaining, ok := parseCondition(s)
+		c, remaining, ok := ParseCondition(s)
 		if !ok {
-			return ifList{}, "", false
+			return IfList{}, "", false
 		}
-		l.conditions = append(l.conditions, c)
+		l.Conditions = append(l.Conditions, c)
 		s = remaining
 	}
 }
 
-func parseCondition(s string) (c Condition, remaining string, ok bool) {
+func ParseCondition(s string) (c Condition, remaining string, ok bool) {
 	tokenType, tokenStr, s := lex(s)
-	if tokenType == notTokenType {
+	if tokenType == NotTokenType {
 		c.Not = true
 		tokenType, tokenStr, s = lex(s)
 	}
 	switch tokenType {
-	case strTokenType, angleTokenType:
+	case StrTokenType, AngleTokenType:
 		c.Token = tokenStr
-	case squareTokenType:
+	case SquareTokenType:
 		c.ETag = tokenStr
 	default:
 		return Condition{}, "", false
@@ -122,12 +122,12 @@ func parseCondition(s string) (c Condition, remaining string, ok bool) {
 // Single-rune tokens like '(' or ')' have a token type equal to their rune.
 // All other tokens have a negative token type.
 const (
-	errTokenType    = rune(-1)
-	eofTokenType    = rune(-2)
-	strTokenType    = rune(-3)
-	notTokenType    = rune(-4)
-	angleTokenType  = rune(-5)
-	squareTokenType = rune(-6)
+	ErrTokenType    = rune(-1)
+	EofTokenType    = rune(-2)
+	StrTokenType    = rune(-3)
+	NotTokenType    = rune(-4)
+	AngleTokenType  = rune(-5)
+	SquareTokenType = rune(-6)
 )
 
 func lex(s string) (tokenType rune, tokenStr string, remaining string) {
@@ -138,7 +138,7 @@ func lex(s string) (tokenType rune, tokenStr string, remaining string) {
 		s = s[1:]
 	}
 	if len(s) == 0 {
-		return eofTokenType, "", ""
+		return EofTokenType, "", ""
 	}
 	i := 0
 loop:
@@ -152,22 +152,22 @@ loop:
 	if i != 0 {
 		tokenStr, remaining = s[:i], s[i:]
 		if tokenStr == "Not" {
-			return notTokenType, "", remaining
+			return NotTokenType, "", remaining
 		}
-		return strTokenType, tokenStr, remaining
+		return StrTokenType, tokenStr, remaining
 	}
 
 	j := 0
 	switch s[0] {
 	case '<':
-		j, tokenType = strings.IndexByte(s, '>'), angleTokenType
+		j, tokenType = strings.IndexByte(s, '>'), AngleTokenType
 	case '[':
-		j, tokenType = strings.IndexByte(s, ']'), squareTokenType
+		j, tokenType = strings.IndexByte(s, ']'), SquareTokenType
 	default:
 		return rune(s[0]), "", s[1:]
 	}
 	if j < 0 {
-		return errTokenType, "", ""
+		return ErrTokenType, "", ""
 	}
 	return tokenType, s[1:j], s[j+1:]
 }

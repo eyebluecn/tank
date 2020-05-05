@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/eyebluecn/tank/code/tool/i18n"
 	"net/http"
+	"strconv"
 )
 
 type WebResult struct {
@@ -73,7 +74,13 @@ func FetchHttpStatus(code string) int {
 	} else if code == SERVER.Code {
 		return SERVER.HttpStatus
 	} else {
-		return UNKNOWN.HttpStatus
+		//if this is an int. regard it as statusCode
+		statusCode, err := strconv.Atoi(code)
+		if err != nil {
+			return UNKNOWN.HttpStatus
+		} else {
+			return statusCode
+		}
 	}
 }
 
@@ -99,6 +106,18 @@ func CustomWebResult(codeWrapper *CodeWrapper, description string) *WebResult {
 	}
 	wr := &WebResult{
 		Code: codeWrapper.Code,
+		Msg:  description,
+	}
+	return wr
+}
+
+//use standard http status code.
+func StatusCodeWebResult(statusCode int, description string) *WebResult {
+	if description == "" {
+		description = http.StatusText(statusCode)
+	}
+	wr := &WebResult{
+		Code: fmt.Sprintf("%d", statusCode),
 		Msg:  description,
 	}
 	return wr

@@ -25,12 +25,12 @@ func TestReadLockInfo(t *testing.T) {
 	testCases := []struct {
 		desc       string
 		input      string
-		wantLI     lockInfo
+		wantLI     LockInfo
 		wantStatus int
 	}{{
 		"bad: junk",
 		"xxx",
-		lockInfo{},
+		LockInfo{},
 		http.StatusBadRequest,
 	}, {
 		"bad: invalid owner XML",
@@ -42,7 +42,7 @@ func TestReadLockInfo(t *testing.T) {
 			"    <D:href>   no end tag   \n" +
 			"  </D:owner>\n" +
 			"</D:lockinfo>",
-		lockInfo{},
+		LockInfo{},
 		http.StatusBadRequest,
 	}, {
 		"bad: invalid UTF-8",
@@ -54,7 +54,7 @@ func TestReadLockInfo(t *testing.T) {
 			"    <D:href>   \xff   </D:href>\n" +
 			"  </D:owner>\n" +
 			"</D:lockinfo>",
-		lockInfo{},
+		LockInfo{},
 		http.StatusBadRequest,
 	}, {
 		"bad: unfinished XML #1",
@@ -62,7 +62,7 @@ func TestReadLockInfo(t *testing.T) {
 			"<D:lockinfo xmlns:D='DAV:'>\n" +
 			"  <D:lockscope><D:exclusive/></D:lockscope>\n" +
 			"  <D:locktype><D:write/></D:locktype>\n",
-		lockInfo{},
+		LockInfo{},
 		http.StatusBadRequest,
 	}, {
 		"bad: unfinished XML #2",
@@ -71,12 +71,12 @@ func TestReadLockInfo(t *testing.T) {
 			"  <D:lockscope><D:exclusive/></D:lockscope>\n" +
 			"  <D:locktype><D:write/></D:locktype>\n" +
 			"  <D:owner>\n",
-		lockInfo{},
+		LockInfo{},
 		http.StatusBadRequest,
 	}, {
 		"good: empty",
 		"",
-		lockInfo{},
+		LockInfo{},
 		0,
 	}, {
 		"good: plain-text owner",
@@ -86,7 +86,7 @@ func TestReadLockInfo(t *testing.T) {
 			"  <D:locktype><D:write/></D:locktype>\n" +
 			"  <D:owner>gopher</D:owner>\n" +
 			"</D:lockinfo>",
-		lockInfo{
+		LockInfo{
 			XMLName:   ixml.Name{Space: "DAV:", Local: "lockinfo"},
 			Exclusive: new(struct{}),
 			Write:     new(struct{}),
@@ -105,7 +105,7 @@ func TestReadLockInfo(t *testing.T) {
 			"    <D:href>http://example.org/~ejw/contact.html</D:href>\n" +
 			"  </D:owner>\n" +
 			"</D:lockinfo>",
-		lockInfo{
+		LockInfo{
 			XMLName:   ixml.Name{Space: "DAV:", Local: "lockinfo"},
 			Exclusive: new(struct{}),
 			Write:     new(struct{}),
@@ -117,7 +117,7 @@ func TestReadLockInfo(t *testing.T) {
 	}}
 
 	for _, tc := range testCases {
-		li, status, err := readLockInfo(strings.NewReader(tc.input))
+		li, status, err := ReadLockInfo(strings.NewReader(tc.input))
 		if tc.wantStatus != 0 {
 			if err == nil {
 				t.Errorf("%s: got nil error, want non-nil", tc.desc)
@@ -128,7 +128,7 @@ func TestReadLockInfo(t *testing.T) {
 			continue
 		}
 		if !reflect.DeepEqual(li, tc.wantLI) || status != tc.wantStatus {
-			t.Errorf("%s:\ngot  lockInfo=%v, status=%v\nwant lockInfo=%v, status=%v",
+			t.Errorf("%s:\ngot  LockInfo=%v, status=%v\nwant LockInfo=%v, status=%v",
 				tc.desc, li, status, tc.wantLI, tc.wantStatus)
 			continue
 		}
@@ -503,7 +503,7 @@ func TestMultistatusWriter(t *testing.T) {
 				Status: "HTTP/1.1 200 OK",
 			}},
 		}},
-		wantErr: errInvalidResponse,
+		wantErr: ErrInvalidResponse,
 		// default of http.responseWriter
 		wantCode: http.StatusOK,
 	}, {
@@ -511,7 +511,7 @@ func TestMultistatusWriter(t *testing.T) {
 		responses: []response{{
 			Href: []string{"http://example.com/foo", "http://example.com/bar"},
 		}},
-		wantErr: errInvalidResponse,
+		wantErr: ErrInvalidResponse,
 		// default of http.responseWriter
 		wantCode: http.StatusOK,
 	}, {
@@ -519,7 +519,7 @@ func TestMultistatusWriter(t *testing.T) {
 		responses: []response{{
 			Href: []string{"http://example.com/foo"},
 		}},
-		wantErr: errInvalidResponse,
+		wantErr: ErrInvalidResponse,
 		// default of http.responseWriter
 		wantCode: http.StatusOK,
 	}, {
@@ -537,7 +537,7 @@ func TestMultistatusWriter(t *testing.T) {
 			}},
 			Status: "HTTP/1.1 200 OK",
 		}},
-		wantErr: errInvalidResponse,
+		wantErr: ErrInvalidResponse,
 		// default of http.responseWriter
 		wantCode: http.StatusOK,
 	}, {
@@ -557,7 +557,7 @@ func TestMultistatusWriter(t *testing.T) {
 				Status: "HTTP/1.1 200 OK",
 			}},
 		}},
-		wantErr: errInvalidResponse,
+		wantErr: ErrInvalidResponse,
 		// default of http.responseWriter
 		wantCode: http.StatusOK,
 	}}

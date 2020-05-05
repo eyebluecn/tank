@@ -36,7 +36,7 @@ import (
 )
 
 // http://www.webdav.org/specs/rfc4918.html#ELEMENT_lockinfo
-type lockInfo struct {
+type LockInfo struct {
 	XMLName   ixml.Name `xml:"lockinfo"`
 	Exclusive *struct{} `xml:"lockscope>exclusive"`
 	Shared    *struct{} `xml:"lockscope>shared"`
@@ -49,23 +49,23 @@ type owner struct {
 	InnerXML string `xml:",innerxml"`
 }
 
-func readLockInfo(r io.Reader) (li lockInfo, status int, err error) {
+func ReadLockInfo(r io.Reader) (li LockInfo, status int, err error) {
 	c := &countingReader{r: r}
 	if err = ixml.NewDecoder(c).Decode(&li); err != nil {
 		if err == io.EOF {
 			if c.n == 0 {
 				// An empty body means to refresh the lock.
 				// http://www.webdav.org/specs/rfc4918.html#refreshing-locks
-				return lockInfo{}, 0, nil
+				return LockInfo{}, 0, nil
 			}
-			err = errInvalidLockInfo
+			err = ErrInvalidLockInfo
 		}
-		return lockInfo{}, http.StatusBadRequest, err
+		return LockInfo{}, http.StatusBadRequest, err
 	}
 	// We only support exclusive (non-shared) write locks. In practice, these are
 	// the only types of locks that seem to matter.
 	if li.Exclusive == nil || li.Shared != nil || li.Write == nil {
-		return lockInfo{}, http.StatusNotImplemented, errUnsupportedLockInfo
+		return LockInfo{}, http.StatusNotImplemented, ErrUnsupportedLockInfo
 	}
 	return li, 0, nil
 }
@@ -81,7 +81,7 @@ func (c *countingReader) Read(p []byte) (int, error) {
 	return n, err
 }
 
-func writeLockInfo(w io.Writer, token string, ld LockDetails) (int, error) {
+func WriteLockInfo(w io.Writer, token string, ld LockDetails) (int, error) {
 	depth := "infinity"
 	if ld.ZeroDepth {
 		depth = "0"
@@ -184,22 +184,22 @@ func ReadPropfind(r io.Reader) (pf Propfind, status int, err error) {
 				// http://www.webdav.org/specs/rfc4918.html#METHOD_PROPFIND
 				return Propfind{Allprop: new(struct{})}, 0, nil
 			}
-			err = errInvalidPropfind
+			err = ErrInvalidPropfind
 		}
 		return Propfind{}, http.StatusBadRequest, err
 	}
 
 	if pf.Allprop == nil && pf.Include != nil {
-		return Propfind{}, http.StatusBadRequest, errInvalidPropfind
+		return Propfind{}, http.StatusBadRequest, ErrInvalidPropfind
 	}
 	if pf.Allprop != nil && (pf.Prop != nil || pf.Propname != nil) {
-		return Propfind{}, http.StatusBadRequest, errInvalidPropfind
+		return Propfind{}, http.StatusBadRequest, ErrInvalidPropfind
 	}
 	if pf.Prop != nil && pf.Propname != nil {
-		return Propfind{}, http.StatusBadRequest, errInvalidPropfind
+		return Propfind{}, http.StatusBadRequest, ErrInvalidPropfind
 	}
 	if pf.Propname == nil && pf.Allprop == nil && pf.Prop == nil {
-		return Propfind{}, http.StatusBadRequest, errInvalidPropfind
+		return Propfind{}, http.StatusBadRequest, ErrInvalidPropfind
 	}
 	return pf, 0, nil
 }
@@ -328,14 +328,14 @@ type MultiStatusWriter struct {
 func (w *MultiStatusWriter) write(r *response) error {
 	switch len(r.Href) {
 	case 0:
-		return errInvalidResponse
+		return ErrInvalidResponse
 	case 1:
 		if len(r.Propstat) > 0 != (r.Status == "") {
-			return errInvalidResponse
+			return ErrInvalidResponse
 		}
 	default:
 		if len(r.Propstat) > 0 || r.Status == "" {
-			return errInvalidResponse
+			return ErrInvalidResponse
 		}
 	}
 	err := w.writeHeader()
@@ -506,12 +506,12 @@ func ReadProppatch(r io.Reader) (patches []Proppatch, status int, err error) {
 		case ixml.Name{Space: "DAV:", Local: "remove"}:
 			for _, p := range op.Prop {
 				if len(p.InnerXML) > 0 {
-					return nil, http.StatusBadRequest, errInvalidProppatch
+					return nil, http.StatusBadRequest, ErrInvalidProppatch
 				}
 			}
 			remove = true
 		default:
-			return nil, http.StatusBadRequest, errInvalidProppatch
+			return nil, http.StatusBadRequest, ErrInvalidProppatch
 		}
 		patches = append(patches, Proppatch{Remove: remove, Props: op.Prop})
 	}

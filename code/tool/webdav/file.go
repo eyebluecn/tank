@@ -370,10 +370,10 @@ func (fs *memFS) Rename(ctx context.Context, oldName, newName string) error {
 	if oNode.children != nil {
 		if nNode, ok := nDir.children[nFrag]; ok {
 			if nNode.children == nil {
-				return errNotADirectory
+				return ErrNotADirectory
 			}
 			if len(nNode.children) != 0 {
-				return errDirectoryNotEmpty
+				return ErrDirectoryNotEmpty
 			}
 		}
 	}
@@ -653,7 +653,7 @@ func copyProps(dst, src File) error {
 // See section 9.8.5 for when various HTTP status codes apply.
 func copyFiles(ctx context.Context, fs FileSystem, src, dst string, overwrite bool, depth int, recursion int) (status int, err error) {
 	if recursion == 1000 {
-		return http.StatusInternalServerError, errRecursionTooDeep
+		return http.StatusInternalServerError, ErrRecursionTooDeep
 	}
 	recursion++
 

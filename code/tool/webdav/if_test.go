@@ -16,61 +16,61 @@ func TestParseIfHeader(t *testing.T) {
 	testCases := []struct {
 		desc  string
 		input string
-		want  ifHeader
+		want  IfHeader
 	}{{
 		"bad: empty",
 		``,
-		ifHeader{},
+		IfHeader{},
 	}, {
 		"bad: no parens",
 		`foobar`,
-		ifHeader{},
+		IfHeader{},
 	}, {
 		"bad: empty list #1",
 		`()`,
-		ifHeader{},
+		IfHeader{},
 	}, {
 		"bad: empty list #2",
 		`(a) (b c) () (d)`,
-		ifHeader{},
+		IfHeader{},
 	}, {
 		"bad: no list after resource #1",
 		`<foo>`,
-		ifHeader{},
+		IfHeader{},
 	}, {
 		"bad: no list after resource #2",
 		`<foo> <bar> (a)`,
-		ifHeader{},
+		IfHeader{},
 	}, {
 		"bad: no list after resource #3",
 		`<foo> (a) (b) <bar>`,
-		ifHeader{},
+		IfHeader{},
 	}, {
 		"bad: no-tag-list followed by tagged-list",
 		`(a) (b) <foo> (c)`,
-		ifHeader{},
+		IfHeader{},
 	}, {
 		"bad: unfinished list",
 		`(a`,
-		ifHeader{},
+		IfHeader{},
 	}, {
 		"bad: unfinished ETag",
 		`([b`,
-		ifHeader{},
+		IfHeader{},
 	}, {
 		"bad: unfinished Notted list",
 		`(Not a`,
-		ifHeader{},
+		IfHeader{},
 	}, {
 		"bad: double Not",
 		`(Not Not a)`,
-		ifHeader{},
+		IfHeader{},
 	}, {
 		"good: one list with a Token",
 		`(a)`,
-		ifHeader{
-			lists: []ifList{{
-				conditions: []Condition{{
+		IfHeader{
+			Lists: []IfList{{
+				Conditions: []Condition{{
 					Token: `a`,
 				}},
 			}},
@@ -78,9 +78,9 @@ func TestParseIfHeader(t *testing.T) {
 	}, {
 		"good: one list with an ETag",
 		`([a])`,
-		ifHeader{
-			lists: []ifList{{
-				conditions: []Condition{{
+		IfHeader{
+			Lists: []IfList{{
+				Conditions: []Condition{{
 					ETag: `a`,
 				}},
 			}},
@@ -88,9 +88,9 @@ func TestParseIfHeader(t *testing.T) {
 	}, {
 		"good: one list with three Nots",
 		`(Not a Not b Not [d])`,
-		ifHeader{
-			lists: []ifList{{
-				conditions: []Condition{{
+		IfHeader{
+			Lists: []IfList{{
+				Conditions: []Condition{{
 					Not:   true,
 					Token: `a`,
 				}, {
@@ -105,13 +105,13 @@ func TestParseIfHeader(t *testing.T) {
 	}, {
 		"good: two lists",
 		`(a) (b)`,
-		ifHeader{
-			lists: []ifList{{
-				conditions: []Condition{{
+		IfHeader{
+			Lists: []IfList{{
+				Conditions: []Condition{{
 					Token: `a`,
 				}},
 			}, {
-				conditions: []Condition{{
+				Conditions: []Condition{{
 					Token: `b`,
 				}},
 			}},
@@ -119,14 +119,14 @@ func TestParseIfHeader(t *testing.T) {
 	}, {
 		"good: two Notted lists",
 		`(Not a) (Not b)`,
-		ifHeader{
-			lists: []ifList{{
-				conditions: []Condition{{
+		IfHeader{
+			Lists: []IfList{{
+				Conditions: []Condition{{
 					Not:   true,
 					Token: `a`,
 				}},
 			}, {
-				conditions: []Condition{{
+				Conditions: []Condition{{
 					Not:   true,
 					Token: `b`,
 				}},
@@ -136,10 +136,10 @@ func TestParseIfHeader(t *testing.T) {
 		"section 7.5.1",
 		`<http://www.example.com/users/f/fielding/index.html> 
 			(<urn:uuid:f81d4fae-7dec-11d0-a765-00a0c91e6bf6>)`,
-		ifHeader{
-			lists: []ifList{{
-				resourceTag: `http://www.example.com/users/f/fielding/index.html`,
-				conditions: []Condition{{
+		IfHeader{
+			Lists: []IfList{{
+				ResourceTag: `http://www.example.com/users/f/fielding/index.html`,
+				Conditions: []Condition{{
 					Token: `urn:uuid:f81d4fae-7dec-11d0-a765-00a0c91e6bf6`,
 				}},
 			}},
@@ -147,9 +147,9 @@ func TestParseIfHeader(t *testing.T) {
 	}, {
 		"section 7.5.2 #1",
 		`(<urn:uuid:150852e2-3847-42d5-8cbe-0f4f296f26cf>)`,
-		ifHeader{
-			lists: []ifList{{
-				conditions: []Condition{{
+		IfHeader{
+			Lists: []IfList{{
+				Conditions: []Condition{{
 					Token: `urn:uuid:150852e2-3847-42d5-8cbe-0f4f296f26cf`,
 				}},
 			}},
@@ -158,10 +158,10 @@ func TestParseIfHeader(t *testing.T) {
 		"section 7.5.2 #2",
 		`<http://example.com/locked/>
 			(<urn:uuid:150852e2-3847-42d5-8cbe-0f4f296f26cf>)`,
-		ifHeader{
-			lists: []ifList{{
-				resourceTag: `http://example.com/locked/`,
-				conditions: []Condition{{
+		IfHeader{
+			Lists: []IfList{{
+				ResourceTag: `http://example.com/locked/`,
+				Conditions: []Condition{{
 					Token: `urn:uuid:150852e2-3847-42d5-8cbe-0f4f296f26cf`,
 				}},
 			}},
@@ -170,10 +170,10 @@ func TestParseIfHeader(t *testing.T) {
 		"section 7.5.2 #3",
 		`<http://example.com/locked/member>
 			(<urn:uuid:150852e2-3847-42d5-8cbe-0f4f296f26cf>)`,
-		ifHeader{
-			lists: []ifList{{
-				resourceTag: `http://example.com/locked/member`,
-				conditions: []Condition{{
+		IfHeader{
+			Lists: []IfList{{
+				ResourceTag: `http://example.com/locked/member`,
+				Conditions: []Condition{{
 					Token: `urn:uuid:150852e2-3847-42d5-8cbe-0f4f296f26cf`,
 				}},
 			}},
@@ -182,13 +182,13 @@ func TestParseIfHeader(t *testing.T) {
 		"section 9.9.6",
 		`(<urn:uuid:fe184f2e-6eec-41d0-c765-01adc56e6bb4>) 
 			(<urn:uuid:e454f3f3-acdc-452a-56c7-00a5c91e4b77>)`,
-		ifHeader{
-			lists: []ifList{{
-				conditions: []Condition{{
+		IfHeader{
+			Lists: []IfList{{
+				Conditions: []Condition{{
 					Token: `urn:uuid:fe184f2e-6eec-41d0-c765-01adc56e6bb4`,
 				}},
 			}, {
-				conditions: []Condition{{
+				Conditions: []Condition{{
 					Token: `urn:uuid:e454f3f3-acdc-452a-56c7-00a5c91e4b77`,
 				}},
 			}},
@@ -196,9 +196,9 @@ func TestParseIfHeader(t *testing.T) {
 	}, {
 		"section 9.10.8",
 		`(<urn:uuid:e71d4fae-5dec-22d6-fea5-00a0c91e6be4>)`,
-		ifHeader{
-			lists: []ifList{{
-				conditions: []Condition{{
+		IfHeader{
+			Lists: []IfList{{
+				Conditions: []Condition{{
 					Token: `urn:uuid:e71d4fae-5dec-22d6-fea5-00a0c91e6be4`,
 				}},
 			}},
@@ -208,15 +208,15 @@ func TestParseIfHeader(t *testing.T) {
 		`(<urn:uuid:181d4fae-7d8c-11d0-a765-00a0c91e6bf2> 
 			["I am an ETag"])
 			(["I am another ETag"])`,
-		ifHeader{
-			lists: []ifList{{
-				conditions: []Condition{{
+		IfHeader{
+			Lists: []IfList{{
+				Conditions: []Condition{{
 					Token: `urn:uuid:181d4fae-7d8c-11d0-a765-00a0c91e6bf2`,
 				}, {
 					ETag: `"I am an ETag"`,
 				}},
 			}, {
-				conditions: []Condition{{
+				Conditions: []Condition{{
 					ETag: `"I am another ETag"`,
 				}},
 			}},
@@ -225,9 +225,9 @@ func TestParseIfHeader(t *testing.T) {
 		"section 10.4.7",
 		`(Not <urn:uuid:181d4fae-7d8c-11d0-a765-00a0c91e6bf2> 
 			<urn:uuid:58f202ac-22cf-11d1-b12d-002035b29092>)`,
-		ifHeader{
-			lists: []ifList{{
-				conditions: []Condition{{
+		IfHeader{
+			Lists: []IfList{{
+				Conditions: []Condition{{
 					Not:   true,
 					Token: `urn:uuid:181d4fae-7d8c-11d0-a765-00a0c91e6bf2`,
 				}, {
@@ -239,13 +239,13 @@ func TestParseIfHeader(t *testing.T) {
 		"section 10.4.8",
 		`(<urn:uuid:181d4fae-7d8c-11d0-a765-00a0c91e6bf2>) 
 			(Not <DAV:no-lock>)`,
-		ifHeader{
-			lists: []ifList{{
-				conditions: []Condition{{
+		IfHeader{
+			Lists: []IfList{{
+				Conditions: []Condition{{
 					Token: `urn:uuid:181d4fae-7d8c-11d0-a765-00a0c91e6bf2`,
 				}},
 			}, {
-				conditions: []Condition{{
+				Conditions: []Condition{{
 					Not:   true,
 					Token: `DAV:no-lock`,
 				}},
@@ -256,17 +256,17 @@ func TestParseIfHeader(t *testing.T) {
 		`</resource1> 
 			(<urn:uuid:181d4fae-7d8c-11d0-a765-00a0c91e6bf2> 
 			[W/"A weak ETag"]) (["strong ETag"])`,
-		ifHeader{
-			lists: []ifList{{
-				resourceTag: `/resource1`,
-				conditions: []Condition{{
+		IfHeader{
+			Lists: []IfList{{
+				ResourceTag: `/resource1`,
+				Conditions: []Condition{{
 					Token: `urn:uuid:181d4fae-7d8c-11d0-a765-00a0c91e6bf2`,
 				}, {
 					ETag: `W/"A weak ETag"`,
 				}},
 			}, {
-				resourceTag: `/resource1`,
-				conditions: []Condition{{
+				ResourceTag: `/resource1`,
+				Conditions: []Condition{{
 					ETag: `"strong ETag"`,
 				}},
 			}},
@@ -275,10 +275,10 @@ func TestParseIfHeader(t *testing.T) {
 		"section 10.4.10",
 		`<http://www.example.com/specs/> 
 			(<urn:uuid:181d4fae-7d8c-11d0-a765-00a0c91e6bf2>)`,
-		ifHeader{
-			lists: []ifList{{
-				resourceTag: `http://www.example.com/specs/`,
-				conditions: []Condition{{
+		IfHeader{
+			Lists: []IfList{{
+				ResourceTag: `http://www.example.com/specs/`,
+				Conditions: []Condition{{
 					Token: `urn:uuid:181d4fae-7d8c-11d0-a765-00a0c91e6bf2`,
 				}},
 			}},
@@ -286,10 +286,10 @@ func TestParseIfHeader(t *testing.T) {
 	}, {
 		"section 10.4.11 #1",
 		`</specs/rfc2518.doc> (["4217"])`,
-		ifHeader{
-			lists: []ifList{{
-				resourceTag: `/specs/rfc2518.doc`,
-				conditions: []Condition{{
+		IfHeader{
+			Lists: []IfList{{
+				ResourceTag: `/specs/rfc2518.doc`,
+				Conditions: []Condition{{
 					ETag: `"4217"`,
 				}},
 			}},
@@ -297,10 +297,10 @@ func TestParseIfHeader(t *testing.T) {
 	}, {
 		"section 10.4.11 #2",
 		`</specs/rfc2518.doc> (Not ["4217"])`,
-		ifHeader{
-			lists: []ifList{{
-				resourceTag: `/specs/rfc2518.doc`,
-				conditions: []Condition{{
+		IfHeader{
+			Lists: []IfList{{
+				ResourceTag: `/specs/rfc2518.doc`,
+				Conditions: []Condition{{
 					Not:  true,
 					ETag: `"4217"`,
 				}},
@@ -309,8 +309,8 @@ func TestParseIfHeader(t *testing.T) {
 	}}
 
 	for _, tc := range testCases {
-		got, ok := parseIfHeader(strings.Replace(tc.input, "\n", "", -1))
-		if gotEmpty := reflect.DeepEqual(got, ifHeader{}); gotEmpty == ok {
+		got, ok := ParseIfHeader(strings.Replace(tc.input, "\n", "", -1))
+		if gotEmpty := reflect.DeepEqual(got, IfHeader{}); gotEmpty == ok {
 			t.Errorf("%s: should be different: empty header == %t, ok == %t", tc.desc, gotEmpty, ok)
 			continue
 		}
