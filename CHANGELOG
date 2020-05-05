@@ -54,6 +54,7 @@ c. 在github上发布新版本。
 TO RELEASE
 tank-3.1.0
 1. Add prop column into tank31_matter
+2. Add charset in mysql config.
 
 
 ALTER TABLE `tank`.`tank30_matter`

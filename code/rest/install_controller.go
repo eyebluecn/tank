@@ -97,6 +97,7 @@ func (this *InstallController) openDbConnection(writer http.ResponseWriter, requ
 	mysqlSchema := request.FormValue("mysqlSchema")
 	mysqlUsername := request.FormValue("mysqlUsername")
 	mysqlPassword := request.FormValue("mysqlPassword")
+	mysqlCharset := request.FormValue("mysqlCharset")
 
 	var mysqlPort int
 	if mysqlPortStr != "" {
@@ -105,7 +106,7 @@ func (this *InstallController) openDbConnection(writer http.ResponseWriter, requ
 		mysqlPort = tmp
 	}
 
-	mysqlUrl := util.GetMysqlUrl(mysqlPort, mysqlHost, mysqlSchema, mysqlUsername, mysqlPassword)
+	mysqlUrl := util.GetMysqlUrl(mysqlPort, mysqlHost, mysqlSchema, mysqlUsername, mysqlPassword, mysqlCharset)
 
 	this.logger.Info("Connect MySQL %s", mysqlUrl)
 
@@ -227,7 +228,7 @@ func (this *InstallController) CreateTable(writer http.ResponseWriter, request *
 	for _, iBase := range this.tableNames {
 
 		//complete the missing fields or create table. use utf8 charset
-		db1 := db.Set("gorm:table_options", "CHARSET=utf8").AutoMigrate(iBase)
+		db1 := db.Set("gorm:table_options", "CHARSET=utf8mb4").AutoMigrate(iBase)
 		this.PanicError(db1.Error)
 
 		exist, allFields, missingFields := this.getTableMeta(db, iBase)
@@ -350,6 +351,7 @@ func (this *InstallController) Finish(writer http.ResponseWriter, request *http.
 	mysqlSchema := request.FormValue("mysqlSchema")
 	mysqlUsername := request.FormValue("mysqlUsername")
 	mysqlPassword := request.FormValue("mysqlPassword")
+	mysqlCharset := request.FormValue("mysqlCharset")
 
 	var mysqlPort int
 	if mysqlPortStr != "" {
@@ -375,7 +377,7 @@ func (this *InstallController) Finish(writer http.ResponseWriter, request *http.
 	}
 
 	//announce the config to write config to tank.json
-	core.CONFIG.FinishInstall(mysqlPort, mysqlHost, mysqlSchema, mysqlUsername, mysqlPassword)
+	core.CONFIG.FinishInstall(mysqlPort, mysqlHost, mysqlSchema, mysqlUsername, mysqlPassword, mysqlCharset)
 
 	//announce the context to broadcast the installation news to bean.
 	core.CONTEXT.InstallOk()

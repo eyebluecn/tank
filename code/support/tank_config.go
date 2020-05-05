@@ -40,6 +40,8 @@ type ConfigItem struct {
 	MysqlUsername string
 	//mysql password
 	MysqlPassword string
+	//mysql charset
+	MysqlCharset string
 }
 
 //validate whether the config file is ok
@@ -72,6 +74,10 @@ func (this *ConfigItem) validate() bool {
 
 	if this.MysqlSchema == "" {
 		core.LOGGER.Error("MysqlSchema  is not configured")
+		return false
+	}
+	if this.MysqlCharset == "" {
+		core.LOGGER.Error("MysqlCharset  is not configured")
 		return false
 	}
 
@@ -144,7 +150,7 @@ func (this *TankConfig) ReadFromConfigFile() {
 		}
 		util.MakeDirAll(this.matterPath)
 
-		this.mysqlUrl = util.GetMysqlUrl(this.item.MysqlPort, this.item.MysqlHost, this.item.MysqlSchema, this.item.MysqlUsername, this.item.MysqlPassword)
+		this.mysqlUrl = util.GetMysqlUrl(this.item.MysqlPort, this.item.MysqlHost, this.item.MysqlSchema, this.item.MysqlUsername, this.item.MysqlPassword, this.item.MysqlCharset)
 		this.installed = true
 
 		core.LOGGER.Info("use config file: %s", filePath)
@@ -173,7 +179,7 @@ func (this *TankConfig) MatterPath() string {
 }
 
 //Finish the installation. Write config to tank.json
-func (this *TankConfig) FinishInstall(mysqlPort int, mysqlHost string, mysqlSchema string, mysqlUsername string, mysqlPassword string) {
+func (this *TankConfig) FinishInstall(mysqlPort int, mysqlHost string, mysqlSchema string, mysqlUsername string, mysqlPassword string, mysqlCharset string) {
 
 	var configItem = &ConfigItem{
 		//server port
@@ -185,6 +191,7 @@ func (this *TankConfig) FinishInstall(mysqlPort int, mysqlHost string, mysqlSche
 		MysqlSchema:   mysqlSchema,
 		MysqlUsername: mysqlUsername,
 		MysqlPassword: mysqlPassword,
+		MysqlCharset:  mysqlCharset,
 	}
 
 	//pretty json.

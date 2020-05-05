@@ -89,7 +89,8 @@ func (this *DavService) PropstatsFromXmlNames(user *User, matter *Matter, xmlNam
 
 	propstats := make([]dav.Propstat, 0)
 
-	var properties []dav.Property
+	var okProperties []dav.Property
+	var notFoundProperties []dav.Property
 
 	for _, xmlName := range xmlNames {
 		//TODO: deadprops not implement yet.
@@ -98,22 +99,48 @@ func (this *DavService) PropstatsFromXmlNames(user *User, matter *Matter, xmlNam
 		if liveProp := LivePropMap[xmlName]; liveProp.findFn != nil && (liveProp.dir || !matter.Dir) {
 			innerXML := liveProp.findFn(user, matter)
 
-			properties = append(properties, dav.Property{
+			okProperties = append(okProperties, dav.Property{
 				XMLName:  xmlName,
 				InnerXML: []byte(innerXML),
 			})
 		} else {
-			this.logger.Info("%s %s cannot finish.", matter.Path, xmlName.Local)
+			this.logger.Info("handle props %s %s.", matter.Path, xmlName.Local)
+
+			propMap := matter.FetchPropMap()
+			if value, isPresent := propMap[xmlName.Local]; isPresent {
+				okProperties = append(okProperties, dav.Property{
+					XMLName:  xmlName,
+					InnerXML: []byte(value),
+				})
+			} else {
+
+				//only accept Space not null.
+				if xmlName.Space != "" {
+
+					//collect not found props
+					notFoundProperties = append(notFoundProperties, dav.Property{
+						XMLName:  xmlName,
+						InnerXML: []byte(""),
+					})
+				}
+
+			}
 		}
 	}
 
-	if len(properties) == 0 {
+	if len(okProperties) == 0 && len(notFoundProperties) == 0 {
 		panic(result.BadRequest("cannot parse request properties"))
 	}
 
-	okPropstat := dav.Propstat{Status: http.StatusOK, Props: properties}
+	if len(okProperties) != 0 {
+		okPropstat := dav.Propstat{Status: http.StatusOK, Props: okProperties}
+		propstats = append(propstats, okPropstat)
+	}
 
-	propstats = append(propstats, okPropstat)
+	if len(notFoundProperties) != 0 {
+		notFoundPropstat := dav.Propstat{Status: http.StatusNotFound, Props: notFoundProperties}
+		propstats = append(propstats, notFoundPropstat)
+	}
 
 	return propstats
 
@@ -153,6 +180,11 @@ func (this *DavService) Propstats(user *User, matter *Matter, propfind *dav.Prop
 
 //list the directory.
 func (this *DavService) HandlePropfind(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
+
+	xLimits := request.Header.Get("X-Litmus")
+	if xLimits == "props: 3 (propfind_invalid2)" {
+		fmt.Println("stop here!")
+	}
 
 	fmt.Printf("PROPFIND %s\n", subPath)
 
@@ -202,6 +234,11 @@ func (this *DavService) HandleProppatch(writer http.ResponseWriter, request *htt
 
 	fmt.Printf("PROPPATCH %s\n", subPath)
 
+	xLimits := request.Header.Get("X-Litmus")
+	if xLimits == "props: 17 (prophighunicode)" {
+		fmt.Println("stop here!")
+	}
+
 	matter := this.matterDao.checkByUserUuidAndPath(user.Uuid, subPath)
 
 	patches, status, err := webdav.ReadProppatch(request.Body)
@@ -218,6 +255,13 @@ func (this *DavService) HandleProppatch(writer http.ResponseWriter, request *htt
 		propStat := dav.Propstat{Status: http.StatusOK}
 		if patch.Remove {
 
+			if len(patch.Props) > 0 {
+				property := patch.Props[0]
+				if _, isPresent := propMap[property.XMLName.Local]; isPresent {
+					//delete the prop.
+					delete(propMap, property.XMLName.Local)
+				}
+			}
 		} else {
 			for _, prop := range patch.Props {
 				propMap[prop.XMLName.Local] = string(prop.InnerXML)

@@ -23,5 +23,5 @@ type Config interface {
 	//files storage location.
 	MatterPath() string
 	//when installed by user. Write configs to tank.json
-	FinishInstall(mysqlPort int, mysqlHost string, mysqlSchema string, mysqlUsername string, mysqlPassword string)
+	FinishInstall(mysqlPort int, mysqlHost string, mysqlSchema string, mysqlUsername string, mysqlPassword string, mysqlCharset string)
 }
