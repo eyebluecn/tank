@@ -61,7 +61,7 @@ func TestWalkToRoot(t *testing.T) {
 }
 
 var lockTestDurations = []time.Duration{
-	infiniteTimeout, // infiniteTimeout means to never expire.
+	InfiniteTimeout, // InfiniteTimeout means to never expire.
 	0,               // A zero duration means to expire immediately.
 	100 * time.Hour, // A very large duration will not expire in these tests.
 }
@@ -102,7 +102,7 @@ func TestMemLSCanCreate(t *testing.T) {
 	for _, name := range lockTestNames {
 		_, err := m.Create(now, LockDetails{
 			Root:      name,
-			Duration:  infiniteTimeout,
+			Duration:  InfiniteTimeout,
 			ZeroDepth: lockTestZeroDepth(name),
 		})
 		if err != nil {
@@ -165,7 +165,7 @@ func TestMemLSLookup(t *testing.T) {
 	for _, name := range lockTestNames {
 		token, err := m.Create(now, LockDetails{
 			Root:      name,
-			Duration:  infiniteTimeout,
+			Duration:  InfiniteTimeout,
 			ZeroDepth: lockTestZeroDepth(name),
 		})
 		if err != nil {
@@ -209,7 +209,7 @@ func TestMemLSConfirm(t *testing.T) {
 	m := NewMemLS().(*MemLS)
 	alice, err := m.Create(now, LockDetails{
 		Root:      "/alice",
-		Duration:  infiniteTimeout,
+		Duration:  InfiniteTimeout,
 		ZeroDepth: false,
 	})
 	if err != nil {
@@ -218,7 +218,7 @@ func TestMemLSConfirm(t *testing.T) {
 
 	tweedle, err := m.Create(now, LockDetails{
 		Root:      "/tweedle",
-		Duration:  infiniteTimeout,
+		Duration:  InfiniteTimeout,
 		ZeroDepth: false,
 	})
 	if err != nil {
@@ -644,11 +644,11 @@ func TestParseTimeout(t *testing.T) {
 		wantErr error
 	}{{
 		"",
-		infiniteTimeout,
+		InfiniteTimeout,
 		nil,
 	}, {
 		"Infinite",
-		infiniteTimeout,
+		InfiniteTimeout,
 		nil,
 	}, {
 		"Infinitesimal",
@@ -722,7 +722,7 @@ func TestParseTimeout(t *testing.T) {
 		// The Go WebDAV package always supports infinite length locks,
 		// and ignores the fallback after the comma.
 		"Infinite, Second-4100000000",
-		infiniteTimeout,
+		InfiniteTimeout,
 		nil,
 	}}
 

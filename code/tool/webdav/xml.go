@@ -65,6 +65,7 @@ func ReadLockInfo(r io.Reader) (li LockInfo, status int, err error) {
 	// We only support exclusive (non-shared) write locks. In practice, these are
 	// the only types of locks that seem to matter.
 	if li.Exclusive == nil || li.Shared != nil || li.Write == nil {
+		// we should support Shared lock.
 		return LockInfo{}, http.StatusNotImplemented, ErrUnsupportedLockInfo
 	}
 	return li, 0, nil

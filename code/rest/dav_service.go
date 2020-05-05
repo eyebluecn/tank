@@ -185,11 +185,6 @@ func (this *DavService) Propstats(user *User, matter *Matter, propfind *dav.Prop
 //list the directory.
 func (this *DavService) HandlePropfind(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
 
-	xLimits := request.Header.Get("X-Litmus")
-	if xLimits == "props: 3 (propfind_invalid2)" {
-		fmt.Println("stop here!")
-	}
-
 	fmt.Printf("PROPFIND %s\n", subPath)
 
 	// read depth
@@ -238,9 +233,17 @@ func (this *DavService) HandleProppatch(writer http.ResponseWriter, request *htt
 
 	fmt.Printf("PROPPATCH %s\n", subPath)
 
-	xLimits := request.Header.Get("X-Litmus")
-	if xLimits == "props: 17 (prophighunicode)" {
-		fmt.Println("stop here!")
+	// handle the lock feature.
+	reqPath, status, err := this.stripPrefix(request.URL.Path)
+	if err != nil {
+		panic(result.StatusCodeWebResult(status, err.Error()))
+	}
+	release, status, err := this.confirmLocks(request, reqPath, "")
+	if err != nil {
+		panic(result.StatusCodeWebResult(status, err.Error()))
+	}
+	if release != nil {
+		defer release()
 	}
 
 	matter := this.matterDao.checkByUserUuidAndPath(user.Uuid, subPath)
@@ -316,6 +319,23 @@ func (this *DavService) HandlePut(writer http.ResponseWriter, request *http.Requ
 
 	fmt.Printf("PUT %s\n", subPath)
 
+	// handle the lock feature.
+	reqPath, status, err := this.stripPrefix(request.URL.Path)
+	if err != nil {
+		panic(result.StatusCodeWebResult(status, err.Error()))
+	}
+	release, status, err := this.confirmLocks(request, reqPath, "")
+	if err != nil {
+
+		//if status == http.StatusLocked {
+		//	status = http.StatusPreconditionFailed
+		//}
+		panic(result.StatusCodeWebResult(status, err.Error()))
+	}
+	if release != nil {
+		defer release()
+	}
+
 	filename := util.GetFilenameOfPath(subPath)
 	dirPath := util.GetDirOfPath(subPath)
 
@@ -335,13 +355,25 @@ func (this *DavService) HandlePut(writer http.ResponseWriter, request *http.Requ
 }
 
 //delete file
-func (this *DavService) HandleDelete(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
+func (this *DavService) HandleDelete(w http.ResponseWriter, r *http.Request, user *User, subPath string) {
 
 	fmt.Printf("DELETE %s\n", subPath)
 
+	reqPath, status, err := this.stripPrefix(r.URL.Path)
+	if err != nil {
+		panic(result.StatusCodeWebResult(status, err.Error()))
+	}
+	release, status, err := this.confirmLocks(r, reqPath, "")
+	if err != nil {
+		panic(result.StatusCodeWebResult(status, err.Error()))
+	}
+	if release != nil {
+		defer release()
+	}
+
 	matter := this.matterDao.CheckWithRootByPath(subPath, user)
 
-	this.matterService.AtomicDelete(request, matter, user)
+	this.matterService.AtomicDelete(r, matter, user)
 }
 
 //crate a directory
@@ -496,6 +528,19 @@ func (this *DavService) HandleMove(writer http.ResponseWriter, request *http.Req
 
 	fmt.Printf("MOVE %s\n", subPath)
 
+	// handle the lock feature.
+	reqPath, status, err := this.stripPrefix(request.URL.Path)
+	if err != nil {
+		panic(result.StatusCodeWebResult(status, err.Error()))
+	}
+	release, status, err := this.confirmLocks(request, reqPath, "")
+	if err != nil {
+		panic(result.StatusCodeWebResult(status, err.Error()))
+	}
+	if release != nil {
+		defer release()
+	}
+
 	srcMatter, destDirMatter, srcDirPath, destinationDirPath, destinationName, overwrite := this.prepareMoveCopy(writer, request, user, subPath)
 
 	//move to the new directory
@@ -524,6 +569,15 @@ func (this *DavService) HandleCopy(writer http.ResponseWriter, request *http.Req
 
 	srcMatter, destDirMatter, _, _, destinationName, overwrite := this.prepareMoveCopy(writer, request, user, subPath)
 
+	// handle the lock feature.
+	release, status, err := this.confirmLocks(request, destDirMatter.Path+"/"+destinationName, "")
+	if err != nil {
+		panic(result.StatusCodeWebResult(status, err.Error()))
+	}
+	if release != nil {
+		defer release()
+	}
+
 	//copy to the new directory
 	this.matterService.AtomicCopy(request, srcMatter, destDirMatter, destinationName, overwrite, user)
 
@@ -539,13 +593,103 @@ func (this *DavService) HandleCopy(writer http.ResponseWriter, request *http.Req
 
 }
 
+func (h *DavService) stripPrefix(p string) (string, int, error) {
+	if r := strings.TrimPrefix(p, WEBDAV_PREFIX); len(r) < len(p) {
+		return r, http.StatusOK, nil
+	}
+	return p, http.StatusNotFound, webdav.ErrPrefixMismatch
+}
+
+func (h *DavService) lock(now time.Time, root string) (token string, status int, err error) {
+	token, err = h.lockSystem.Create(now, webdav.LockDetails{
+		Root:      root,
+		Duration:  webdav.InfiniteTimeout,
+		ZeroDepth: true,
+	})
+	if err != nil {
+		if err == webdav.ErrLocked {
+			return "", webdav.StatusLocked, err
+		}
+		return "", http.StatusInternalServerError, err
+	}
+	return token, 0, nil
+}
+
+func (h *DavService) confirmLocks(r *http.Request, src, dst string) (release func(), status int, err error) {
+	hdr := r.Header.Get("If")
+	if hdr == "" {
+		// An empty If header means that the client hasn't previously created locks.
+		// Even if this client doesn't care about locks, we still need to check that
+		// the resources aren't locked by another client, so we create temporary
+		// locks that would conflict with another client's locks. These temporary
+		// locks are unlocked at the end of the HTTP request.
+		now, srcToken, dstToken := time.Now(), "", ""
+		if src != "" {
+			srcToken, status, err = h.lock(now, src)
+			if err != nil {
+				return nil, status, err
+			}
+		}
+		if dst != "" {
+			dstToken, status, err = h.lock(now, dst)
+			if err != nil {
+				if srcToken != "" {
+					h.lockSystem.Unlock(now, srcToken)
+				}
+				return nil, status, err
+			}
+		}
+
+		return func() {
+			if dstToken != "" {
+				h.lockSystem.Unlock(now, dstToken)
+			}
+			if srcToken != "" {
+				h.lockSystem.Unlock(now, srcToken)
+			}
+		}, 0, nil
+	}
+
+	ih, ok := webdav.ParseIfHeader(hdr)
+	if !ok {
+		return nil, http.StatusBadRequest, webdav.ErrInvalidIfHeader
+	}
+	// ih is a disjunction (OR) of ifLists, so any IfList will do.
+	for _, l := range ih.Lists {
+		lsrc := l.ResourceTag
+		if lsrc == "" {
+			lsrc = src
+		} else {
+			u, err := url.Parse(lsrc)
+			if err != nil {
+				continue
+			}
+			if u.Host != r.Host {
+				continue
+			}
+			lsrc, status, err = h.stripPrefix(u.Path)
+			if err != nil {
+				return nil, status, err
+			}
+		}
+		release, err = h.lockSystem.Confirm(time.Now(), lsrc, dst, l.Conditions...)
+		if err == webdav.ErrConfirmationFailed {
+			continue
+		}
+		if err != nil {
+			return nil, http.StatusInternalServerError, err
+		}
+		return release, 0, nil
+	}
+	// Section 10.4.1 says that "If this header is evaluated and all state lists
+	// fail, then the request must fail with a 412 (Precondition Failed) status."
+	// We follow the spec even though the cond_put_corrupt_token test case from
+	// the litmus test warns on seeing a 412 instead of a 423 (Locked).
+	return nil, http.StatusLocked, webdav.ErrLocked
+}
+
 //lock.
 func (this *DavService) HandleLock(w http.ResponseWriter, r *http.Request, user *User, subPath string) {
-
-	xLimits := r.Header.Get("X-Litmus")
-	if xLimits == "locks: 6 (lock_excl)" {
-		fmt.Println("stop here!")
-	}
 
 	duration, err := webdav.ParseTimeout(r.Header.Get("Timeout"))
 	if err != nil {
@@ -590,8 +734,13 @@ func (this *DavService) HandleLock(w http.ResponseWriter, r *http.Request, user 
 			}
 		}
 
+		reqPath, status, err := this.stripPrefix(r.URL.Path)
+		if err != nil {
+			panic(result.StatusCodeWebResult(status, err.Error()))
+		}
+
 		ld = webdav.LockDetails{
-			Root:      subPath,
+			Root:      reqPath,
 			Duration:  duration,
 			OwnerXML:  li.Owner.InnerXML,
 			ZeroDepth: depth == 0,
@@ -637,9 +786,28 @@ func (this *DavService) HandleLock(w http.ResponseWriter, r *http.Request, user 
 }
 
 //unlock
-func (this *DavService) HandleUnlock(writer http.ResponseWriter, request *http.Request, user *User, subPath string) {
+func (this *DavService) HandleUnlock(w http.ResponseWriter, r *http.Request, user *User, subPath string) {
 
-	panic(result.BadRequest("not support UNLOCK yet."))
+	// http://www.webdav.org/specs/rfc4918.html#HEADER_Lock-Token says that the
+	// Lock-Token value is a Coded-URL. We strip its angle brackets.
+	t := r.Header.Get("Lock-Token")
+	if len(t) < 2 || t[0] != '<' || t[len(t)-1] != '>' {
+		panic(result.StatusCodeWebResult(http.StatusBadRequest, webdav.ErrInvalidLockToken.Error()))
+	}
+	t = t[1 : len(t)-1]
+
+	switch err := this.lockSystem.Unlock(time.Now(), t); err {
+	case nil:
+		panic(result.StatusCodeWebResult(http.StatusNoContent, ""))
+	case webdav.ErrForbidden:
+		panic(result.StatusCodeWebResult(http.StatusForbidden, err.Error()))
+	case webdav.ErrLocked:
+		panic(result.StatusCodeWebResult(http.StatusLocked, err.Error()))
+	case webdav.ErrNoSuchLock:
+		panic(result.StatusCodeWebResult(http.StatusConflict, err.Error()))
+	default:
+		panic(result.StatusCodeWebResult(http.StatusInternalServerError, err.Error()))
+	}
 }
 
 //hanle all the request.
