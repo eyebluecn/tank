@@ -37,6 +37,7 @@ func (this *UserController) RegisterRoutes() map[string]func(writer http.Respons
 
 	routeMap := make(map[string]func(writer http.ResponseWriter, request *http.Request))
 
+	routeMap["/api/user/info"] = this.Wrap(this.Info, USER_ROLE_GUEST)
 	routeMap["/api/user/login"] = this.Wrap(this.Login, USER_ROLE_GUEST)
 	routeMap["/api/user/authentication/login"] = this.Wrap(this.AuthenticationLogin, USER_ROLE_GUEST)
 	routeMap["/api/user/register"] = this.Wrap(this.Register, USER_ROLE_GUEST)
@@ -131,6 +132,12 @@ func (this *UserController) AuthenticationLogin(writer http.ResponseWriter, requ
 	return this.Success(user)
 }
 
+//fetch current user's info.
+func (this *UserController) Info(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+	user := this.checkUser(request)
+	return this.Success(user)
+}
+
 //register by username and password. After registering, will auto login.
 func (this *UserController) Register(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
@@ -155,11 +162,11 @@ func (this *UserController) Register(writer http.ResponseWriter, request *http.R
 	}
 
 	user := &User{
-		Role:      USER_ROLE_USER,
-		Username:  username,
-		Password:  util.GetBcrypt(password),
+		Role:           USER_ROLE_USER,
+		Username:       username,
+		Password:       util.GetBcrypt(password),
 		TotalSizeLimit: preference.DefaultTotalSizeLimit,
-		Status:    USER_STATUS_OK,
+		Status:         USER_STATUS_OK,
 	}
 
 	user = this.userDao.Create(user)
