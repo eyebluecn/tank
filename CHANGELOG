@@ -55,6 +55,7 @@ TO RELEASE
 tank-3.1.0
 1. Add prop column into tank31_matter
 2. Add charset in mysql config.
+3. Add office_url.
 
 
 ALTER TABLE `tank`.`tank30_matter`

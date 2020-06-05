@@ -13,6 +13,7 @@ type Preference struct {
 	DownloadDirMaxNum     int64  `json:"downloadDirMaxNum" gorm:"type:bigint(20) not null;default:-1"`
 	DefaultTotalSizeLimit int64  `json:"defaultTotalSizeLimit" gorm:"type:bigint(20) not null;default:-1"`
 	AllowRegister         bool   `json:"allowRegister" gorm:"type:tinyint(1) not null;default:0"`
+	OfficeUrl             string `json:"officeUrl" gorm:"type:varchar(255)"`
 	Version               string `json:"version" gorm:"-"`
 }
 

@@ -72,6 +72,7 @@ func (this *PreferenceController) Edit(writer http.ResponseWriter, request *http
 	downloadDirMaxNumStr := request.FormValue("downloadDirMaxNum")
 	defaultTotalSizeLimitStr := request.FormValue("defaultTotalSizeLimit")
 	allowRegisterStr := request.FormValue("allowRegister")
+	officeUrl := request.FormValue("officeUrl")
 
 	if name == "" {
 		panic(result.BadRequest("name cannot be null"))
@@ -119,6 +120,7 @@ func (this *PreferenceController) Edit(writer http.ResponseWriter, request *http
 	preference.DownloadDirMaxNum = downloadDirMaxNum
 	preference.DefaultTotalSizeLimit = defaultTotalSizeLimit
 	preference.AllowRegister = allowRegister
+	preference.OfficeUrl = officeUrl
 
 	preference = this.preferenceDao.Save(preference)
 
