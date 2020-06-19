@@ -960,9 +960,11 @@ func (this *MatterService) WrapParentDetail(request *http.Request, matter *Matte
 		panic(result.BadRequest("matter cannot be nil."))
 	}
 
-	puuid := matter.Puuid
-	tmpMatter := matter
+	//when self not root.
 	if matter.Uuid != MATTER_ROOT {
+
+		puuid := matter.Puuid
+		tmpMatter := matter
 		for puuid != MATTER_ROOT {
 			pFile := this.matterDao.CheckByUuid(puuid)
 			tmpMatter.Parent = pFile
