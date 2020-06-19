@@ -962,11 +962,13 @@ func (this *MatterService) WrapParentDetail(request *http.Request, matter *Matte
 
 	puuid := matter.Puuid
 	tmpMatter := matter
-	for puuid != MATTER_ROOT {
-		pFile := this.matterDao.CheckByUuid(puuid)
-		tmpMatter.Parent = pFile
-		tmpMatter = pFile
-		puuid = pFile.Puuid
+	if matter.Uuid != MATTER_ROOT {
+		for puuid != MATTER_ROOT {
+			pFile := this.matterDao.CheckByUuid(puuid)
+			tmpMatter.Parent = pFile
+			tmpMatter = pFile
+			puuid = pFile.Puuid
+		}
 	}
 
 	return matter
