@@ -158,3 +158,32 @@ func (this *UserService) FindCacheUsersByUuid(userUuid string) []*User {
 
 	return users
 }
+
+//remove cache user by its userUuid
+func (this *UserService) RemoveCacheUserByUuid(userUuid string) {
+
+	var sessionId interface{}
+	//let session user work.
+	core.CONTEXT.GetSessionCache().Foreach(func(key interface{}, cacheItem *cache.Item) {
+		if cacheItem == nil || cacheItem.Data() == nil {
+			return
+		}
+		if value, ok := cacheItem.Data().(*User); ok {
+			var user = value
+			if user.Uuid == userUuid {
+				sessionId = key
+				this.logger.Info("sessionId %v", key)
+			}
+		} else {
+			this.logger.Error("cache item not store the *User")
+		}
+	})
+
+	exists := core.CONTEXT.GetSessionCache().Exists(sessionId)
+	if exists {
+		_, err := core.CONTEXT.GetSessionCache().Delete(sessionId)
+		if err != nil {
+			this.logger.Error("occur error when deleting cache user.")
+		}
+	}
+}

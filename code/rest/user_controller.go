@@ -287,6 +287,9 @@ func (this *UserController) Edit(writer http.ResponseWriter, request *http.Reque
 
 	currentUser = this.userDao.Save(currentUser)
 
+	//remove cache user.
+	this.userService.RemoveCacheUserByUuid(currentUser.Uuid)
+
 	return this.Success(currentUser)
 }
 
@@ -400,11 +403,8 @@ func (this *UserController) ToggleStatus(writer http.ResponseWriter, request *ht
 
 	currentUser = this.userDao.Save(currentUser)
 
-	cacheUsers := this.userService.FindCacheUsersByUuid(currentUser.Uuid)
-	this.logger.Info("find %d cache users", len(cacheUsers))
-	for _, u := range cacheUsers {
-		u.Status = currentUser.Status
-	}
+	//remove cache user.
+	this.userService.RemoveCacheUserByUuid(currentUser.Uuid)
 
 	return this.Success(currentUser)
 
