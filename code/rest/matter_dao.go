@@ -385,6 +385,13 @@ func (this *MatterDao) Delete(matter *Matter) {
 	}
 }
 
+func (this *MatterDao) DeleteByUserUuid(userUuid string) {
+
+	db := core.CONTEXT.GetDB().Where("user_uuid = ?", userUuid).Delete(Matter{})
+	this.PanicError(db.Error)
+
+}
+
 func (this *MatterDao) CountBetweenTime(startTime time.Time, endTime time.Time) int64 {
 	var count int64
 	db := core.CONTEXT.GetDB().Model(&Matter{}).Where("create_time >= ? AND create_time <= ?", startTime, endTime).Count(&count)

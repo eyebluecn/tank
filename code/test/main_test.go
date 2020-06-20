@@ -16,6 +16,11 @@ func TestHello(t *testing.T) {
 	split := strings.Split("good", "/")
 	fmt.Printf("%v", split)
 
+	var i int
+	for i = 1; i < 10; i++ {
+		fmt.Printf("i=%d\n", i)
+	}
+
 }
 
 func TestCron(t *testing.T) {

@@ -137,6 +137,13 @@ func (this *FootprintDao) DeleteByCreateTimeBefore(createTime time.Time) {
 	this.PanicError(db.Error)
 }
 
+func (this *FootprintDao) DeleteByUserUuid(userUuid string) {
+
+	db := core.CONTEXT.GetDB().Where("user_uuid = ?", userUuid).Delete(Footprint{})
+	this.PanicError(db.Error)
+
+}
+
 //System cleanup.
 func (this *FootprintDao) Cleanup() {
 	this.logger.Info("[FootprintDao][DownloadTokenDao] clean up. Delete all Footprint")

@@ -141,6 +141,12 @@ func (this *UserDao) DeleteUsers20() {
 	this.PanicError(db.Error)
 }
 
+func (this *UserDao) Delete(user *User) {
+
+	db := core.CONTEXT.GetDB().Delete(&user)
+	this.PanicError(db.Error)
+}
+
 //System cleanup.
 func (this *UserDao) Cleanup() {
 	this.logger.Info("[UserDao] clean up. Delete all User")

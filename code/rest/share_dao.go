@@ -39,6 +39,14 @@ func (this *ShareDao) CheckByUuid(uuid string) *Share {
 
 func (this *ShareDao) Page(page int, pageSize int, userUuid string, sortArray []builder.OrderPair) *Pager {
 
+	count, shares := this.PlainPage(page, pageSize, userUuid, sortArray)
+	pager := NewPager(page, pageSize, count, shares)
+
+	return pager
+}
+
+func (this *ShareDao) PlainPage(page int, pageSize int, userUuid string, sortArray []builder.OrderPair) (int, []*Share) {
+
 	var wp = &builder.WherePair{}
 
 	if userUuid != "" {
@@ -55,9 +63,8 @@ func (this *ShareDao) Page(page int, pageSize int, userUuid string, sortArray []
 	var shares []*Share
 	db = conditionDB.Order(this.GetSortString(sortArray)).Offset(page * pageSize).Limit(pageSize).Find(&shares)
 	this.PanicError(db.Error)
-	pager := NewPager(page, pageSize, count, shares)
 
-	return pager
+	return count, shares
 }
 
 func (this *ShareDao) Create(share *Share) *Share {

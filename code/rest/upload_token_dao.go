@@ -56,3 +56,10 @@ func (this *UploadTokenDao) Save(uploadToken *UploadToken) *UploadToken {
 
 	return uploadToken
 }
+
+func (this *UploadTokenDao) DeleteByUserUuid(userUuid string) {
+
+	db := core.CONTEXT.GetDB().Where("user_uuid = ?", userUuid).Delete(UploadToken{})
+	this.PanicError(db.Error)
+
+}

@@ -50,6 +50,7 @@ func (this *UserController) RegisterRoutes() map[string]func(writer http.Respons
 	routeMap["/api/user/page"] = this.Wrap(this.Page, USER_ROLE_ADMINISTRATOR)
 	routeMap["/api/user/toggle/status"] = this.Wrap(this.ToggleStatus, USER_ROLE_ADMINISTRATOR)
 	routeMap["/api/user/transfiguration"] = this.Wrap(this.Transfiguration, USER_ROLE_ADMINISTRATOR)
+	routeMap["/api/user/delete"] = this.Wrap(this.Delete, USER_ROLE_ADMINISTRATOR)
 
 	return routeMap
 }
@@ -392,7 +393,7 @@ func (this *UserController) ToggleStatus(writer http.ResponseWriter, request *ht
 	currentUser := this.userDao.CheckByUuid(uuid)
 	user := this.checkUser(request)
 	if uuid == user.Uuid {
-		panic(result.UNAUTHORIZED)
+		panic(result.BadRequest("You cannot disable yourself."))
 	}
 
 	if currentUser.Status == USER_STATUS_OK {
@@ -429,6 +430,24 @@ func (this *UserController) Transfiguration(writer http.ResponseWriter, request 
 	session = this.sessionDao.Create(session)
 
 	return this.Success(session.Uuid)
+}
+
+func (this *UserController) Delete(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+
+	uuid := request.FormValue("uuid")
+	currentUser := this.userDao.CheckByUuid(uuid)
+	user := this.checkUser(request)
+
+	if currentUser.Status != USER_STATUS_DISABLED {
+		panic(result.BadRequest("Only disabled user can be deleted."))
+	}
+	if currentUser.Uuid == user.Uuid {
+		panic(result.BadRequest("You cannot delete yourself."))
+	}
+
+	this.userService.DeleteUser(request, currentUser)
+
+	return this.Success("OK")
 }
 
 func (this *UserController) ChangePassword(writer http.ResponseWriter, request *http.Request) *result.WebResult {

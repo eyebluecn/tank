@@ -58,6 +58,13 @@ func (this *DownloadTokenDao) Save(downloadToken *DownloadToken) *DownloadToken 
 	return downloadToken
 }
 
+func (this *DownloadTokenDao) DeleteByUserUuid(userUuid string) {
+
+	db := core.CONTEXT.GetDB().Where("user_uuid = ?", userUuid).Delete(DownloadToken{})
+	this.PanicError(db.Error)
+
+}
+
 func (this *DownloadTokenDao) Cleanup() {
 	this.logger.Info("[DownloadTokenDao] clean up. Delete all DownloadToken")
 	db := core.CONTEXT.GetDB().Where("uuid is not null").Delete(DownloadToken{})

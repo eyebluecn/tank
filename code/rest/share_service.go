@@ -2,8 +2,10 @@ package rest
 
 import (
 	"github.com/eyebluecn/tank/code/core"
+	"github.com/eyebluecn/tank/code/tool/builder"
 	"github.com/eyebluecn/tank/code/tool/i18n"
 	"github.com/eyebluecn/tank/code/tool/result"
+	"math"
 	"net/http"
 	"strings"
 	"time"
@@ -104,6 +106,28 @@ func (this *ShareService) ValidateMatter(request *http.Request, shareUuid string
 		child := strings.HasPrefix(matter.Path, shareRootMatter.Path)
 		if !child {
 			panic(result.BadRequest("%s is not %s's children", matter.Uuid, shareRootUuid))
+		}
+	}
+
+}
+
+//delete user's shares and corresponding bridges.
+func (this *ShareService) DeleteSharesByUser(request *http.Request, currentUser *User) {
+
+	//delete share and bridges.
+	pageSize := 100
+	var sortArray []builder.OrderPair
+	count, _ := this.shareDao.PlainPage(0, pageSize, currentUser.Uuid, sortArray)
+	var totalPages = int(math.Ceil(float64(count) / float64(pageSize)))
+
+	var page int
+	for page = 0; page < totalPages; page++ {
+		_, shares := this.shareDao.PlainPage(0, pageSize, currentUser.Uuid, sortArray)
+		for _, share := range shares {
+			this.bridgeDao.DeleteByShareUuid(share.Uuid)
+
+			//delete this share
+			this.shareDao.Delete(share)
 		}
 	}
 

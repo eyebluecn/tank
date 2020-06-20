@@ -73,6 +73,14 @@ func NewRootMatter(user *User) *Matter {
 	return matter
 }
 
+//get user's space absolute path
+func GetUserSpaceRootDir(username string) (rootDirPath string) {
+
+	rootDirPath = fmt.Sprintf("%s/%s", core.CONFIG.MatterPath(), username)
+
+	return rootDirPath
+}
+
 //get user's root absolute path
 func GetUserMatterRootDir(username string) (rootDirPath string) {
 

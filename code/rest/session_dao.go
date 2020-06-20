@@ -67,6 +67,13 @@ func (this *SessionDao) Delete(uuid string) {
 
 }
 
+func (this *SessionDao) DeleteByUserUuid(userUuid string) {
+
+	db := core.CONTEXT.GetDB().Where("user_uuid = ?", userUuid).Delete(Session{})
+	this.PanicError(db.Error)
+
+}
+
 //System cleanup.
 func (this *SessionDao) Cleanup() {
 	this.logger.Info("[SessionDao] clean up. Delete all Session")

@@ -184,6 +184,11 @@ func (this *ImageCacheDao) DeleteByMatterUuid(matterUuid string) {
 
 }
 
+func (this *ImageCacheDao) DeleteByUserUuid(userUuid string) {
+	db := core.CONTEXT.GetDB().Where("user_uuid = ?", userUuid).Delete(ImageCache{})
+	this.PanicError(db.Error)
+}
+
 func (this *ImageCacheDao) SizeBetweenTime(startTime time.Time, endTime time.Time) int64 {
 
 	var wp = &builder.WherePair{Query: "create_time >= ? AND create_time <= ?", Args: []interface{}{startTime, endTime}}
