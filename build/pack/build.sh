@@ -47,8 +47,8 @@ echo "DIST_PATH: ${DIST_PATH}"
 
 cd ${PROJECT_DIR}
 
-echo "go build -mod=readonly"
-go build -mod=readonly
+echo "go build"
+go build
 
 # if a directory
 if [[ -d COMPONENT_DIR ]] ; then
