@@ -1,4 +1,4 @@
-CREATE TABLE `tank30_bridge` (
+CREATE TABLE `tank31_bridge` (
   `uuid` char(36) NOT NULL DEFAULT '',
   `sort` bigint(20) NOT NULL,
   `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -7,9 +7,9 @@ CREATE TABLE `tank30_bridge` (
   `matter_uuid` char(36) DEFAULT NULL,
   PRIMARY KEY (`uuid`),
   UNIQUE KEY `uuid` (`uuid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE `tank30_dashboard` (
+CREATE TABLE `tank31_dashboard` (
   `uuid` char(36) NOT NULL DEFAULT '',
   `sort` bigint(20) NOT NULL,
   `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -27,9 +27,9 @@ CREATE TABLE `tank30_dashboard` (
   PRIMARY KEY (`uuid`),
   UNIQUE KEY `uuid` (`uuid`),
   KEY `idx_dt` (`dt`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE `tank30_download_token` (
+CREATE TABLE `tank31_download_token` (
   `uuid` char(36) NOT NULL DEFAULT '',
   `sort` bigint(20) NOT NULL,
   `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -41,9 +41,9 @@ CREATE TABLE `tank30_download_token` (
   PRIMARY KEY (`uuid`),
   UNIQUE KEY `uuid` (`uuid`),
   KEY `idx_mu` (`matter_uuid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE `tank30_footprint` (
+CREATE TABLE `tank31_footprint` (
   `uuid` char(36) NOT NULL DEFAULT '',
   `sort` bigint(20) NOT NULL,
   `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -57,9 +57,9 @@ CREATE TABLE `tank30_footprint` (
   `success` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`uuid`),
   UNIQUE KEY `uuid` (`uuid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE `tank30_image_cache` (
+CREATE TABLE `tank31_image_cache` (
   `uuid` char(36) NOT NULL DEFAULT '',
   `sort` bigint(20) NOT NULL,
   `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -76,9 +76,9 @@ CREATE TABLE `tank30_image_cache` (
   PRIMARY KEY (`uuid`),
   UNIQUE KEY `uuid` (`uuid`),
   KEY `idx_mu` (`matter_uuid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE `tank30_matter` (
+CREATE TABLE `tank31_matter` (
   `uuid` char(36) NOT NULL DEFAULT '',
   `sort` bigint(20) NOT NULL,
   `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -93,13 +93,14 @@ CREATE TABLE `tank30_matter` (
   `privacy` tinyint(1) NOT NULL DEFAULT '0',
   `path` varchar(1024) DEFAULT NULL,
   `times` bigint(20) NOT NULL DEFAULT '0',
+  `prop` varchar(1024) NOT NULL DEFAULT '{}',
   PRIMARY KEY (`uuid`),
   UNIQUE KEY `uuid` (`uuid`),
   KEY `idx_puuid` (`puuid`),
   KEY `idx_uu` (`user_uuid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE `tank30_preference` (
+CREATE TABLE `tank31_preference` (
   `uuid` char(36) NOT NULL DEFAULT '',
   `sort` bigint(20) NOT NULL,
   `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -113,11 +114,12 @@ CREATE TABLE `tank30_preference` (
   `download_dir_max_num` bigint(20) NOT NULL DEFAULT '-1',
   `default_total_size_limit` bigint(20) NOT NULL DEFAULT '-1',
   `allow_register` tinyint(1) NOT NULL DEFAULT '0',
+  `preview_config` text,
   PRIMARY KEY (`uuid`),
   UNIQUE KEY `uuid` (`uuid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE `tank30_session` (
+CREATE TABLE `tank31_session` (
   `uuid` char(36) NOT NULL DEFAULT '',
   `sort` bigint(20) NOT NULL,
   `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -127,9 +129,9 @@ CREATE TABLE `tank30_session` (
   `expire_time` timestamp NOT NULL DEFAULT '2018-01-01 00:00:00',
   PRIMARY KEY (`uuid`),
   UNIQUE KEY `uuid` (`uuid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE `tank30_share` (
+CREATE TABLE `tank31_share` (
   `uuid` char(36) NOT NULL DEFAULT '',
   `sort` bigint(20) NOT NULL,
   `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -144,9 +146,9 @@ CREATE TABLE `tank30_share` (
   `expire_time` timestamp NOT NULL DEFAULT '2018-01-01 00:00:00',
   PRIMARY KEY (`uuid`),
   UNIQUE KEY `uuid` (`uuid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE `tank30_upload_token` (
+CREATE TABLE `tank31_upload_token` (
   `uuid` char(36) NOT NULL DEFAULT '',
   `sort` bigint(20) NOT NULL,
   `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -161,9 +163,9 @@ CREATE TABLE `tank30_upload_token` (
   `ip` varchar(128) NOT NULL,
   PRIMARY KEY (`uuid`),
   UNIQUE KEY `uuid` (`uuid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE `tank30_user` (
+CREATE TABLE `tank31_user` (
   `uuid` char(36) NOT NULL DEFAULT '',
   `sort` bigint(20) NOT NULL,
   `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -181,4 +183,4 @@ CREATE TABLE `tank30_user` (
   PRIMARY KEY (`uuid`),
   UNIQUE KEY `username` (`username`),
   UNIQUE KEY `uuid` (`uuid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
