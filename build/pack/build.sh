@@ -9,7 +9,7 @@
 #prepare the variables.
 
 # version name
-VERSION_NAME=tank-3.0.6
+VERSION_NAME=tank-3.1.0.beta1
 echo "VERSION_NAME: ${VERSION_NAME}"
 #  golang proxy
 GOPROXY=https://athens.azurefd.net

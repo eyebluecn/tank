@@ -52,10 +52,12 @@ c. 在github上发布新版本。
 
 
 TO RELEASE
-tank-3.1.0
-1. Add prop column into tank31_matter
+tank-3.1.0.beta1
+1. Enhance the webdav ability.
 2. Add charset in mysql config.
-3. Add office_url.
+3. Add preview_config.
+4. Add delete user feature.
+5. Fix the move to root dir bug.
 
 
 ALTER TABLE `tank`.`tank30_matter`
