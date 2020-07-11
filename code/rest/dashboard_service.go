@@ -60,6 +60,7 @@ func (this *DashboardService) Etl() {
 	startTime := util.FirstSecondOfDay(util.Yesterday())
 	endTime := util.LastSecondOfDay(util.Yesterday())
 	dt := util.ConvertTimeToDateString(startTime)
+	now := time.Now()
 	longTimeAgo := time.Now()
 	longTimeAgo = longTimeAgo.AddDate(-20, 0, 0)
 
@@ -73,19 +74,19 @@ func (this *DashboardService) Etl() {
 	}
 
 	invokeNum := this.footprintDao.CountBetweenTime(startTime, endTime)
-	totalInvokeNum := this.footprintDao.CountBetweenTime(longTimeAgo, endTime)
+	totalInvokeNum := this.footprintDao.CountBetweenTime(longTimeAgo, now)
 	uv := this.footprintDao.UvBetweenTime(startTime, endTime)
-	totalUv := this.footprintDao.UvBetweenTime(longTimeAgo, endTime)
+	totalUv := this.footprintDao.UvBetweenTime(longTimeAgo, now)
 	matterNum := this.matterDao.CountBetweenTime(startTime, endTime)
-	totalMatterNum := this.matterDao.CountBetweenTime(longTimeAgo, endTime)
+	totalMatterNum := this.matterDao.CountBetweenTime(longTimeAgo, now)
 
 	matterSize := this.matterDao.SizeBetweenTime(startTime, endTime)
 
-	totalMatterSize := this.matterDao.SizeBetweenTime(longTimeAgo, endTime)
+	totalMatterSize := this.matterDao.SizeBetweenTime(longTimeAgo, now)
 
 	cacheSize := this.imageCacheDao.SizeBetweenTime(startTime, endTime)
 
-	totalCacheSize := this.imageCacheDao.SizeBetweenTime(longTimeAgo, endTime)
+	totalCacheSize := this.imageCacheDao.SizeBetweenTime(longTimeAgo, now)
 
 	avgCost := this.footprintDao.AvgCostBetweenTime(startTime, endTime)
 
