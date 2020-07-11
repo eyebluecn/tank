@@ -54,11 +54,16 @@ func (this *DashboardService) Bootstrap() {
 	go core.RunWithRecovery(this.Etl)
 }
 
-// handle the dashboard data.
 func (this *DashboardService) Etl() {
+	this.etlOneDay(util.Yesterday())
+	this.etlOneDay(time.Now())
+}
 
-	startTime := util.FirstSecondOfDay(util.Yesterday())
-	endTime := util.LastSecondOfDay(util.Yesterday())
+// handle the dashboard data.
+func (this *DashboardService) etlOneDay(thenTime time.Time) {
+
+	startTime := util.FirstSecondOfDay(thenTime)
+	endTime := util.LastSecondOfDay(thenTime)
 	dt := util.ConvertTimeToDateString(startTime)
 	now := time.Now()
 	longTimeAgo := time.Now()

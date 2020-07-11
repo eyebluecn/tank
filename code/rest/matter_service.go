@@ -351,16 +351,17 @@ func (this *MatterService) createNonDirMatter(dirMatter *Matter, filename string
 
 	//write to db.
 	matter := &Matter{
-		Puuid:    dirMatter.Uuid,
-		UserUuid: user.Uuid,
-		Username: user.Username,
-		Dir:      false,
-		Name:     filename,
-		Md5:      "",
-		Size:     fileSize,
-		Privacy:  privacy,
-		Path:     fileRelativePath,
-		Prop:     EMPTY_JSON_MAP,
+		Puuid:     dirMatter.Uuid,
+		UserUuid:  user.Uuid,
+		Username:  user.Username,
+		Dir:       false,
+		Name:      filename,
+		Md5:       "",
+		Size:      fileSize,
+		Privacy:   privacy,
+		Path:      fileRelativePath,
+		Prop:      EMPTY_JSON_MAP,
+		VisitTime: time.Now(),
 	}
 	matter = this.matterDao.Create(matter)
 
@@ -520,12 +521,13 @@ func (this *MatterService) createDirectory(request *http.Request, dirMatter *Mat
 
 	//create in db
 	matter = &Matter{
-		Puuid:    dirMatter.Uuid,
-		UserUuid: user.Uuid,
-		Username: user.Username,
-		Dir:      true,
-		Name:     name,
-		Path:     relativePath,
+		Puuid:     dirMatter.Uuid,
+		UserUuid:  user.Uuid,
+		Username:  user.Username,
+		Dir:       true,
+		Name:      name,
+		Path:      relativePath,
+		VisitTime: time.Now(),
 	}
 
 	matter = this.matterDao.Create(matter)
@@ -701,16 +703,17 @@ func (this *MatterService) copy(request *http.Request, srcMatter *Matter, destDi
 	if srcMatter.Dir {
 
 		newMatter := &Matter{
-			Puuid:    destDirMatter.Uuid,
-			UserUuid: srcMatter.UserUuid,
-			Username: srcMatter.Username,
-			Dir:      srcMatter.Dir,
-			Name:     name,
-			Md5:      "",
-			Size:     srcMatter.Size,
-			Privacy:  srcMatter.Privacy,
-			Path:     destDirMatter.Path + "/" + name,
-			Prop:     EMPTY_JSON_MAP,
+			Puuid:     destDirMatter.Uuid,
+			UserUuid:  srcMatter.UserUuid,
+			Username:  srcMatter.Username,
+			Dir:       srcMatter.Dir,
+			Name:      name,
+			Md5:       "",
+			Size:      srcMatter.Size,
+			Privacy:   srcMatter.Privacy,
+			Path:      destDirMatter.Path + "/" + name,
+			Prop:      EMPTY_JSON_MAP,
+			VisitTime: time.Now(),
 		}
 
 		newMatter = this.matterDao.Create(newMatter)
@@ -733,16 +736,17 @@ func (this *MatterService) copy(request *http.Request, srcMatter *Matter, destDi
 		util.CopyFile(srcAbsolutePath, destAbsolutePath)
 
 		newMatter := &Matter{
-			Puuid:    destDirMatter.Uuid,
-			UserUuid: srcMatter.UserUuid,
-			Username: srcMatter.Username,
-			Dir:      srcMatter.Dir,
-			Name:     name,
-			Md5:      "",
-			Size:     srcMatter.Size,
-			Privacy:  srcMatter.Privacy,
-			Path:     destDirMatter.Path + "/" + name,
-			Prop:     EMPTY_JSON_MAP,
+			Puuid:     destDirMatter.Uuid,
+			UserUuid:  srcMatter.UserUuid,
+			Username:  srcMatter.Username,
+			Dir:       srcMatter.Dir,
+			Name:      name,
+			Md5:       "",
+			Size:      srcMatter.Size,
+			Privacy:   srcMatter.Privacy,
+			Path:      destDirMatter.Path + "/" + name,
+			Prop:      EMPTY_JSON_MAP,
+			VisitTime: time.Now(),
 		}
 		newMatter = this.matterDao.Create(newMatter)
 

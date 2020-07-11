@@ -348,7 +348,7 @@ func (this *MatterDao) Save(matter *Matter) *Matter {
 
 //download time add 1
 func (this *MatterDao) TimesIncrement(matterUuid string) {
-	db := core.CONTEXT.GetDB().Model(&Matter{}).Where("uuid = ?", matterUuid).Update("times", gorm.Expr("times + 1"))
+	db := core.CONTEXT.GetDB().Model(&Matter{}).Where("uuid = ?", matterUuid).Update(map[string]interface{}{"times": gorm.Expr("times + 1"), "visit_time": time.Now()})
 	this.PanicError(db.Error)
 }
 
