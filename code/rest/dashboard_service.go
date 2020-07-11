@@ -3,7 +3,6 @@ package rest
 import (
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/util"
-	"github.com/robfig/cron"
 	"time"
 )
 
@@ -49,19 +48,14 @@ func (this *DashboardService) Init() {
 
 func (this *DashboardService) Bootstrap() {
 
-	this.logger.Info("[cron job] Everyday 00:05 ETL dashboard data.")
-	expression := "0 5 0 * * ?"
-	cronJob := cron.New()
-	err := cronJob.AddFunc(expression, this.etl)
-	core.PanicError(err)
-	cronJob.Start()
+	this.logger.Info("Immediately ETL dashboard data.")
 
 	//do the etl method now.
-	go core.RunWithRecovery(this.etl)
+	go core.RunWithRecovery(this.Etl)
 }
 
 // handle the dashboard data.
-func (this *DashboardService) etl() {
+func (this *DashboardService) Etl() {
 
 	this.logger.Info("ETL dashboard data.")
 

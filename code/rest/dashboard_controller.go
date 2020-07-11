@@ -34,6 +34,7 @@ func (this *DashboardController) RegisterRoutes() map[string]func(writer http.Re
 
 	routeMap["/api/dashboard/page"] = this.Wrap(this.Page, USER_ROLE_ADMINISTRATOR)
 	routeMap["/api/dashboard/active/ip/top10"] = this.Wrap(this.ActiveIpTop10, USER_ROLE_ADMINISTRATOR)
+	routeMap["/api/dashboard/etl"] = this.Wrap(this.Etl, USER_ROLE_ADMINISTRATOR)
 
 	return routeMap
 }
@@ -88,4 +89,10 @@ func (this *DashboardController) ActiveIpTop10(writer http.ResponseWriter, reque
 	//TODO:
 	list := this.dashboardDao.ActiveIpTop10()
 	return this.Success(list)
+}
+
+func (this *DashboardController) Etl(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+
+	this.dashboardService.Etl()
+	return this.Success("OK")
 }

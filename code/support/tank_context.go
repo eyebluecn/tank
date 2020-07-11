@@ -169,6 +169,9 @@ func (this *TankContext) registerBeans() {
 	//uploadToken
 	this.registerBean(new(rest.UploadTokenDao))
 
+	//task
+	this.registerBean(new(rest.TaskService))
+
 	//user
 	this.registerBean(new(rest.UserController))
 	this.registerBean(new(rest.UserDao))

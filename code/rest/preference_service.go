@@ -56,6 +56,17 @@ func (this *PreferenceService) Reset() {
 
 }
 
+//清空单例配置。
+func (this *PreferenceService) Save(preference *Preference) *Preference {
+
+	preference = this.preferenceDao.Save(preference)
+
+	//clean cache.
+	this.Reset()
+
+	return preference
+}
+
 //System cleanup.
 func (this *PreferenceService) Cleanup() {
 

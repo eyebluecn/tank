@@ -41,6 +41,8 @@ func (this *PreferenceController) RegisterRoutes() map[string]func(writer http.R
 	routeMap["/api/preference/ping"] = this.Wrap(this.Ping, USER_ROLE_GUEST)
 	routeMap["/api/preference/fetch"] = this.Wrap(this.Fetch, USER_ROLE_GUEST)
 	routeMap["/api/preference/edit"] = this.Wrap(this.Edit, USER_ROLE_ADMINISTRATOR)
+	routeMap["/api/preference/edit/preview/config"] = this.Wrap(this.EditPreviewConfig, USER_ROLE_ADMINISTRATOR)
+	routeMap["/api/preference/edit/scan/config"] = this.Wrap(this.EditScanConfig, USER_ROLE_ADMINISTRATOR)
 	routeMap["/api/preference/system/cleanup"] = this.Wrap(this.SystemCleanup, USER_ROLE_ADMINISTRATOR)
 
 	return routeMap
@@ -60,6 +62,7 @@ func (this *PreferenceController) Fetch(writer http.ResponseWriter, request *htt
 	return this.Success(preference)
 }
 
+//edit basic info.
 func (this *PreferenceController) Edit(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	name := request.FormValue("name")
@@ -72,7 +75,6 @@ func (this *PreferenceController) Edit(writer http.ResponseWriter, request *http
 	downloadDirMaxNumStr := request.FormValue("downloadDirMaxNum")
 	defaultTotalSizeLimitStr := request.FormValue("defaultTotalSizeLimit")
 	allowRegisterStr := request.FormValue("allowRegister")
-	previewConfig := request.FormValue("previewConfig")
 
 	if name == "" {
 		panic(result.BadRequest("name cannot be null"))
@@ -120,12 +122,34 @@ func (this *PreferenceController) Edit(writer http.ResponseWriter, request *http
 	preference.DownloadDirMaxNum = downloadDirMaxNum
 	preference.DefaultTotalSizeLimit = defaultTotalSizeLimit
 	preference.AllowRegister = allowRegister
+
+	preference = this.preferenceService.Save(preference)
+
+	return this.Success(preference)
+}
+
+//edit preview config.
+func (this *PreferenceController) EditPreviewConfig(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+
+	previewConfig := request.FormValue("previewConfig")
+
+	preference := this.preferenceDao.Fetch()
 	preference.PreviewConfig = previewConfig
 
-	preference = this.preferenceDao.Save(preference)
+	preference = this.preferenceService.Save(preference)
 
-	//reset the preference cache
-	this.preferenceService.Reset()
+	return this.Success(preference)
+}
+
+func (this *PreferenceController) EditScanConfig(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+
+	scanConfig := request.FormValue("scanConfig")
+
+	preference := this.preferenceDao.Fetch()
+
+	preference.ScanConfig = scanConfig
+
+	preference = this.preferenceService.Save(preference)
 
 	return this.Success(preference)
 }

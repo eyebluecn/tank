@@ -5,7 +5,6 @@ import (
 
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/util"
-	"github.com/robfig/cron"
 	"net/http"
 	"time"
 )
@@ -94,18 +93,12 @@ func (this *FootprintService) Trace(request *http.Request, duration time.Duratio
 
 func (this *FootprintService) Bootstrap() {
 
-	this.logger.Info("[cron job] Every day 00:10 delete Footprint data 8 days ago.")
-	expression := "0 10 0 * * ?"
-	cronJob := cron.New()
-	err := cronJob.AddFunc(expression, this.cleanOldData)
-	core.PanicError(err)
-	cronJob.Start()
+	this.logger.Info("Immediately delete Footprint data of 8 days ago.")
 
-	go core.RunWithRecovery(this.cleanOldData)
-
+	go core.RunWithRecovery(this.CleanOldData)
 }
 
-func (this *FootprintService) cleanOldData() {
+func (this *FootprintService) CleanOldData() {
 
 	day8Ago := time.Now()
 	day8Ago = day8Ago.AddDate(0, 0, -8)
