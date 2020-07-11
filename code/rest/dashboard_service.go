@@ -57,8 +57,6 @@ func (this *DashboardService) Bootstrap() {
 // handle the dashboard data.
 func (this *DashboardService) Etl() {
 
-	this.logger.Info("ETL dashboard data.")
-
 	startTime := util.FirstSecondOfDay(util.Yesterday())
 	endTime := util.LastSecondOfDay(util.Yesterday())
 	dt := util.ConvertTimeToDateString(startTime)

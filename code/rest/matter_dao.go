@@ -7,6 +7,7 @@ import (
 	"github.com/eyebluecn/tank/code/tool/util"
 	"github.com/eyebluecn/tank/code/tool/uuid"
 	"github.com/jinzhu/gorm"
+	"math"
 	"os"
 	"time"
 )
@@ -296,6 +297,31 @@ func (this *MatterDao) Page(page int, pageSize int, puuid string, userUuid strin
 	pager := NewPager(page, pageSize, count, matters)
 
 	return pager
+}
+
+//handle matter page by page.
+func (this *MatterDao) PageHandle(puuid string, userUuid string, name string, dir string, fun func(matter *Matter)) {
+
+	//delete share and bridges.
+	pageSize := 1000
+	sortArray := []builder.OrderPair{
+		{
+			Key:   "uuid",
+			Value: DIRECTION_ASC,
+		},
+	}
+	count, _ := this.PlainPage(0, pageSize, puuid, userUuid, name, dir, nil, sortArray)
+	if count > 0 {
+		var totalPages = int(math.Ceil(float64(count) / float64(pageSize)))
+
+		var page int
+		for page = 0; page < totalPages; page++ {
+			_, matters := this.PlainPage(0, pageSize, puuid, userUuid, name, dir, nil, sortArray)
+			for _, matter := range matters {
+				fun(matter)
+			}
+		}
+	}
 }
 
 func (this *MatterDao) Create(matter *Matter) *Matter {

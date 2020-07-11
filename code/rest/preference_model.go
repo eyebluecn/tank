@@ -37,7 +37,7 @@ const (
 type ScanConfig struct {
 	//whether enable the scan task.
 	Enable bool `json:"enable"`
-	//when to process the task.
+	//when to process the task. five fields. @every 1s
 	Cron string `json:"cron"`
 	//username
 	Usernames []string `json:"usernames"`

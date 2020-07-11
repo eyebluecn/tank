@@ -118,17 +118,20 @@ func (this *ShareService) DeleteSharesByUser(request *http.Request, currentUser 
 	pageSize := 100
 	var sortArray []builder.OrderPair
 	count, _ := this.shareDao.PlainPage(0, pageSize, currentUser.Uuid, sortArray)
-	var totalPages = int(math.Ceil(float64(count) / float64(pageSize)))
+	if count > 0 {
+		var totalPages = int(math.Ceil(float64(count) / float64(pageSize)))
 
-	var page int
-	for page = 0; page < totalPages; page++ {
-		_, shares := this.shareDao.PlainPage(0, pageSize, currentUser.Uuid, sortArray)
-		for _, share := range shares {
-			this.bridgeDao.DeleteByShareUuid(share.Uuid)
+		var page int
+		for page = 0; page < totalPages; page++ {
+			_, shares := this.shareDao.PlainPage(0, pageSize, currentUser.Uuid, sortArray)
+			for _, share := range shares {
+				this.bridgeDao.DeleteByShareUuid(share.Uuid)
 
-			//delete this share
-			this.shareDao.Delete(share)
+				//delete this share
+				this.shareDao.Delete(share)
+			}
 		}
+
 	}
 
 }

@@ -16,6 +16,7 @@ type UserController struct {
 	BaseController
 	preferenceService *PreferenceService
 	userService       *UserService
+	matterService     *MatterService
 }
 
 func (this *UserController) Init() {
@@ -29,6 +30,11 @@ func (this *UserController) Init() {
 	b = core.CONTEXT.GetBean(this.userService)
 	if b, ok := b.(*UserService); ok {
 		this.userService = b
+	}
+
+	b = core.CONTEXT.GetBean(this.matterService)
+	if b, ok := b.(*MatterService); ok {
+		this.matterService = b
 	}
 
 }
@@ -50,6 +56,7 @@ func (this *UserController) RegisterRoutes() map[string]func(writer http.Respons
 	routeMap["/api/user/page"] = this.Wrap(this.Page, USER_ROLE_ADMINISTRATOR)
 	routeMap["/api/user/toggle/status"] = this.Wrap(this.ToggleStatus, USER_ROLE_ADMINISTRATOR)
 	routeMap["/api/user/transfiguration"] = this.Wrap(this.Transfiguration, USER_ROLE_ADMINISTRATOR)
+	routeMap["/api/user/scan"] = this.Wrap(this.Scan, USER_ROLE_ADMINISTRATOR)
 	routeMap["/api/user/delete"] = this.Wrap(this.Delete, USER_ROLE_ADMINISTRATOR)
 
 	return routeMap
@@ -430,6 +437,16 @@ func (this *UserController) Transfiguration(writer http.ResponseWriter, request 
 	session = this.sessionDao.Create(session)
 
 	return this.Success(session.Uuid)
+}
+
+//scan user's physics files. create index into EyeblueTank
+func (this *UserController) Scan(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+
+	uuid := request.FormValue("uuid")
+	currentUser := this.userDao.CheckByUuid(uuid)
+	this.matterService.Scan(currentUser)
+
+	return this.Success("OK")
 }
 
 func (this *UserController) Delete(writer http.ResponseWriter, request *http.Request) *result.WebResult {

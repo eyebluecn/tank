@@ -5,6 +5,7 @@ import (
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
 	jsoniter "github.com/json-iterator/go"
+	"github.com/robfig/cron/v3"
 	"net/http"
 	"strconv"
 )
@@ -157,7 +158,19 @@ func (this *PreferenceController) EditScanConfig(writer http.ResponseWriter, req
 	//validate the scan config.
 	if scanConfig.Enable {
 		//validate cron.
+		_, err := cron.ParseStandard(scanConfig.Cron)
+		this.PanicError(err)
 
+		//validate scope.
+		if scanConfig.Scope == SCAN_SCOPE_CUSTOM {
+			if len(scanConfig.Usernames) == 0 {
+				panic(result.BadRequest("scope cannot be null"))
+			}
+		} else if scanConfig.Scope == SCAN_SCOPE_ALL {
+
+		} else {
+			panic(result.BadRequest("cannot recognize scope %s", scanConfig.Scope))
+		}
 	}
 
 	preference = this.preferenceService.Save(preference)

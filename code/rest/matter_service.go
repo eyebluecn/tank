@@ -1049,3 +1049,29 @@ func (this *MatterService) adjustPath(matter *Matter, parentMatter *Matter) {
 	}
 
 }
+
+//delete someone's EyeblueTank files according to physics files.
+func (this *MatterService) DeleteByPhysics(user *User) {
+
+	if user == nil {
+		panic(result.BadRequest("user cannot be nil."))
+	}
+
+	//scan user's file.
+	this.matterDao.PageHandle("", user.Uuid, "", "", func(matter *Matter) {
+		this.logger.Info("handle %s", matter.Name)
+	})
+
+}
+
+//scan someone's physics files to EyeblueTank
+func (this *MatterService) Scan(user *User) {
+
+	if user == nil {
+		panic(result.BadRequest("user cannot be nil."))
+	}
+
+	rootDirPath := GetUserMatterRootDir(user.Username)
+	this.logger.Info("scan %s's root dir %s", user.Username, rootDirPath)
+
+}
