@@ -2,10 +2,10 @@ package rest
 
 import (
 	"github.com/eyebluecn/tank/code/core"
+	"github.com/eyebluecn/tank/code/tool/i18n"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
 	jsoniter "github.com/json-iterator/go"
-	"github.com/robfig/cron/v3"
 	"net/http"
 	"strconv"
 )
@@ -152,6 +152,9 @@ func (this *PreferenceController) EditPreviewConfig(writer http.ResponseWriter, 
 func (this *PreferenceController) EditScanConfig(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	scanConfigStr := request.FormValue("scanConfig")
+	if scanConfigStr == "" {
+		panic(result.BadRequest("scanConfig cannot be null"))
+	}
 
 	preference := this.preferenceDao.Fetch()
 
@@ -164,8 +167,9 @@ func (this *PreferenceController) EditScanConfig(writer http.ResponseWriter, req
 	//validate the scan config.
 	if scanConfig.Enable {
 		//validate cron.
-		_, err := cron.ParseStandard(scanConfig.Cron)
-		this.PanicError(err)
+		if !util.ValidateCron(scanConfig.Cron) {
+			panic(result.CustomWebResultI18n(request, result.SHARE_CODE_ERROR, i18n.CronValidateError))
+		}
 
 		//validate scope.
 		if scanConfig.Scope == SCAN_SCOPE_CUSTOM {
@@ -179,6 +183,7 @@ func (this *PreferenceController) EditScanConfig(writer http.ResponseWriter, req
 		}
 	}
 
+	preference.ScanConfig = scanConfigStr
 	preference = this.preferenceService.Save(preference)
 
 	//reinit the scan task.

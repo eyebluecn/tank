@@ -45,6 +45,7 @@ var (
 	ShareNumExceedLimit            = &Item{English: `sharing files' num exceed the limit %d > %d`, Chinese: `一次分享的文件数量超出限制了 %d > %d `}
 	ShareCodeRequired              = &Item{English: `share code required`, Chinese: `提取码必填`}
 	ShareCodeError                 = &Item{English: `share code error`, Chinese: `提取码错误`}
+	CronValidateError              = &Item{English: `cron error. five fields needed. eg: 1 * * * *`, Chinese: `Cron表达式错误，必须为5位。例如：1 * * * *`}
 )
 
 func (this *Item) Message(request *http.Request) string {
