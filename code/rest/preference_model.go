@@ -64,14 +64,3 @@ func (this *Preference) FetchScanConfig() *ScanConfig {
 		return m
 	}
 }
-
-//set the scan config
-func (this *Preference) SetScanConfig(scanConfigJson string) {
-
-	b, err := jsoniter.ConfigCompatibleWithStandardLibrary.Marshal(scanConfigJson)
-	if err != nil {
-		panic(err)
-	}
-
-	this.ScanConfig = string(b)
-}

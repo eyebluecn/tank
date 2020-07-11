@@ -2,7 +2,7 @@ package rest
 
 import (
 	"github.com/eyebluecn/tank/code/core"
-	"github.com/robfig/cron"
+	"github.com/robfig/cron/v3"
 )
 
 // system tasks service
@@ -31,37 +31,37 @@ func (this *TaskService) Init() {
 //init the clean footprint task.
 func (this *TaskService) InitCleanFootprintTask() {
 
-	this.logger.Info("[cron job] Every day 00:10 delete Footprint data of 8 days ago.")
 	expression := "0 10 0 * * ?"
 	cronJob := cron.New()
-	err := cronJob.AddFunc(expression, this.footprintService.CleanOldData)
+	entryId, err := cronJob.AddFunc(expression, this.footprintService.CleanOldData)
 	core.PanicError(err)
 	cronJob.Start()
 
+	this.logger.Info("[cron job] Every day 00:10 delete Footprint data of 8 days ago. entryId = %d", entryId)
 }
 
 //init the elt task.
 func (this *TaskService) InitEtlTask() {
 
-	this.logger.Info("[cron job] Everyday 00:05 ETL dashboard data.")
 	expression := "0 5 0 * * ?"
 	cronJob := cron.New()
-	err := cronJob.AddFunc(expression, this.dashboardService.Etl)
+	entryId, err := cronJob.AddFunc(expression, this.dashboardService.Etl)
 	core.PanicError(err)
 	cronJob.Start()
 
+	this.logger.Info("[cron job] Everyday 00:05 ETL dashboard data. entryId = %d", entryId)
 }
 
 //init the scan task.
 func (this *TaskService) InitScanTask() {
 
-	this.logger.Info("[cron job] Everyday 00:05 ETL dashboard data.")
 	expression := "0 5 0 * * ?"
 	cronJob := cron.New()
-	err := cronJob.AddFunc(expression, this.dashboardService.Etl)
+	entryId, err := cronJob.AddFunc(expression, this.dashboardService.Etl)
 	core.PanicError(err)
 	cronJob.Start()
 
+	this.logger.Info("[cron job] Everyday 00:05 ETL dashboard data. entryId = %d", entryId)
 }
 
 func (this *TaskService) Bootstrap() {

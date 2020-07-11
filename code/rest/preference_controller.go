@@ -4,6 +4,7 @@ import (
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
+	jsoniter "github.com/json-iterator/go"
 	"net/http"
 	"strconv"
 )
@@ -143,11 +144,21 @@ func (this *PreferenceController) EditPreviewConfig(writer http.ResponseWriter, 
 
 func (this *PreferenceController) EditScanConfig(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
-	scanConfig := request.FormValue("scanConfig")
+	scanConfigStr := request.FormValue("scanConfig")
 
 	preference := this.preferenceDao.Fetch()
 
-	preference.ScanConfig = scanConfig
+	scanConfig := &ScanConfig{}
+	err := jsoniter.ConfigCompatibleWithStandardLibrary.Unmarshal([]byte(scanConfigStr), &scanConfig)
+	if err != nil {
+		panic(err)
+	}
+
+	//validate the scan config.
+	if scanConfig.Enable {
+		//validate cron.
+
+	}
 
 	preference = this.preferenceService.Save(preference)
 

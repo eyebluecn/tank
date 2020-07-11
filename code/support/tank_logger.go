@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/util"
-	"github.com/robfig/cron"
+	"github.com/robfig/cron/v3"
 	"log"
 	"os"
 	"runtime"
@@ -25,13 +25,13 @@ func (this *TankLogger) Init() {
 
 	this.openFile()
 
-	this.Info("[cron job] Every day 00:00 maintain log file.")
 	expression := "0 0 0 * * ?"
 	cronJob := cron.New()
-	err := cronJob.AddFunc(expression, this.maintain)
+	entryId, err := cronJob.AddFunc(expression, this.maintain)
 	core.PanicError(err)
 	cronJob.Start()
 
+	this.Info("[cron job] Every day 00:00 maintain log file. entryId = %d", entryId)
 }
 
 func (this *TankLogger) Destroy() {
