@@ -1,6 +1,6 @@
 [![蓝眼云盘logo](https://raw.githubusercontent.com/eyebluecn/tank/master/build/doc/img/logo.png)](https://github.com/eyebluecn/tank)
 
-[English Version](./README_EN.md)
+[English Version](https://tank-doc.eyeblue.cn/en)
 
 # 蓝眼云盘（3.0.6）
 
