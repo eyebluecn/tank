@@ -5,7 +5,7 @@ import (
 	"github.com/eyebluecn/tank/code/tool/cache"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
-	gouuid "github.com/nu7hatch/gouuid"
+	"github.com/eyebluecn/tank/code/tool/uuid"
 	"net/http"
 	"os"
 	"time"
@@ -169,7 +169,7 @@ func (this *UserService) PreHandle(writer http.ResponseWriter, request *http.Req
 				} else {
 
 					this.logger.Info("load a temp session by username and password.")
-					timeUUID, _ := gouuid.NewV4()
+					timeUUID, _ := uuid.NewV4()
 					uuidStr := string(timeUUID.String())
 					request.Form[core.COOKIE_AUTH_KEY] = []string{uuidStr}
 

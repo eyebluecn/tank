@@ -6,7 +6,7 @@ import (
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/jinzhu/gorm"
 
-	"github.com/nu7hatch/gouuid"
+	"github.com/eyebluecn/tank/code/tool/uuid"
 	"time"
 )
 

@@ -3,7 +3,7 @@ package rest
 import (
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/result"
-	"github.com/nu7hatch/gouuid"
+	"github.com/eyebluecn/tank/code/tool/uuid"
 	"time"
 )
 

@@ -3,8 +3,8 @@ package rest
 import (
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/builder"
+	"github.com/eyebluecn/tank/code/tool/uuid"
 	"github.com/jinzhu/gorm"
-	"github.com/nu7hatch/gouuid"
 	"time"
 )
 
