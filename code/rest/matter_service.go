@@ -1166,6 +1166,11 @@ func (this *MatterService) scanPhysicsFolder(request *http.Request, dirInfo os.F
 					this.logger.Info("update matter: %s size:%d -> %d", name, matter.Size, fileInfo.Size())
 					this.updateNonDirMatter(matter, fileInfo.Size(), user)
 				}
+			} else {
+
+				//recursive scan this folder.
+				this.scanPhysicsFolder(request, fileInfo, matter, user)
+
 			}
 
 		} else {

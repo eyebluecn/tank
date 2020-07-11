@@ -91,11 +91,11 @@ func (this *TaskService) doScanTask() {
 		if err := recover(); err != nil {
 			this.logger.Info("occur error when do scan task.")
 		}
-		this.logger.Info("finish do scan task.")
+		this.logger.Info("finish the scan task.")
 		this.scanTaskRunning = false
 	}()
 
-	this.logger.Info("do the scan task.")
+	this.logger.Info("[cron job] do the scan task.")
 	preference := this.preferenceService.Fetch()
 	scanConfig := preference.FetchScanConfig()
 
