@@ -52,22 +52,14 @@ c. 在github上发布新版本。
 
 
 TO RELEASE
-tank-3.1.0.beta1
+tank-3.1.0
+1. Reconstruct frontend by typescript+react+antd.
 1. Enhance the webdav ability.
 2. Add charset in mysql config.
 3. Add preview_config.
 4. Add delete user feature.
 5. Fix the move to root dir bug.
-
-
-ALTER TABLE `tank`.`tank30_matter`
-ADD COLUMN `prop` VARCHAR(1024) NULL DEFAULT '{}' AFTER `times`;
-
-2. Remove Migrate  20To30
-
-
-
-
+6. Add Scan config.
 
 
 2019-10-13
