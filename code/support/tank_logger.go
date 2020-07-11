@@ -25,7 +25,7 @@ func (this *TankLogger) Init() {
 
 	this.openFile()
 
-	expression := "0 0 0 * * ?"
+	expression := "0 0 * * *"
 	cronJob := cron.New()
 	entryId, err := cronJob.AddFunc(expression, this.maintain)
 	core.PanicError(err)

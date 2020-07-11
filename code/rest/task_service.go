@@ -31,7 +31,8 @@ func (this *TaskService) Init() {
 //init the clean footprint task.
 func (this *TaskService) InitCleanFootprintTask() {
 
-	expression := "0 10 0 * * ?"
+	//use standard cron expression. 5 fields. ()
+	expression := "10 0 * * *"
 	cronJob := cron.New()
 	entryId, err := cronJob.AddFunc(expression, this.footprintService.CleanOldData)
 	core.PanicError(err)
@@ -43,7 +44,7 @@ func (this *TaskService) InitCleanFootprintTask() {
 //init the elt task.
 func (this *TaskService) InitEtlTask() {
 
-	expression := "0 5 0 * * ?"
+	expression := "5 0 * * *"
 	cronJob := cron.New()
 	entryId, err := cronJob.AddFunc(expression, this.dashboardService.Etl)
 	core.PanicError(err)
@@ -55,7 +56,7 @@ func (this *TaskService) InitEtlTask() {
 //init the scan task.
 func (this *TaskService) InitScanTask() {
 
-	expression := "0 5 0 * * ?"
+	expression := "15 0 * * *"
 	cronJob := cron.New()
 	entryId, err := cronJob.AddFunc(expression, this.dashboardService.Etl)
 	core.PanicError(err)
