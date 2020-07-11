@@ -8,7 +8,7 @@ import (
 func TestValidateCron(t *testing.T) {
 
 	spec := "*/1 * * * * ?"
-	_, err := cron.Parse(spec)
+	_, err := cron.ParseStandard(spec)
 	if err != nil {
 		t.Error(err)
 	} else {

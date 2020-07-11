@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/util"
-	"github.com/robfig/cron"
+	"github.com/robfig/cron/v3"
 	"log"
 	"strings"
 	"testing"
@@ -28,13 +28,14 @@ func TestCron(t *testing.T) {
 	i := 0
 	c := cron.New()
 	spec := "*/1 * * * * ?"
-	err := c.AddFunc(spec, func() {
+	entryId, err := c.AddFunc(spec, func() {
 		i++
 		log.Println("cron running:", i)
 		if i == 3 {
 			panic("intent to panic.")
 		}
 	})
+	fmt.Printf("entryId = %d", entryId)
 	core.PanicError(err)
 
 	c.Start()
