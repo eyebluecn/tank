@@ -243,3 +243,22 @@ func UniformPath(p string) string {
 	p = strings.TrimSuffix(p, "/")
 	return p
 }
+
+// readDirNames reads the directory named by dirname and returns
+// see filepath.readDirNames
+func ReadDirNames(dirname string) ([]string, error) {
+	f, err := os.Open(dirname)
+	if err != nil {
+		return nil, err
+	}
+	names, err := f.Readdirnames(-1)
+	if err != nil {
+		return nil, err
+	}
+	err = f.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	return names, nil
+}

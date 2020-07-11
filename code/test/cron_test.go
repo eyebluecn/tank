@@ -45,6 +45,27 @@ func TestEveryOneSecondCron(t *testing.T) {
 
 }
 
+func TestSimpleCron(t *testing.T) {
+
+	i := 0
+
+	var c *cron.Cron
+	var spec string
+
+	//新标准。
+	c = cron.New()
+	spec = "@every 2s"
+
+	_, _ = c.AddFunc(spec, func() {
+		i++
+		log.Println("cron running:", i)
+	})
+	c.Start()
+
+	time.Sleep(70 * time.Second)
+
+}
+
 func TestValidateCron(t *testing.T) {
 
 	spec := "@every 1s"

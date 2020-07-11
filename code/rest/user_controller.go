@@ -444,7 +444,8 @@ func (this *UserController) Scan(writer http.ResponseWriter, request *http.Reque
 
 	uuid := request.FormValue("uuid")
 	currentUser := this.userDao.CheckByUuid(uuid)
-	this.matterService.Scan(currentUser)
+	this.matterService.DeleteByPhysics(request, currentUser)
+	this.matterService.ScanPhysics(request, currentUser)
 
 	return this.Success("OK")
 }

@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -284,7 +285,6 @@ func (this *MatterService) Upload(request *http.Request, file io.Reader, user *U
 	}
 
 	dirAbsolutePath := dirMatter.AbsolutePath()
-	dirRelativePath := dirMatter.Path
 
 	count := this.matterDao.CountByUserUuidAndPuuidAndDirAndName(user.Uuid, dirMatter.Uuid, false, filename)
 	if count > 0 {
@@ -292,7 +292,6 @@ func (this *MatterService) Upload(request *http.Request, file io.Reader, user *U
 	}
 
 	fileAbsolutePath := dirAbsolutePath + "/" + filename
-	fileRelativePath := dirRelativePath + "/" + filename
 
 	util.MakeDirAll(dirAbsolutePath)
 
@@ -340,6 +339,16 @@ func (this *MatterService) Upload(request *http.Request, file io.Reader, user *U
 		}
 	}
 
+	matter := this.CreateNonDirMatter(dirMatter, filename, fileSize, privacy, user)
+
+	return matter
+}
+
+// create a non dir matter.
+func (this *MatterService) CreateNonDirMatter(dirMatter *Matter, filename string, fileSize int64, privacy bool, user *User) *Matter {
+	dirRelativePath := dirMatter.Path
+	fileRelativePath := dirRelativePath + "/" + filename
+
 	//write to db.
 	matter := &Matter{
 		Puuid:    dirMatter.Uuid,
@@ -358,6 +367,21 @@ func (this *MatterService) Upload(request *http.Request, file io.Reader, user *U
 	//compute the size of directory
 	go core.RunWithRecovery(func() {
 		this.ComputeRouteSize(dirMatter.Uuid, user)
+	})
+
+	return matter
+}
+
+// create a non dir matter.
+func (this *MatterService) UpdateNonDirMatter(matter *Matter, fileSize int64, user *User) *Matter {
+
+	matter.Size = fileSize
+
+	matter = this.matterDao.Save(matter)
+
+	//compute the size of directory
+	go core.RunWithRecovery(func() {
+		this.ComputeRouteSize(matter.Puuid, user)
 	})
 
 	return matter
@@ -1051,21 +1075,38 @@ func (this *MatterService) adjustPath(matter *Matter, parentMatter *Matter) {
 }
 
 //delete someone's EyeblueTank files according to physics files.
-func (this *MatterService) DeleteByPhysics(user *User) {
+func (this *MatterService) DeleteByPhysics(request *http.Request, user *User) {
 
 	if user == nil {
 		panic(result.BadRequest("user cannot be nil."))
 	}
 
-	//scan user's file.
-	this.matterDao.PageHandle("", user.Uuid, "", "", func(matter *Matter) {
-		this.logger.Info("handle %s", matter.Name)
-	})
+	//scan user's file. scan level by level.
+	rootMatter := NewRootMatter(user)
+	this.deleteFolderByPhysics(request, rootMatter, user)
 
 }
 
+func (this *MatterService) deleteFolderByPhysics(request *http.Request, dirMatter *Matter, user *User) {
+
+	//scan user's file. scan level by level.
+	this.matterDao.PageHandle(dirMatter.Uuid, user.Uuid, "", "", func(matter *Matter) {
+
+		if matter.Dir {
+			//delete children first.
+			this.deleteFolderByPhysics(request, matter, user)
+		}
+
+		if !util.PathExists(matter.AbsolutePath()) {
+			this.logger.Info("physics file not exist. delete from tank. %s", matter.Name)
+			this.AtomicDelete(nil, matter, user)
+		}
+
+	})
+}
+
 //scan someone's physics files to EyeblueTank
-func (this *MatterService) Scan(user *User) {
+func (this *MatterService) ScanPhysics(request *http.Request, user *User) {
 
 	if user == nil {
 		panic(result.BadRequest("user cannot be nil."))
@@ -1074,4 +1115,77 @@ func (this *MatterService) Scan(user *User) {
 	rootDirPath := GetUserMatterRootDir(user.Username)
 	this.logger.Info("scan %s's root dir %s", user.Username, rootDirPath)
 
+	rootExists := util.PathExists(rootDirPath)
+	if !rootExists {
+		util.MakeDirAll(rootDirPath)
+	}
+	rootFileInfo, err := os.Lstat(rootDirPath)
+	if err != nil {
+		panic(result.BadRequest("cannot get root file info."))
+	}
+
+	rootMatter := NewRootMatter(user)
+	this.scanPhysicsFolder(request, rootFileInfo, rootMatter, user)
+}
+
+func (this *MatterService) scanPhysicsFolder(request *http.Request, dirInfo os.FileInfo, dirMatter *Matter, user *User) {
+	if !dirInfo.IsDir() {
+		return
+	}
+
+	//fetch all matters under this folder.
+	_, matters := this.matterDao.PlainPage(0, 1000, dirMatter.Uuid, user.Uuid, "", "", nil, nil)
+	nameMatterMap := make(map[string]*Matter)
+	for _, m := range matters {
+		nameMatterMap[m.Name] = m
+	}
+
+	dirPath := dirMatter.AbsolutePath()
+	names, err := util.ReadDirNames(dirPath)
+	if err != nil {
+		this.logger.Error("occur error when ReadDirNames %s %s", dirPath, err.Error())
+		return
+	}
+	for _, name := range names {
+		fileFullPath := filepath.Join(dirPath, name)
+		fileInfo, err := os.Lstat(fileFullPath)
+		if err != nil {
+			this.logger.Error("occur error when Lstat %s %s", name, err.Error())
+			continue
+		}
+
+		//find ther matter
+		var matter *Matter
+		_, ok := nameMatterMap[name]
+		if ok {
+			//exits. check the basic info.
+			matter = nameMatterMap[name]
+			//only check the fileSize.
+			if !matter.Dir {
+				if matter.Size != fileInfo.Size() {
+					this.logger.Info("update matter: %s size %d -> %d", name, matter.Size, fileInfo.Size())
+					this.UpdateNonDirMatter(matter, fileInfo.Size(), user)
+				}
+			}
+
+		} else {
+
+			if fileInfo.IsDir() {
+
+				//create folder.
+				matter = this.createDirectory(request, dirMatter, name, user)
+
+				//recursive scan this folder.
+				this.scanPhysicsFolder(request, fileInfo, matter, user)
+
+			} else {
+
+				//not exist. add basic info.
+				this.logger.Info("Create matter: %s size %d", name, fileInfo.Size())
+				matter = this.CreateNonDirMatter(dirMatter, name, fileInfo.Size(), true, user)
+
+			}
+
+		}
+	}
 }
