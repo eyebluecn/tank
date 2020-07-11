@@ -339,13 +339,13 @@ func (this *MatterService) Upload(request *http.Request, file io.Reader, user *U
 		}
 	}
 
-	matter := this.CreateNonDirMatter(dirMatter, filename, fileSize, privacy, user)
+	matter := this.createNonDirMatter(dirMatter, filename, fileSize, privacy, user)
 
 	return matter
 }
 
 // create a non dir matter.
-func (this *MatterService) CreateNonDirMatter(dirMatter *Matter, filename string, fileSize int64, privacy bool, user *User) *Matter {
+func (this *MatterService) createNonDirMatter(dirMatter *Matter, filename string, fileSize int64, privacy bool, user *User) *Matter {
 	dirRelativePath := dirMatter.Path
 	fileRelativePath := dirRelativePath + "/" + filename
 
@@ -373,7 +373,7 @@ func (this *MatterService) CreateNonDirMatter(dirMatter *Matter, filename string
 }
 
 // create a non dir matter.
-func (this *MatterService) UpdateNonDirMatter(matter *Matter, fileSize int64, user *User) *Matter {
+func (this *MatterService) updateNonDirMatter(matter *Matter, fileSize int64, user *User) *Matter {
 
 	matter.Size = fileSize
 
@@ -1163,8 +1163,8 @@ func (this *MatterService) scanPhysicsFolder(request *http.Request, dirInfo os.F
 			//only check the fileSize.
 			if !matter.Dir {
 				if matter.Size != fileInfo.Size() {
-					this.logger.Info("update matter: %s size %d -> %d", name, matter.Size, fileInfo.Size())
-					this.UpdateNonDirMatter(matter, fileInfo.Size(), user)
+					this.logger.Info("update matter: %s size:%d -> %d", name, matter.Size, fileInfo.Size())
+					this.updateNonDirMatter(matter, fileInfo.Size(), user)
 				}
 			}
 
@@ -1181,8 +1181,8 @@ func (this *MatterService) scanPhysicsFolder(request *http.Request, dirInfo os.F
 			} else {
 
 				//not exist. add basic info.
-				this.logger.Info("Create matter: %s size %d", name, fileInfo.Size())
-				matter = this.CreateNonDirMatter(dirMatter, name, fileInfo.Size(), true, user)
+				this.logger.Info("Create matter: %s size:%d", name, fileInfo.Size())
+				matter = this.createNonDirMatter(dirMatter, name, fileInfo.Size(), true, user)
 
 			}
 

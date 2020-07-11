@@ -5,6 +5,7 @@ import (
 	"github.com/eyebluecn/tank/code/tool/builder"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/uuid"
+	"math"
 	"time"
 )
 
@@ -74,6 +75,15 @@ func (this *UserDao) FindByUsername(username string) *User {
 
 func (this *UserDao) Page(page int, pageSize int, username string, status string, sortArray []builder.OrderPair) *Pager {
 
+	count, users := this.PlainPage(page, pageSize, username, status, sortArray)
+
+	pager := NewPager(page, pageSize, count, users)
+
+	return pager
+}
+
+func (this *UserDao) PlainPage(page int, pageSize int, username string, status string, sortArray []builder.OrderPair) (int, []*User) {
+
 	var wp = &builder.WherePair{}
 
 	if username != "" {
@@ -98,9 +108,31 @@ func (this *UserDao) Page(page int, pageSize int, username string, status string
 
 	this.PanicError(db.Error)
 
-	pager := NewPager(page, pageSize, count, users)
+	return count, users
+}
 
-	return pager
+//handle user page by page.
+func (this *UserDao) PageHandle(username string, status string, fun func(user *User)) {
+
+	//delete share and bridges.
+	pageSize := 1000
+	sortArray := []builder.OrderPair{
+		{
+			Key:   "uuid",
+			Value: DIRECTION_ASC,
+		},
+	}
+	count, _ := this.PlainPage(0, pageSize, username, status, sortArray)
+	if count > 0 {
+		var totalPages = int(math.Ceil(float64(count) / float64(pageSize)))
+		var page int
+		for page = 0; page < totalPages; page++ {
+			_, users := this.PlainPage(0, pageSize, username, status, sortArray)
+			for _, u := range users {
+				fun(u)
+			}
+		}
+	}
 }
 
 func (this *UserDao) CountByUsername(username string) int {

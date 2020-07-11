@@ -2,15 +2,24 @@ package rest
 
 import (
 	"github.com/eyebluecn/tank/code/core"
+	"github.com/eyebluecn/tank/code/tool/util"
 	"github.com/robfig/cron/v3"
+	"net/http"
 )
 
 // system tasks service
 //@Service
 type TaskService struct {
 	BaseBean
-	footprintService *FootprintService
-	dashboardService *DashboardService
+	footprintService  *FootprintService
+	dashboardService  *DashboardService
+	preferenceService *PreferenceService
+	matterService     *MatterService
+	userDao           *UserDao
+
+	//whether scan task is running
+	scanTaskRunning bool
+	scanTaskCron    *cron.Cron
 }
 
 func (this *TaskService) Init() {
@@ -26,6 +35,21 @@ func (this *TaskService) Init() {
 		this.dashboardService = b
 	}
 
+	b = core.CONTEXT.GetBean(this.preferenceService)
+	if b, ok := b.(*PreferenceService); ok {
+		this.preferenceService = b
+	}
+
+	b = core.CONTEXT.GetBean(this.matterService)
+	if b, ok := b.(*MatterService); ok {
+		this.matterService = b
+	}
+	b = core.CONTEXT.GetBean(this.userDao)
+	if b, ok := b.(*UserDao); ok {
+		this.userDao = b
+	}
+
+	this.scanTaskRunning = false
 }
 
 //init the clean footprint task.
@@ -53,16 +77,99 @@ func (this *TaskService) InitEtlTask() {
 	this.logger.Info("[cron job] Everyday 00:05 ETL dashboard data. entryId = %d", entryId)
 }
 
+//scan task.
+func (this *TaskService) doScanTask() {
+
+	if this.scanTaskRunning {
+		this.logger.Info("scan task is processing. Give up this invoke.")
+		return
+	} else {
+		this.scanTaskRunning = true
+	}
+
+	defer func() {
+		if err := recover(); err != nil {
+			this.logger.Info("occur error when do scan task.")
+		}
+		this.logger.Info("finish do scan task.")
+		this.scanTaskRunning = false
+	}()
+
+	this.logger.Info("do the scan task.")
+	preference := this.preferenceService.Fetch()
+	scanConfig := preference.FetchScanConfig()
+
+	if !scanConfig.Enable {
+		this.logger.Info("scan task not enabled.")
+		return
+	}
+
+	//mock a request.
+	request := &http.Request{}
+
+	if scanConfig.Scope == SCAN_SCOPE_ALL {
+		//scan all user's root folder.
+		this.userDao.PageHandle("", "", func(user *User) {
+
+			core.RunWithRecovery(func() {
+
+				this.matterService.DeleteByPhysics(request, user)
+				this.matterService.ScanPhysics(request, user)
+
+			})
+
+		})
+
+	} else if scanConfig.Scope == SCAN_SCOPE_CUSTOM {
+		//scan custom user's folder.
+
+		for _, username := range scanConfig.Usernames {
+			user := this.userDao.FindByUsername(username)
+			if user == nil {
+				this.logger.Error("username = %s not exist.", username)
+			} else {
+				this.logger.Info("scan custom user folder. username = %s", username)
+
+				core.RunWithRecovery(func() {
+
+					this.matterService.DeleteByPhysics(request, user)
+					this.matterService.ScanPhysics(request, user)
+
+				})
+
+			}
+		}
+	}
+
+}
+
 //init the scan task.
 func (this *TaskService) InitScanTask() {
 
-	expression := "15 0 * * *"
-	cronJob := cron.New()
-	entryId, err := cronJob.AddFunc(expression, this.dashboardService.Etl)
-	core.PanicError(err)
-	cronJob.Start()
+	if this.scanTaskCron != nil {
+		this.scanTaskCron.Stop()
+		this.scanTaskCron = nil
+	}
 
-	this.logger.Info("[cron job] Everyday 00:05 ETL dashboard data. entryId = %d", entryId)
+	preference := this.preferenceService.Fetch()
+	scanConfig := preference.FetchScanConfig()
+
+	if !scanConfig.Enable {
+		this.logger.Info("scan task not enabled.")
+		return
+	}
+
+	if !util.ValidateCron(scanConfig.Cron) {
+		this.logger.Info("cron spec %s error", scanConfig.Cron)
+		return
+	}
+
+	this.scanTaskCron = cron.New()
+	entryId, err := this.scanTaskCron.AddFunc(scanConfig.Cron, this.doScanTask)
+	core.PanicError(err)
+	this.scanTaskCron.Start()
+
+	this.logger.Info("[cron job] %s do scan task. entryId = %d", scanConfig.Cron, entryId)
 }
 
 func (this *TaskService) Bootstrap() {
@@ -72,5 +179,8 @@ func (this *TaskService) Bootstrap() {
 
 	//load the etl task.
 	this.InitEtlTask()
+
+	//load the scan task.
+	this.InitScanTask()
 
 }

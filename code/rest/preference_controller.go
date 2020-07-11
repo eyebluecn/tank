@@ -15,6 +15,7 @@ type PreferenceController struct {
 	preferenceDao     *PreferenceDao
 	matterDao         *MatterDao
 	preferenceService *PreferenceService
+	taskService       *TaskService
 }
 
 func (this *PreferenceController) Init() {
@@ -32,6 +33,11 @@ func (this *PreferenceController) Init() {
 	b = core.CONTEXT.GetBean(this.preferenceService)
 	if b, ok := b.(*PreferenceService); ok {
 		this.preferenceService = b
+	}
+
+	b = core.CONTEXT.GetBean(this.taskService)
+	if b, ok := b.(*TaskService); ok {
+		this.taskService = b
 	}
 
 }
@@ -174,6 +180,9 @@ func (this *PreferenceController) EditScanConfig(writer http.ResponseWriter, req
 	}
 
 	preference = this.preferenceService.Save(preference)
+
+	//reinit the scan task.
+	this.taskService.InitScanTask()
 
 	return this.Success(preference)
 }
