@@ -489,7 +489,7 @@ func (this *MatterDao) Recovery(matter *Matter) {
 		matters := this.FindByPuuidAndUserUuid(matter.Uuid, matter.UserUuid, nil)
 
 		for _, f := range matters {
-			this.SoftDelete(f)
+			this.Recovery(f)
 		}
 
 		//recovery from db.
