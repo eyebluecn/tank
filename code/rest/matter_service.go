@@ -1151,7 +1151,7 @@ func (this *MatterService) DeleteByPhysics(request *http.Request, user *User) {
 func (this *MatterService) deleteFolderByPhysics(request *http.Request, dirMatter *Matter, user *User) {
 
 	//scan user's file. scan level by level.
-	this.matterDao.PageHandle(dirMatter.Uuid, user.Uuid, "", "", func(matter *Matter) {
+	this.matterDao.PageHandle(dirMatter.Uuid, user.Uuid, "", "", "", func(matter *Matter) {
 
 		if matter.Dir {
 			//delete children first.
