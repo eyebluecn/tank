@@ -77,7 +77,7 @@ func (this *TankContext) OpenDb() {
 		core.LOGGER.Panic("failed to connect mysql database")
 	}
 
-	//whether open the db log. (only true when debug)
+	//whether open the db sql log. (only true when debug)
 	this.db.LogMode(false)
 }
 

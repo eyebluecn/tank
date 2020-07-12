@@ -462,13 +462,13 @@ func (this *MatterDao) SoftDelete(matter *Matter) {
 		}
 
 		//soft delete from db.
-		db := core.CONTEXT.GetDB().Model(&Matter{}).Where("uuid = ?", matter.Uuid).Update(map[string]interface{}{"deleted": 1, "delete_time": time.Now()})
+		db := core.CONTEXT.GetDB().Model(&Matter{}).Where("uuid = ?", matter.Uuid).Update(map[string]interface{}{"deleted": true, "delete_time": time.Now()})
 		this.PanicError(db.Error)
 
 	} else {
 
 		//soft delete from db.
-		db := core.CONTEXT.GetDB().Model(&Matter{}).Where("uuid = ?", matter.Uuid).Update(map[string]interface{}{"deleted": 1, "delete_time": time.Now()})
+		db := core.CONTEXT.GetDB().Model(&Matter{}).Where("uuid = ?", matter.Uuid).Update(map[string]interface{}{"deleted": true, "delete_time": time.Now()})
 		this.PanicError(db.Error)
 
 		//no need to delete its image cache.
