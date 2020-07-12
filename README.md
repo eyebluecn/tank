@@ -1,4 +1,4 @@
-[![蓝眼云盘logo](https://raw.githubusercontent.com/eyebluecn/tank/master/build/doc/img/logo.png)](https://github.com/eyebluecn/tank)
+[![蓝眼云盘logo](./build/doc/img/logo.png)](https://github.com/eyebluecn/tank)
 
 [English Version](https://tank-doc.eyeblue.cn/en)
 
@@ -18,17 +18,12 @@
 
 ![](./build/doc/img/tank2.png)
 
-![](./build/doc/img/tank3.png)
-
-![](./build/doc/img/tank4.png)
-
 #### 手机端截图
 
 ![](./build/doc/img/mobile.png)
 
 
-## [安装文档](https://tank-doc.eyeblue.cn/zh/basic/install.html)
-
+## [安装文档](https://tank-doc.eyeblue.cn/basic/install.html)
 
 ### Contribution
 
@@ -36,7 +31,7 @@
 
 如果您也想参与进来，请尽情的fork, star, post issue, pull requests
 
-当然你可以加入钉钉群一起直接交流
+当然你可以加入钉钉群一起直接交流，在钉钉群中可以获取最新beta版本。
 
 ![](./build/doc/img/dingding.jpg)
 
