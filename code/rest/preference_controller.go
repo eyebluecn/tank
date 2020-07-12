@@ -123,6 +123,10 @@ func (this *PreferenceController) Edit(writer http.ResponseWriter, request *http
 		intDeletedKeepDays, err := strconv.Atoi(deletedKeepDaysStr)
 		this.PanicError(err)
 		deletedKeepDays = int64(intDeletedKeepDays)
+
+		if deletedKeepDays < 0 {
+			panic(result.BadRequest("deletedKeepDays cannot less than 0"))
+		}
 	}
 
 	var allowRegister = false
