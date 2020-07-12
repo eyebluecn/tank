@@ -246,7 +246,7 @@ func (this *MatterDao) FindByUuids(uuids []string, sortArray []builder.OrderPair
 
 	return matters
 }
-func (this *MatterDao) PlainPage(page int, pageSize int, puuid string, userUuid string, name string, dir string, extensions []string, sortArray []builder.OrderPair) (int, []*Matter) {
+func (this *MatterDao) PlainPage(page int, pageSize int, puuid string, userUuid string, name string, dir string, deleted string, extensions []string, sortArray []builder.OrderPair) (int, []*Matter) {
 
 	var wp = &builder.WherePair{}
 
@@ -266,6 +266,12 @@ func (this *MatterDao) PlainPage(page int, pageSize int, puuid string, userUuid 
 		wp = wp.And(&builder.WherePair{Query: "dir = ?", Args: []interface{}{1}})
 	} else if dir == FALSE {
 		wp = wp.And(&builder.WherePair{Query: "dir = ?", Args: []interface{}{0}})
+	}
+
+	if deleted == TRUE {
+		wp = wp.And(&builder.WherePair{Query: "deleted = ?", Args: []interface{}{1}})
+	} else if deleted == FALSE {
+		wp = wp.And(&builder.WherePair{Query: "deleted = ?", Args: []interface{}{0}})
 	}
 
 	var conditionDB *gorm.DB
@@ -291,16 +297,16 @@ func (this *MatterDao) PlainPage(page int, pageSize int, puuid string, userUuid 
 
 	return count, matters
 }
-func (this *MatterDao) Page(page int, pageSize int, puuid string, userUuid string, name string, dir string, extensions []string, sortArray []builder.OrderPair) *Pager {
+func (this *MatterDao) Page(page int, pageSize int, puuid string, userUuid string, name string, dir string, deleted string, extensions []string, sortArray []builder.OrderPair) *Pager {
 
-	count, matters := this.PlainPage(page, pageSize, puuid, userUuid, name, dir, extensions, sortArray)
+	count, matters := this.PlainPage(page, pageSize, puuid, userUuid, name, dir, deleted, extensions, sortArray)
 	pager := NewPager(page, pageSize, count, matters)
 
 	return pager
 }
 
 //handle matter page by page.
-func (this *MatterDao) PageHandle(puuid string, userUuid string, name string, dir string, fun func(matter *Matter)) {
+func (this *MatterDao) PageHandle(puuid string, userUuid string, name string, dir string, deleted string, fun func(matter *Matter)) {
 
 	//delete share and bridges.
 	pageSize := 1000
@@ -310,13 +316,13 @@ func (this *MatterDao) PageHandle(puuid string, userUuid string, name string, di
 			Value: DIRECTION_ASC,
 		},
 	}
-	count, _ := this.PlainPage(0, pageSize, puuid, userUuid, name, dir, nil, sortArray)
+	count, _ := this.PlainPage(0, pageSize, puuid, userUuid, name, dir, deleted, nil, sortArray)
 	if count > 0 {
 		var totalPages = int(math.Ceil(float64(count) / float64(pageSize)))
 
 		var page int
 		for page = 0; page < totalPages; page++ {
-			_, matters := this.PlainPage(0, pageSize, puuid, userUuid, name, dir, nil, sortArray)
+			_, matters := this.PlainPage(0, pageSize, puuid, userUuid, name, dir, deleted, nil, sortArray)
 			for _, matter := range matters {
 				fun(matter)
 			}
@@ -407,6 +413,37 @@ func (this *MatterDao) Delete(matter *Matter) {
 		if err != nil {
 			this.logger.Error("occur error when deleting file. %v", err)
 		}
+
+	}
+}
+
+//soft delete a file from db and disk.
+func (this *MatterDao) SoftDelete(matter *Matter) {
+
+	// recursive if dir
+	if matter.Dir {
+		matters := this.FindByPuuidAndUserUuid(matter.Uuid, matter.UserUuid, nil)
+
+		for _, f := range matters {
+			this.SoftDelete(f)
+		}
+
+		//soft delete from db.
+		db := core.CONTEXT.GetDB().Model(&Matter{}).Where("uuid = ?", matter.Uuid).Update(map[string]interface{}{"deleted": 1})
+		this.PanicError(db.Error)
+
+	} else {
+
+		//soft delete from db.
+		db := core.CONTEXT.GetDB().Model(&Matter{}).Where("uuid = ?", matter.Uuid).Update(map[string]interface{}{"deleted": 1})
+		this.PanicError(db.Error)
+
+		//no need to delete its image cache.
+
+		//delete all the share.
+		this.bridgeDao.DeleteByMatterUuid(matter.Uuid)
+
+		//no need to delete from disk.
 
 	}
 }

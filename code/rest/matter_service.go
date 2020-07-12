@@ -255,6 +255,21 @@ func (this *MatterService) Delete(request *http.Request, matter *Matter, user *U
 	this.ComputeRouteSize(matter.Puuid, user)
 }
 
+//soft delete files.
+func (this *MatterService) SoftDelete(request *http.Request, matter *Matter, user *User) {
+
+	if matter == nil {
+		panic(result.BadRequest("matter cannot be nil"))
+	}
+
+	if matter.Deleted {
+		panic(result.BadRequest("matter has been deleted"))
+	}
+
+	this.matterDao.SoftDelete(matter)
+	//no need to recompute size.
+}
+
 //atomic delete files
 func (this *MatterService) AtomicDelete(request *http.Request, matter *Matter, user *User) {
 
@@ -269,6 +284,24 @@ func (this *MatterService) AtomicDelete(request *http.Request, matter *Matter, u
 	this.Delete(request, matter, user)
 }
 
+//atomic soft delete files
+func (this *MatterService) AtomicSoftDelete(request *http.Request, matter *Matter, user *User) {
+
+	if matter == nil {
+		panic(result.BadRequest("matter cannot be nil"))
+	}
+
+	if matter.Deleted {
+		panic(result.BadRequest("matter has been deleted"))
+	}
+
+	//lock
+	this.userService.MatterLock(matter.UserUuid)
+	defer this.userService.MatterUnlock(matter.UserUuid)
+
+	this.SoftDelete(request, matter, user)
+}
+
 //upload files.
 func (this *MatterService) Upload(request *http.Request, file io.Reader, user *User, dirMatter *Matter, filename string, privacy bool) *Matter {
 
@@ -278,6 +311,10 @@ func (this *MatterService) Upload(request *http.Request, file io.Reader, user *U
 
 	if dirMatter == nil {
 		panic(result.BadRequest("dirMatter cannot be nil."))
+	}
+
+	if dirMatter.Deleted {
+		panic(result.BadRequest("Dir has been deleted. Cannot upload under it."))
 	}
 
 	if len(filename) > MATTER_NAME_MAX_LENGTH {
@@ -479,6 +516,10 @@ func (this *MatterService) createDirectory(request *http.Request, dirMatter *Mat
 		panic(result.BadRequest("dirMatter must be directory"))
 	}
 
+	if dirMatter.Deleted {
+		panic(result.BadRequest("Dir has been deleted. Cannot create dir under it."))
+	}
+
 	if dirMatter.UserUuid != user.Uuid {
 
 		panic(result.BadRequest("file's user not the same"))
@@ -536,6 +577,10 @@ func (this *MatterService) createDirectory(request *http.Request, dirMatter *Mat
 }
 
 func (this *MatterService) AtomicCreateDirectory(request *http.Request, dirMatter *Matter, name string, user *User) *Matter {
+
+	if dirMatter.Deleted {
+		panic(result.BadRequest("Dir has been deleted. Cannot create sub dir under it."))
+	}
 
 	this.userService.MatterLock(user.Uuid)
 	defer this.userService.MatterUnlock(user.Uuid)
@@ -782,6 +827,10 @@ func (this *MatterService) AtomicRename(request *http.Request, matter *Matter, n
 		panic(result.BadRequest("user cannot be nil"))
 	}
 
+	if matter.Deleted {
+		panic(result.BadRequest("matter has been deleted. Cannot rename."))
+	}
+
 	this.userService.MatterLock(user.Uuid)
 	defer this.userService.MatterUnlock(user.Uuid)
 
@@ -868,6 +917,10 @@ func (this *MatterService) AtomicMirror(request *http.Request, srcPath string, d
 	}
 
 	destDirMatter := this.CreateDirectories(request, user, destPath)
+
+	if destDirMatter.Deleted {
+		panic(result.BadRequest("dest matter has been deleted. Cannot mirror."))
+	}
 
 	this.mirror(request, srcPath, destDirMatter, overwrite, user)
 }
@@ -1036,6 +1089,10 @@ func (this *MatterService) AtomicCrawl(request *http.Request, url string, filena
 		panic(result.BadRequest("user cannot be nil."))
 	}
 
+	if dirMatter.Deleted {
+		panic(result.BadRequest("Dir has been deleted. Cannot crawl under it."))
+	}
+
 	this.userService.MatterLock(user.Uuid)
 	defer this.userService.MatterUnlock(user.Uuid)
 
@@ -1138,7 +1195,7 @@ func (this *MatterService) scanPhysicsFolder(request *http.Request, dirInfo os.F
 	}
 
 	//fetch all matters under this folder.
-	_, matters := this.matterDao.PlainPage(0, 1000, dirMatter.Uuid, user.Uuid, "", "", nil, nil)
+	_, matters := this.matterDao.PlainPage(0, 1000, dirMatter.Uuid, user.Uuid, "", "", "", nil, nil)
 	nameMatterMap := make(map[string]*Matter)
 	for _, m := range matters {
 		nameMatterMap[m.Name] = m

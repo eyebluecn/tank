@@ -73,6 +73,8 @@ func (this *MatterController) RegisterRoutes() map[string]func(writer http.Respo
 	routeMap["/api/matter/create/directory"] = this.Wrap(this.CreateDirectory, USER_ROLE_USER)
 	routeMap["/api/matter/upload"] = this.Wrap(this.Upload, USER_ROLE_USER)
 	routeMap["/api/matter/crawl"] = this.Wrap(this.Crawl, USER_ROLE_USER)
+	routeMap["/api/matter/soft/delete"] = this.Wrap(this.SoftDelete, USER_ROLE_USER)
+	routeMap["/api/matter/soft/delete/batch"] = this.Wrap(this.SoftDeleteBatch, USER_ROLE_USER)
 	routeMap["/api/matter/delete"] = this.Wrap(this.Delete, USER_ROLE_USER)
 	routeMap["/api/matter/delete/batch"] = this.Wrap(this.DeleteBatch, USER_ROLE_USER)
 	routeMap["/api/matter/rename"] = this.Wrap(this.Rename, USER_ROLE_USER)
@@ -118,6 +120,7 @@ func (this *MatterController) Page(writer http.ResponseWriter, request *http.Req
 	puuid := request.FormValue("puuid")
 	name := request.FormValue("name")
 	dir := request.FormValue("dir")
+	deleted := request.FormValue("deleted")
 	orderDir := request.FormValue("orderDir")
 	orderSize := request.FormValue("orderSize")
 	orderName := request.FormValue("orderName")
@@ -201,7 +204,7 @@ func (this *MatterController) Page(writer http.ResponseWriter, request *http.Req
 		},
 	}
 
-	pager := this.matterDao.Page(page, pageSize, puuid, userUuid, name, dir, extensions, sortArray)
+	pager := this.matterDao.Page(page, pageSize, puuid, userUuid, name, dir, deleted, extensions, sortArray)
 
 	return this.Success(pager)
 }
@@ -280,6 +283,57 @@ func (this *MatterController) Crawl(writer http.ResponseWriter, request *http.Re
 	return this.Success(matter)
 }
 
+//soft delete.
+func (this *MatterController) SoftDelete(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+
+	uuid := request.FormValue("uuid")
+	if uuid == "" {
+		panic(result.BadRequest("uuid cannot be null"))
+	}
+
+	matter := this.matterDao.CheckByUuid(uuid)
+
+	user := this.checkUser(request)
+	if matter.UserUuid != user.Uuid {
+		panic(result.UNAUTHORIZED)
+	}
+
+	this.matterService.AtomicSoftDelete(request, matter, user)
+
+	return this.Success("OK")
+}
+
+func (this *MatterController) SoftDeleteBatch(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+
+	uuids := request.FormValue("uuids")
+	if uuids == "" {
+		panic(result.BadRequest("uuids cannot be null"))
+	}
+
+	uuidArray := strings.Split(uuids, ",")
+
+	for _, uuid := range uuidArray {
+
+		matter := this.matterDao.FindByUuid(uuid)
+
+		if matter == nil {
+			this.logger.Warn("%s not exist anymore", uuid)
+			continue
+		}
+
+		user := this.checkUser(request)
+		if matter.UserUuid != user.Uuid {
+			panic(result.UNAUTHORIZED)
+		}
+
+		this.matterService.AtomicSoftDelete(request, matter, user)
+
+	}
+
+	return this.Success("OK")
+}
+
+//complete delete.
 func (this *MatterController) Delete(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	uuid := request.FormValue("uuid")
@@ -357,6 +411,10 @@ func (this *MatterController) ChangePrivacy(writer http.ResponseWriter, request 
 
 	matter := this.matterDao.CheckByUuid(uuid)
 
+	if matter.Deleted {
+		panic(result.BadRequest("matter has been deleted. Cannot change privacy."))
+	}
+
 	if matter.Privacy == privacy {
 		panic(result.BadRequest("not changed. Invalid operation."))
 	}
@@ -395,12 +453,20 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 		panic(result.UNAUTHORIZED)
 	}
 
+	if destMatter.Deleted {
+		panic(result.BadRequest("dest matter has been deleted. Cannot move."))
+	}
+
 	var srcMatters []*Matter
 	for _, uuid := range srcUuids {
 		srcMatter := this.matterDao.CheckByUuid(uuid)
 
 		if srcMatter.Puuid == destMatter.Uuid {
 			panic(result.BadRequest("no move, invalid operation"))
+		}
+
+		if srcMatter.Deleted {
+			panic(result.BadRequest("src matter has been deleted. Cannot move."))
 		}
 
 		//check whether there are files with the same name.
@@ -461,6 +527,13 @@ func (this *MatterController) Zip(writer http.ResponseWriter, request *http.Requ
 	if matters == nil || len(matters) == 0 {
 		panic(result.BadRequest("matters cannot be nil."))
 	}
+
+	for _, matter := range matters {
+		if matter.Deleted {
+			panic(result.BadRequest("matter has been deleted. Cannot download batch."))
+		}
+	}
+
 	user := this.checkUser(request)
 	puuid := matters[0].Puuid
 
