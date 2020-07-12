@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"fmt"
 	"github.com/eyebluecn/tank/code/core"
+	"github.com/eyebluecn/tank/code/tool/builder"
 	"github.com/eyebluecn/tank/code/tool/download"
 	"github.com/eyebluecn/tank/code/tool/i18n"
 	"github.com/eyebluecn/tank/code/tool/result"
@@ -1151,7 +1152,7 @@ func (this *MatterService) DeleteByPhysics(request *http.Request, user *User) {
 func (this *MatterService) deleteFolderByPhysics(request *http.Request, dirMatter *Matter, user *User) {
 
 	//scan user's file. scan level by level.
-	this.matterDao.PageHandle(dirMatter.Uuid, user.Uuid, "", "", "", func(matter *Matter) {
+	this.matterDao.PageHandle(dirMatter.Uuid, user.Uuid, "", "", "", nil, nil, func(matter *Matter) {
 
 		if matter.Dir {
 			//delete children first.
@@ -1195,7 +1196,7 @@ func (this *MatterService) scanPhysicsFolder(request *http.Request, dirInfo os.F
 	}
 
 	//fetch all matters under this folder.
-	_, matters := this.matterDao.PlainPage(0, 1000, dirMatter.Uuid, user.Uuid, "", "", "", nil, nil)
+	_, matters := this.matterDao.PlainPage(0, 1000, dirMatter.Uuid, user.Uuid, "", "", "", nil, nil, nil)
 	nameMatterMap := make(map[string]*Matter)
 	for _, m := range matters {
 		nameMatterMap[m.Name] = m
@@ -1254,4 +1255,40 @@ func (this *MatterService) scanPhysicsFolder(request *http.Request, dirInfo os.F
 
 		}
 	}
+}
+
+//clean all the expired deleted matters
+func (this *MatterService) CleanExpiredDeletedMatters() {
+	//mock a request.
+	request := &http.Request{}
+
+	preference := this.preferenceService.Fetch()
+
+	this.userDao.PageHandle("", "", func(user *User) {
+
+		this.logger.Info("Clean %s 's deleted matters", user.Username)
+
+		thenDate := time.Now()
+		thenDate = thenDate.AddDate(0, 0, int(-preference.DeletedKeepDays))
+		thenDate = util.FirstSecondOfDay(thenDate)
+
+		//first remove all the matter(not dir).
+		this.matterDao.PageHandle("", "", "", FALSE, TRUE, &thenDate, nil, func(matter *Matter) {
+			this.Delete(request, matter, user)
+		})
+
+		sortArray := []builder.OrderPair{
+			{
+				Key:   "path",
+				Value: DIRECTION_DESC,
+			},
+		}
+
+		//remove all the deleted directories. sort by path.
+		this.matterDao.PageHandle("", "", "", TRUE, TRUE, &thenDate, sortArray, func(matter *Matter) {
+			this.Delete(request, matter, user)
+		})
+
+	})
+
 }

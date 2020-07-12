@@ -58,11 +58,11 @@ func (this *TaskService) InitCleanFootprintTask() {
 	//use standard cron expression. 5 fields. ()
 	expression := "10 0 * * *"
 	cronJob := cron.New()
-	entryId, err := cronJob.AddFunc(expression, this.footprintService.CleanOldData)
+	_, err := cronJob.AddFunc(expression, this.footprintService.CleanOldData)
 	core.PanicError(err)
 	cronJob.Start()
 
-	this.logger.Info("[cron job] Every day 00:10 delete Footprint data of 8 days ago. entryId = %d", entryId)
+	this.logger.Info("[cron job] Every day 00:10 delete Footprint data of 8 days ago.")
 }
 
 //init the elt task.
@@ -70,11 +70,23 @@ func (this *TaskService) InitEtlTask() {
 
 	expression := "5 0 * * *"
 	cronJob := cron.New()
-	entryId, err := cronJob.AddFunc(expression, this.dashboardService.Etl)
+	_, err := cronJob.AddFunc(expression, this.dashboardService.Etl)
 	core.PanicError(err)
 	cronJob.Start()
 
-	this.logger.Info("[cron job] Everyday 00:05 ETL dashboard data. entryId = %d", entryId)
+	this.logger.Info("[cron job] Everyday 00:05 ETL dashboard data.")
+}
+
+//init the clean deleted matters task.
+func (this *TaskService) InitCleanDeletedMattersTask() {
+
+	expression := "0 1 * * *"
+	cronJob := cron.New()
+	_, err := cronJob.AddFunc(expression, this.matterService.CleanExpiredDeletedMatters)
+	core.PanicError(err)
+	cronJob.Start()
+
+	this.logger.Info("[cron job] Everyday 01:00 Clean deleted matters.")
 }
 
 //scan task.
@@ -165,11 +177,11 @@ func (this *TaskService) InitScanTask() {
 	}
 
 	this.scanTaskCron = cron.New()
-	entryId, err := this.scanTaskCron.AddFunc(scanConfig.Cron, this.doScanTask)
+	_, err := this.scanTaskCron.AddFunc(scanConfig.Cron, this.doScanTask)
 	core.PanicError(err)
 	this.scanTaskCron.Start()
 
-	this.logger.Info("[cron job] %s do scan task. entryId = %d", scanConfig.Cron, entryId)
+	this.logger.Info("[cron job] %s do scan task.", scanConfig.Cron)
 }
 
 func (this *TaskService) Bootstrap() {
@@ -179,6 +191,9 @@ func (this *TaskService) Bootstrap() {
 
 	//load the etl task.
 	this.InitEtlTask()
+
+	//load the clean deleted matters task.
+	this.InitCleanDeletedMattersTask()
 
 	//load the scan task.
 	this.InitScanTask()

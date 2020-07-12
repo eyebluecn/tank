@@ -255,7 +255,17 @@ func (this *MatterDao) FindByUuids(uuids []string, sortArray []builder.OrderPair
 
 	return matters
 }
-func (this *MatterDao) PlainPage(page int, pageSize int, puuid string, userUuid string, name string, dir string, deleted string, extensions []string, sortArray []builder.OrderPair) (int, []*Matter) {
+func (this *MatterDao) PlainPage(
+	page int,
+	pageSize int,
+	puuid string,
+	userUuid string,
+	name string,
+	dir string,
+	deleted string,
+	deleteTimeBefore *time.Time,
+	extensions []string,
+	sortArray []builder.OrderPair) (int, []*Matter) {
 
 	var wp = &builder.WherePair{}
 
@@ -269,6 +279,10 @@ func (this *MatterDao) PlainPage(page int, pageSize int, puuid string, userUuid 
 
 	if name != "" {
 		wp = wp.And(&builder.WherePair{Query: "name LIKE ?", Args: []interface{}{"%" + name + "%"}})
+	}
+
+	if deleteTimeBefore != nil {
+		wp = wp.And(&builder.WherePair{Query: "delete_time < ?", Args: []interface{}{&deleteTimeBefore}})
 	}
 
 	if dir == TRUE {
@@ -308,30 +322,40 @@ func (this *MatterDao) PlainPage(page int, pageSize int, puuid string, userUuid 
 }
 func (this *MatterDao) Page(page int, pageSize int, puuid string, userUuid string, name string, dir string, deleted string, extensions []string, sortArray []builder.OrderPair) *Pager {
 
-	count, matters := this.PlainPage(page, pageSize, puuid, userUuid, name, dir, deleted, extensions, sortArray)
+	count, matters := this.PlainPage(page, pageSize, puuid, userUuid, name, dir, deleted, nil, extensions, sortArray)
 	pager := NewPager(page, pageSize, count, matters)
 
 	return pager
 }
 
 //handle matter page by page.
-func (this *MatterDao) PageHandle(puuid string, userUuid string, name string, dir string, deleted string, fun func(matter *Matter)) {
+func (this *MatterDao) PageHandle(
+	puuid string,
+	userUuid string,
+	name string,
+	dir string,
+	deleted string,
+	deleteTimeBefore *time.Time,
+	sortArray []builder.OrderPair,
+	fun func(matter *Matter)) {
 
-	//delete share and bridges.
 	pageSize := 1000
-	sortArray := []builder.OrderPair{
-		{
-			Key:   "uuid",
-			Value: DIRECTION_ASC,
-		},
+	if sortArray == nil || len(sortArray) == 0 {
+		sortArray = []builder.OrderPair{
+			{
+				Key:   "uuid",
+				Value: DIRECTION_ASC,
+			},
+		}
 	}
-	count, _ := this.PlainPage(0, pageSize, puuid, userUuid, name, dir, deleted, nil, sortArray)
+
+	count, _ := this.PlainPage(0, pageSize, puuid, userUuid, name, dir, deleted, deleteTimeBefore, nil, sortArray)
 	if count > 0 {
 		var totalPages = int(math.Ceil(float64(count) / float64(pageSize)))
 
 		var page int
 		for page = 0; page < totalPages; page++ {
-			_, matters := this.PlainPage(0, pageSize, puuid, userUuid, name, dir, deleted, nil, sortArray)
+			_, matters := this.PlainPage(0, pageSize, puuid, userUuid, name, dir, deleted, deleteTimeBefore, nil, sortArray)
 			for _, matter := range matters {
 				fun(matter)
 			}

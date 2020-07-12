@@ -27,11 +27,11 @@ func (this *TankLogger) Init() {
 
 	expression := "0 0 * * *"
 	cronJob := cron.New()
-	entryId, err := cronJob.AddFunc(expression, this.maintain)
+	_, err := cronJob.AddFunc(expression, this.maintain)
 	core.PanicError(err)
 	cronJob.Start()
 
-	this.Info("[cron job] Every day 00:00 maintain log file. entryId = %d", entryId)
+	this.Info("[cron job] Every day 00:00 maintain log file.")
 }
 
 func (this *TankLogger) Destroy() {
