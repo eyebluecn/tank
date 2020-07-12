@@ -163,7 +163,7 @@ func (this *DavController) debug(writer http.ResponseWriter, request *http.Reque
 func (this *DavController) Index(writer http.ResponseWriter, request *http.Request, subPath string) {
 
 	//when debugging. open it.
-	this.debug(writer, request, subPath)
+	//this.debug(writer, request, subPath)
 
 	user := this.CheckCurrentUser(writer, request)
 

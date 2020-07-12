@@ -213,10 +213,19 @@ func (this *MatterDao) FindByUserUuidAndPuuidAndDirAndName(userUuid string, puui
 }
 
 func (this *MatterDao) FindByPuuidAndUserUuid(puuid string, userUuid string, sortArray []builder.OrderPair) []*Matter {
+	return this.FindByPuuidAndUserUuidAndDeleted(puuid, userUuid, "", sortArray)
+}
+
+func (this *MatterDao) FindByPuuidAndUserUuidAndDeleted(puuid string, userUuid string, deleted string, sortArray []builder.OrderPair) []*Matter {
 	var matters []*Matter
 
 	var wp = &builder.WherePair{}
 	wp = wp.And(&builder.WherePair{Query: "puuid = ? AND user_uuid = ?", Args: []interface{}{puuid, userUuid}})
+	if deleted == TRUE {
+		wp = wp.And(&builder.WherePair{Query: "deleted = 1", Args: []interface{}{}})
+	} else if deleted == FALSE {
+		wp = wp.And(&builder.WherePair{Query: "deleted = 0", Args: []interface{}{}})
+	}
 
 	if sortArray == nil {
 
@@ -429,13 +438,13 @@ func (this *MatterDao) SoftDelete(matter *Matter) {
 		}
 
 		//soft delete from db.
-		db := core.CONTEXT.GetDB().Model(&Matter{}).Where("uuid = ?", matter.Uuid).Update(map[string]interface{}{"deleted": 1})
+		db := core.CONTEXT.GetDB().Model(&Matter{}).Where("uuid = ?", matter.Uuid).Update(map[string]interface{}{"deleted": 1, "delete_time": time.Now()})
 		this.PanicError(db.Error)
 
 	} else {
 
 		//soft delete from db.
-		db := core.CONTEXT.GetDB().Model(&Matter{}).Where("uuid = ?", matter.Uuid).Update(map[string]interface{}{"deleted": 1})
+		db := core.CONTEXT.GetDB().Model(&Matter{}).Where("uuid = ?", matter.Uuid).Update(map[string]interface{}{"deleted": 1, "delete_time": time.Now()})
 		this.PanicError(db.Error)
 
 		//no need to delete its image cache.

@@ -200,7 +200,7 @@ func (this *DavService) HandlePropfind(writer http.ResponseWriter, request *http
 		matters = []*Matter{matter}
 	} else {
 		// len(matters) == 0 means empty directory
-		matters = this.matterDao.FindByPuuidAndUserUuid(matter.Uuid, user.Uuid, nil)
+		matters = this.matterDao.FindByPuuidAndUserUuidAndDeleted(matter.Uuid, user.Uuid, FALSE, nil)
 
 		//add this matter to head.
 		matters = append([]*Matter{matter}, matters...)
@@ -373,7 +373,7 @@ func (this *DavService) HandleDelete(w http.ResponseWriter, r *http.Request, use
 
 	matter := this.matterDao.CheckWithRootByPath(subPath, user)
 
-	this.matterService.AtomicDelete(r, matter, user)
+	this.matterService.AtomicSoftDelete(r, matter, user)
 }
 
 //crate a directory
