@@ -2,7 +2,7 @@
 
 [English Version](https://tank-doc.eyeblue.cn/en)
 
-# 蓝眼云盘（3.1.0）
+# 蓝眼云盘（3.0.6）
 
 [在线Demo](https://tank.eyeblue.cn) (体验账号： demo 密码：123456)
 
