@@ -450,7 +450,7 @@ func (this *MatterDao) Delete(matter *Matter) {
 	}
 }
 
-//soft delete a file from db and disk.
+//soft delete a file
 func (this *MatterDao) SoftDelete(matter *Matter) {
 
 	// recursive if dir
@@ -477,6 +477,30 @@ func (this *MatterDao) SoftDelete(matter *Matter) {
 		this.bridgeDao.DeleteByMatterUuid(matter.Uuid)
 
 		//no need to delete from disk.
+
+	}
+}
+
+//recovery a file
+func (this *MatterDao) Recovery(matter *Matter) {
+
+	// recursive if dir
+	if matter.Dir {
+		matters := this.FindByPuuidAndUserUuid(matter.Uuid, matter.UserUuid, nil)
+
+		for _, f := range matters {
+			this.SoftDelete(f)
+		}
+
+		//recovery from db.
+		db := core.CONTEXT.GetDB().Model(&Matter{}).Where("uuid = ?", matter.Uuid).Update(map[string]interface{}{"deleted": false, "delete_time": time.Now()})
+		this.PanicError(db.Error)
+
+	} else {
+
+		//recovery from db.
+		db := core.CONTEXT.GetDB().Model(&Matter{}).Where("uuid = ?", matter.Uuid).Update(map[string]interface{}{"deleted": false, "delete_time": time.Now()})
+		this.PanicError(db.Error)
 
 	}
 }

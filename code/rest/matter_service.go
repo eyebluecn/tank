@@ -271,6 +271,21 @@ func (this *MatterService) SoftDelete(request *http.Request, matter *Matter, use
 	//no need to recompute size.
 }
 
+//recovery delete files.
+func (this *MatterService) Recovery(request *http.Request, matter *Matter, user *User) {
+
+	if matter == nil {
+		panic(result.BadRequest("matter cannot be nil"))
+	}
+
+	if !matter.Deleted {
+		panic(result.BadRequest("matter has not been deleted"))
+	}
+
+	this.matterDao.Recovery(matter)
+	//no need to recompute size.
+}
+
 //atomic delete files
 func (this *MatterService) AtomicDelete(request *http.Request, matter *Matter, user *User) {
 
@@ -301,6 +316,24 @@ func (this *MatterService) AtomicSoftDelete(request *http.Request, matter *Matte
 	defer this.userService.MatterUnlock(matter.UserUuid)
 
 	this.SoftDelete(request, matter, user)
+}
+
+//atomic recovery delete files
+func (this *MatterService) AtomicRecovery(request *http.Request, matter *Matter, user *User) {
+
+	if matter == nil {
+		panic(result.BadRequest("matter cannot be nil"))
+	}
+
+	if !matter.Deleted {
+		panic(result.BadRequest("matter has not been deleted"))
+	}
+
+	//lock
+	this.userService.MatterLock(matter.UserUuid)
+	defer this.userService.MatterUnlock(matter.UserUuid)
+
+	this.Recovery(request, matter, user)
 }
 
 //upload files.

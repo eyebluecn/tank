@@ -75,6 +75,8 @@ func (this *MatterController) RegisterRoutes() map[string]func(writer http.Respo
 	routeMap["/api/matter/crawl"] = this.Wrap(this.Crawl, USER_ROLE_USER)
 	routeMap["/api/matter/soft/delete"] = this.Wrap(this.SoftDelete, USER_ROLE_USER)
 	routeMap["/api/matter/soft/delete/batch"] = this.Wrap(this.SoftDeleteBatch, USER_ROLE_USER)
+	routeMap["/api/matter/recovery"] = this.Wrap(this.Recovery, USER_ROLE_USER)
+	routeMap["/api/matter/recovery/batch"] = this.Wrap(this.RecoveryBatch, USER_ROLE_USER)
 	routeMap["/api/matter/delete"] = this.Wrap(this.Delete, USER_ROLE_USER)
 	routeMap["/api/matter/delete/batch"] = this.Wrap(this.DeleteBatch, USER_ROLE_USER)
 	routeMap["/api/matter/rename"] = this.Wrap(this.Rename, USER_ROLE_USER)
@@ -327,6 +329,57 @@ func (this *MatterController) SoftDeleteBatch(writer http.ResponseWriter, reques
 		}
 
 		this.matterService.AtomicSoftDelete(request, matter, user)
+
+	}
+
+	return this.Success("OK")
+}
+
+//recovery delete.
+func (this *MatterController) Recovery(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+
+	uuid := request.FormValue("uuid")
+	if uuid == "" {
+		panic(result.BadRequest("uuid cannot be null"))
+	}
+
+	matter := this.matterDao.CheckByUuid(uuid)
+
+	user := this.checkUser(request)
+	if matter.UserUuid != user.Uuid {
+		panic(result.UNAUTHORIZED)
+	}
+
+	this.matterService.AtomicRecovery(request, matter, user)
+
+	return this.Success("OK")
+}
+
+//recovery batch.
+func (this *MatterController) RecoveryBatch(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+
+	uuids := request.FormValue("uuids")
+	if uuids == "" {
+		panic(result.BadRequest("uuids cannot be null"))
+	}
+
+	uuidArray := strings.Split(uuids, ",")
+
+	for _, uuid := range uuidArray {
+
+		matter := this.matterDao.FindByUuid(uuid)
+
+		if matter == nil {
+			this.logger.Warn("%s not exist anymore", uuid)
+			continue
+		}
+
+		user := this.checkUser(request)
+		if matter.UserUuid != user.Uuid {
+			panic(result.UNAUTHORIZED)
+		}
+
+		this.matterService.AtomicRecovery(request, matter, user)
 
 	}
 
