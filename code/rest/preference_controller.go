@@ -83,6 +83,7 @@ func (this *PreferenceController) Edit(writer http.ResponseWriter, request *http
 	downloadDirMaxNumStr := request.FormValue("downloadDirMaxNum")
 	defaultTotalSizeLimitStr := request.FormValue("defaultTotalSizeLimit")
 	allowRegisterStr := request.FormValue("allowRegister")
+	deletedKeepDaysStr := request.FormValue("deletedKeepDays")
 
 	if name == "" {
 		panic(result.BadRequest("name cannot be null"))
@@ -115,6 +116,15 @@ func (this *PreferenceController) Edit(writer http.ResponseWriter, request *http
 		defaultTotalSizeLimit = int64(intDefaultTotalSizeLimit)
 	}
 
+	var deletedKeepDays int64 = 0
+	if deletedKeepDaysStr == "" {
+		panic(result.BadRequest("deletedKeepDays cannot be null"))
+	} else {
+		intDeletedKeepDays, err := strconv.Atoi(deletedKeepDaysStr)
+		this.PanicError(err)
+		deletedKeepDays = int64(intDeletedKeepDays)
+	}
+
 	var allowRegister = false
 	if allowRegisterStr == TRUE {
 		allowRegister = true
@@ -130,6 +140,7 @@ func (this *PreferenceController) Edit(writer http.ResponseWriter, request *http
 	preference.DownloadDirMaxNum = downloadDirMaxNum
 	preference.DefaultTotalSizeLimit = defaultTotalSizeLimit
 	preference.AllowRegister = allowRegister
+	preference.DeletedKeepDays = deletedKeepDays
 
 	preference = this.preferenceService.Save(preference)
 

@@ -18,6 +18,7 @@ type Preference struct {
 	AllowRegister         bool   `json:"allowRegister" gorm:"type:tinyint(1) not null;default:0"`
 	PreviewConfig         string `json:"previewConfig" gorm:"type:text"`
 	ScanConfig            string `json:"scanConfig" gorm:"type:text"`
+	DeletedKeepDays       int64  `json:"deletedKeepDays" gorm:"type:bigint(20) not null;default:7"`
 	Version               string `json:"version" gorm:"-"`
 }
 
