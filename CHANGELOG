@@ -54,12 +54,18 @@ c. 在github上发布新版本。
 TO RELEASE
 tank-3.1.0
 1. Reconstruct frontend by typescript+react+antd.
-1. Enhance the webdav ability.
-2. Add charset in mysql config.
-3. Add preview_config.
-4. Add delete user feature.
-5. Fix the move to root dir bug.
+2. Enhance the webdav ability.
+3. Add charset in mysql config.
+4. Add preview_config.
+5. Add delete user feature.
 6. Add Scan config.
+
+1. 前后进行了一次完全的重构。 采用Typescript+React+Antd
+2. 增强了WebDav的能力，现在能够适配更多的WebDav客户端了
+3. 数据库配置项中添加了编码支持，可以支持emoji了
+4. 添加了预览引擎配置，用户可以使用自己的引擎来预览特定格式文件
+5. 添加了删除用户的功能，删除用户后会清空用户所有的文件和痕迹
+6. 添加了扫描功能，可以定时同步物理文件到蓝眼云盘中
 
 
 2019-10-13
