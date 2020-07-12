@@ -59,6 +59,7 @@ tank-3.1.0
 4. Add preview_config.
 5. Add delete user feature.
 6. Add Scan config.
+7. Add recycle bin feature.
 
 1. 前后进行了一次完全的重构。 采用Typescript+React+Antd
 2. 增强了WebDav的能力，现在能够适配更多的WebDav客户端了
@@ -66,6 +67,7 @@ tank-3.1.0
 4. 添加了预览引擎配置，用户可以使用自己的引擎来预览特定格式文件
 5. 添加了删除用户的功能，删除用户后会清空用户所有的文件和痕迹
 6. 添加了扫描功能，可以定时同步物理文件到蓝眼云盘中
+7. 增加回收站功能
 
 
 2019-10-13
