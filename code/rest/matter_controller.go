@@ -285,7 +285,7 @@ func (this *MatterController) Crawl(writer http.ResponseWriter, request *http.Re
 	return this.Success(matter)
 }
 
-//soft delete.
+//soft delete. todo: 删除了文件，但是父目录没有删的情形没处理。
 func (this *MatterController) SoftDelete(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	uuid := request.FormValue("uuid")
