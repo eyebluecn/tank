@@ -45,7 +45,7 @@ type Matter struct {
 	Children   []*Matter `json:"-" gorm:"-"`
 	Prop       string    `json:"prop" gorm:"type:varchar(1024) not null;default:'{}'"`
 	VisitTime  time.Time `json:"visitTime" gorm:"type:timestamp not null;default:'2018-01-01 00:00:00'"`
-	Deleted    bool      `json:"deleted" gorm:"type:tinyint(1) not null:idx_del;default:0"`
+	Deleted    bool      `json:"deleted" gorm:"type:tinyint(1) not null;index:idx_del;default:0"`
 	DeleteTime time.Time `json:"deleteTime" gorm:"type:timestamp not null;index:idx_delt;default:'2018-01-01 00:00:00'"`
 }
 
