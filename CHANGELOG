@@ -31,7 +31,7 @@ docker container prune
 docker build -t eyeblue/tank:x.x.x .
 # 本地测试
 docker run --name dockermysql -p 13306:3306 -e MYSQL_ROOT_PASSWORD=123456 -e MYSQL_DATABASE=tank -e MYSQL_USER=tank -e MYSQL_PASSWORD=tank123 -v ~/data/dockermysql:/var/lib/mysql -d mysql:5.7
-docker run --name tank -p 6010:6010 --link dockermysql:mysql -v ~/data/dockermatter:/data/matter -d eyeblue/tank:x.x.x
+docker run --name tank -p 6010:6010 --link dockermysql:mysql -v ~/data/dockermatter:/data/build/matter -d eyeblue/tank:x.x.x
 # 没问题后，推送到远程
 docker push eyeblue/tank:x.x.x
 ```
