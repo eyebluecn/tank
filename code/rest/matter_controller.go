@@ -116,6 +116,7 @@ func (this *MatterController) Page(writer http.ResponseWriter, request *http.Req
 	pageSizeStr := request.FormValue("pageSize")
 	orderCreateTime := request.FormValue("orderCreateTime")
 	orderUpdateTime := request.FormValue("orderUpdateTime")
+	orderDeleteTime := request.FormValue("orderDeleteTime")
 	orderSort := request.FormValue("orderSort")
 	orderTimes := request.FormValue("orderTimes")
 
@@ -187,6 +188,10 @@ func (this *MatterController) Page(writer http.ResponseWriter, request *http.Req
 		{
 			Key:   "update_time",
 			Value: orderUpdateTime,
+		},
+		{
+			Key:   "delete_time",
+			Value: orderDeleteTime,
 		},
 		{
 			Key:   "sort",
