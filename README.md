@@ -2,9 +2,7 @@
 
 [English Version](https://tank-doc.eyeblue.cn/en)
 
-# 蓝眼云盘（3.0.6）
-
-**预告：2020-7-18 发布3.1.0版本**
+# 蓝眼云盘（3.1.0）
 
 [在线Demo](https://tank.eyeblue.cn) (体验账号： demo 密码：123456)
 
