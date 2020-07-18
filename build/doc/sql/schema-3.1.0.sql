@@ -94,11 +94,15 @@ CREATE TABLE `tank31_matter` (
   `path` varchar(1024) DEFAULT NULL,
   `times` bigint(20) NOT NULL DEFAULT '0',
   `prop` varchar(1024) NOT NULL DEFAULT '{}',
-  `visit_time` timestamp NULL DEFAULT '2018-01-01 00:00:00',
+  `visit_time` timestamp NOT NULL DEFAULT '2018-01-01 00:00:00',
+  `deleted` tinyint(1) NOT NULL DEFAULT '0',
+  `delete_time` timestamp NOT NULL DEFAULT '2018-01-01 00:00:00',
   PRIMARY KEY (`uuid`),
   UNIQUE KEY `uuid` (`uuid`),
+  KEY `idx_puuid` (`puuid`),
   KEY `idx_uu` (`user_uuid`),
-  KEY `idx_puuid` (`puuid`)
+  KEY `idx_del` (`deleted`),
+  KEY `idx_delt` (`delete_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `tank31_preference` (
@@ -117,6 +121,7 @@ CREATE TABLE `tank31_preference` (
   `allow_register` tinyint(1) NOT NULL DEFAULT '0',
   `preview_config` text,
   `scan_config` text,
+  `deleted_keep_days` bigint(20) NOT NULL DEFAULT '7',
   PRIMARY KEY (`uuid`),
   UNIQUE KEY `uuid` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
