@@ -438,6 +438,7 @@ func (this *MatterController) DeleteBatch(writer http.ResponseWriter, request *h
 			panic(result.UNAUTHORIZED)
 		}
 
+		matters = append(matters, matter)
 	}
 
 	for _, matter := range matters {
