@@ -285,7 +285,7 @@ func (this *MatterController) Crawl(writer http.ResponseWriter, request *http.Re
 	return this.Success(matter)
 }
 
-//soft delete. todo: 删除了文件，但是父目录没有删的情形没处理。
+//soft delete.
 func (this *MatterController) SoftDelete(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	uuid := request.FormValue("uuid")
@@ -311,9 +311,11 @@ func (this *MatterController) SoftDeleteBatch(writer http.ResponseWriter, reques
 	if uuids == "" {
 		panic(result.BadRequest("uuids cannot be null"))
 	}
+	user := this.checkUser(request)
 
 	uuidArray := strings.Split(uuids, ",")
 
+	matters := make([]*Matter, 0)
 	for _, uuid := range uuidArray {
 
 		matter := this.matterDao.FindByUuid(uuid)
@@ -323,13 +325,15 @@ func (this *MatterController) SoftDeleteBatch(writer http.ResponseWriter, reques
 			continue
 		}
 
-		user := this.checkUser(request)
 		if matter.UserUuid != user.Uuid {
 			panic(result.UNAUTHORIZED)
 		}
 
-		this.matterService.AtomicSoftDelete(request, matter, user)
+		matters = append(matters, matter)
+	}
 
+	for _, matter := range matters {
+		this.matterService.AtomicSoftDelete(request, matter, user)
 	}
 
 	return this.Success("OK")
@@ -414,7 +418,8 @@ func (this *MatterController) DeleteBatch(writer http.ResponseWriter, request *h
 	}
 
 	uuidArray := strings.Split(uuids, ",")
-
+	user := this.checkUser(request)
+	matters := make([]*Matter, 0)
 	for _, uuid := range uuidArray {
 
 		matter := this.matterDao.FindByUuid(uuid)
@@ -424,13 +429,15 @@ func (this *MatterController) DeleteBatch(writer http.ResponseWriter, request *h
 			continue
 		}
 
-		user := this.checkUser(request)
 		if matter.UserUuid != user.Uuid {
 			panic(result.UNAUTHORIZED)
 		}
 
-		this.matterService.AtomicDelete(request, matter, user)
+	}
 
+	for _, matter := range matters {
+
+		this.matterService.AtomicDelete(request, matter, user)
 	}
 
 	return this.Success("OK")
