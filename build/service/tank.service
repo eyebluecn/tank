@@ -6,7 +6,7 @@ After=network.target
 
 [Service]
 Type=simple
-DynamicUser=yes
+#DynamicUser=yes
 ExecStart=/data/program/tank/tank
 Restart=always
 RestartSec=3
