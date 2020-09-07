@@ -51,7 +51,13 @@ c. 在github上发布新版本。
 3.更新tank-doc 下载内容
 
 
-TO RELEASE
+tank-3.1.1 2020-09-08
+1. Add upload folder feature.
+2. Fix the share auth bug.
+
+1. 添加了文件夹上传功能
+2. 修复了分享时需要登陆的问题
+
 tank-3.1.0
 1. Reconstruct frontend by typescript+react+antd.
 2. Enhance the webdav ability.
