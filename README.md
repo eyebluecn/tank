@@ -2,18 +2,19 @@
 
 [English Version](https://tank-doc.eyeblue.cn/en)
 
-# 蓝眼云盘（3.1.0）
+# 蓝眼云盘（3.1.1）
 [在线Demo](https://tank.eyeblue.cn) (体验账号： demo 密码：123456)
 
 蓝眼云盘是蓝眼开源系列代表作品之一，致力于打造精致，优雅，简约的云盘。核心功能如下：
 1. 文件列表
-2. 文件分享
-3. 文件监控统计
-4. 回收站
-5. 多用户
-6. [WebDav](https://tank-doc.eyeblue.cn/advance/webdav.html)
-7. [扫描磁盘任务](https://tank-doc.eyeblue.cn/advance/scan.html)
-8. [在线预览及自定义配置预览引擎](https://tank-doc.eyeblue.cn/advance/preview.html)
+2. 文件/文件夹上传 + 拖拽上传
+3. 文件分享
+4. 文件监控统计
+5. 回收站
+6. 多用户
+7. [WebDav](https://tank-doc.eyeblue.cn/advance/webdav.html)
+8. [扫描磁盘任务](https://tank-doc.eyeblue.cn/advance/scan.html)
+9. [在线预览及自定义配置预览引擎](https://tank-doc.eyeblue.cn/advance/preview.html)
 
 [更多内容请移步至文档](https://tank-doc.eyeblue.cn/)
 
