@@ -23,7 +23,7 @@ const (
 
 const (
 	//username pattern
-	USERNAME_PATTERN = `^[0-9a-z_]+$`
+	USERNAME_PATTERN = "^[\\p{Han}0-9a-zA-Z_]+$"
 	USERNAME_DEMO    = "demo"
 )
 

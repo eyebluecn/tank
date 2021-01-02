@@ -26,7 +26,7 @@ var (
 	UsernameExist                  = &Item{English: `username "%s" exists`, Chinese: `用户名"%s"已存在`}
 	UsernameNotExist               = &Item{English: `username "%s" not exists`, Chinese: `用户名"%s"不存在`}
 	UsernameIsNotAdmin             = &Item{English: `username "%s" is not admin user`, Chinese: `用户名"%s"不是管理员账号`}
-	UsernameError                  = &Item{English: `username can only be lowercase letters, numbers or _`, Chinese: `用户名必填，且只能包含小写字母，数字和'_'`}
+	UsernameError                  = &Item{English: `username can only be letters, numbers or _`, Chinese: `用户名必填，且只能包含中文，字母，数字和'_'`}
 	UserRegisterNotAllowd          = &Item{English: `admin has banned register`, Chinese: `管理员已禁用自主注册`}
 	UserPasswordLengthError        = &Item{English: `password at least 6 chars`, Chinese: `密码长度至少为6位`}
 	UserOldPasswordError           = &Item{English: `old password error`, Chinese: `旧密码不正确`}
