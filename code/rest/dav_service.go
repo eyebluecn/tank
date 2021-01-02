@@ -373,7 +373,7 @@ func (this *DavService) HandleDelete(w http.ResponseWriter, r *http.Request, use
 
 	matter := this.matterDao.CheckWithRootByPath(subPath, user)
 
-	this.matterService.AtomicSoftDelete(r, matter, user)
+	this.matterService.AtomicDelete(r, matter, user)
 }
 
 //crate a directory

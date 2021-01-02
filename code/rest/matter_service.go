@@ -1303,7 +1303,9 @@ func (this *MatterService) CleanExpiredDeletedMatters() {
 
 		thenDate := time.Now()
 		thenDate = thenDate.AddDate(0, 0, int(-preference.DeletedKeepDays))
-		thenDate = util.FirstSecondOfDay(thenDate)
+		if preference.DeletedKeepDays != 0 {
+			thenDate = util.FirstSecondOfDay(thenDate)
+		}
 
 		//first remove all the matter(not dir).
 		this.matterDao.PageHandle("", "", "", FALSE, TRUE, &thenDate, nil, func(matter *Matter) {

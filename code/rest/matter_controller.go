@@ -79,6 +79,7 @@ func (this *MatterController) RegisterRoutes() map[string]func(writer http.Respo
 	routeMap["/api/matter/recovery/batch"] = this.Wrap(this.RecoveryBatch, USER_ROLE_USER)
 	routeMap["/api/matter/delete"] = this.Wrap(this.Delete, USER_ROLE_USER)
 	routeMap["/api/matter/delete/batch"] = this.Wrap(this.DeleteBatch, USER_ROLE_USER)
+	routeMap["/api/matter/clean/expired/deleted/matters"] = this.Wrap(this.CleanExpiredDeletedMatters, USER_ROLE_ADMINISTRATOR)
 	routeMap["/api/matter/rename"] = this.Wrap(this.Rename, USER_ROLE_USER)
 	routeMap["/api/matter/change/privacy"] = this.Wrap(this.ChangePrivacy, USER_ROLE_USER)
 	routeMap["/api/matter/move"] = this.Wrap(this.Move, USER_ROLE_USER)
@@ -445,6 +446,14 @@ func (this *MatterController) DeleteBatch(writer http.ResponseWriter, request *h
 
 		this.matterService.AtomicDelete(request, matter, user)
 	}
+
+	return this.Success("OK")
+}
+
+//manual clean expired deleted matters.
+func (this *MatterController) CleanExpiredDeletedMatters(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+
+	this.matterService.CleanExpiredDeletedMatters()
 
 	return this.Success("OK")
 }
