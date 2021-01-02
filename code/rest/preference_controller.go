@@ -51,6 +51,7 @@ func (this *PreferenceController) RegisterRoutes() map[string]func(writer http.R
 	routeMap["/api/preference/edit"] = this.Wrap(this.Edit, USER_ROLE_ADMINISTRATOR)
 	routeMap["/api/preference/edit/preview/config"] = this.Wrap(this.EditPreviewConfig, USER_ROLE_ADMINISTRATOR)
 	routeMap["/api/preference/edit/scan/config"] = this.Wrap(this.EditScanConfig, USER_ROLE_ADMINISTRATOR)
+	routeMap["/api/preference/scan/once"] = this.Wrap(this.ScanOnce, USER_ROLE_ADMINISTRATOR)
 	routeMap["/api/preference/system/cleanup"] = this.Wrap(this.SystemCleanup, USER_ROLE_ADMINISTRATOR)
 
 	return routeMap
@@ -205,6 +206,13 @@ func (this *PreferenceController) EditScanConfig(writer http.ResponseWriter, req
 	this.taskService.InitScanTask()
 
 	return this.Success(preference)
+}
+
+//scan immediately according the current config.
+func (this *PreferenceController) ScanOnce(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+
+	this.taskService.doScanTask()
+	return this.Success("OK")
 }
 
 //cleanup system data.
