@@ -12,10 +12,7 @@
 3. core/config.go
     VERSION = x.x.x
 
-4. tank-front 修改 vuex/index.js
-    versionName: 'x.x.x'
-
-5. readme.md 修改 eyeblue/tank:x.x.x
+4. readme.md 修改 eyeblue/tank:x.x.x
     eyeblue/tank:x.x.x
 
 
@@ -49,6 +46,27 @@ b. 上传 tank-x.x.x.windows-x86_64.zip 到蓝眼云盘
 c. 在github上发布新版本。
 
 3.更新tank-doc 下载内容
+
+tank-3.1.2 2021-01-02
+1. Add scan manually once feature
+2. Add disable recycle bin feature
+3. WebDAV use hard delete now
+4. Support Chinese Username
+5. Normal user cannot change itself space limit
+6. Support the order sort by filename, size and update time
+7. Hide the side menu on phone by default
+8. Friendly hint for large file upload.
+9. Cancel during uploading.
+
+1. 添加了手动扫描一次的功能
+2. 添加了禁用回收站功能
+3. WebDAV中的删除采用硬删除
+4. 支持中文的用户名
+5. 普通用户不能再修改自己的空间限制
+6. 文件支持按照名称排序，按照大小排序，按照修改日期排序
+7. 手机端默认隐藏左边菜单
+8. 大文件上传友好性提示
+9. 可以取消文件上传
 
 
 tank-3.1.1 2020-09-08
