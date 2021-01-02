@@ -14,6 +14,7 @@ type PreferenceController struct {
 	BaseController
 	preferenceDao     *PreferenceDao
 	matterDao         *MatterDao
+	matterService     *MatterService
 	preferenceService *PreferenceService
 	taskService       *TaskService
 }
@@ -29,6 +30,10 @@ func (this *PreferenceController) Init() {
 	b = core.CONTEXT.GetBean(this.matterDao)
 	if b, ok := b.(*MatterDao); ok {
 		this.matterDao = b
+	}
+	b = core.CONTEXT.GetBean(this.matterService)
+	if b, ok := b.(*MatterService); ok {
+		this.matterService = b
 	}
 	b = core.CONTEXT.GetBean(this.preferenceService)
 	if b, ok := b.(*PreferenceService); ok {
@@ -136,6 +141,7 @@ func (this *PreferenceController) Edit(writer http.ResponseWriter, request *http
 	}
 
 	preference := this.preferenceDao.Fetch()
+	oldDeletedKeepDays := preference.DeletedKeepDays
 	preference.Name = name
 	preference.LogoUrl = logoUrl
 	preference.FaviconUrl = faviconUrl
@@ -148,6 +154,11 @@ func (this *PreferenceController) Edit(writer http.ResponseWriter, request *http
 	preference.DeletedKeepDays = deletedKeepDays
 
 	preference = this.preferenceService.Save(preference)
+
+	//if changed the bin strategy. then trigger once.
+	if oldDeletedKeepDays != deletedKeepDays {
+		this.matterService.CleanExpiredDeletedMatters()
+	}
 
 	return this.Success(preference)
 }
