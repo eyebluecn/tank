@@ -14,6 +14,7 @@ type MatterController struct {
 	BaseController
 	matterDao         *MatterDao
 	matterService     *MatterService
+	preferenceService *PreferenceService
 	downloadTokenDao  *DownloadTokenDao
 	imageCacheDao     *ImageCacheDao
 	shareDao          *ShareDao

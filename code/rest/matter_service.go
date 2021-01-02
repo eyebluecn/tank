@@ -315,7 +315,14 @@ func (this *MatterService) AtomicSoftDelete(request *http.Request, matter *Matte
 	this.userService.MatterLock(matter.UserUuid)
 	defer this.userService.MatterUnlock(matter.UserUuid)
 
-	this.SoftDelete(request, matter, user)
+	//if disabled the recycle feature. then we hard delete.
+	preference := this.preferenceService.Fetch()
+	if preference.DeletedKeepDays == 0 {
+		this.Delete(request, matter, user)
+	} else {
+		this.SoftDelete(request, matter, user)
+	}
+
 }
 
 //atomic recovery delete files
