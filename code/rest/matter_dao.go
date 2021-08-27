@@ -355,7 +355,7 @@ func (this *MatterDao) PageHandle(
 
 		var page int
 		for page = 0; page < totalPages; page++ {
-			_, matters := this.PlainPage(0, pageSize, puuid, userUuid, name, dir, deleted, deleteTimeBefore, nil, sortArray)
+			_, matters := this.PlainPage(page, pageSize, puuid, userUuid, name, dir, deleted, deleteTimeBefore, nil, sortArray)
 			for _, matter := range matters {
 				fun(matter)
 			}

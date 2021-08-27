@@ -36,7 +36,7 @@ type Matter struct {
 	Username   string    `json:"username" gorm:"type:varchar(45) not null"`
 	Dir        bool      `json:"dir" gorm:"type:tinyint(1) not null;default:0"`
 	Name       string    `json:"name" gorm:"type:varchar(255) not null"`
-	Md5        string    `json:"md5" gorm:"type:varchar(45)"`
+	Md5        string    `json:"md5" gorm:"type:varchar(512)"`
 	Size       int64     `json:"size" gorm:"type:bigint(20) not null;default:0"`
 	Privacy    bool      `json:"privacy" gorm:"type:tinyint(1) not null;default:0"`
 	Path       string    `json:"path" gorm:"type:varchar(1024)"`

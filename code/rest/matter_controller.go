@@ -5,6 +5,7 @@ import (
 	"github.com/eyebluecn/tank/code/tool/builder"
 	"github.com/eyebluecn/tank/code/tool/i18n"
 	"github.com/eyebluecn/tank/code/tool/result"
+	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -21,6 +22,9 @@ type MatterController struct {
 	shareService      *ShareService
 	bridgeDao         *BridgeDao
 	imageCacheService *ImageCacheService
+	ossService        *OssService
+
+	ossUploading bool
 }
 
 func (this *MatterController) Init() {
@@ -65,6 +69,12 @@ func (this *MatterController) Init() {
 	if b, ok := b.(*ImageCacheService); ok {
 		this.imageCacheService = b
 	}
+	b = core.CONTEXT.GetBean(this.ossService)
+	if b, ok := b.(*OssService); ok {
+		this.ossService = b
+	}
+
+	this.ossUploading = false
 }
 
 func (this *MatterController) RegisterRoutes() map[string]func(writer http.ResponseWriter, request *http.Request) {
@@ -90,6 +100,9 @@ func (this *MatterController) RegisterRoutes() map[string]func(writer http.Respo
 	//mirror local files.
 	routeMap["/api/matter/mirror"] = this.Wrap(this.Mirror, USER_ROLE_USER)
 	routeMap["/api/matter/zip"] = this.Wrap(this.Zip, USER_ROLE_USER)
+
+	routeMap["/api/matter/oss"] = this.Wrap(this.Oss, USER_ROLE_ADMINISTRATOR)
+	routeMap["/api/matter/stop"] = this.Wrap(this.Stop, USER_ROLE_ADMINISTRATOR)
 
 	return routeMap
 }
@@ -624,4 +637,57 @@ func (this *MatterController) Zip(writer http.ResponseWriter, request *http.Requ
 	this.matterService.DownloadZip(writer, request, matters)
 
 	return nil
+}
+
+//upload to oss.
+func (this *MatterController) Oss(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+
+	if this.ossUploading {
+		return this.Success("oss is running")
+	} else {
+		this.ossUploading = true
+	}
+
+	pageSize := 100
+	count, _ := this.matterDao.PlainPage(0, pageSize, "", "", "", "false", "", nil, nil, nil)
+	if count > 0 {
+		var totalPages = int(math.Ceil(float64(count) / float64(pageSize)))
+
+		var page int
+		for page = 0; page < totalPages; page++ {
+
+			this.logger.Info("-- processing %d/%d", page+1, totalPages)
+
+			if !this.ossUploading {
+				break
+			}
+
+			_, matters := this.matterDao.PlainPage(page, pageSize, "", "", "", "false", "", nil, nil, nil)
+			for _, matter := range matters {
+
+				if !this.ossUploading {
+					break
+				}
+
+				//保证不抛异常
+				core.RunWithRecovery(func() {
+					this.ossService.Upload(matter)
+				})
+
+			}
+		}
+	}
+
+	this.ossUploading = false
+
+	return this.Success(nil)
+}
+
+//stop uploading to oss.
+func (this *MatterController) Stop(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+
+	this.ossUploading = false
+
+	this.logger.Info("-- stop processing --")
+	return this.Success("OK")
 }
