@@ -42,6 +42,12 @@ type ConfigItem struct {
 	MysqlPassword string
 	//mysql charset
 	MysqlCharset string
+
+	OssAccessKey  string
+	OssSecretKey  string
+	OssEndpoint   string
+	OssCustomHost string
+	OssBucket     string
 }
 
 //validate whether the config file is ok
@@ -78,6 +84,30 @@ func (this *ConfigItem) validate() bool {
 	}
 	if this.MysqlCharset == "" {
 		core.LOGGER.Error("MysqlCharset  is not configured")
+		return false
+	}
+
+	if this.OssAccessKey == "" {
+		core.LOGGER.Error("OssAccessKey  is not configured")
+		return false
+	}
+
+	if this.OssSecretKey == "" {
+		core.LOGGER.Error("OssSecretKey  is not configured")
+		return false
+	}
+
+	if this.OssEndpoint == "" {
+		core.LOGGER.Error("OssEndpoint  is not configured")
+		return false
+	}
+
+	if this.OssCustomHost == "" {
+		core.LOGGER.Error("OssCustomHost  is not configured")
+		return false
+	}
+	if this.OssBucket == "" {
+		core.LOGGER.Error("OssBucket  is not configured")
 		return false
 	}
 
@@ -176,6 +206,26 @@ func (this *TankConfig) MysqlUrl() string {
 //matter path
 func (this *TankConfig) MatterPath() string {
 	return this.matterPath
+}
+
+func (this *TankConfig) OssAccessKey() string {
+	return this.item.OssAccessKey
+}
+
+func (this *TankConfig) OssSecretKey() string {
+	return this.item.OssSecretKey
+}
+
+func (this *TankConfig) OssEndpoint() string {
+	return this.item.OssEndpoint
+}
+
+func (this *TankConfig) OssCustomHost() string {
+	return this.item.OssCustomHost
+}
+
+func (this *TankConfig) OssBucket() string {
+	return this.item.OssBucket
 }
 
 //Finish the installation. Write config to tank.json

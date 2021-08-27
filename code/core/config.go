@@ -22,6 +22,13 @@ type Config interface {
 	MysqlUrl() string
 	//files storage location.
 	MatterPath() string
+
+	OssAccessKey() string
+	OssSecretKey() string
+	OssEndpoint() string
+	OssCustomHost() string
+	OssBucket() string
+
 	//when installed by user. Write configs to tank.json
 	FinishInstall(mysqlPort int, mysqlHost string, mysqlSchema string, mysqlUsername string, mysqlPassword string, mysqlCharset string)
 }

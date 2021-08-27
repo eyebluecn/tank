@@ -147,6 +147,9 @@ func (this *TankContext) registerBeans() {
 	this.registerBean(new(rest.MatterDao))
 	this.registerBean(new(rest.MatterService))
 
+	//oss
+	this.registerBean(new(rest.OssService))
+
 	//preference
 	this.registerBean(new(rest.PreferenceController))
 	this.registerBean(new(rest.PreferenceDao))
