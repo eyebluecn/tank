@@ -47,6 +47,17 @@ c. 在github上发布新版本。
 
 3.更新tank-doc 下载内容
 
+
+tank-3.1.3 2022-03-10
+1. Add kkfileview 3.x support
+2. Fix search bug https://github.com/eyebluecn/tank/issues/148
+3. Fix bug of totalSize in dashboard
+
+1. 添加了kkfileview 3.x的预览支持
+2. 修复了一个搜索的bug https://github.com/eyebluecn/tank/issues/148
+3. 修复了文件大小统计的bug
+
+
 tank-3.1.2 2021-01-02
 1. Add scan manually once feature
 2. Add disable recycle bin feature
