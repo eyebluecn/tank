@@ -484,7 +484,7 @@ func (this *MatterDao) CountBetweenTime(startTime time.Time, endTime time.Time) 
 
 func (this *MatterDao) SizeBetweenTime(startTime time.Time, endTime time.Time) int64 {
 
-	var wp = &builder.WherePair{Query: "create_time >= ? AND create_time <= ?", Args: []interface{}{startTime, endTime}}
+	var wp = &builder.WherePair{Query: "dir = 0 AND create_time >= ? AND create_time <= ?", Args: []interface{}{startTime, endTime}}
 
 	var count int64
 	db := core.CONTEXT.GetDB().Model(&Matter{}).Where(wp.Query, wp.Args...).Count(&count)
