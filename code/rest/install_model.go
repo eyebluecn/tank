@@ -1,8 +1,7 @@
 package rest
 
-/**
- * table meta info.
- */
+// InstallTableInfo /**
+// table meta info.
 type InstallTableInfo struct {
 	Name          string              `json:"name"`
 	TableExist    bool                `json:"tableExist"`

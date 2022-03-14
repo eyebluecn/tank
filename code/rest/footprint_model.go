@@ -2,9 +2,9 @@ package rest
 
 import "time"
 
-/**
- * visit record.
- */
+// Footprint /**
+// Mysql 5.5 only support one CURRENT_TIMESTAMP
+// so we use 2018-01-01 00:00:00 as default, which is the first release date of EyeblueTank
 type Footprint struct {
 	Uuid       string    `json:"uuid" gorm:"type:char(36);primary_key;unique"`
 	Sort       int64     `json:"sort" gorm:"type:bigint(20) not null"`
