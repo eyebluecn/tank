@@ -138,7 +138,7 @@ func (this *MatterDao) FindByUserUuidAndPuuidAndDirTrue(userUuid string, puuid s
 func (this *MatterDao) CheckByUuidAndUserUuid(uuid string, userUuid string) *Matter {
 
 	var matter = &Matter{}
-	db := core.CONTEXT.GetDB().Where(&Matter{Base: Base{Uuid: uuid}, UserUuid: userUuid}).First(matter)
+	db := core.CONTEXT.GetDB().Where(&Matter{Uuid: uuid, UserUuid: userUuid}).First(matter)
 	this.PanicError(db.Error)
 
 	return matter

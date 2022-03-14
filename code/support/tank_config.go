@@ -4,6 +4,7 @@ import (
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/util"
 	"github.com/json-iterator/go"
+	"gorm.io/gorm/schema"
 	"io/ioutil"
 	"os"
 	"time"
@@ -176,6 +177,14 @@ func (this *TankConfig) MysqlUrl() string {
 //matter path
 func (this *TankConfig) MatterPath() string {
 	return this.matterPath
+}
+
+//matter path
+func (this *TankConfig) NamingStrategy() schema.NamingStrategy {
+	return schema.NamingStrategy{
+		TablePrefix:   core.TABLE_PREFIX,
+		SingularTable: true,
+	}
 }
 
 //Finish the installation. Write config to tank.json

@@ -75,6 +75,7 @@ func (this *TankContext) ServeHTTP(writer http.ResponseWriter, request *http.Req
 
 func (this *TankContext) OpenDb() {
 
+	//log strategy.
 	dbLogger := logger.New(
 		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
 		logger.Config{
@@ -84,9 +85,11 @@ func (this *TankContext) OpenDb() {
 			Colorful:                  false,         // colorful print
 		},
 	)
+	//table name strategy.
+	namingStrategy := core.CONFIG.NamingStrategy()
 
 	var err error = nil
-	this.db, err = gorm.Open(mysql.Open(core.CONFIG.MysqlUrl()), &gorm.Config{Logger: dbLogger})
+	this.db, err = gorm.Open(mysql.Open(core.CONFIG.MysqlUrl()), &gorm.Config{Logger: dbLogger, NamingStrategy: namingStrategy})
 
 	if err != nil {
 		core.LOGGER.Panic("failed to connect mysql database")

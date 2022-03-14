@@ -67,7 +67,7 @@ func (this *ImageCacheDao) CheckByUuidAndUserUuid(uuid string, userUuid string) 
 
 	// Read
 	var imageCache = &ImageCache{}
-	db := core.CONTEXT.GetDB().Where(&ImageCache{Base: Base{Uuid: uuid}, UserUuid: userUuid}).First(imageCache)
+	db := core.CONTEXT.GetDB().Where(&ImageCache{Uuid: uuid, UserUuid: userUuid}).First(imageCache)
 	this.PanicError(db.Error)
 
 	return imageCache

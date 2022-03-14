@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"github.com/eyebluecn/tank/code/core"
 	"time"
 )
 
@@ -22,7 +21,10 @@ const (
  * share record
  */
 type Share struct {
-	Base
+	Uuid           string    `json:"uuid" gorm:"type:char(36);primary_key;unique"`
+	Sort           int64     `json:"sort" gorm:"type:bigint(20) not null"`
+	UpdateTime     time.Time `json:"updateTime" gorm:"type:timestamp not null;default:CURRENT_TIMESTAMP"`
+	CreateTime     time.Time `json:"createTime" gorm:"type:timestamp not null;default:'2018-01-01 00:00:00'"`
 	Name           string    `json:"name" gorm:"type:varchar(255)"`
 	ShareType      string    `json:"shareType" gorm:"type:varchar(45)"`
 	Username       string    `json:"username" gorm:"type:varchar(45)"`
@@ -33,9 +35,4 @@ type Share struct {
 	ExpireTime     time.Time `json:"expireTime" gorm:"type:timestamp not null;default:'2018-01-01 00:00:00'"`
 	DirMatter      *Matter   `json:"dirMatter" gorm:"-"`
 	Matters        []*Matter `json:"matters" gorm:"-"`
-}
-
-// set File's table name to be `profiles`
-func (this *Share) TableName() string {
-	return core.TABLE_PREFIX + "share"
 }

@@ -1,5 +1,7 @@
 package core
 
+import "gorm.io/gorm/schema"
+
 const (
 	//authentication key of cookie
 	COOKIE_AUTH_KEY = "_ak"
@@ -22,6 +24,8 @@ type Config interface {
 	MysqlUrl() string
 	//files storage location.
 	MatterPath() string
+	//table name strategy
+	NamingStrategy() schema.NamingStrategy
 	//when installed by user. Write configs to tank.json
 	FinishInstall(mysqlPort int, mysqlHost string, mysqlSchema string, mysqlUsername string, mysqlPassword string, mysqlCharset string)
 }

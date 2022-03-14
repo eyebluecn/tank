@@ -1,15 +1,19 @@
 package rest
 
-import (
-	"gorm.io/gorm/schema"
-)
-
 /**
  * table meta info.
  */
 type InstallTableInfo struct {
-	Name          string          `json:"name"`
-	TableExist    bool            `json:"tableExist"`
-	AllFields     []*schema.Field `json:"allFields"`
-	MissingFields []*schema.Field `json:"missingFields"`
+	Name          string              `json:"name"`
+	TableExist    bool                `json:"tableExist"`
+	AllFields     []*InstallFieldInfo `json:"allFields"`
+	MissingFields []*InstallFieldInfo `json:"missingFields"`
+}
+
+/**
+ * table meta info.
+ */
+type InstallFieldInfo struct {
+	Name     string `json:"name"`
+	DataType string `json:"dataType"`
 }
