@@ -2,7 +2,7 @@ package core
 
 import (
 	"github.com/eyebluecn/tank/code/tool/cache"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 	"net/http"
 )
 

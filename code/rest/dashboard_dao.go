@@ -4,7 +4,7 @@ import (
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/builder"
 	"github.com/eyebluecn/tank/code/tool/uuid"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 	"time"
 )
 
@@ -61,14 +61,14 @@ func (this *DashboardDao) Page(page int, pageSize int, dt string, sortArray []bu
 	var conditionDB *gorm.DB
 	conditionDB = core.CONTEXT.GetDB().Model(&Dashboard{}).Where(wp.Query, wp.Args...)
 
-	count := 0
+	var count int64 = 0
 	db := conditionDB.Count(&count)
 	this.PanicError(db.Error)
 
 	var dashboards []*Dashboard
 	db = conditionDB.Order(this.GetSortString(sortArray)).Offset(page * pageSize).Limit(pageSize).Find(&dashboards)
 	this.PanicError(db.Error)
-	pager := NewPager(page, pageSize, count, dashboards)
+	pager := NewPager(page, pageSize, int(count), dashboards)
 
 	return pager
 }

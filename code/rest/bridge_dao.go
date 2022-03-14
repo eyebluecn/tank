@@ -5,7 +5,7 @@ import (
 	"github.com/eyebluecn/tank/code/tool/builder"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/uuid"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 	"time"
 )
 
@@ -69,7 +69,7 @@ func (this *BridgeDao) PlainPage(page int, pageSize int, shareUuid string, sortA
 	var conditionDB *gorm.DB
 	conditionDB = core.CONTEXT.GetDB().Model(&Bridge{}).Where(wp.Query, wp.Args...)
 
-	count := 0
+	var count int64 = 0
 	db := conditionDB.Count(&count)
 	this.PanicError(db.Error)
 
@@ -77,7 +77,7 @@ func (this *BridgeDao) PlainPage(page int, pageSize int, shareUuid string, sortA
 	db = conditionDB.Order(this.GetSortString(sortArray)).Offset(page * pageSize).Limit(pageSize).Find(&bridges)
 	this.PanicError(db.Error)
 
-	return count, bridges
+	return int(count), bridges
 }
 
 //get pager

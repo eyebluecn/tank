@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"fmt"
 	"math"
 	"time"
 )
@@ -31,7 +32,8 @@ type Base struct {
 }
 
 func (this *Base) TableName() string {
-	panic("you should overwrite TableName()")
+	panic(fmt.Sprintf("you should overwrite TableName() in %v", this))
+	return ""
 }
 
 //pager

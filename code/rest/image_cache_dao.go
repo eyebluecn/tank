@@ -7,7 +7,7 @@ import (
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
 	"github.com/eyebluecn/tank/code/tool/uuid"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 	"os"
 	"path/filepath"
 	"time"
@@ -101,14 +101,14 @@ func (this *ImageCacheDao) Page(page int, pageSize int, userUuid string, matterU
 	var conditionDB *gorm.DB
 	conditionDB = core.CONTEXT.GetDB().Model(&ImageCache{}).Where(wp.Query, wp.Args...)
 
-	count := 0
+	var count int64 = 0
 	db := conditionDB.Count(&count)
 	this.PanicError(db.Error)
 
 	var imageCaches []*ImageCache
 	db = conditionDB.Order(this.GetSortString(sortArray)).Offset(page * pageSize).Limit(pageSize).Find(&imageCaches)
 	this.PanicError(db.Error)
-	pager := NewPager(page, pageSize, count, imageCaches)
+	pager := NewPager(page, pageSize, int(count), imageCaches)
 
 	return pager
 }

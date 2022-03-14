@@ -4,7 +4,7 @@ import (
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/builder"
 	"github.com/eyebluecn/tank/code/tool/result"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 
 	"github.com/eyebluecn/tank/code/tool/uuid"
 	"time"
@@ -56,7 +56,7 @@ func (this *ShareDao) PlainPage(page int, pageSize int, userUuid string, sortArr
 	var conditionDB *gorm.DB
 	conditionDB = core.CONTEXT.GetDB().Model(&Share{}).Where(wp.Query, wp.Args...)
 
-	count := 0
+	var count int64 = 0
 	db := conditionDB.Count(&count)
 	this.PanicError(db.Error)
 
@@ -64,7 +64,7 @@ func (this *ShareDao) PlainPage(page int, pageSize int, userUuid string, sortArr
 	db = conditionDB.Order(this.GetSortString(sortArray)).Offset(page * pageSize).Limit(pageSize).Find(&shares)
 	this.PanicError(db.Error)
 
-	return count, shares
+	return int(count), shares
 }
 
 func (this *ShareDao) Create(share *Share) *Share {

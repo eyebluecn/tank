@@ -4,9 +4,14 @@ import (
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/rest"
 	"github.com/eyebluecn/tank/code/tool/cache"
-	"github.com/jinzhu/gorm"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+	"log"
 	"net/http"
+	"os"
 	"reflect"
+	"time"
 )
 
 type TankContext struct {
@@ -70,21 +75,33 @@ func (this *TankContext) ServeHTTP(writer http.ResponseWriter, request *http.Req
 
 func (this *TankContext) OpenDb() {
 
+	dbLogger := logger.New(
+		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
+		logger.Config{
+			SlowThreshold:             time.Second,   // slow SQL 1s
+			LogLevel:                  logger.Silent, // log level
+			IgnoreRecordNotFoundError: true,          // ignore ErrRecordNotFound
+			Colorful:                  false,         // colorful print
+		},
+	)
+
 	var err error = nil
-	this.db, err = gorm.Open("mysql", core.CONFIG.MysqlUrl())
+	this.db, err = gorm.Open(mysql.Open(core.CONFIG.MysqlUrl()), &gorm.Config{Logger: dbLogger})
 
 	if err != nil {
 		core.LOGGER.Panic("failed to connect mysql database")
 	}
 
-	//whether open the db sql log. (only true when debug)
-	this.db.LogMode(false)
 }
 
 func (this *TankContext) CloseDb() {
 
 	if this.db != nil {
-		err := this.db.Close()
+		db, err := this.db.DB()
+		if err != nil {
+			core.LOGGER.Error("occur error when get *sql.DB %s", err.Error())
+		}
+		err = db.Close()
 		if err != nil {
 			core.LOGGER.Error("occur error when closing db %s", err.Error())
 		}

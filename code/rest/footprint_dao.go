@@ -4,7 +4,7 @@ import (
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/builder"
 	"github.com/eyebluecn/tank/code/tool/result"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 
 	"github.com/eyebluecn/tank/code/tool/uuid"
 	"time"
@@ -48,14 +48,14 @@ func (this *FootprintDao) Page(page int, pageSize int, userUuid string, sortArra
 	var conditionDB *gorm.DB
 	conditionDB = core.CONTEXT.GetDB().Model(&Footprint{}).Where(wp.Query, wp.Args...)
 
-	count := 0
+	var count int64 = 0
 	db := conditionDB.Count(&count)
 	this.PanicError(db.Error)
 
 	var footprints []*Footprint
 	db = conditionDB.Order(this.GetSortString(sortArray)).Offset(page * pageSize).Limit(pageSize).Find(&footprints)
 	this.PanicError(db.Error)
-	pager := NewPager(page, pageSize, count, footprints)
+	pager := NewPager(page, pageSize, int(count), footprints)
 
 	return pager
 }

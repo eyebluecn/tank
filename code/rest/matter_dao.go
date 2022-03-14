@@ -6,7 +6,7 @@ import (
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
 	"github.com/eyebluecn/tank/code/tool/uuid"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 	"math"
 	"os"
 	"time"
@@ -148,7 +148,7 @@ func (this *MatterDao) CheckByUuidAndUserUuid(uuid string, userUuid string) *Mat
 func (this *MatterDao) CountByUserUuidAndPuuidAndDirAndName(userUuid string, puuid string, dir bool, name string) int {
 
 	var matter Matter
-	var count int
+	var count int64
 
 	var wp = &builder.WherePair{}
 
@@ -172,7 +172,7 @@ func (this *MatterDao) CountByUserUuidAndPuuidAndDirAndName(userUuid string, puu
 		Count(&count)
 	this.PanicError(db.Error)
 
-	return count
+	return int(count)
 }
 
 func (this *MatterDao) FindByUserUuidAndPuuidAndDirAndName(userUuid string, puuid string, dir string, name string) *Matter {
@@ -310,7 +310,7 @@ func (this *MatterDao) PlainPage(
 		conditionDB = core.CONTEXT.GetDB().Model(&Matter{}).Where(wp.Query, wp.Args...)
 	}
 
-	count := 0
+	var count int64 = 0
 	db := conditionDB.Count(&count)
 	this.PanicError(db.Error)
 
@@ -318,7 +318,7 @@ func (this *MatterDao) PlainPage(
 	db = conditionDB.Order(this.GetSortString(sortArray)).Offset(page * pageSize).Limit(pageSize).Find(&matters)
 	this.PanicError(db.Error)
 
-	return count, matters
+	return int(count), matters
 }
 func (this *MatterDao) Page(page int, pageSize int, puuid string, userUuid string, name string, dir string, deleted string, extensions []string, sortArray []builder.OrderPair) *Pager {
 
@@ -387,7 +387,7 @@ func (this *MatterDao) Save(matter *Matter) *Matter {
 
 //download time add 1
 func (this *MatterDao) TimesIncrement(matterUuid string) {
-	db := core.CONTEXT.GetDB().Model(&Matter{}).Where("uuid = ?", matterUuid).Update(map[string]interface{}{"times": gorm.Expr("times + 1"), "visit_time": time.Now()})
+	db := core.CONTEXT.GetDB().Model(&Matter{}).Where("uuid = ?", matterUuid).Updates(map[string]interface{}{"times": gorm.Expr("times + 1"), "visit_time": time.Now()})
 	this.PanicError(db.Error)
 }
 
@@ -454,7 +454,7 @@ func (this *MatterDao) Delete(matter *Matter) {
 func (this *MatterDao) SoftDelete(matter *Matter) {
 
 	//soft delete from db.
-	db := core.CONTEXT.GetDB().Model(&Matter{}).Where("uuid = ?", matter.Uuid).Update(map[string]interface{}{"deleted": true, "delete_time": time.Now()})
+	db := core.CONTEXT.GetDB().Model(&Matter{}).Where("uuid = ?", matter.Uuid).Updates(map[string]interface{}{"deleted": true, "delete_time": time.Now()})
 	this.PanicError(db.Error)
 
 }
@@ -463,7 +463,7 @@ func (this *MatterDao) SoftDelete(matter *Matter) {
 func (this *MatterDao) Recovery(matter *Matter) {
 
 	//recovery from db.
-	db := core.CONTEXT.GetDB().Model(&Matter{}).Where("uuid = ?", matter.Uuid).Update(map[string]interface{}{"deleted": false, "delete_time": time.Now()})
+	db := core.CONTEXT.GetDB().Model(&Matter{}).Where("uuid = ?", matter.Uuid).Updates(map[string]interface{}{"deleted": false, "delete_time": time.Now()})
 	this.PanicError(db.Error)
 
 }

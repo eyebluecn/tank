@@ -6,12 +6,19 @@ import (
 	"github.com/eyebluecn/tank/code/tool/builder"
 	"github.com/eyebluecn/tank/code/tool/i18n"
 	"github.com/eyebluecn/tank/code/tool/result"
+	"github.com/eyebluecn/tank/code/tool/third"
 	"github.com/eyebluecn/tank/code/tool/util"
 	"github.com/eyebluecn/tank/code/tool/uuid"
-	"github.com/jinzhu/gorm"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+	"gorm.io/gorm/schema"
+	"log"
 	"net/http"
+	"os"
 	"regexp"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -62,16 +69,16 @@ func (this *InstallController) Init() {
 
 	this.tableNames = []IBase{
 		&Dashboard{},
-		&Bridge{},
-		&DownloadToken{},
-		&Footprint{},
-		&ImageCache{},
-		&Matter{},
-		&Preference{},
-		&Session{},
-		&Share{},
-		&UploadToken{},
-		&User{},
+		//&Bridge{},
+		//&DownloadToken{},
+		//&Footprint{},
+		//&ImageCache{},
+		//&Matter{},
+		//&Preference{},
+		//&Session{},
+		//&Share{},
+		//&UploadToken{},
+		//&User{},
 	}
 
 }
@@ -110,11 +117,19 @@ func (this *InstallController) openDbConnection(writer http.ResponseWriter, requ
 
 	this.logger.Info("Connect MySQL %s", mysqlUrl)
 
-	var err error = nil
-	db, err := gorm.Open("mysql", mysqlUrl)
-	this.PanicError(err)
+	dbLogger := logger.New(
+		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
+		logger.Config{
+			SlowThreshold:             time.Second, // slow SQL 1s
+			LogLevel:                  logger.Info, // log level
+			IgnoreRecordNotFoundError: true,        // ignore ErrRecordNotFound
+			Colorful:                  false,       // colorful print
+		},
+	)
 
-	db.LogMode(false)
+	var err error = nil
+	db, err := gorm.Open(mysql.Open(mysqlUrl), &gorm.Config{Logger: dbLogger})
+	this.PanicError(err)
 
 	return db
 
@@ -123,32 +138,40 @@ func (this *InstallController) openDbConnection(writer http.ResponseWriter, requ
 func (this *InstallController) closeDbConnection(db *gorm.DB) {
 
 	if db != nil {
-		err := db.Close()
+		sqlDB, err := db.DB()
 		if err != nil {
-			this.logger.Error("occur error when close db. %v", err)
+			core.LOGGER.Error("occur error when get *sql.DB %s", err.Error())
+		}
+		err = sqlDB.Close()
+		if err != nil {
+			core.LOGGER.Error("occur error when closing db %s", err.Error())
 		}
 	}
 }
 
-func (this *InstallController) getTableMeta(gormDb *gorm.DB, entity IBase) (bool, []*gorm.StructField, []*gorm.StructField) {
+// (exists, allFields, missingFields)
+func (this *InstallController) getTableMeta(gormDb *gorm.DB, schemaName string, entity IBase) (bool, []*schema.Field, []*schema.Field) {
 
-	db := gormDb.Unscoped()
-	scope := db.NewScope(entity)
+	//get all useful fields from model.
+	entitySchema, err := schema.Parse(entity, &sync.Map{}, schema.NamingStrategy{})
+	this.PanicError(err)
 
-	tableName := scope.TableName()
-	modelStruct := scope.GetModelStruct()
-	allFields := modelStruct.StructFields
-	var missingFields = make([]*gorm.StructField, 0)
+	tableName := entitySchema.Table
+	allFields := entitySchema.Fields
 
-	if !scope.Dialect().HasTable(tableName) {
+	var missingFields = make([]*schema.Field, 0)
+
+	if !gormDb.Migrator().HasTable(tableName) {
 		missingFields = append(missingFields, allFields...)
 
 		return false, allFields, missingFields
 	} else {
 
 		for _, field := range allFields {
-			if !scope.Dialect().HasColumn(tableName, field.DBName) {
-				if field.IsNormal {
+			//tag with `gorm:"-"` will be ""
+			if field.DBName != "" {
+				database := gormDb.Migrator().CurrentDatabase()
+				if !third.MysqlMigratorHasColumn(gormDb, database, tableName, field.DBName) {
 					missingFields = append(missingFields, field)
 				}
 			}
@@ -159,12 +182,12 @@ func (this *InstallController) getTableMeta(gormDb *gorm.DB, entity IBase) (bool
 
 }
 
-func (this *InstallController) getTableMetaList(db *gorm.DB) []*InstallTableInfo {
+func (this *InstallController) getTableMetaList(db *gorm.DB, mysqlSchema string) []*InstallTableInfo {
 
 	var installTableInfos []*InstallTableInfo
 
 	for _, iBase := range this.tableNames {
-		exist, allFields, missingFields := this.getTableMeta(db, iBase)
+		exist, allFields, missingFields := this.getTableMeta(db, mysqlSchema, iBase)
 		installTableInfos = append(installTableInfos, &InstallTableInfo{
 			Name:          iBase.TableName(),
 			TableExist:    exist,
@@ -204,24 +227,27 @@ func (this *InstallController) Verify(writer http.ResponseWriter, request *http.
 	defer this.closeDbConnection(db)
 
 	this.logger.Info("Ping DB")
-	err := db.DB().Ping()
+	phyDb, err := db.DB()
+	this.PanicError(err)
+	err = phyDb.Ping()
 	this.PanicError(err)
 
 	return this.Success("OK")
 }
 
 func (this *InstallController) TableInfoList(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+	mysqlSchema := request.FormValue("mysqlSchema")
 
 	db := this.openDbConnection(writer, request)
 	defer this.closeDbConnection(db)
 
-	return this.Success(this.getTableMetaList(db))
+	return this.Success(this.getTableMetaList(db, mysqlSchema))
 }
 
 func (this *InstallController) CreateTable(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	var installTableInfos []*InstallTableInfo
-
+	mysqlSchema := request.FormValue("mysqlSchema")
 	db := this.openDbConnection(writer, request)
 	defer this.closeDbConnection(db)
 
@@ -229,9 +255,11 @@ func (this *InstallController) CreateTable(writer http.ResponseWriter, request *
 
 		//complete the missing fields or create table. use utf8 charset
 		db1 := db.Set("gorm:table_options", "CHARSET=utf8mb4").AutoMigrate(iBase)
-		this.PanicError(db1.Error)
+		if db1.Error() != "" {
+			panic(result.BadRequest(`migrate table error`))
+		}
 
-		exist, allFields, missingFields := this.getTableMeta(db, iBase)
+		exist, allFields, missingFields := this.getTableMeta(db, mysqlSchema, iBase)
 		installTableInfos = append(installTableInfos, &InstallTableInfo{
 			Name:          iBase.TableName(),
 			TableExist:    exist,
@@ -365,7 +393,7 @@ func (this *InstallController) Finish(writer http.ResponseWriter, request *http.
 	defer this.closeDbConnection(db)
 
 	//Recheck the integrity of tables.
-	tableMetaList := this.getTableMetaList(db)
+	tableMetaList := this.getTableMetaList(db, mysqlSchema)
 	this.validateTableMetaList(tableMetaList)
 
 	//At least one admin

@@ -94,7 +94,7 @@ func (this *UserDao) PlainPage(page int, pageSize int, username string, status s
 		wp = wp.And(&builder.WherePair{Query: "status = ?", Args: []interface{}{status}})
 	}
 
-	count := 0
+	var count int64 = 0
 	db := core.CONTEXT.GetDB().Model(&User{}).Where(wp.Query, wp.Args...).Count(&count)
 	this.PanicError(db.Error)
 
@@ -108,7 +108,7 @@ func (this *UserDao) PlainPage(page int, pageSize int, username string, status s
 
 	this.PanicError(db.Error)
 
-	return count, users
+	return int(count), users
 }
 
 //handle user page by page.
@@ -136,13 +136,13 @@ func (this *UserDao) PageHandle(username string, status string, fun func(user *U
 }
 
 func (this *UserDao) CountByUsername(username string) int {
-	var count int
+	var count int64
 	db := core.CONTEXT.GetDB().
 		Model(&User{}).
 		Where("username = ?", username).
 		Count(&count)
 	this.PanicError(db.Error)
-	return count
+	return int(count)
 }
 
 func (this *UserDao) Save(user *User) *User {
