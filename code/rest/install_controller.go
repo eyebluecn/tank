@@ -9,6 +9,7 @@ import (
 	"github.com/eyebluecn/tank/code/tool/third"
 	"github.com/eyebluecn/tank/code/tool/util"
 	"github.com/eyebluecn/tank/code/tool/uuid"
+	"github.com/glebarez/sqlite"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -99,6 +100,7 @@ func (this *InstallController) RegisterRoutes() map[string]func(writer http.Resp
 }
 
 func (this *InstallController) openDbConnection(writer http.ResponseWriter, request *http.Request) *gorm.DB {
+	dbType := request.FormValue("dbType")
 	mysqlPortStr := request.FormValue("mysqlPort")
 	mysqlHost := request.FormValue("mysqlHost")
 	mysqlSchema := request.FormValue("mysqlSchema")
@@ -113,28 +115,47 @@ func (this *InstallController) openDbConnection(writer http.ResponseWriter, requ
 		mysqlPort = tmp
 	}
 
-	mysqlUrl := util.GetMysqlUrl(mysqlPort, mysqlHost, mysqlSchema, mysqlUsername, mysqlPassword, mysqlCharset)
-
-	this.logger.Info("Connect MySQL %s", mysqlUrl)
-
 	//log config
 	dbLogger := logger.New(
 		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
 		logger.Config{
-			SlowThreshold:             time.Second, // slow SQL 1s
-			LogLevel:                  logger.Info, // log level
-			IgnoreRecordNotFoundError: true,        // ignore ErrRecordNotFound
-			Colorful:                  false,       // colorful print
+			SlowThreshold:             time.Second,   // slow SQL 1s
+			LogLevel:                  logger.Silent, // log level. open when debug.
+			IgnoreRecordNotFoundError: true,          // ignore ErrRecordNotFound
+			Colorful:                  false,         // colorful print
 		},
 	)
 	//table name strategy
 	namingStrategy := core.CONFIG.NamingStrategy()
 
-	var err error = nil
-	db, err := gorm.Open(mysql.Open(mysqlUrl), &gorm.Config{Logger: dbLogger, NamingStrategy: namingStrategy})
-	this.PanicError(err)
+	if dbType == "sqlite" {
 
-	return db
+		var err error = nil
+		sqliteFolder := core.CONFIG.SqliteFolder() + "/tank.sqlite"
+		this.logger.Info("Connect Sqlite %s", sqliteFolder)
+		db, err := gorm.Open(sqlite.Open(sqliteFolder), &gorm.Config{Logger: dbLogger, NamingStrategy: namingStrategy})
+
+		if err != nil {
+			core.LOGGER.Panic("failed to connect sqlite database")
+		}
+
+		//sqlite lock issue. https://gist.github.com/mrnugget/0eda3b2b53a70fa4a894
+		phyDb, err := db.DB()
+		phyDb.SetMaxOpenConns(1)
+
+		return db
+
+	} else {
+		mysqlUrl := util.GetMysqlUrl(mysqlPort, mysqlHost, mysqlSchema, mysqlUsername, mysqlPassword, mysqlCharset)
+
+		this.logger.Info("Connect MySQL %s", mysqlUrl)
+
+		var err error = nil
+		db, err := gorm.Open(mysql.Open(mysqlUrl), &gorm.Config{Logger: dbLogger, NamingStrategy: namingStrategy})
+		this.PanicError(err)
+
+		return db
+	}
 
 }
 
@@ -181,10 +202,23 @@ func (this *InstallController) getTableMeta(gormDb *gorm.DB, entity interface{})
 		for _, field := range allFields {
 			//tag with `gorm:"-"` will be ""
 			if field.Name != "" {
+
 				database := gormDb.Migrator().CurrentDatabase()
-				if !third.MysqlMigratorHasColumn(gormDb, database, tableName, field.Name) {
-					missingFields = append(missingFields, field)
+
+				//if sqlite
+				if _, ok := gormDb.Dialector.(*sqlite.Dialector); ok {
+
+					if !gormDb.Migrator().HasColumn(tableName, field.Name) {
+						missingFields = append(missingFields, field)
+					}
+				} else {
+
+					if !third.MysqlMigratorHasColumn(gormDb, database, tableName, field.Name) {
+						missingFields = append(missingFields, field)
+					}
+
 				}
+
 			}
 		}
 
@@ -258,16 +292,24 @@ func (this *InstallController) TableInfoList(writer http.ResponseWriter, request
 func (this *InstallController) CreateTable(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	var installTableInfos []*InstallTableInfo
-	mysqlCharset := request.FormValue("mysqlCharset")
+
 	db := this.openDbConnection(writer, request)
 	defer this.closeDbConnection(db)
 
 	for _, iBase := range this.tableNames {
 
-		//complete the missing fields or create table. use utf8 charset
-		err := db.Set("gorm:table_options", fmt.Sprintf("CHARSET=%s", mysqlCharset)).AutoMigrate(iBase)
-		this.PanicError(err)
+		if _, ok := db.Dialector.(*sqlite.Dialector); ok {
+			//if sqlite. no need to set CHARSET.
+			err := db.AutoMigrate(iBase)
+			this.PanicError(err)
+		} else {
+			//use utf8 charset
+			mysqlCharset := request.FormValue("mysqlCharset")
+			err := db.Set("gorm:table_options", fmt.Sprintf("CHARSET=%s", mysqlCharset)).AutoMigrate(iBase)
+			this.PanicError(err)
+		}
 
+		//complete the missing fields or create table.
 		tableName, exist, allFields, missingFields := this.getTableMeta(db, iBase)
 		installTableInfos = append(installTableInfos, &InstallTableInfo{
 			Name:          tableName,
@@ -383,6 +425,7 @@ func (this *InstallController) ValidateAdmin(writer http.ResponseWriter, request
 //Finish the installation
 func (this *InstallController) Finish(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
+	dbType := request.FormValue("dbType")
 	mysqlPortStr := request.FormValue("mysqlPort")
 	mysqlHost := request.FormValue("mysqlHost")
 	mysqlSchema := request.FormValue("mysqlSchema")
@@ -414,7 +457,7 @@ func (this *InstallController) Finish(writer http.ResponseWriter, request *http.
 	}
 
 	//announce the config to write config to tank.json
-	core.CONFIG.FinishInstall(mysqlPort, mysqlHost, mysqlSchema, mysqlUsername, mysqlPassword, mysqlCharset)
+	core.CONFIG.FinishInstall(dbType, mysqlPort, mysqlHost, mysqlSchema, mysqlUsername, mysqlPassword, mysqlCharset)
 
 	//announce the context to broadcast the installation news to bean.
 	core.CONTEXT.InstallOk()

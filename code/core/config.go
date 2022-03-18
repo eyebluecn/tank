@@ -20,12 +20,16 @@ const (
 type Config interface {
 	Installed() bool
 	ServerPort() int
+	//get the db type
+	DbType() string
 	//get the mysql url. eg. tank:tank123@tcp(127.0.0.1:3306)/tank?charset=utf8&parseTime=True&loc=Local
 	MysqlUrl() string
+	//get the sqlite path
+	SqliteFolder() string
 	//files storage location.
 	MatterPath() string
 	//table name strategy
 	NamingStrategy() schema.NamingStrategy
 	//when installed by user. Write configs to tank.json
-	FinishInstall(mysqlPort int, mysqlHost string, mysqlSchema string, mysqlUsername string, mysqlPassword string, mysqlCharset string)
+	FinishInstall(dbType string, mysqlPort int, mysqlHost string, mysqlSchema string, mysqlUsername string, mysqlPassword string, mysqlCharset string)
 }

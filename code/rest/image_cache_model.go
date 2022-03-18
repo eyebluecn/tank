@@ -13,7 +13,7 @@ type ImageCache struct {
 	Name       string    `json:"name" gorm:"type:varchar(255) not null"`
 	UserUuid   string    `json:"userUuid" gorm:"type:char(36)"`
 	Username   string    `json:"username" gorm:"type:varchar(45) not null"`
-	MatterUuid string    `json:"matterUuid" gorm:"type:char(36);index:idx_mu"`
+	MatterUuid string    `json:"matterUuid" gorm:"type:char(36);index:idx_image_cache_mu"` //index should unique globally.
 	MatterName string    `json:"matterName" gorm:"type:varchar(255) not null"`
 	Mode       string    `json:"mode" gorm:"type:varchar(512)"`
 	Md5        string    `json:"md5" gorm:"type:varchar(45)"`

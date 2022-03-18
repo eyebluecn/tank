@@ -4,6 +4,7 @@ import (
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/rest"
 	"github.com/eyebluecn/tank/code/tool/cache"
+	"github.com/glebarez/sqlite"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -80,19 +81,36 @@ func (this *TankContext) OpenDb() {
 		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
 		logger.Config{
 			SlowThreshold:             time.Second,   // slow SQL 1s
-			LogLevel:                  logger.Silent, // log level
+			LogLevel:                  logger.Silent, // log level. open when debug.
 			IgnoreRecordNotFoundError: true,          // ignore ErrRecordNotFound
 			Colorful:                  false,         // colorful print
 		},
 	)
+
 	//table name strategy.
 	namingStrategy := core.CONFIG.NamingStrategy()
 
-	var err error = nil
-	this.db, err = gorm.Open(mysql.Open(core.CONFIG.MysqlUrl()), &gorm.Config{Logger: dbLogger, NamingStrategy: namingStrategy})
+	if core.CONFIG.DbType() == "sqlite" {
 
-	if err != nil {
-		core.LOGGER.Panic("failed to connect mysql database")
+		var err error = nil
+		this.db, err = gorm.Open(sqlite.Open(core.CONFIG.SqliteFolder()+"/tank.sqlite"), &gorm.Config{Logger: dbLogger, NamingStrategy: namingStrategy})
+
+		if err != nil {
+			core.LOGGER.Panic("failed to connect mysql database")
+		}
+
+		//sqlite lock issue. https://gist.github.com/mrnugget/0eda3b2b53a70fa4a894
+		phyDb, err := this.db.DB()
+		phyDb.SetMaxOpenConns(1)
+
+	} else {
+
+		var err error = nil
+		this.db, err = gorm.Open(mysql.Open(core.CONFIG.MysqlUrl()), &gorm.Config{Logger: dbLogger, NamingStrategy: namingStrategy})
+
+		if err != nil {
+			core.LOGGER.Panic("failed to connect mysql database")
+		}
 	}
 
 }

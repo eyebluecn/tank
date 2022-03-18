@@ -20,6 +20,8 @@ type TankConfig struct {
 	matterPath string
 	//mysql url.
 	mysqlUrl string
+	//sqlite file path
+	sqliteFolder string
 	//configs in tank.json
 	item *ConfigItem
 }
@@ -30,7 +32,10 @@ type ConfigItem struct {
 	ServerPort int
 	//file storage location. eg./var/www/matter
 	MatterPath string
-	//mysql configurations.
+	//********db configurations.********
+	//default value is "mysql"
+	DbType string
+	//********mysql configurations..********
 	//mysql port
 	MysqlPort int
 	//mysql host
@@ -43,6 +48,9 @@ type ConfigItem struct {
 	MysqlPassword string
 	//mysql charset
 	MysqlCharset string
+	//********sqlite configurations..********
+	//default value is matter/
+	SqliteFolder string
 }
 
 //validate whether the config file is ok
@@ -53,33 +61,39 @@ func (this *ConfigItem) validate() bool {
 		return false
 	}
 
-	if this.MysqlUsername == "" {
-		core.LOGGER.Error("MysqlUsername  is not configured")
-		return false
-	}
+	if this.DbType == "sqlite" {
 
-	if this.MysqlPassword == "" {
-		core.LOGGER.Error("MysqlPassword  is not configured")
-		return false
-	}
+	} else {
 
-	if this.MysqlHost == "" {
-		core.LOGGER.Error("MysqlHost  is not configured")
-		return false
-	}
+		if this.MysqlUsername == "" {
+			core.LOGGER.Error("MysqlUsername  is not configured")
+			return false
+		}
 
-	if this.MysqlPort == 0 {
-		core.LOGGER.Error("MysqlPort  is not configured")
-		return false
-	}
+		if this.MysqlPassword == "" {
+			core.LOGGER.Error("MysqlPassword  is not configured")
+			return false
+		}
 
-	if this.MysqlSchema == "" {
-		core.LOGGER.Error("MysqlSchema  is not configured")
-		return false
-	}
-	if this.MysqlCharset == "" {
-		core.LOGGER.Error("MysqlCharset  is not configured")
-		return false
+		if this.MysqlHost == "" {
+			core.LOGGER.Error("MysqlHost  is not configured")
+			return false
+		}
+
+		if this.MysqlPort == 0 {
+			core.LOGGER.Error("MysqlPort  is not configured")
+			return false
+		}
+
+		if this.MysqlSchema == "" {
+			core.LOGGER.Error("MysqlSchema  is not configured")
+			return false
+		}
+
+		if this.MysqlCharset == "" {
+			core.LOGGER.Error("MysqlCharset  is not configured")
+			return false
+		}
 	}
 
 	return true
@@ -169,9 +183,28 @@ func (this *TankConfig) ServerPort() int {
 	return this.serverPort
 }
 
+//get the db type
+func (this *TankConfig) DbType() string {
+	return this.item.DbType
+}
+
 //mysql url
 func (this *TankConfig) MysqlUrl() string {
 	return this.mysqlUrl
+}
+
+//get the sqlite path
+func (this *TankConfig) SqliteFolder() string {
+	if this.sqliteFolder == "" {
+		//use default file location.
+		if this.item == nil || this.item.SqliteFolder == "" {
+			this.sqliteFolder = util.GetHomePath() + "/matter"
+		} else {
+			this.sqliteFolder = util.UniformPath(this.item.SqliteFolder)
+		}
+	}
+
+	return this.sqliteFolder
 }
 
 //matter path
@@ -187,10 +220,11 @@ func (this *TankConfig) NamingStrategy() schema.NamingStrategy {
 	}
 }
 
-//Finish the installation. Write config to tank.json
-func (this *TankConfig) FinishInstall(mysqlPort int, mysqlHost string, mysqlSchema string, mysqlUsername string, mysqlPassword string, mysqlCharset string) {
+//TODO: Finish the installation. Write config to tank.json. add sqlite support.
+func (this *TankConfig) FinishInstall(dbType string, mysqlPort int, mysqlHost string, mysqlSchema string, mysqlUsername string, mysqlPassword string, mysqlCharset string) {
 
 	var configItem = &ConfigItem{
+		DbType: dbType,
 		//server port
 		ServerPort: core.CONFIG.ServerPort(),
 		//file storage location. eg./var/www/matter
