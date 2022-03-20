@@ -202,6 +202,7 @@ func (this *TankConfig) SqliteFolder() string {
 		} else {
 			this.sqliteFolder = util.UniformPath(this.item.SqliteFolder)
 		}
+		util.MakeDirAll(this.matterPath)
 	}
 
 	return this.sqliteFolder

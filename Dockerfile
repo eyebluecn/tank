@@ -1,5 +1,5 @@
-# use golang 1.12
-FROM golang:1.12
+# use golang 1.17
+FROM golang:1.17
 
 # maintainer. Author's name and email.
 MAINTAINER eyeblue "eyebluecn@126.com"
@@ -17,7 +17,7 @@ VOLUME /data/build/matter
 ENV GOPROXY=https://goproxy.cn
 
 # prepare the config file
-RUN go build -mod=readonly \
+RUN go build \
     && cp -r /data/tank /data/build
 
 # use 6010 as default.
