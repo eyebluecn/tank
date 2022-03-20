@@ -51,6 +51,16 @@ c. 在github上发布新版本。
 go get xxx/xxx
 go mod tidy
 
+
+tank-3.1.4 2022-03-20
+1. Support Sqlite.
+2. Upgrade webpack.
+
+1. 支持Sqlite
+2. 升级了前端的webpack
+
+
+
 tank-3.1.3 2022-03-10
 1. Add kkfileview 3.x support
 2. Fix search bug https://github.com/eyebluecn/tank/issues/148
