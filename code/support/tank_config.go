@@ -198,11 +198,11 @@ func (this *TankConfig) SqliteFolder() string {
 	if this.sqliteFolder == "" {
 		//use default file location.
 		if this.item == nil || this.item.SqliteFolder == "" {
-			this.sqliteFolder = util.GetHomePath() + "/matter"
+			this.sqliteFolder = util.GetHomePath() + "/conf"
 		} else {
 			this.sqliteFolder = util.UniformPath(this.item.SqliteFolder)
 		}
-		util.MakeDirAll(this.matterPath)
+		util.MakeDirAll(this.sqliteFolder)
 	}
 
 	return this.sqliteFolder
