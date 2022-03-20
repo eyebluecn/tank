@@ -15,6 +15,7 @@
 7. [WebDav](https://tank-doc.eyeblue.cn/advance/webdav.html)
 8. [扫描磁盘任务](https://tank-doc.eyeblue.cn/advance/scan.html)
 9. [在线预览及自定义配置预览引擎](https://tank-doc.eyeblue.cn/advance/preview.html)
+10. 支持Sqlite和Mysql数据库用以存储文件元信息，Sqlite可以做到开箱即用。
 
 [更多内容请移步至文档](https://tank-doc.eyeblue.cn/)
 
