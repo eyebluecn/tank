@@ -52,6 +52,14 @@ go get xxx/xxx
 go mod tidy
 
 
+tank-3.1.5 2022-03-21
+1. Support Sqlite.
+2. Upgrade webpack.
+
+1. 支持Sqlite
+2. 升级了前端的webpack
+
+
 tank-3.1.4 2022-03-20
 1. Support Sqlite.
 2. Upgrade webpack.
