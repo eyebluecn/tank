@@ -51,6 +51,7 @@
 
 ### Support
 IDE for this project is supported by jetbrains.
+
 [![](./build/doc/img/jb_beam.png)](https://jb.gg/OpenSourceSupport)
 
 
