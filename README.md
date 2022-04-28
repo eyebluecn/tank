@@ -48,6 +48,12 @@
 
 群号：23156361
 
+
+### Support
+IDE for this project is supported by jetbrains.
+[![](./build/doc/img/jb_beam.png)](https://jb.gg/OpenSourceSupport)
+
+
 ### License
 
 [MIT](http://opensource.org/licenses/MIT)
