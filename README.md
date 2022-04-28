@@ -50,7 +50,7 @@
 
 
 ### Support
-IDE for this project is supported by jetbrains.
+IDE for this project is supported by [Jetbrains](https://jb.gg/OpenSourceSupport).
 
 [![](./build/doc/img/jb_beam.png)](https://jb.gg/OpenSourceSupport)
 
