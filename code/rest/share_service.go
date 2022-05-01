@@ -92,6 +92,11 @@ func (this *ShareService) ValidateMatter(request *http.Request, shareUuid string
 
 	share := this.CheckShare(request, shareUuid, code, user)
 
+	shareOwner := this.userDao.FindByUuid(share.UserUuid)
+	if shareOwner.Status == USER_STATUS_DISABLED {
+		panic(result.BadRequestI18n(request, i18n.UserDisabled))
+	}
+
 	//if shareRootUuid is root. Bridge must has record.
 	if shareRootUuid == MATTER_ROOT {
 
