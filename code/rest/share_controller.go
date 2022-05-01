@@ -278,6 +278,10 @@ func (this *ShareController) Browse(writer http.ResponseWriter, request *http.Re
 	user := this.findUser(request)
 	share := this.shareService.CheckShare(request, shareUuid, code, user)
 	bridges := this.bridgeDao.FindByShareUuid(share.Uuid)
+	shareOwner := this.userDao.FindByUuid(share.UserUuid)
+	if shareOwner.Status == USER_STATUS_DISABLED {
+		panic(result.BadRequestI18n(request, i18n.UserDisabled))
+	}
 
 	if puuid == MATTER_ROOT {
 
