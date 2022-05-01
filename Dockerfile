@@ -16,6 +16,10 @@ VOLUME /data/build/matter
 # proxy
 ENV GOPROXY=https://goproxy.cn
 
+# Handle time-zone
+ENV TZ=Asia/Shanghai
+RUN apt-get install -y tzdata
+
 # prepare the config file
 RUN go build \
     && cp -r /data/tank /data/build
