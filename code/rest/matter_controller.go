@@ -1,13 +1,14 @@
 package rest
 
 import (
+	"net/http"
+	"strconv"
+	"strings"
+
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/builder"
 	"github.com/eyebluecn/tank/code/tool/i18n"
 	"github.com/eyebluecn/tank/code/tool/result"
-	"net/http"
-	"strconv"
-	"strings"
 )
 
 type MatterController struct {
@@ -229,6 +230,32 @@ func (this *MatterController) CreateDirectory(writer http.ResponseWriter, reques
 
 	matter := this.matterService.AtomicCreateDirectory(request, dirMatter, name, user)
 	return this.Success(matter)
+}
+
+// 检查已上传的chunk索引列表，用来断点续传
+func (this *MatterController) CheckUploadedChunkIndexes(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+
+}
+
+// 上传chunk
+func (this *MatterController) UploadChunk(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+	// 再次确认一下是否已上传
+	index := request.FormValue("index")
+	md5 := request.FormValue("md5")
+	data := request.FormValue("data")
+
+	user := this.checkUser(request)
+
+	// 去暂存表里查有无记录
+	err = request.ParseMultipartForm(32 << 20)
+	this.PanicError(err)
+
+	// this.matterDao.CheckWithRootByUuid(user)
+}
+
+// 合并chunk
+func (this *MatterController) MergeChunkList(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+
 }
 
 func (this *MatterController) Upload(writer http.ResponseWriter, request *http.Request) *result.WebResult {
