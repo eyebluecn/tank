@@ -42,11 +42,11 @@
 
 如果您也想参与进来，请尽情的fork, star, post issue, pull requests
 
-当然你可以加入钉钉群一起直接交流，在钉钉群中可以获取最新beta版本。
+当然你可以加入钉钉群（一群已满员）一起直接交流，在钉钉群中可以获取最新beta版本。
 
 ![](./build/doc/img/dingding.jpg)
 
-群号：23156361
+群号：44754005
 
 
 ### Support
