@@ -3,17 +3,17 @@ package support
 import (
 	"flag"
 	"fmt"
-	"github.com/eyebluecn/tank/code/core"
-	"github.com/eyebluecn/tank/code/tool/result"
-	"github.com/eyebluecn/tank/code/tool/util"
-	jsoniter "github.com/json-iterator/go"
-	"golang.org/x/crypto/ssh/terminal"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"strings"
 	"syscall"
+
+	"github.com/eyebluecn/tank/code/core"
+	"github.com/eyebluecn/tank/code/tool/result"
+	"github.com/eyebluecn/tank/code/tool/util"
+	jsoniter "github.com/json-iterator/go"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 const (
@@ -77,6 +77,11 @@ func (this *TankApplication) Start() {
 	this.overwrite = *overwritePtr
 	this.filename = *filenamePtr
 
+	//default host.
+	if this.host == "" {
+		this.host = fmt.Sprintf("http://127.0.0.1:%d", core.DEFAULT_SERVER_PORT)
+	}
+
 	//default start as web.
 	if this.mode == "" || strings.ToLower(this.mode) == MODE_WEB {
 
@@ -87,11 +92,6 @@ func (this *TankApplication) Start() {
 		this.HandleVersion()
 
 	} else {
-
-		//default host.
-		if this.host == "" {
-			this.host = fmt.Sprintf("http://127.0.0.1:%d", core.DEFAULT_SERVER_PORT)
-		}
 
 		if this.username == "" {
 			panic(result.BadRequest("in mode %s, username is required", this.mode))
@@ -150,14 +150,12 @@ func (this *TankApplication) HandleWeb() {
 
 	//Step 4. Start http
 	http.Handle("/", core.CONTEXT)
-	core.LOGGER.Info("App started at http://localhost:%v", core.CONFIG.ServerPort())
+	core.LOGGER.Info("App started at %v", this.host)
 
-	dotPort := fmt.Sprintf(":%v", core.CONFIG.ServerPort())
-	err1 := http.ListenAndServe(dotPort, nil)
+	err1 := http.ListenAndServe(strings.TrimPrefix(this.host, "http://"), nil)
 	if err1 != nil {
 		log.Fatal("ListenAndServe: ", err1)
 	}
-
 }
 
 func (this *TankApplication) HandleMirror() {
@@ -184,11 +182,10 @@ func (this *TankApplication) HandleMirror() {
 	response, err := http.PostForm(urlString, params)
 	core.PanicError(err)
 
-	bodyBytes, err := ioutil.ReadAll(response.Body)
-
 	webResult := &result.WebResult{}
 
-	err = jsoniter.ConfigCompatibleWithStandardLibrary.Unmarshal(bodyBytes, webResult)
+	err = jsoniter.ConfigCompatibleWithStandardLibrary.NewDecoder(response.Body).Decode(webResult)
+	_ = response.Body.Close()
 	if err != nil {
 		fmt.Printf("error response format %s \r\n", err.Error())
 		return
@@ -230,11 +227,10 @@ func (this *TankApplication) HandleCrawl() {
 	response, err := http.PostForm(urlString, params)
 	core.PanicError(err)
 
-	bodyBytes, err := ioutil.ReadAll(response.Body)
-
 	webResult := &result.WebResult{}
 
-	err = jsoniter.ConfigCompatibleWithStandardLibrary.Unmarshal(bodyBytes, webResult)
+	err = jsoniter.ConfigCompatibleWithStandardLibrary.NewDecoder(response.Body).Decode(webResult)
+	_ = response.Body.Close()
 	if err != nil {
 		fmt.Printf("Error response format %s \r\n", err.Error())
 		return
