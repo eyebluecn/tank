@@ -1,4 +1,6 @@
 {
-  "ServerPort": 6010,
-  "MatterPath": ""
+  "ServerPort": 6012,
+  "MatterPath": "",
+  "SSLCertFile":"C:/Workspaces/SSL/server.pem",
+  "SSLKeyFile":"C:/Workspaces/SSL/server.key"
 }

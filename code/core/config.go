@@ -20,6 +20,10 @@ const (
 type Config interface {
 	Installed() bool
 	ServerPort() int
+	//SSL Cert File
+	SSLCertFile() string
+	//SSL key File
+	SSLKeyFile() string
 	//get the db type
 	DbType() string
 	//get the mysql url. eg. tank:tank123@tcp(127.0.0.1:3306)/tank?charset=utf8&parseTime=True&loc=Local

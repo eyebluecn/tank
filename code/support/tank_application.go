@@ -150,14 +150,27 @@ func (this *TankApplication) HandleWeb() {
 
 	//Step 4. Start http
 	http.Handle("/", core.CONTEXT)
-	core.LOGGER.Info("App started at http://localhost:%v", core.CONFIG.ServerPort())
 
 	dotPort := fmt.Sprintf(":%v", core.CONFIG.ServerPort())
-	err1 := http.ListenAndServe(dotPort, nil)
+
+	//if ssl cert file or key file is empty,use http service else use https service
+	var err1 error
+	if strings.TrimSpace(core.CONFIG.SSLCertFile()) != "" && strings.TrimSpace(core.CONFIG.SSLKeyFile()) != "" {
+		PrintStartInfo("https")
+		err1 = http.ListenAndServeTLS(dotPort, core.CONFIG.SSLCertFile(), core.CONFIG.SSLKeyFile(), nil)
+	} else {
+		PrintStartInfo("http")
+		err1 = http.ListenAndServe(dotPort, nil)
+	}
 	if err1 != nil {
 		log.Fatal("ListenAndServe: ", err1)
 	}
 
+}
+
+//print starting info
+func PrintStartInfo(protocol string) {
+	core.LOGGER.Info("App started at %v://localhost:%v", protocol, core.CONFIG.ServerPort())
 }
 
 func (this *TankApplication) HandleMirror() {

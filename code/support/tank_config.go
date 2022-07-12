@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm/schema"
 	"io/ioutil"
 	"os"
+	"strings"
 	"time"
 	"unsafe"
 )
@@ -14,6 +15,10 @@ import (
 type TankConfig struct {
 	//server port
 	serverPort int
+	//ssl cert file
+	sSLCertFile string
+	//ssl key file
+	sSLKeyFile string
 	//whether installed
 	installed bool
 	//file storage location. eg./var/www/matter
@@ -30,6 +35,10 @@ type TankConfig struct {
 type ConfigItem struct {
 	//server port
 	ServerPort int
+	//ssl cert file
+	SSLCertFile string
+	//ssl key file
+	SSLKeyFile string
 	//file storage location. eg./var/www/matter
 	MatterPath string
 	//********db configurations.********
@@ -149,6 +158,15 @@ func (this *TankConfig) ReadFromConfigFile() {
 			this.serverPort = this.item.ServerPort
 		}
 
+		//load ssl cert from json
+		if strings.TrimSpace(this.item.SSLCertFile) != "" {
+			this.sSLCertFile = this.item.SSLCertFile
+		}
+		//load ssl cert from json
+		if strings.TrimSpace(this.item.SSLKeyFile) != "" {
+			this.sSLKeyFile = this.item.SSLKeyFile
+		}
+
 		//check the integrity
 		itemValidate := this.item.validate()
 		if !itemValidate {
@@ -181,6 +199,16 @@ func (this *TankConfig) Installed() bool {
 //server port
 func (this *TankConfig) ServerPort() int {
 	return this.serverPort
+}
+
+//server ssl cert
+func (this *TankConfig) SSLCertFile() string {
+	return this.sSLCertFile
+}
+
+//server ssl key
+func (this *TankConfig) SSLKeyFile() string {
+	return this.sSLKeyFile
 }
 
 //get the db type
