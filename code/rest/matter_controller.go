@@ -1,14 +1,13 @@
 package rest
 
 import (
-	"net/http"
-	"strconv"
-	"strings"
-
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/builder"
 	"github.com/eyebluecn/tank/code/tool/i18n"
 	"github.com/eyebluecn/tank/code/tool/result"
+	"net/http"
+	"strconv"
+	"strings"
 )
 
 type MatterController struct {
@@ -232,32 +231,6 @@ func (this *MatterController) CreateDirectory(writer http.ResponseWriter, reques
 	return this.Success(matter)
 }
 
-// 检查已上传的chunk索引列表，用来断点续传
-func (this *MatterController) CheckUploadedChunkIndexes(writer http.ResponseWriter, request *http.Request) *result.WebResult {
-
-}
-
-// 上传chunk
-func (this *MatterController) UploadChunk(writer http.ResponseWriter, request *http.Request) *result.WebResult {
-	// 再次确认一下是否已上传
-	index := request.FormValue("index")
-	md5 := request.FormValue("md5")
-	data := request.FormValue("data")
-
-	user := this.checkUser(request)
-
-	// 去暂存表里查有无记录
-	err = request.ParseMultipartForm(32 << 20)
-	this.PanicError(err)
-
-	// this.matterDao.CheckWithRootByUuid(user)
-}
-
-// 合并chunk
-func (this *MatterController) MergeChunkList(writer http.ResponseWriter, request *http.Request) *result.WebResult {
-
-}
-
 func (this *MatterController) Upload(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	puuid := request.FormValue("puuid")
@@ -295,7 +268,7 @@ func (this *MatterController) Upload(writer http.ResponseWriter, request *http.R
 	return this.Success(matter)
 }
 
-//crawl a file by url.
+// crawl a file by url.
 func (this *MatterController) Crawl(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	url := request.FormValue("url")
@@ -319,7 +292,7 @@ func (this *MatterController) Crawl(writer http.ResponseWriter, request *http.Re
 	return this.Success(matter)
 }
 
-//soft delete.
+// soft delete.
 func (this *MatterController) SoftDelete(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	uuid := request.FormValue("uuid")
@@ -373,7 +346,7 @@ func (this *MatterController) SoftDeleteBatch(writer http.ResponseWriter, reques
 	return this.Success("OK")
 }
 
-//recovery delete.
+// recovery delete.
 func (this *MatterController) Recovery(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	uuid := request.FormValue("uuid")
@@ -393,7 +366,7 @@ func (this *MatterController) Recovery(writer http.ResponseWriter, request *http
 	return this.Success("OK")
 }
 
-//recovery batch.
+// recovery batch.
 func (this *MatterController) RecoveryBatch(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	uuids := request.FormValue("uuids")
@@ -424,7 +397,7 @@ func (this *MatterController) RecoveryBatch(writer http.ResponseWriter, request 
 	return this.Success("OK")
 }
 
-//complete delete.
+// complete delete.
 func (this *MatterController) Delete(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	uuid := request.FormValue("uuid")
@@ -478,7 +451,7 @@ func (this *MatterController) DeleteBatch(writer http.ResponseWriter, request *h
 	return this.Success("OK")
 }
 
-//manual clean expired deleted matters.
+// manual clean expired deleted matters.
 func (this *MatterController) CleanExpiredDeletedMatters(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	this.matterService.CleanExpiredDeletedMatters()
@@ -591,7 +564,7 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 	return this.Success(nil)
 }
 
-//mirror local files to EyeblueTank
+// mirror local files to EyeblueTank
 func (this *MatterController) Mirror(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	srcPath := request.FormValue("srcPath")
@@ -615,7 +588,7 @@ func (this *MatterController) Mirror(writer http.ResponseWriter, request *http.R
 
 }
 
-//download zip.
+// download zip.
 func (this *MatterController) Zip(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	uuids := request.FormValue("uuids")
