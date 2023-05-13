@@ -59,3 +59,78 @@ func (this *SpaceMemberService) CreateMember(space *Space, memeber *User, spaceR
 	return spaceMember
 
 }
+
+// 当前用户对于此空间，是否有管理权限。
+func (this *SpaceMemberService) canManage(user *User, spaceUuid string) bool {
+	if user.Role == USER_ROLE_ADMINISTRATOR {
+		return true
+	}
+
+	//only space's admin can add member.
+	spaceMember := this.spaceMemberDao.FindBySpaceUuidAndUserUuid(spaceUuid, user.Uuid)
+	return this.canManageBySpaceMember(user, spaceMember)
+}
+
+// 当前用户对于此空间，是否有可读权限。
+func (this *SpaceMemberService) canRead(user *User, spaceUuid string) bool {
+	if user.Role == USER_ROLE_ADMINISTRATOR {
+		return true
+	}
+
+	//only space's admin can add member.
+	spaceMember := this.spaceMemberDao.FindBySpaceUuidAndUserUuid(spaceUuid, user.Uuid)
+	return this.canReadBySpaceMember(user, spaceMember)
+}
+
+// 当前用户对于此空间，是否有可写权限。
+func (this *SpaceMemberService) canWrite(user *User, spaceUuid string) bool {
+	if user.Role == USER_ROLE_ADMINISTRATOR {
+		return true
+	}
+
+	//only space's admin can add member.
+	spaceMember := this.spaceMemberDao.FindBySpaceUuidAndUserUuid(spaceUuid, user.Uuid)
+	return this.canWriteBySpaceMember(user, spaceMember)
+}
+
+// 当前用户对于此空间，是否有管理权限。
+func (this *SpaceMemberService) canManageBySpaceMember(user *User, member *SpaceMember) bool {
+	if user.Role == USER_ROLE_ADMINISTRATOR {
+		return true
+	}
+
+	//only space's admin can add member.
+	if member != nil && member.Role == SPACE_MEMBER_ROLE_ADMIN {
+		return true
+	}
+
+	return false
+}
+
+// 当前用户对于此空间，是否有可读权限。
+func (this *SpaceMemberService) canReadBySpaceMember(user *User, member *SpaceMember) bool {
+	if user.Role == USER_ROLE_ADMINISTRATOR {
+		return true
+	}
+
+	//only space's admin can add member.
+	if member != nil {
+		return true
+	}
+
+	return false
+}
+
+// 当前用户对于此空间，是否有科协权限。
+func (this *SpaceMemberService) canWriteBySpaceMember(user *User, member *SpaceMember) bool {
+	if user.Role == USER_ROLE_ADMINISTRATOR {
+		return true
+	}
+
+	//only space's admin can add member.
+	if member != nil && (member.Role == SPACE_MEMBER_ROLE_ADMIN || member.Role == SPACE_MEMBER_ROLE_READ_WRITE) {
+		return true
+	}
+
+	return false
+}

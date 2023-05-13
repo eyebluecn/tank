@@ -37,6 +37,14 @@ func (this *SpaceDao) CheckByUuid(uuid string) *Space {
 	return entity
 }
 
+// TODO:
+func (this *SpaceDao) SelfPage(page int, pageSize int, user *User, sortArray []builder.OrderPair) *Pager {
+	count, spaces := this.PlainPage(page, pageSize, sortArray)
+	pager := NewPager(page, pageSize, count, spaces)
+
+	return pager
+}
+
 func (this *SpaceDao) Page(page int, pageSize int, sortArray []builder.OrderPair) *Pager {
 	count, spaces := this.PlainPage(page, pageSize, sortArray)
 	pager := NewPager(page, pageSize, count, spaces)
