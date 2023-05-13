@@ -61,6 +61,7 @@ func (this *SpaceController) RegisterRoutes() map[string]func(writer http.Respon
 	routeMap := make(map[string]func(writer http.ResponseWriter, request *http.Request))
 
 	routeMap["/api/space/create"] = this.Wrap(this.Create, USER_ROLE_ADMINISTRATOR)
+	routeMap["/api/space/edit"] = this.Wrap(this.Edit, USER_ROLE_ADMINISTRATOR)
 	routeMap["/api/space/delete"] = this.Wrap(this.Delete, USER_ROLE_ADMINISTRATOR)
 	routeMap["/api/space/detail"] = this.Wrap(this.Detail, USER_ROLE_USER)
 	routeMap["/api/space/page"] = this.Wrap(this.Page, USER_ROLE_USER)
@@ -115,6 +116,47 @@ func (this *SpaceController) Create(writer http.ResponseWriter, request *http.Re
 	//create related space.
 	space := this.spaceService.CreateSpace(user.Uuid)
 	space.User = user
+
+	return this.Success(space)
+}
+
+func (this *SpaceController) Edit(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+	//space's name
+	spaceUuid := request.FormValue("spaceUuid")
+	sizeLimitStr := request.FormValue("sizeLimit")
+	totalSizeLimitStr := request.FormValue("totalSizeLimit")
+
+	//only admin can edit user's sizeLimit
+	var sizeLimit int64 = 0
+	if sizeLimitStr == "" {
+		panic("space's limit size is required")
+	} else {
+		intSizeLimit, err := strconv.Atoi(sizeLimitStr)
+		if err != nil {
+			this.PanicError(err)
+		}
+		sizeLimit = int64(intSizeLimit)
+	}
+
+	var totalSizeLimit int64 = 0
+	if totalSizeLimitStr == "" {
+		panic("space's total limit size is required")
+	} else {
+		intTotalSizeLimit, err := strconv.Atoi(totalSizeLimitStr)
+		if err != nil {
+			this.PanicError(err)
+		}
+		totalSizeLimit = int64(intTotalSizeLimit)
+	}
+
+	space := this.spaceDao.CheckByUuid(spaceUuid)
+	spaceUser := this.userDao.CheckByUuid(space.UserUuid)
+	spaceUser.SizeLimit = sizeLimit
+	spaceUser.TotalSizeLimit = totalSizeLimit
+
+	spaceUser = this.userDao.Save(spaceUser)
+
+	space.User = spaceUser
 
 	return this.Success(space)
 }

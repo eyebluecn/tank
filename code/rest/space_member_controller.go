@@ -59,6 +59,7 @@ func (this *SpaceMemberController) RegisterRoutes() map[string]func(writer http.
 	routeMap := make(map[string]func(writer http.ResponseWriter, request *http.Request))
 
 	routeMap["/api/space/member/create"] = this.Wrap(this.Create, USER_ROLE_USER)
+	routeMap["/api/space/member/edit"] = this.Wrap(this.Edit, USER_ROLE_USER)
 	routeMap["/api/space/member/delete"] = this.Wrap(this.Delete, USER_ROLE_USER)
 	routeMap["/api/space/member/detail"] = this.Wrap(this.Detail, USER_ROLE_USER)
 	routeMap["/api/space/member/page"] = this.Wrap(this.Page, USER_ROLE_USER)
@@ -100,6 +101,28 @@ func (this *SpaceMemberController) Create(writer http.ResponseWriter, request *h
 	}
 
 	spaceMember = this.spaceMemberService.CreateMember(space, member, spaceRole)
+
+	return this.Success(spaceMember)
+}
+
+func (this *SpaceMemberController) Edit(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+	spaceMemberUuid := request.FormValue("spaceMemberUuid")
+	spaceRole := request.FormValue("spaceRole")
+
+	if spaceRole != SPACE_MEMBER_ROLE_READ_ONLY && spaceRole != SPACE_MEMBER_ROLE_READ_WRITE && spaceRole != SPACE_MEMBER_ROLE_ADMIN {
+		panic("spaceRole is not correct")
+	}
+
+	spaceMember := this.spaceMemberDao.CheckByUuid(spaceMemberUuid)
+
+	currentUser := this.checkUser(request)
+	canManage := this.spaceMemberService.canManageBySpaceMember(currentUser, spaceMember)
+	if !canManage {
+		panic(result.BadRequestI18n(request, i18n.PermissionDenied))
+	}
+
+	spaceMember.Role = spaceRole
+	spaceMember = this.spaceMemberDao.Save(spaceMember)
 
 	return this.Success(spaceMember)
 }
