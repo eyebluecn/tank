@@ -48,7 +48,7 @@ type Matter struct {
 	VisitTime  time.Time `json:"visitTime" gorm:"type:timestamp not null;default:'2018-01-01 00:00:00'"`
 	Deleted    bool      `json:"deleted" gorm:"type:tinyint(1) not null;index:idx_matter_del;default:0"`
 	DeleteTime time.Time `json:"deleteTime" gorm:"type:timestamp not null;index:idx_matter_delt;default:'2018-01-01 00:00:00'"`
-	SpaceUuid  string    `json:"spaceUuid" gorm:"type:char(36) not null;default:'root';index:idx_space_uuid"`
+	SpaceUuid  string    `json:"spaceUuid" gorm:"type:char(36) not null;index:idx_space_uuid"`
 	Parent     *Matter   `json:"parent" gorm:"-"`
 	Children   []*Matter `json:"-" gorm:"-"`
 }
