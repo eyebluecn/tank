@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-//whether windows develop environment
+// whether windows develop environment
 func EnvWinDevelopment() bool {
 
 	ex, err := os.Executable()
@@ -18,7 +18,7 @@ func EnvWinDevelopment() bool {
 	systemUser, err := user.Current()
 	if systemUser != nil {
 
-		return strings.HasPrefix(ex, systemUser.HomeDir+"\\AppData\\Local\\Temp")
+		return strings.HasPrefix(ex, systemUser.HomeDir+"\\AppData\\Local")
 
 	}
 
@@ -26,7 +26,7 @@ func EnvWinDevelopment() bool {
 
 }
 
-//whether mac develop environment
+// whether mac develop environment
 func EnvMacDevelopment() bool {
 
 	ex, err := os.Executable()
@@ -38,7 +38,7 @@ func EnvMacDevelopment() bool {
 
 }
 
-//whether develop environment (whether run in IDE)
+// whether develop environment (whether run in IDE)
 func EnvDevelopment() bool {
 
 	return EnvWinDevelopment() || EnvMacDevelopment()
