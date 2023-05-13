@@ -52,20 +52,20 @@ func (this *SpaceMemberDao) FindBySpaceUuidAndUserUuid(spaceUuid string, userUui
 	return entity
 }
 
-func (this *SpaceMemberDao) Page(page int, pageSize int, userUuid string, sortArray []builder.OrderPair) *Pager {
+func (this *SpaceMemberDao) Page(page int, pageSize int, spaceUuid string, sortArray []builder.OrderPair) *Pager {
 
-	count, spaceMembers := this.PlainPage(page, pageSize, userUuid, sortArray)
+	count, spaceMembers := this.PlainPage(page, pageSize, spaceUuid, sortArray)
 	pager := NewPager(page, pageSize, count, spaceMembers)
 
 	return pager
 }
 
-func (this *SpaceMemberDao) PlainPage(page int, pageSize int, userUuid string, sortArray []builder.OrderPair) (int, []*SpaceMember) {
+func (this *SpaceMemberDao) PlainPage(page int, pageSize int, spaceUuid string, sortArray []builder.OrderPair) (int, []*SpaceMember) {
 
 	var wp = &builder.WherePair{}
 
-	if userUuid != "" {
-		wp = wp.And(&builder.WherePair{Query: "user_uuid = ?", Args: []interface{}{userUuid}})
+	if spaceUuid != "" {
+		wp = wp.And(&builder.WherePair{Query: "space_uuid = ?", Args: []interface{}{spaceUuid}})
 	}
 
 	var conditionDB *gorm.DB

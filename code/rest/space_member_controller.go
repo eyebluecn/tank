@@ -143,8 +143,7 @@ func (this *SpaceMemberController) Page(writer http.ResponseWriter, request *htt
 	pageStr := request.FormValue("page")
 	pageSizeStr := request.FormValue("pageSize")
 	orderCreateTime := request.FormValue("orderCreateTime")
-
-	user := this.checkUser(request)
+	spaceUuid := request.FormValue("spaceUuid")
 
 	var page int
 	if pageStr != "" {
@@ -159,6 +158,16 @@ func (this *SpaceMemberController) Page(writer http.ResponseWriter, request *htt
 		}
 	}
 
+	if spaceUuid == "" {
+		panic(result.BadRequest("spaceUuid cannot be null"))
+	}
+
+	user := this.checkUser(request)
+	canRead := this.canRead(user, spaceUuid)
+	if !canRead {
+		panic(result.BadRequestI18n(request, i18n.PermissionDenied))
+	}
+
 	sortArray := []builder.OrderPair{
 		{
 			Key:   "create_time",
@@ -166,7 +175,14 @@ func (this *SpaceMemberController) Page(writer http.ResponseWriter, request *htt
 		},
 	}
 
-	pager := this.spaceMemberDao.Page(page, pageSize, user.Uuid, sortArray)
+	pager := this.spaceMemberDao.Page(page, pageSize, spaceUuid, sortArray)
+
+	//fill the space's user. FIXME: user better way to get User.
+	if pager != nil {
+		for _, spaceMember := range pager.Data.([]*SpaceMember) {
+			spaceMember.User = this.userDao.FindByUuid(spaceMember.UserUuid)
+		}
+	}
 
 	return this.Success(pager)
 }
@@ -182,6 +198,28 @@ func (this *SpaceMemberController) canManage(user *User, spaceUuid string) bool 
 	return this.canManageBySpaceMember(user, spaceMember)
 }
 
+// 当前用户对于此空间，是否有可读权限。
+func (this *SpaceMemberController) canRead(user *User, spaceUuid string) bool {
+	if user.Role == USER_ROLE_ADMINISTRATOR {
+		return true
+	}
+
+	//only space's admin can add member.
+	spaceMember := this.spaceMemberDao.FindBySpaceUuidAndUserUuid(spaceUuid, user.Uuid)
+	return this.canReadBySpaceMember(user, spaceMember)
+}
+
+// 当前用户对于此空间，是否有可写权限。
+func (this *SpaceMemberController) canWrite(user *User, spaceUuid string) bool {
+	if user.Role == USER_ROLE_ADMINISTRATOR {
+		return true
+	}
+
+	//only space's admin can add member.
+	spaceMember := this.spaceMemberDao.FindBySpaceUuidAndUserUuid(spaceUuid, user.Uuid)
+	return this.canWriteBySpaceMember(user, spaceMember)
+}
+
 // 当前用户对于此空间，是否有管理权限。
 func (this *SpaceMemberController) canManageBySpaceMember(user *User, member *SpaceMember) bool {
 	if user.Role == USER_ROLE_ADMINISTRATOR {
@@ -190,6 +228,34 @@ func (this *SpaceMemberController) canManageBySpaceMember(user *User, member *Sp
 
 	//only space's admin can add member.
 	if member != nil && member.Role == SPACE_MEMBER_ROLE_ADMIN {
+		return true
+	}
+
+	return false
+}
+
+// 当前用户对于此空间，是否有可读权限。
+func (this *SpaceMemberController) canReadBySpaceMember(user *User, member *SpaceMember) bool {
+	if user.Role == USER_ROLE_ADMINISTRATOR {
+		return true
+	}
+
+	//only space's admin can add member.
+	if member != nil {
+		return true
+	}
+
+	return false
+}
+
+// 当前用户对于此空间，是否有科协权限。
+func (this *SpaceMemberController) canWriteBySpaceMember(user *User, member *SpaceMember) bool {
+	if user.Role == USER_ROLE_ADMINISTRATOR {
+		return true
+	}
+
+	//only space's admin can add member.
+	if member != nil && (member.Role == SPACE_MEMBER_ROLE_ADMIN || member.Role == SPACE_MEMBER_ROLE_READ_WRITE) {
 		return true
 	}
 

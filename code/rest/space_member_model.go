@@ -24,4 +24,5 @@ type SpaceMember struct {
 	SpaceUuid  string    `json:"spaceUuid" gorm:"type:char(36);index:idx_space_uuid"`
 	UserUuid   string    `json:"userUuid" gorm:"type:char(36);index:idx_user_uuid"`
 	Role       string    `json:"role" gorm:"type:varchar(45)"`
+	User       *User     `json:"user" gorm:"-"`
 }

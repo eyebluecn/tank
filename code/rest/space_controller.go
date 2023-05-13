@@ -184,7 +184,7 @@ func (this *SpaceController) Page(writer http.ResponseWriter, request *http.Requ
 		pager = this.spaceDao.Page(page, pageSize, sortArray)
 	}
 
-	//fill the space's user.
+	//fill the space's user. FIXME: user better way to get User.
 	if pager != nil {
 		for _, space := range pager.Data.([]*Space) {
 			space.User = this.userDao.FindByUuid(space.UserUuid)
