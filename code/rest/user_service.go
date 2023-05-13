@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-//@Service
+// @Service
 type UserService struct {
 	BaseBean
 	userDao    *UserDao
@@ -82,7 +82,7 @@ func (this *UserService) Init() {
 	this.locker = cache.NewTable()
 }
 
-//lock a user's operation. If lock, user cannot operate file.
+// lock a user's operation. If lock, user cannot operate file.
 func (this *UserService) MatterLock(userUuid string) {
 
 	cacheItem, err := this.locker.Value(userUuid)
@@ -98,7 +98,7 @@ func (this *UserService) MatterLock(userUuid string) {
 	this.locker.Add(userUuid, duration, true)
 }
 
-//unlock
+// unlock
 func (this *UserService) MatterUnlock(userUuid string) {
 
 	exist := this.locker.Exists(userUuid)
@@ -110,8 +110,8 @@ func (this *UserService) MatterUnlock(userUuid string) {
 	}
 }
 
-//load session to SessionCache. This method will be invoked in every request.
-//authorize by 1. cookie 2. username and password in request form. 3. Basic Auth
+// load session to SessionCache. This method will be invoked in every request.
+// authorize by 1. cookie 2. username and password in request form. 3. Basic Auth
 func (this *UserService) PreHandle(writer http.ResponseWriter, request *http.Request) {
 
 	sessionId := util.GetSessionUuidFromRequest(request, core.COOKIE_AUTH_KEY)
@@ -182,7 +182,7 @@ func (this *UserService) PreHandle(writer http.ResponseWriter, request *http.Req
 
 }
 
-//find a cache user by its userUuid
+// find a cache user by its userUuid
 func (this *UserService) FindCacheUsersByUuid(userUuid string) []*User {
 
 	var users []*User
@@ -204,7 +204,7 @@ func (this *UserService) FindCacheUsersByUuid(userUuid string) []*User {
 	return users
 }
 
-//remove cache user by its userUuid
+// remove cache user by its userUuid
 func (this *UserService) RemoveCacheUserByUuid(userUuid string) {
 
 	var sessionId interface{}
@@ -233,7 +233,25 @@ func (this *UserService) RemoveCacheUserByUuid(userUuid string) {
 	}
 }
 
-//delete user
+// create user
+func (this *UserService) CreateUser(request *http.Request, username string, password string, role string, sizeLimit int64, totalSizeLimit int64) *User {
+
+	user := &User{
+		Username:       username,
+		Password:       util.GetBcrypt(password),
+		Role:           role,
+		SizeLimit:      sizeLimit,
+		TotalSizeLimit: totalSizeLimit,
+		Status:         USER_STATUS_OK,
+	}
+
+	user = this.userDao.Create(user)
+
+	return user
+
+}
+
+// delete user
 func (this *UserService) DeleteUser(request *http.Request, currentUser *User) {
 
 	//delete from cache

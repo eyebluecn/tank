@@ -44,3 +44,16 @@ func (this *SpaceService) Detail(uuid string) *Space {
 
 	return space
 }
+
+// create space
+func (this *SpaceService) CreateSpace(userUuid string) *Space {
+
+	space := &Space{
+		UserUuid: userUuid,
+	}
+
+	space = this.spaceDao.Create(space)
+
+	return space
+
+}

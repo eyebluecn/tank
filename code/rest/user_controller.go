@@ -96,7 +96,7 @@ func (this *UserController) innerLogin(writer http.ResponseWriter, request *http
 	this.userDao.Save(user)
 }
 
-//login by username and password
+// login by username and password
 func (this *UserController) Login(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	username := request.FormValue("username")
@@ -119,7 +119,7 @@ func (this *UserController) Login(writer http.ResponseWriter, request *http.Requ
 	return this.Success(user)
 }
 
-//login by authentication.
+// login by authentication.
 func (this *UserController) AuthenticationLogin(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	authentication := request.FormValue("authentication")
@@ -140,13 +140,13 @@ func (this *UserController) AuthenticationLogin(writer http.ResponseWriter, requ
 	return this.Success(user)
 }
 
-//fetch current user's info.
+// fetch current user's info.
 func (this *UserController) Info(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 	user := this.checkUser(request)
 	return this.Success(user)
 }
 
-//register by username and password. After registering, will auto login.
+// register by username and password. After registering, will auto login.
 func (this *UserController) Register(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	username := request.FormValue("username")
@@ -216,6 +216,7 @@ func (this *UserController) Create(writer http.ResponseWriter, request *http.Req
 		totalSizeLimit = int64(intTotalSizeLimit)
 	}
 
+	//validation work.
 	if m, _ := regexp.MatchString(USERNAME_PATTERN, username); !m {
 		panic(result.BadRequestI18n(request, i18n.UsernameError))
 	}
@@ -228,20 +229,12 @@ func (this *UserController) Create(writer http.ResponseWriter, request *http.Req
 		panic(result.BadRequestI18n(request, i18n.UsernameExist, username))
 	}
 
+	//check user role.
 	if role != USER_ROLE_USER && role != USER_ROLE_ADMINISTRATOR {
-		role = USER_ROLE_USER
+		panic(result.BadRequestI18n(request, i18n.UserRoleError))
 	}
 
-	user := &User{
-		Username:       username,
-		Password:       util.GetBcrypt(password),
-		Role:           role,
-		SizeLimit:      sizeLimit,
-		TotalSizeLimit: totalSizeLimit,
-		Status:         USER_STATUS_OK,
-	}
-
-	user = this.userDao.Create(user)
+	user := this.userService.CreateUser(request, username, password, role, sizeLimit, totalSizeLimit)
 
 	return this.Success(user)
 }
@@ -439,7 +432,7 @@ func (this *UserController) Transfiguration(writer http.ResponseWriter, request 
 	return this.Success(session.Uuid)
 }
 
-//scan user's physics files. create index into EyeblueTank
+// scan user's physics files. create index into EyeblueTank
 func (this *UserController) Scan(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	uuid := request.FormValue("uuid")
@@ -494,7 +487,7 @@ func (this *UserController) ChangePassword(writer http.ResponseWriter, request *
 	return this.Success(user)
 }
 
-//admin reset password.
+// admin reset password.
 func (this *UserController) ResetPassword(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	userUuid := request.FormValue("userUuid")

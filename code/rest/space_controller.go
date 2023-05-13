@@ -3,8 +3,10 @@ package rest
 import (
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/builder"
+	"github.com/eyebluecn/tank/code/tool/i18n"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"net/http"
+	"regexp"
 	"strconv"
 )
 
@@ -14,6 +16,7 @@ type SpaceController struct {
 	matterDao     *MatterDao
 	matterService *MatterService
 	spaceService  *SpaceService
+	userService   *UserService
 }
 
 func (this *SpaceController) Init() {
@@ -39,6 +42,11 @@ func (this *SpaceController) Init() {
 		this.spaceService = b
 	}
 
+	b = core.CONTEXT.GetBean(this.userService)
+	if b, ok := b.(*UserService); ok {
+		this.userService = b
+	}
+
 }
 
 func (this *SpaceController) RegisterRoutes() map[string]func(writer http.ResponseWriter, request *http.Request) {
@@ -54,8 +62,50 @@ func (this *SpaceController) RegisterRoutes() map[string]func(writer http.Respon
 }
 
 func (this *SpaceController) Create(writer http.ResponseWriter, request *http.Request) *result.WebResult {
-	//TODO:
-	return this.Success("OK")
+	//space's name
+	name := request.FormValue("name")
+	sizeLimitStr := request.FormValue("sizeLimit")
+	totalSizeLimitStr := request.FormValue("totalSizeLimit")
+
+	//only admin can edit user's sizeLimit
+	var sizeLimit int64 = 0
+	if sizeLimitStr == "" {
+		panic("space's limit size is required")
+	} else {
+		intSizeLimit, err := strconv.Atoi(sizeLimitStr)
+		if err != nil {
+			this.PanicError(err)
+		}
+		sizeLimit = int64(intSizeLimit)
+	}
+
+	var totalSizeLimit int64 = 0
+	if totalSizeLimitStr == "" {
+		panic("space's total limit size is required")
+	} else {
+		intTotalSizeLimit, err := strconv.Atoi(totalSizeLimitStr)
+		if err != nil {
+			this.PanicError(err)
+		}
+		totalSizeLimit = int64(intTotalSizeLimit)
+	}
+
+	//validation work.
+	if m, _ := regexp.MatchString(USERNAME_PATTERN, name); !m {
+		panic(result.BadRequestI18n(request, i18n.SpaceNameError))
+	}
+
+	if this.userDao.CountByUsername(name) > 0 {
+		panic(result.BadRequestI18n(request, i18n.SpaceNameExist, name))
+	}
+
+	user := this.userService.CreateUser(request, name, "", USER_ROLE_SPACE, sizeLimit, totalSizeLimit)
+
+	//create related space.
+	space := this.spaceService.CreateSpace(user.Uuid)
+	space.User = user
+
+	return this.Success(space)
 }
 
 func (this *SpaceController) Delete(writer http.ResponseWriter, request *http.Request) *result.WebResult {
@@ -122,7 +172,20 @@ func (this *SpaceController) Page(writer http.ResponseWriter, request *http.Requ
 		},
 	}
 
-	pager := this.spaceDao.Page(page, pageSize, user.Uuid, sortArray)
+	//TODO: user fetch self's sapces.
+	var pager *Pager
+	if user.Role == USER_ROLE_USER {
+
+	} else if user.Role == USER_ROLE_ADMINISTRATOR {
+		pager = this.spaceDao.Page(page, pageSize, sortArray)
+	}
+
+	//fill the space's user.
+	if pager != nil {
+		for _, space := range pager.Data.([]*Space) {
+			space.User = this.userDao.FindByUuid(space.UserUuid)
+		}
+	}
 
 	return this.Success(pager)
 }

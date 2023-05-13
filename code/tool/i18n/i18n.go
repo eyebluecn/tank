@@ -27,6 +27,7 @@ var (
 	UsernameNotExist               = &Item{English: `username "%s" not exists`, Chinese: `用户名"%s"不存在`}
 	UsernameIsNotAdmin             = &Item{English: `username "%s" is not admin user`, Chinese: `用户名"%s"不是管理员账号`}
 	UsernameError                  = &Item{English: `username can only be letters, numbers or _`, Chinese: `用户名必填，且只能包含中文，字母，数字和'_'`}
+	UserRoleError                  = &Item{English: `user role is not correct`, Chinese: `用户角色设置错误`}
 	UserRegisterNotAllowd          = &Item{English: `admin has banned register`, Chinese: `管理员已禁用自主注册`}
 	UserPasswordLengthError        = &Item{English: `password at least 6 chars`, Chinese: `密码长度至少为6位`}
 	UserOldPasswordError           = &Item{English: `old password error`, Chinese: `旧密码不正确`}
@@ -46,6 +47,8 @@ var (
 	ShareCodeRequired              = &Item{English: `share code required`, Chinese: `提取码必填`}
 	ShareCodeError                 = &Item{English: `share code error`, Chinese: `提取码错误`}
 	CronValidateError              = &Item{English: `cron error. five fields needed. eg: 1 * * * *`, Chinese: `Cron表达式错误，必须为5位。例如：1 * * * *`}
+	SpaceNameError                 = &Item{English: `space's name can only be letters, numbers or _`, Chinese: `共享空间名称必填，且只能包含中文，字母，数字和'_'`}
+	SpaceNameExist                 = &Item{English: `space's name "%s" exists`, Chinese: `共享空间名称"%s"已存在`}
 )
 
 func (this *Item) Message(request *http.Request) string {

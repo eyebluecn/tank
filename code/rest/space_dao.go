@@ -37,21 +37,16 @@ func (this *SpaceDao) CheckByUuid(uuid string) *Space {
 	return entity
 }
 
-func (this *SpaceDao) Page(page int, pageSize int, userUuid string, sortArray []builder.OrderPair) *Pager {
-
-	count, spaces := this.PlainPage(page, pageSize, userUuid, sortArray)
+func (this *SpaceDao) Page(page int, pageSize int, sortArray []builder.OrderPair) *Pager {
+	count, spaces := this.PlainPage(page, pageSize, sortArray)
 	pager := NewPager(page, pageSize, count, spaces)
 
 	return pager
 }
 
-func (this *SpaceDao) PlainPage(page int, pageSize int, userUuid string, sortArray []builder.OrderPair) (int, []*Space) {
+func (this *SpaceDao) PlainPage(page int, pageSize int, sortArray []builder.OrderPair) (int, []*Space) {
 
 	var wp = &builder.WherePair{}
-
-	if userUuid != "" {
-		wp = wp.And(&builder.WherePair{Query: "user_uuid = ?", Args: []interface{}{userUuid}})
-	}
 
 	var conditionDB *gorm.DB
 	conditionDB = core.CONTEXT.GetDB().Model(&Space{}).Where(wp.Query, wp.Args...)
