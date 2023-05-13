@@ -49,6 +49,8 @@ var (
 	CronValidateError              = &Item{English: `cron error. five fields needed. eg: 1 * * * *`, Chinese: `Cron表达式错误，必须为5位。例如：1 * * * *`}
 	SpaceNameError                 = &Item{English: `space's name can only be letters, numbers or _`, Chinese: `共享空间名称必填，且只能包含中文，字母，数字和'_'`}
 	SpaceNameExist                 = &Item{English: `space's name "%s" exists`, Chinese: `共享空间名称"%s"已存在`}
+	SpaceMemberExist               = &Item{English: `space member exists`, Chinese: `该用于已经是空间的成员`}
+	PermissionDenied               = &Item{English: `permission denied.`, Chinese: `没有操作权限`}
 )
 
 func (this *Item) Message(request *http.Request) string {

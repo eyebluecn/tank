@@ -44,3 +44,18 @@ func (this *SpaceMemberService) Detail(uuid string) *SpaceMember {
 
 	return spaceMember
 }
+
+// create space
+func (this *SpaceMemberService) CreateMember(spaceUuid string, userUuid string, spaceRole string) *SpaceMember {
+
+	spaceMember := &SpaceMember{
+		SpaceUuid: spaceUuid,
+		UserUuid:  userUuid,
+		Role:      spaceRole,
+	}
+
+	spaceMember = this.spaceMemberDao.Create(spaceMember)
+
+	return spaceMember
+
+}

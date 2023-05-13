@@ -37,6 +37,21 @@ func (this *SpaceMemberDao) CheckByUuid(uuid string) *SpaceMember {
 	return entity
 }
 
+// find by spaceUuid and userUuid. if not found return nil.
+func (this *SpaceMemberDao) FindBySpaceUuidAndUserUuid(spaceUuid string, userUuid string) *SpaceMember {
+	var entity = &SpaceMember{}
+	db := core.CONTEXT.GetDB().Where("space_uuid = ? AND user_uuid = ?", spaceUuid, userUuid).First(entity)
+
+	if db.Error != nil {
+		if db.Error.Error() == result.DB_ERROR_NOT_FOUND {
+			return nil
+		} else {
+			panic(db.Error)
+		}
+	}
+	return entity
+}
+
 func (this *SpaceMemberDao) Page(page int, pageSize int, userUuid string, sortArray []builder.OrderPair) *Pager {
 
 	count, spaceMembers := this.PlainPage(page, pageSize, userUuid, sortArray)

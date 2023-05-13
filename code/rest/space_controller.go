@@ -67,6 +67,10 @@ func (this *SpaceController) Create(writer http.ResponseWriter, request *http.Re
 	sizeLimitStr := request.FormValue("sizeLimit")
 	totalSizeLimitStr := request.FormValue("totalSizeLimit")
 
+	if name == "" {
+		panic("name is required")
+	}
+
 	//only admin can edit user's sizeLimit
 	var sizeLimit int64 = 0
 	if sizeLimitStr == "" {
