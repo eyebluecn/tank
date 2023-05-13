@@ -69,7 +69,7 @@ func (this *TankContext) Cleanup() {
 	}
 }
 
-//can serve as http server.
+// can serve as http server.
 func (this *TankContext) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	this.Router.ServeHTTP(writer, request)
 }
@@ -204,6 +204,16 @@ func (this *TankContext) registerBeans() {
 	this.registerBean(new(rest.ShareDao))
 	this.registerBean(new(rest.ShareService))
 
+	//space
+	this.registerBean(new(rest.SpaceController))
+	this.registerBean(new(rest.SpaceDao))
+	this.registerBean(new(rest.SpaceService))
+
+	//space member
+	this.registerBean(new(rest.SpaceMemberController))
+	this.registerBean(new(rest.SpaceMemberDao))
+	this.registerBean(new(rest.SpaceMemberService))
+
 	//uploadToken
 	this.registerBean(new(rest.UploadTokenDao))
 
@@ -241,7 +251,7 @@ func (this *TankContext) initBeans() {
 	}
 }
 
-//if application installed. invoke this method.
+// if application installed. invoke this method.
 func (this *TankContext) InstallOk() {
 
 	if core.CONFIG.Installed() {
