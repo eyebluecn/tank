@@ -106,8 +106,8 @@ func (this *SpaceMemberController) Create(writer http.ResponseWriter, request *h
 
 func (this *SpaceMemberController) Delete(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
-	spaceMemberUuid := request.FormValue("spaceMemberUuid")
-	spaceMember := this.spaceMemberDao.CheckByUuid(spaceMemberUuid)
+	uuid := request.FormValue("uuid")
+	spaceMember := this.spaceMemberDao.CheckByUuid(uuid)
 	user := this.checkUser(request)
 	canManage := this.spaceMemberService.canManageBySpaceMember(user, spaceMember)
 	if !canManage {

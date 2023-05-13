@@ -46,7 +46,7 @@ func (this *MatterDao) FindByUuid(uuid string) *Matter {
 	return entity
 }
 
-//find by uuid. if not found panic NotFound error
+// find by uuid. if not found panic NotFound error
 func (this *MatterDao) CheckByUuid(uuid string) *Matter {
 	entity := this.FindByUuid(uuid)
 	if entity == nil {
@@ -328,7 +328,7 @@ func (this *MatterDao) Page(page int, pageSize int, puuid string, userUuid strin
 	return pager
 }
 
-//handle matter page by page.
+// handle matter page by page.
 func (this *MatterDao) PageHandle(
 	puuid string,
 	userUuid string,
@@ -385,7 +385,7 @@ func (this *MatterDao) Save(matter *Matter) *Matter {
 	return matter
 }
 
-//download time add 1
+// download time add 1
 func (this *MatterDao) TimesIncrement(matterUuid string) {
 	db := core.CONTEXT.GetDB().Model(&Matter{}).Where("uuid = ?", matterUuid).Updates(map[string]interface{}{"times": gorm.Expr("times + 1"), "visit_time": time.Now()})
 	this.PanicError(db.Error)
@@ -411,7 +411,7 @@ func (this *MatterDao) SizeByPuuidAndUserUuid(matterUuid string, userUuid string
 	return sumSize
 }
 
-//delete a file from db and disk.
+// delete a file from db and disk.
 func (this *MatterDao) Delete(matter *Matter) {
 
 	// recursive if dir
@@ -450,7 +450,7 @@ func (this *MatterDao) Delete(matter *Matter) {
 	}
 }
 
-//soft delete a file or dir
+// soft delete a file or dir
 func (this *MatterDao) SoftDelete(matter *Matter) {
 
 	//soft delete from db.
@@ -459,7 +459,7 @@ func (this *MatterDao) SoftDelete(matter *Matter) {
 
 }
 
-//recovery a file
+// recovery a file
 func (this *MatterDao) Recovery(matter *Matter) {
 
 	//recovery from db.
@@ -501,7 +501,7 @@ func (this *MatterDao) SizeBetweenTime(startTime time.Time, endTime time.Time) i
 	return size
 }
 
-//find by userUuid and path. if not found, return nil
+// find by userUuid and path. if not found, return nil
 func (this *MatterDao) findByUserUuidAndPath(userUuid string, path string) *Matter {
 
 	var wp = &builder.WherePair{Query: "user_uuid = ? AND path = ?", Args: []interface{}{userUuid, path}}
@@ -520,7 +520,7 @@ func (this *MatterDao) findByUserUuidAndPath(userUuid string, path string) *Matt
 	return matter
 }
 
-//find by userUuid and path. if not found, panic
+// find by userUuid and path. if not found, panic
 func (this *MatterDao) checkByUserUuidAndPath(userUuid string, path string) *Matter {
 
 	if path == "" {
@@ -567,7 +567,19 @@ func (this *MatterDao) CountByUserUuidAndPath(userUuid string, path string) int6
 
 }
 
-//统计总共有多少条。
+func (this *MatterDao) CountByUserUuid(userUuid string) int64 {
+
+	var wp = &builder.WherePair{Query: "user_uuid = ?", Args: []interface{}{userUuid}}
+
+	var count int64
+	db := core.CONTEXT.GetDB().Model(&Matter{}).Where(wp.Query, wp.Args...).Count(&count)
+	core.PanicError(db.Error)
+
+	return count
+
+}
+
+// 统计总共有多少条。
 func (this *MatterDao) Count() int64 {
 
 	var count int64
@@ -578,7 +590,7 @@ func (this *MatterDao) Count() int64 {
 
 }
 
-//System cleanup.
+// System cleanup.
 func (this *MatterDao) Cleanup() {
 	this.logger.Info("[MatterDao] clean up. Delete all Matter record in db and on disk.")
 	db := core.CONTEXT.GetDB().Where("uuid is not null").Delete(Matter{})

@@ -111,6 +111,26 @@ func (this *SpaceMemberDao) Delete(spaceMember *SpaceMember) {
 
 }
 
+func (this *SpaceMemberDao) DeleteBySpaceUuid(spaceUuid string) {
+
+	var wp = &builder.WherePair{}
+
+	wp = wp.And(&builder.WherePair{Query: "space_uuid = ?", Args: []interface{}{spaceUuid}})
+
+	db := core.CONTEXT.GetDB().Where(wp.Query, wp.Args).Delete(SpaceMember{})
+	this.PanicError(db.Error)
+}
+
+func (this *SpaceMemberDao) CountBySpaceUuid(spaceUuid string) int {
+	var count int64
+	db := core.CONTEXT.GetDB().
+		Model(&SpaceMember{}).
+		Where("space_uuid = ?", spaceUuid).
+		Count(&count)
+	this.PanicError(db.Error)
+	return int(count)
+}
+
 // System cleanup.
 func (this *SpaceMemberDao) Cleanup() {
 	this.logger.Info("[SpaceMemberDao] clean up. Delete all SpaceMember")
