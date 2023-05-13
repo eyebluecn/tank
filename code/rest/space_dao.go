@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"fmt"
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/builder"
 	"github.com/eyebluecn/tank/code/tool/result"
@@ -38,11 +39,24 @@ func (this *SpaceDao) CheckByUuid(uuid string) *Space {
 }
 
 // TODO:
-func (this *SpaceDao) SelfPage(page int, pageSize int, user *User, sortArray []builder.OrderPair) *Pager {
-	count, spaces := this.PlainPage(page, pageSize, sortArray)
+func (this *SpaceDao) SelfPage(page int, pageSize int, userUuid string, sortArray []builder.OrderPair) *Pager {
+
+	countSqlTemplate := fmt.Sprintf("SELECT COUNT(*) FROM `%sspace` WHERE uuid IN (SELECT space_uuid FROM `%sspace_member` WHERE user_uuid = ?)", core.TABLE_PREFIX, core.TABLE_PREFIX)
+	var count int
+	core.CONTEXT.GetDB().Raw(countSqlTemplate, userUuid).Scan(&count)
+
+	orderByString := this.GetSortString(sortArray)
+	if orderByString == "" {
+		orderByString = "uuid"
+	}
+	querySqlTemplate := fmt.Sprintf("SELECT * FROM `%sspace` WHERE uuid IN (SELECT space_uuid FROM `%sspace_member` WHERE user_uuid = ?) ORDER BY ? LIMIT ?,?", core.TABLE_PREFIX, core.TABLE_PREFIX)
+	var spaces []*Space
+	core.CONTEXT.GetDB().Raw(querySqlTemplate, userUuid, orderByString, page*pageSize, pageSize).Scan(&spaces)
+
 	pager := NewPager(page, pageSize, count, spaces)
 
 	return pager
+
 }
 
 func (this *SpaceDao) Page(page int, pageSize int, sortArray []builder.OrderPair) *Pager {
