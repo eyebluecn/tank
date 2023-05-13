@@ -23,7 +23,7 @@ import (
 	"time"
 )
 
-//install apis. Only when installing period can be visited.
+// install apis. Only when installing period can be visited.
 type InstallController struct {
 	BaseController
 	uploadTokenDao    *UploadTokenDao
@@ -78,6 +78,8 @@ func (this *InstallController) Init() {
 		&Preference{},
 		&Session{},
 		&Share{},
+		&Space{},
+		&SpaceMember{},
 		&UploadToken{},
 		&User{},
 	}
@@ -266,7 +268,7 @@ func (this *InstallController) validateTableMetaList(tableInfoList []*InstallTab
 
 }
 
-//Ping db.
+// Ping db.
 func (this *InstallController) Verify(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	db := this.openDbConnection(writer, request)
@@ -324,7 +326,7 @@ func (this *InstallController) CreateTable(writer http.ResponseWriter, request *
 
 }
 
-//get the list of admin.
+// get the list of admin.
 func (this *InstallController) AdminList(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	db := this.openDbConnection(writer, request)
@@ -342,7 +344,7 @@ func (this *InstallController) AdminList(writer http.ResponseWriter, request *ht
 	return this.Success(users)
 }
 
-//create admin
+// create admin
 func (this *InstallController) CreateAdmin(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	db := this.openDbConnection(writer, request)
@@ -388,7 +390,7 @@ func (this *InstallController) CreateAdmin(writer http.ResponseWriter, request *
 
 }
 
-//(if there is admin in db)Validate admin.
+// (if there is admin in db)Validate admin.
 func (this *InstallController) ValidateAdmin(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	db := this.openDbConnection(writer, request)
@@ -422,7 +424,7 @@ func (this *InstallController) ValidateAdmin(writer http.ResponseWriter, request
 
 }
 
-//Finish the installation
+// Finish the installation
 func (this *InstallController) Finish(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	dbType := request.FormValue("dbType")

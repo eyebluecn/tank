@@ -7,12 +7,12 @@ import (
 	"github.com/eyebluecn/tank/code/tool/result"
 	"net/http"
 	"strconv"
-	"strings"
 )
 
 type SpaceMemberController struct {
 	BaseController
 	spaceMemberDao     *SpaceMemberDao
+	spaceDao           *SpaceDao
 	bridgeDao          *BridgeDao
 	matterDao          *MatterDao
 	matterService      *MatterService
@@ -25,6 +25,11 @@ func (this *SpaceMemberController) Init() {
 	b := core.CONTEXT.GetBean(this.spaceMemberDao)
 	if b, ok := b.(*SpaceMemberDao); ok {
 		this.spaceMemberDao = b
+	}
+
+	b = core.CONTEXT.GetBean(this.spaceDao)
+	if b, ok := b.(*SpaceDao); ok {
+		this.spaceDao = b
 	}
 
 	b = core.CONTEXT.GetBean(this.bridgeDao)
@@ -86,31 +91,30 @@ func (this *SpaceMemberController) Create(writer http.ResponseWriter, request *h
 		panic(result.BadRequestI18n(request, i18n.SpaceMemberExist))
 	}
 
-	spaceMember = this.spaceMemberService.CreateMember(spaceUuid, userUuid, spaceRole)
+	//check whether space exists.
+	space := this.spaceDao.CheckByUuid(spaceUuid)
+	member := this.userDao.CheckByUuid(userUuid)
+	//can not add a SPACE_USER as member.
+	if member.Role == USER_ROLE_SPACE {
+		panic(result.BadRequestI18n(request, i18n.SpaceMemberRoleConflict))
+	}
+
+	spaceMember = this.spaceMemberService.CreateMember(space, member, spaceRole)
 
 	return this.Success(spaceMember)
 }
 
 func (this *SpaceMemberController) Delete(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
-	uuids := request.FormValue("uuids")
-	if uuids == "" {
-		panic(result.BadRequest("uuids cannot be null"))
+	spaceMemberUuid := request.FormValue("spaceMemberUuid")
+	spaceMember := this.spaceMemberDao.CheckByUuid(spaceMemberUuid)
+	user := this.checkUser(request)
+	canManage := this.canManageBySpaceMember(user, spaceMember)
+	if !canManage {
+		panic(result.BadRequestI18n(request, i18n.PermissionDenied))
 	}
 
-	uuidArray := strings.Split(uuids, ",")
-
-	for _, uuid := range uuidArray {
-
-		imageCache := this.spaceMemberDao.FindByUuid(uuid)
-
-		user := this.checkUser(request)
-		if imageCache.UserUuid != user.Uuid {
-			panic(result.UNAUTHORIZED)
-		}
-
-		this.spaceMemberDao.Delete(imageCache)
-	}
+	this.spaceMemberDao.Delete(spaceMember)
 
 	return this.Success("OK")
 }
@@ -175,7 +179,17 @@ func (this *SpaceMemberController) canManage(user *User, spaceUuid string) bool 
 
 	//only space's admin can add member.
 	spaceMember := this.spaceMemberDao.FindBySpaceUuidAndUserUuid(spaceUuid, user.Uuid)
-	if spaceMember != nil && spaceMember.Role == SPACE_MEMBER_ROLE_ADMIN {
+	return this.canManageBySpaceMember(user, spaceMember)
+}
+
+// 当前用户对于此空间，是否有管理权限。
+func (this *SpaceMemberController) canManageBySpaceMember(user *User, member *SpaceMember) bool {
+	if user.Role == USER_ROLE_ADMINISTRATOR {
+		return true
+	}
+
+	//only space's admin can add member.
+	if member != nil && member.Role == SPACE_MEMBER_ROLE_ADMIN {
 		return true
 	}
 
