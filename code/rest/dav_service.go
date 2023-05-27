@@ -347,7 +347,7 @@ func (this *DavService) HandlePut(writer http.ResponseWriter, request *http.Requ
 		this.matterService.AtomicDelete(request, srcMatter, user, space)
 	}
 
-	this.matterService.Upload(request, request.Body, user, space, dirMatter, filename, true)
+	this.matterService.Upload(request, request.Body, nil, user, space, dirMatter, filename, true)
 
 	//set the status code 201
 	writer.WriteHeader(http.StatusCreated)

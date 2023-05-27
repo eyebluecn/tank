@@ -11,6 +11,7 @@ import (
 	"github.com/eyebluecn/tank/code/tool/util"
 	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"path"
@@ -350,7 +351,7 @@ func (this *MatterService) AtomicRecovery(request *http.Request, matter *Matter,
 }
 
 // upload files.
-func (this *MatterService) Upload(request *http.Request, file io.Reader, user *User, space *Space, dirMatter *Matter, filename string, privacy bool) *Matter {
+func (this *MatterService) Upload(request *http.Request, file io.Reader, fileHeader *multipart.FileHeader, user *User, space *Space, dirMatter *Matter, filename string, privacy bool) *Matter {
 
 	if user == nil {
 		panic(result.BadRequest("user cannot be nil."))
@@ -366,6 +367,23 @@ func (this *MatterService) Upload(request *http.Request, file io.Reader, user *U
 
 	if len(filename) > MATTER_NAME_MAX_LENGTH {
 		panic(result.BadRequestI18n(request, i18n.MatterNameLengthExceedLimit, len(filename), MATTER_NAME_MAX_LENGTH))
+	}
+
+	//if fileHeader.Size not nill . check size in advance.
+	if fileHeader != nil {
+		//check the size limit.
+		if space.SizeLimit >= 0 {
+			if fileHeader.Size > space.SizeLimit {
+				panic(result.BadRequestI18n(request, i18n.MatterSizeExceedLimit, util.HumanFileSize(fileHeader.Size), util.HumanFileSize(space.SizeLimit)))
+			}
+		}
+
+		//check total size.
+		if space.TotalSizeLimit >= 0 {
+			if space.TotalSize+fileHeader.Size > space.TotalSizeLimit {
+				panic(result.BadRequestI18n(request, i18n.MatterSizeExceedTotalLimit, util.HumanFileSize(space.TotalSize), util.HumanFileSize(space.TotalSizeLimit)))
+			}
+		}
 	}
 
 	dirAbsolutePath := dirMatter.AbsolutePath()
@@ -389,39 +407,45 @@ func (this *MatterService) Upload(request *http.Request, file io.Reader, user *U
 
 	destFile, err := os.OpenFile(fileAbsolutePath, os.O_WRONLY|os.O_CREATE, 0777)
 	this.PanicError(err)
-
-	defer func() {
+	closeDestFile := func() {
 		err := destFile.Close()
 		this.PanicError(err)
-	}()
+	}
 
 	fileSize, err := io.Copy(destFile, file)
 	this.PanicError(err)
 
 	this.logger.Info("upload %s %v ", filename, util.HumanFileSize(fileSize))
 
-	//check the size limit.
-	if space.SizeLimit >= 0 {
-		if fileSize > space.SizeLimit {
-			//delete the file on disk.
-			err = os.Remove(fileAbsolutePath)
-			this.PanicError(err)
+	if fileHeader == nil {
+		//check the size limit.
+		if space.SizeLimit >= 0 {
+			if fileSize > space.SizeLimit {
+				closeDestFile()
 
-			panic(result.BadRequestI18n(request, i18n.MatterSizeExceedLimit, util.HumanFileSize(fileSize), util.HumanFileSize(space.SizeLimit)))
+				//delete the file on disk.
+				err = os.Remove(fileAbsolutePath)
+				this.PanicError(err)
+
+				panic(result.BadRequestI18n(request, i18n.MatterSizeExceedLimit, util.HumanFileSize(fileSize), util.HumanFileSize(space.SizeLimit)))
+			}
+		}
+
+		//check total size.
+		if space.TotalSizeLimit >= 0 {
+			if space.TotalSize+fileSize > space.TotalSizeLimit {
+				closeDestFile()
+
+				//delete the file on disk.
+				err = os.Remove(fileAbsolutePath)
+				this.PanicError(err)
+
+				panic(result.BadRequestI18n(request, i18n.MatterSizeExceedTotalLimit, util.HumanFileSize(space.TotalSize), util.HumanFileSize(space.TotalSizeLimit)))
+			}
 		}
 	}
 
-	//check total size.
-	if space.TotalSizeLimit >= 0 {
-		if space.TotalSize+fileSize > space.TotalSizeLimit {
-
-			//delete the file on disk.
-			err = os.Remove(fileAbsolutePath)
-			this.PanicError(err)
-
-			panic(result.BadRequestI18n(request, i18n.MatterSizeExceedTotalLimit, util.HumanFileSize(space.TotalSize), util.HumanFileSize(space.TotalSizeLimit)))
-		}
-	}
+	closeDestFile()
 
 	matter := this.createNonDirMatter(dirMatter, filename, fileSize, privacy, user, space)
 
@@ -1036,7 +1060,7 @@ func (this *MatterService) mirror(request *http.Request, srcPath string, destDir
 			this.PanicError(err)
 		}()
 
-		this.Upload(request, file, user, space, destDirMatter, fileStat.Name(), true)
+		this.Upload(request, file, nil, user, space, destDirMatter, fileStat.Name(), true)
 
 	}
 
@@ -1157,7 +1181,7 @@ func (this *MatterService) AtomicCrawl(request *http.Request, url string, filena
 	resp, err := http.Get(url)
 	this.PanicError(err)
 
-	return this.Upload(request, resp.Body, user, space, dirMatter, filename, privacy)
+	return this.Upload(request, resp.Body, nil, user, space, dirMatter, filename, privacy)
 }
 
 // adjust a matter's path.

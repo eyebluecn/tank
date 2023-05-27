@@ -77,7 +77,8 @@ func (this *MatterController) RegisterRoutes() map[string]func(writer http.Respo
 
 	routeMap := make(map[string]func(writer http.ResponseWriter, request *http.Request))
 	routeMap["/api/matter/detail"] = this.Wrap(this.Detail, USER_ROLE_USER)
-	routeMap["/api/matter/page"] = this.Wrap(this.Page, USER_ROLE_GUEST)
+	routeMap["/api/matter/page"] = this.Wrap(this.Page, USER_ROLE_USER)
+	routeMap["/api/matter/share/page"] = this.Wrap(this.SharePage, USER_ROLE_USER)
 
 	routeMap["/api/matter/create/directory"] = this.Wrap(this.CreateDirectory, USER_ROLE_USER)
 	routeMap["/api/matter/upload"] = this.Wrap(this.Upload, USER_ROLE_USER)
@@ -105,7 +106,7 @@ func (this *MatterController) Detail(writer http.ResponseWriter, request *http.R
 	uuid := util.ExtractRequestString(request, "uuid")
 	user := this.checkUser(request)
 	spaceUuid := util.ExtractRequestOptionalString(request, "spaceUuid", user.SpaceUuid)
-	space := this.spaceService.CheckWritableByUuid(request, user, spaceUuid)
+	space := this.spaceService.CheckReadableByUuid(request, user, spaceUuid)
 
 	matter := this.matterService.Detail(request, uuid)
 
@@ -117,6 +118,7 @@ func (this *MatterController) Detail(writer http.ResponseWriter, request *http.R
 
 }
 
+// TODO: 分享的列表接口不走这个接口了。
 func (this *MatterController) Page(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	page := util.ExtractRequestOptionalInt(request, "page", 0)
@@ -134,39 +136,10 @@ func (this *MatterController) Page(writer http.ResponseWriter, request *http.Req
 	orderSize := util.ExtractRequestOptionalString(request, "orderSize", "")
 	orderName := util.ExtractRequestOptionalString(request, "orderName", "")
 	extensionsStr := util.ExtractRequestOptionalString(request, "extensions", "")
-	//auth by shareUuid.
-	shareUuid := util.ExtractRequestOptionalString(request, "shareUuid", "")
-	shareCode := util.ExtractRequestOptionalString(request, "shareCode", "")
-	shareRootUuid := util.ExtractRequestOptionalString(request, "shareRootUuid", "")
 
 	user := this.checkUser(request)
 	spaceUuid := util.ExtractRequestOptionalString(request, "spaceUuid", user.SpaceUuid)
 	space := this.spaceService.CheckReadableByUuid(request, user, spaceUuid)
-
-	var userUuid string
-
-	if shareUuid != "" {
-
-		if puuid == "" {
-			panic(result.BadRequest("puuid cannot be null"))
-		}
-
-		dirMatter := this.matterDao.CheckByUuid(puuid)
-		if !dirMatter.Dir {
-			panic(result.BadRequest("puuid is not a directory"))
-		}
-
-		user := this.findUser(request)
-
-		this.shareService.ValidateMatter(request, shareUuid, shareCode, user, shareRootUuid, dirMatter)
-		puuid = dirMatter.Uuid
-
-	} else {
-		//if cannot auth by share. Then login is required.
-		user := this.checkUser(request)
-		userUuid = user.Uuid
-
-	}
 
 	var extensions []string
 	if extensionsStr != "" {
@@ -208,7 +181,89 @@ func (this *MatterController) Page(writer http.ResponseWriter, request *http.Req
 		},
 	}
 
-	pager := this.matterDao.Page(page, pageSize, puuid, userUuid, space.Uuid, name, dir, deleted, extensions, sortArray)
+	pager := this.matterDao.Page(page, pageSize, puuid, "", space.Uuid, name, dir, deleted, extensions, sortArray)
+
+	return this.Success(pager)
+}
+
+// 分享的列表接口走这个接口了。 FIXME: 这个接口还没有测试。
+func (this *MatterController) SharePage(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+
+	page := util.ExtractRequestOptionalInt(request, "page", 0)
+	pageSize := util.ExtractRequestOptionalInt(request, "pageSize", 200)
+	orderCreateTime := util.ExtractRequestOptionalString(request, "orderCreateTime", "")
+	orderUpdateTime := util.ExtractRequestOptionalString(request, "orderUpdateTime", "")
+	orderDeleteTime := util.ExtractRequestOptionalString(request, "orderDeleteTime", "")
+	orderSort := util.ExtractRequestOptionalString(request, "orderSort", "")
+	orderTimes := util.ExtractRequestOptionalString(request, "orderTimes", "")
+	puuid := util.ExtractRequestOptionalString(request, "puuid", "")
+	name := util.ExtractRequestOptionalString(request, "name", "")
+	dir := util.ExtractRequestOptionalString(request, "dir", "")
+	deleted := util.ExtractRequestOptionalString(request, "deleted", "")
+	orderDir := util.ExtractRequestOptionalString(request, "orderDir", "")
+	orderSize := util.ExtractRequestOptionalString(request, "orderSize", "")
+	orderName := util.ExtractRequestOptionalString(request, "orderName", "")
+	extensionsStr := util.ExtractRequestOptionalString(request, "extensions", "")
+	//auth by shareUuid.
+	shareUuid := util.ExtractRequestString(request, "shareUuid")
+	shareCode := util.ExtractRequestString(request, "shareCode")
+	shareRootUuid := util.ExtractRequestString(request, "shareRootUuid")
+
+	if puuid == "" {
+		panic(result.BadRequest("puuid cannot be null"))
+	}
+
+	dirMatter := this.matterDao.CheckByUuid(puuid)
+	if !dirMatter.Dir {
+		panic(result.BadRequest("puuid is not a directory"))
+	}
+
+	user := this.findUser(request)
+
+	this.shareService.ValidateMatter(request, shareUuid, shareCode, user, shareRootUuid, dirMatter)
+	puuid = dirMatter.Uuid
+
+	var extensions []string
+	if extensionsStr != "" {
+		extensions = strings.Split(extensionsStr, ",")
+	}
+
+	sortArray := []builder.OrderPair{
+		{
+			Key:   "dir",
+			Value: orderDir,
+		},
+		{
+			Key:   "create_time",
+			Value: orderCreateTime,
+		},
+		{
+			Key:   "update_time",
+			Value: orderUpdateTime,
+		},
+		{
+			Key:   "delete_time",
+			Value: orderDeleteTime,
+		},
+		{
+			Key:   "sort",
+			Value: orderSort,
+		},
+		{
+			Key:   "size",
+			Value: orderSize,
+		},
+		{
+			Key:   "name",
+			Value: orderName,
+		},
+		{
+			Key:   "times",
+			Value: orderTimes,
+		},
+	}
+
+	pager := this.matterDao.Page(page, pageSize, puuid, "", dirMatter.SpaceUuid, name, dir, deleted, extensions, sortArray)
 
 	return this.Success(pager)
 }
@@ -259,7 +314,7 @@ func (this *MatterController) Upload(writer http.ResponseWriter, request *http.R
 	dirMatter := this.matterDao.CheckWithRootByUuid(puuid, space)
 
 	//support upload simultaneously
-	matter := this.matterService.Upload(request, file, user, space, dirMatter, fileName, privacy)
+	matter := this.matterService.Upload(request, file, handler, user, space, dirMatter, fileName, privacy)
 
 	return this.Success(matter)
 }

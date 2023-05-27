@@ -238,7 +238,7 @@ func (this *AlienController) Upload(writer http.ResponseWriter, request *http.Re
 
 	dirMatter := this.matterDao.CheckWithRootByUuid(uploadToken.FolderUuid, space)
 
-	matter := this.matterService.Upload(request, file, user, space, dirMatter, uploadToken.Filename, uploadToken.Privacy)
+	matter := this.matterService.Upload(request, file, handler, user, space, dirMatter, uploadToken.Filename, uploadToken.Privacy)
 
 	//expire the upload token.
 	uploadToken.ExpireTime = time.Now()
