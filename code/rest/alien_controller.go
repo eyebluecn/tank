@@ -236,7 +236,7 @@ func (this *AlienController) Upload(writer http.ResponseWriter, request *http.Re
 		panic(result.BadRequest("file size doesn't the one in uploadToken"))
 	}
 
-	dirMatter := this.matterDao.CheckWithRootByUuid(uploadToken.FolderUuid, user, space)
+	dirMatter := this.matterDao.CheckWithRootByUuid(uploadToken.FolderUuid, space)
 
 	matter := this.matterService.Upload(request, file, user, space, dirMatter, uploadToken.Filename, uploadToken.Privacy)
 
@@ -273,7 +273,7 @@ func (this *AlienController) CrawlToken(writer http.ResponseWriter, request *htt
 	user := this.userDao.CheckByUuid(uploadToken.UserUuid)
 	space := this.spaceDao.CheckByUuid(user.SpaceUuid)
 
-	dirMatter := this.matterDao.CheckWithRootByUuid(uploadToken.FolderUuid, user, space)
+	dirMatter := this.matterDao.CheckWithRootByUuid(uploadToken.FolderUuid, space)
 
 	matter := this.matterService.AtomicCrawl(request, url, uploadToken.Filename, user, space, dirMatter, uploadToken.Privacy)
 

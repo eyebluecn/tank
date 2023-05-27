@@ -56,7 +56,7 @@ func (this *MatterDao) CheckByUuid(uuid string) *Matter {
 }
 
 // find by uuid. if uuid=root, then return the Root Matter
-func (this *MatterDao) CheckWithRootByUuid(uuid string, user *User, space *Space) *Matter {
+func (this *MatterDao) CheckWithRootByUuid(uuid string, space *Space) *Matter {
 
 	if uuid == "" {
 		panic(result.BadRequest("uuid cannot be null."))
@@ -64,10 +64,10 @@ func (this *MatterDao) CheckWithRootByUuid(uuid string, user *User, space *Space
 
 	var matter *Matter
 	if uuid == MATTER_ROOT {
-		if user == nil {
+		if space == nil {
 			panic(result.BadRequest("user cannot be null."))
 		}
-		matter = NewRootMatter(user, space)
+		matter = NewRootMatter(space)
 	} else {
 		matter = this.CheckByUuid(uuid)
 	}
@@ -85,7 +85,7 @@ func (this *MatterDao) CheckWithRootByPath(path string, user *User, space *Space
 	}
 
 	if path == "" || path == "/" {
-		matter = NewRootMatter(user, space)
+		matter = NewRootMatter(space)
 	} else {
 		matter = this.checkByUserUuidAndPath(user.Uuid, path)
 	}
@@ -103,7 +103,7 @@ func (this *MatterDao) FindWithRootByPath(path string, user *User, space *Space)
 	}
 
 	if path == "" || path == "/" {
-		matter = NewRootMatter(user, space)
+		matter = NewRootMatter(space)
 	} else {
 		matter = this.findByUserUuidAndPath(user.Uuid, path)
 	}
@@ -290,6 +290,7 @@ func (this *MatterDao) PlainPage(
 	pageSize int,
 	puuid string,
 	userUuid string,
+	spaceUuid string,
 	name string,
 	dir string,
 	deleted string,
@@ -305,6 +306,10 @@ func (this *MatterDao) PlainPage(
 
 	if userUuid != "" {
 		wp = wp.And(&builder.WherePair{Query: "user_uuid = ?", Args: []interface{}{userUuid}})
+	}
+
+	if spaceUuid != "" {
+		wp = wp.And(&builder.WherePair{Query: "space_uuid = ?", Args: []interface{}{spaceUuid}})
 	}
 
 	if name != "" {
@@ -350,9 +355,9 @@ func (this *MatterDao) PlainPage(
 
 	return int(count), matters
 }
-func (this *MatterDao) Page(page int, pageSize int, puuid string, userUuid string, name string, dir string, deleted string, extensions []string, sortArray []builder.OrderPair) *Pager {
+func (this *MatterDao) Page(page int, pageSize int, puuid string, userUuid string, spaceUuid string, name string, dir string, deleted string, extensions []string, sortArray []builder.OrderPair) *Pager {
 
-	count, matters := this.PlainPage(page, pageSize, puuid, userUuid, name, dir, deleted, nil, extensions, sortArray)
+	count, matters := this.PlainPage(page, pageSize, puuid, userUuid, spaceUuid, name, dir, deleted, nil, extensions, sortArray)
 	pager := NewPager(page, pageSize, count, matters)
 
 	return pager
@@ -362,6 +367,7 @@ func (this *MatterDao) Page(page int, pageSize int, puuid string, userUuid strin
 func (this *MatterDao) PageHandle(
 	puuid string,
 	userUuid string,
+	spaceUuid string,
 	name string,
 	dir string,
 	deleted string,
@@ -379,13 +385,13 @@ func (this *MatterDao) PageHandle(
 		}
 	}
 
-	count, _ := this.PlainPage(0, pageSize, puuid, userUuid, name, dir, deleted, deleteTimeBefore, nil, sortArray)
+	count, _ := this.PlainPage(0, pageSize, puuid, userUuid, spaceUuid, name, dir, deleted, deleteTimeBefore, nil, sortArray)
 	if count > 0 {
 		var totalPages = int(math.Ceil(float64(count) / float64(pageSize)))
 
 		var page int
 		for page = 0; page < totalPages; page++ {
-			_, matters := this.PlainPage(0, pageSize, puuid, userUuid, name, dir, deleted, deleteTimeBefore, nil, sortArray)
+			_, matters := this.PlainPage(0, pageSize, puuid, userUuid, spaceUuid, name, dir, deleted, deleteTimeBefore, nil, sortArray)
 			for _, matter := range matters {
 				fun(matter)
 			}

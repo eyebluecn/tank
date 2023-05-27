@@ -70,9 +70,9 @@ func (this *SpaceController) RegisterRoutes() map[string]func(writer http.Respon
 
 func (this *SpaceController) Create(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 	//space's name
-	name := util.ExtractRequestString(request, "name", "name is required")
-	sizeLimit := util.ExtractRequestInt64(request, "sizeLimit", "space's limit size is required")
-	totalSizeLimit := util.ExtractRequestInt64(request, "totalSizeLimit", "space's total limit size is required")
+	name := util.ExtractRequestString(request, "name")
+	sizeLimit := util.ExtractRequestInt64(request, "sizeLimit")
+	totalSizeLimit := util.ExtractRequestInt64(request, "totalSizeLimit")
 
 	//create related space.
 	space := this.spaceService.CreateSpace(request, name, nil, sizeLimit, totalSizeLimit, SPACE_TYPE_SHARED)
@@ -82,9 +82,9 @@ func (this *SpaceController) Create(writer http.ResponseWriter, request *http.Re
 
 func (this *SpaceController) Edit(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 	//space's name
-	uuid := util.ExtractRequestString(request, "uuid", "uuid is required")
-	sizeLimit := util.ExtractRequestInt64(request, "sizeLimit", "space's limit size is required")
-	totalSizeLimit := util.ExtractRequestInt64(request, "totalSizeLimit", "space's total limit size is required")
+	uuid := util.ExtractRequestString(request, "uuid")
+	sizeLimit := util.ExtractRequestInt64(request, "sizeLimit")
+	totalSizeLimit := util.ExtractRequestInt64(request, "totalSizeLimit")
 
 	space := this.spaceDao.CheckByUuid(uuid)
 
@@ -99,7 +99,7 @@ func (this *SpaceController) Edit(writer http.ResponseWriter, request *http.Requ
 func (this *SpaceController) Delete(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	//space's name
-	uuid := util.ExtractRequestString(request, "uuid", "uuid is required")
+	uuid := util.ExtractRequestString(request, "uuid")
 	space := this.spaceDao.CheckByUuid(uuid)
 
 	//when space has members, cannot delete.
@@ -118,7 +118,7 @@ func (this *SpaceController) Delete(writer http.ResponseWriter, request *http.Re
 
 func (this *SpaceController) Detail(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
-	uuid := util.ExtractRequestString(request, "uuid", "uuid is required")
+	uuid := util.ExtractRequestString(request, "uuid")
 
 	user := this.checkUser(request)
 	space := this.spaceDao.CheckByUuid(uuid)

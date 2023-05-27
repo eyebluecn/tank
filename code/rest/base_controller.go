@@ -13,9 +13,10 @@ import (
 
 type BaseController struct {
 	BaseBean
-	userDao    *UserDao
-	spaceDao   *SpaceDao
-	sessionDao *SessionDao
+	userDao      *UserDao
+	spaceDao     *SpaceDao
+	spaceService *SpaceService
+	sessionDao   *SessionDao
 }
 
 func (this *BaseController) Init() {
@@ -25,6 +26,16 @@ func (this *BaseController) Init() {
 	b := core.CONTEXT.GetBean(this.userDao)
 	if b, ok := b.(*UserDao); ok {
 		this.userDao = b
+	}
+
+	b = core.CONTEXT.GetBean(this.spaceDao)
+	if b, ok := b.(*SpaceDao); ok {
+		this.spaceDao = b
+	}
+
+	b = core.CONTEXT.GetBean(this.spaceService)
+	if b, ok := b.(*SpaceService); ok {
+		this.spaceService = b
 	}
 
 	b = core.CONTEXT.GetBean(this.sessionDao)

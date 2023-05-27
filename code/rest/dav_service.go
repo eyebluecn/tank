@@ -413,7 +413,7 @@ func (this *DavService) HandleMkcol(writer http.ResponseWriter, request *http.Re
 		panic(result.CustomWebResult(result.METHOD_NOT_ALLOWED, fmt.Sprintf("%s file already exists", dirPath)))
 	}
 
-	this.matterService.AtomicCreateDirectory(request, dirMatter, thisDirName, user)
+	this.matterService.AtomicCreateDirectory(request, dirMatter, thisDirName, user, space)
 
 }
 

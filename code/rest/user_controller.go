@@ -193,8 +193,8 @@ func (this *UserController) Create(writer http.ResponseWriter, request *http.Req
 	password := request.FormValue("password")
 	role := request.FormValue("role")
 
-	sizeLimit := util.ExtractRequestInt64(request, "sizeLimit", "space's limit size is required")
-	totalSizeLimit := util.ExtractRequestInt64(request, "totalSizeLimit", "space's total limit size is required")
+	sizeLimit := util.ExtractRequestInt64(request, "sizeLimit")
+	totalSizeLimit := util.ExtractRequestInt64(request, "totalSizeLimit")
 
 	//validation work.
 	if m, _ := regexp.MatchString(USERNAME_PATTERN, username); !m {

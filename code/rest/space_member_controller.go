@@ -69,9 +69,9 @@ func (this *SpaceMemberController) RegisterRoutes() map[string]func(writer http.
 
 func (this *SpaceMemberController) Create(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
-	spaceUuid := util.ExtractRequestString(request, "spaceUuid", "spaceUuid is required")
-	userUuid := util.ExtractRequestString(request, "userUuid", "userUuid is required")
-	spaceRole := util.ExtractRequestString(request, "spaceRole", "spaceRole is required")
+	spaceUuid := util.ExtractRequestString(request, "spaceUuid")
+	userUuid := util.ExtractRequestString(request, "userUuid")
+	spaceRole := util.ExtractRequestString(request, "spaceRole")
 
 	if spaceRole != SPACE_MEMBER_ROLE_READ_ONLY && spaceRole != SPACE_MEMBER_ROLE_READ_WRITE && spaceRole != SPACE_MEMBER_ROLE_ADMIN {
 		panic("spaceRole is not correct")
@@ -99,8 +99,8 @@ func (this *SpaceMemberController) Create(writer http.ResponseWriter, request *h
 }
 
 func (this *SpaceMemberController) Edit(writer http.ResponseWriter, request *http.Request) *result.WebResult {
-	uuid := util.ExtractRequestString(request, "uuid", "uuid is required")
-	spaceRole := util.ExtractRequestString(request, "spaceRole", "spaceRole is required")
+	uuid := util.ExtractRequestString(request, "uuid")
+	spaceRole := util.ExtractRequestString(request, "spaceRole")
 
 	if spaceRole != SPACE_MEMBER_ROLE_READ_ONLY && spaceRole != SPACE_MEMBER_ROLE_READ_WRITE && spaceRole != SPACE_MEMBER_ROLE_ADMIN {
 		panic("spaceRole is not correct")
@@ -121,7 +121,7 @@ func (this *SpaceMemberController) Edit(writer http.ResponseWriter, request *htt
 }
 
 func (this *SpaceMemberController) Delete(writer http.ResponseWriter, request *http.Request) *result.WebResult {
-	uuid := util.ExtractRequestString(request, "uuid", "uuid is required")
+	uuid := util.ExtractRequestString(request, "uuid")
 
 	spaceMember := this.spaceMemberDao.CheckByUuid(uuid)
 	user := this.checkUser(request)
@@ -137,7 +137,7 @@ func (this *SpaceMemberController) Delete(writer http.ResponseWriter, request *h
 
 func (this *SpaceMemberController) Detail(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
-	uuid := util.ExtractRequestString(request, "uuid", "uuid is required")
+	uuid := util.ExtractRequestString(request, "uuid")
 
 	spaceMember := this.spaceMemberDao.CheckByUuid(uuid)
 
@@ -156,7 +156,7 @@ func (this *SpaceMemberController) Page(writer http.ResponseWriter, request *htt
 	page := util.ExtractRequestOptionalInt(request, "page", 0)
 	pageSize := util.ExtractRequestOptionalInt(request, "pageSize", 20)
 	orderCreateTime := util.ExtractRequestOptionalString(request, "orderCreateTime", "")
-	spaceUuid := util.ExtractRequestString(request, "spaceUuid", "spaceUuid is required")
+	spaceUuid := util.ExtractRequestString(request, "spaceUuid")
 
 	user := this.checkUser(request)
 	canRead := this.spaceMemberService.canRead(user, spaceUuid)

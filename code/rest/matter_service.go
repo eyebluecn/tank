@@ -438,6 +438,7 @@ func (this *MatterService) createNonDirMatter(dirMatter *Matter, filename string
 		Puuid:     dirMatter.Uuid,
 		UserUuid:  user.Uuid,
 		SpaceName: space.Name,
+		SpaceUuid: space.Uuid,
 		Dir:       false,
 		Name:      filename,
 		Md5:       "",
@@ -513,7 +514,7 @@ func (this *MatterService) ComputeAllDirSize(user *User, space *Space) {
 
 	this.logger.Info("Compute all dir's size for user %s %s", user.Uuid, user.Username)
 
-	rootMatter := NewRootMatter(user, space)
+	rootMatter := NewRootMatter(space)
 	this.ComputeDirSize(rootMatter, user, space)
 }
 
@@ -553,7 +554,7 @@ func (this *MatterService) ComputeDirSize(dirMatter *Matter, user *User, space *
 }
 
 // inner create directory.
-func (this *MatterService) createDirectory(request *http.Request, dirMatter *Matter, name string, user *User) *Matter {
+func (this *MatterService) createDirectory(request *http.Request, dirMatter *Matter, name string, user *User, space *Space) *Matter {
 
 	if dirMatter == nil {
 		panic(result.BadRequest("dirMatter cannot be nil"))
@@ -567,9 +568,9 @@ func (this *MatterService) createDirectory(request *http.Request, dirMatter *Mat
 		panic(result.BadRequest("Dir has been deleted. Cannot create dir under it."))
 	}
 
-	if dirMatter.UserUuid != user.Uuid {
+	if dirMatter.SpaceUuid != space.Uuid {
 
-		panic(result.BadRequest("file's user not the same"))
+		panic(result.BadRequest("file's space not the same"))
 	}
 
 	name = strings.TrimSpace(name)
@@ -599,7 +600,7 @@ func (this *MatterService) createDirectory(request *http.Request, dirMatter *Mat
 		panic(result.BadRequestI18n(request, i18n.MatterDepthExceedLimit, len(parts), MATTER_NAME_MAX_DEPTH))
 	}
 
-	absolutePath := GetSpaceMatterRootDir(user.Username) + dirMatter.Path + "/" + name
+	absolutePath := GetSpaceMatterRootDir(space.Name) + dirMatter.Path + "/" + name
 
 	relativePath := dirMatter.Path + "/" + name
 
@@ -611,6 +612,7 @@ func (this *MatterService) createDirectory(request *http.Request, dirMatter *Mat
 	matter = &Matter{
 		Puuid:     dirMatter.Uuid,
 		UserUuid:  user.Uuid,
+		SpaceUuid: space.Uuid,
 		SpaceName: user.Username,
 		Dir:       true,
 		Name:      name,
@@ -623,7 +625,7 @@ func (this *MatterService) createDirectory(request *http.Request, dirMatter *Mat
 	return matter
 }
 
-func (this *MatterService) AtomicCreateDirectory(request *http.Request, dirMatter *Matter, name string, user *User) *Matter {
+func (this *MatterService) AtomicCreateDirectory(request *http.Request, dirMatter *Matter, name string, user *User, space *Space) *Matter {
 
 	if dirMatter.Deleted {
 		panic(result.BadRequest("Dir has been deleted. Cannot create sub dir under it."))
@@ -632,7 +634,7 @@ func (this *MatterService) AtomicCreateDirectory(request *http.Request, dirMatte
 	this.userService.MatterLock(user.Uuid)
 	defer this.userService.MatterUnlock(user.Uuid)
 
-	matter := this.createDirectory(request, dirMatter, name, user)
+	matter := this.createDirectory(request, dirMatter, name, user, space)
 
 	return matter
 }
@@ -999,7 +1001,7 @@ func (this *MatterService) mirror(request *http.Request, srcPath string, destDir
 		srcDirMatter := this.matterDao.FindByUserUuidAndPuuidAndDirAndName(user.Uuid, destDirMatter.Uuid, TRUE, fileStat.Name())
 
 		if srcDirMatter == nil {
-			srcDirMatter = this.createDirectory(request, destDirMatter, fileStat.Name(), user)
+			srcDirMatter = this.createDirectory(request, destDirMatter, fileStat.Name(), user, space)
 		}
 
 		fileInfos, err := ioutil.ReadDir(srcPath)
@@ -1046,7 +1048,7 @@ func (this *MatterService) CreateDirectories(request *http.Request, user *User, 
 	dirPath = path.Clean(dirPath)
 
 	if dirPath == "/" {
-		return NewRootMatter(user, space)
+		return NewRootMatter(space)
 	}
 
 	//ignore the last slash.
@@ -1071,11 +1073,11 @@ func (this *MatterService) CreateDirectories(request *http.Request, user *User, 
 
 		//ignore the first element.
 		if k == 0 {
-			dirMatter = NewRootMatter(user, space)
+			dirMatter = NewRootMatter(space)
 			continue
 		}
 
-		dirMatter = this.createDirectory(request, dirMatter, name, user)
+		dirMatter = this.createDirectory(request, dirMatter, name, user, space)
 	}
 
 	return dirMatter
@@ -1190,7 +1192,7 @@ func (this *MatterService) DeleteByPhysics(request *http.Request, user *User, sp
 	}
 
 	//scan user's file. scan level by level.
-	rootMatter := NewRootMatter(user, space)
+	rootMatter := NewRootMatter(space)
 	this.deleteFolderByPhysics(request, rootMatter, user, space)
 
 }
@@ -1198,7 +1200,7 @@ func (this *MatterService) DeleteByPhysics(request *http.Request, user *User, sp
 func (this *MatterService) deleteFolderByPhysics(request *http.Request, dirMatter *Matter, user *User, space *Space) {
 
 	//scan user's file. scan level by level.
-	this.matterDao.PageHandle(dirMatter.Uuid, user.Uuid, "", "", "", nil, nil, func(matter *Matter) {
+	this.matterDao.PageHandle(dirMatter.Uuid, "", space.Uuid, "", "", "", nil, nil, func(matter *Matter) {
 
 		if matter.Dir {
 			//delete children first.
@@ -1232,7 +1234,7 @@ func (this *MatterService) ScanPhysics(request *http.Request, user *User, space 
 		panic(result.BadRequest("cannot get root file info."))
 	}
 
-	rootMatter := NewRootMatter(user, space)
+	rootMatter := NewRootMatter(space)
 	this.scanPhysicsFolder(request, rootFileInfo, rootMatter, user, space)
 }
 
@@ -1242,7 +1244,7 @@ func (this *MatterService) scanPhysicsFolder(request *http.Request, dirInfo os.F
 	}
 
 	//fetch all matters under this folder.
-	_, matters := this.matterDao.PlainPage(0, 1000, dirMatter.Uuid, user.Uuid, "", "", "", nil, nil, nil)
+	_, matters := this.matterDao.PlainPage(0, 1000, dirMatter.Uuid, "", space.Uuid, "", "", "", nil, nil, nil)
 	nameMatterMap := make(map[string]*Matter)
 	for _, m := range matters {
 		nameMatterMap[m.Name] = m
@@ -1286,7 +1288,7 @@ func (this *MatterService) scanPhysicsFolder(request *http.Request, dirInfo os.F
 			if fileInfo.IsDir() {
 
 				//create folder.
-				matter = this.createDirectory(request, dirMatter, name, user)
+				matter = this.createDirectory(request, dirMatter, name, user, space)
 
 				//recursive scan this folder.
 				this.scanPhysicsFolder(request, fileInfo, matter, user, space)
@@ -1321,7 +1323,7 @@ func (this *MatterService) CleanExpiredDeletedMatters() {
 		}
 
 		//first remove all the matter(not dir).
-		this.matterDao.PageHandle("", "", "", FALSE, TRUE, &thenDate, nil, func(matter *Matter) {
+		this.matterDao.PageHandle("", "", "", "", FALSE, TRUE, &thenDate, nil, func(matter *Matter) {
 			this.Delete(request, matter, user, space)
 		})
 
@@ -1333,7 +1335,7 @@ func (this *MatterService) CleanExpiredDeletedMatters() {
 		}
 
 		//remove all the deleted directories. sort by path.
-		this.matterDao.PageHandle("", "", "", TRUE, TRUE, &thenDate, sortArray, func(matter *Matter) {
+		this.matterDao.PageHandle("", "", "", "", TRUE, TRUE, &thenDate, sortArray, func(matter *Matter) {
 			this.Delete(request, matter, user, space)
 		})
 

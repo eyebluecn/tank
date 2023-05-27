@@ -64,16 +64,17 @@ func (this *Matter) MimeType() string {
 }
 
 // Create a root matter. It's convenient for copy and move
-func NewRootMatter(user *User, space *Space) *Matter {
+func NewRootMatter(space *Space) *Matter {
 	matter := &Matter{}
 	matter.Uuid = MATTER_ROOT
-	matter.UserUuid = user.Uuid
+	matter.UserUuid = space.UserUuid
+	matter.SpaceUuid = space.Uuid
 	matter.SpaceName = space.Name
 	matter.Dir = true
 	matter.Path = ""
-	matter.CreateTime = user.CreateTime
-	matter.UpdateTime = user.UpdateTime
-	matter.VisitTime = user.UpdateTime
+	matter.CreateTime = space.CreateTime
+	matter.UpdateTime = space.UpdateTime
+	matter.VisitTime = space.UpdateTime
 
 	return matter
 }

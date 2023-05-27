@@ -11,10 +11,11 @@ import (
 // @Service
 type SpaceService struct {
 	BaseBean
-	spaceDao  *SpaceDao
-	matterDao *MatterDao
-	bridgeDao *BridgeDao
-	userDao   *UserDao
+	spaceDao           *SpaceDao
+	spaceMemberService *SpaceMemberService
+	matterDao          *MatterDao
+	bridgeDao          *BridgeDao
+	userDao            *UserDao
 }
 
 func (this *SpaceService) Init() {
@@ -23,6 +24,11 @@ func (this *SpaceService) Init() {
 	b := core.CONTEXT.GetBean(this.spaceDao)
 	if b, ok := b.(*SpaceDao); ok {
 		this.spaceDao = b
+	}
+
+	b = core.CONTEXT.GetBean(this.spaceMemberService)
+	if b, ok := b.(*SpaceMemberService); ok {
+		this.spaceMemberService = b
 	}
 
 	b = core.CONTEXT.GetBean(this.matterDao)
@@ -97,4 +103,34 @@ func (this *SpaceService) CreateSpace(
 
 	return space
 
+}
+
+// checkout a writable space.
+func (this *SpaceService) CheckWritableByUuid(request *http.Request, user *User, spaceUuid string) *Space {
+	space := this.spaceDao.CheckByUuid(spaceUuid)
+	if space.Type == SPACE_TYPE_PRIVATE && user.Uuid == space.UserUuid {
+		return space
+	}
+
+	manage := this.spaceMemberService.canManage(user, spaceUuid)
+	if !manage {
+		panic(result.BadRequestI18n(request, i18n.PermissionDenied))
+	}
+
+	return space
+}
+
+// checkout a readable space.
+func (this *SpaceService) CheckReadableByUuid(request *http.Request, user *User, spaceUuid string) *Space {
+	space := this.spaceDao.CheckByUuid(spaceUuid)
+	if space.Type == SPACE_TYPE_PRIVATE && user.Uuid == space.UserUuid {
+		return space
+	}
+
+	manage := this.spaceMemberService.canRead(user, spaceUuid)
+	if !manage {
+		panic(result.BadRequestI18n(request, i18n.PermissionDenied))
+	}
+
+	return space
 }

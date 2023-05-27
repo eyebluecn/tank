@@ -5,8 +5,8 @@ import (
 	"github.com/eyebluecn/tank/code/tool/builder"
 	"github.com/eyebluecn/tank/code/tool/i18n"
 	"github.com/eyebluecn/tank/code/tool/result"
+	"github.com/eyebluecn/tank/code/tool/util"
 	"net/http"
-	"strconv"
 	"strings"
 )
 
@@ -76,6 +76,8 @@ func (this *MatterController) Init() {
 func (this *MatterController) RegisterRoutes() map[string]func(writer http.ResponseWriter, request *http.Request) {
 
 	routeMap := make(map[string]func(writer http.ResponseWriter, request *http.Request))
+	routeMap["/api/matter/detail"] = this.Wrap(this.Detail, USER_ROLE_USER)
+	routeMap["/api/matter/page"] = this.Wrap(this.Page, USER_ROLE_GUEST)
 
 	routeMap["/api/matter/create/directory"] = this.Wrap(this.CreateDirectory, USER_ROLE_USER)
 	routeMap["/api/matter/upload"] = this.Wrap(this.Upload, USER_ROLE_USER)
@@ -90,8 +92,6 @@ func (this *MatterController) RegisterRoutes() map[string]func(writer http.Respo
 	routeMap["/api/matter/rename"] = this.Wrap(this.Rename, USER_ROLE_USER)
 	routeMap["/api/matter/change/privacy"] = this.Wrap(this.ChangePrivacy, USER_ROLE_USER)
 	routeMap["/api/matter/move"] = this.Wrap(this.Move, USER_ROLE_USER)
-	routeMap["/api/matter/detail"] = this.Wrap(this.Detail, USER_ROLE_USER)
-	routeMap["/api/matter/page"] = this.Wrap(this.Page, USER_ROLE_GUEST)
 
 	//mirror local files.
 	routeMap["/api/matter/mirror"] = this.Wrap(this.Mirror, USER_ROLE_USER)
@@ -102,15 +102,14 @@ func (this *MatterController) RegisterRoutes() map[string]func(writer http.Respo
 
 func (this *MatterController) Detail(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
-	uuid := request.FormValue("uuid")
-	if uuid == "" {
-		panic(result.BadRequest("uuid cannot be null"))
-	}
+	uuid := util.ExtractRequestString(request, "uuid")
+	user := this.checkUser(request)
+	spaceUuid := util.ExtractRequestOptionalString(request, "spaceUuid", user.SpaceUuid)
+	space := this.spaceService.CheckWritableByUuid(request, user, spaceUuid)
 
 	matter := this.matterService.Detail(request, uuid)
 
-	user := this.checkUser(request)
-	if matter.UserUuid != user.Uuid {
+	if matter.SpaceUuid != space.Uuid {
 		panic(result.UNAUTHORIZED)
 	}
 
@@ -120,29 +119,32 @@ func (this *MatterController) Detail(writer http.ResponseWriter, request *http.R
 
 func (this *MatterController) Page(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
-	pageStr := request.FormValue("page")
-	pageSizeStr := request.FormValue("pageSize")
-	orderCreateTime := request.FormValue("orderCreateTime")
-	orderUpdateTime := request.FormValue("orderUpdateTime")
-	orderDeleteTime := request.FormValue("orderDeleteTime")
-	orderSort := request.FormValue("orderSort")
-	orderTimes := request.FormValue("orderTimes")
+	page := util.ExtractRequestOptionalInt(request, "page", 0)
+	pageSize := util.ExtractRequestOptionalInt(request, "pageSize", 200)
+	orderCreateTime := util.ExtractRequestOptionalString(request, "orderCreateTime", "")
+	orderUpdateTime := util.ExtractRequestOptionalString(request, "orderUpdateTime", "")
+	orderDeleteTime := util.ExtractRequestOptionalString(request, "orderDeleteTime", "")
+	orderSort := util.ExtractRequestOptionalString(request, "orderSort", "")
+	orderTimes := util.ExtractRequestOptionalString(request, "orderTimes", "")
+	puuid := util.ExtractRequestOptionalString(request, "puuid", "")
+	name := util.ExtractRequestOptionalString(request, "name", "")
+	dir := util.ExtractRequestOptionalString(request, "dir", "")
+	deleted := util.ExtractRequestOptionalString(request, "deleted", "")
+	orderDir := util.ExtractRequestOptionalString(request, "orderDir", "")
+	orderSize := util.ExtractRequestOptionalString(request, "orderSize", "")
+	orderName := util.ExtractRequestOptionalString(request, "orderName", "")
+	extensionsStr := util.ExtractRequestOptionalString(request, "extensions", "")
+	//auth by shareUuid.
+	shareUuid := util.ExtractRequestOptionalString(request, "shareUuid", "")
+	shareCode := util.ExtractRequestOptionalString(request, "shareCode", "")
+	shareRootUuid := util.ExtractRequestOptionalString(request, "shareRootUuid", "")
 
-	puuid := request.FormValue("puuid")
-	name := request.FormValue("name")
-	dir := request.FormValue("dir")
-	deleted := request.FormValue("deleted")
-	orderDir := request.FormValue("orderDir")
-	orderSize := request.FormValue("orderSize")
-	orderName := request.FormValue("orderName")
-	extensionsStr := request.FormValue("extensions")
+	user := this.checkUser(request)
+	spaceUuid := util.ExtractRequestOptionalString(request, "spaceUuid", user.SpaceUuid)
+	space := this.spaceService.CheckReadableByUuid(request, user, spaceUuid)
 
 	var userUuid string
 
-	//auth by shareUuid.
-	shareUuid := request.FormValue("shareUuid")
-	shareCode := request.FormValue("shareCode")
-	shareRootUuid := request.FormValue("shareRootUuid")
 	if shareUuid != "" {
 
 		if puuid == "" {
@@ -164,19 +166,6 @@ func (this *MatterController) Page(writer http.ResponseWriter, request *http.Req
 		user := this.checkUser(request)
 		userUuid = user.Uuid
 
-	}
-
-	var page int
-	if pageStr != "" {
-		page, _ = strconv.Atoi(pageStr)
-	}
-
-	pageSize := 200
-	if pageSizeStr != "" {
-		tmp, err := strconv.Atoi(pageSizeStr)
-		if err == nil {
-			pageSize = tmp
-		}
 	}
 
 	var extensions []string
@@ -219,29 +208,33 @@ func (this *MatterController) Page(writer http.ResponseWriter, request *http.Req
 		},
 	}
 
-	pager := this.matterDao.Page(page, pageSize, puuid, userUuid, name, dir, deleted, extensions, sortArray)
+	pager := this.matterDao.Page(page, pageSize, puuid, userUuid, space.Uuid, name, dir, deleted, extensions, sortArray)
 
 	return this.Success(pager)
 }
 
 func (this *MatterController) CreateDirectory(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
-	puuid := request.FormValue("puuid")
-	name := request.FormValue("name")
-
+	puuid := util.ExtractRequestString(request, "puuid")
+	name := util.ExtractRequestString(request, "name")
 	user := this.checkUser(request)
-	space := this.spaceDao.CheckByUuid(user.SpaceUuid)
+	spaceUuid := util.ExtractRequestOptionalString(request, "spaceUuid", user.SpaceUuid)
+	space := this.spaceService.CheckWritableByUuid(request, user, spaceUuid)
 
-	var dirMatter = this.matterDao.CheckWithRootByUuid(puuid, user, space)
+	var dirMatter = this.matterDao.CheckWithRootByUuid(puuid, space)
 
-	matter := this.matterService.AtomicCreateDirectory(request, dirMatter, name, user)
+	matter := this.matterService.AtomicCreateDirectory(request, dirMatter, name, user, space)
 	return this.Success(matter)
 }
 
 func (this *MatterController) Upload(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+	puuid := util.ExtractRequestString(request, "puuid")
+	privacy := util.ExtractRequestOptionalBool(request, "privacy", true)
 
-	puuid := request.FormValue("puuid")
-	privacyStr := request.FormValue("privacy")
+	user := this.checkUser(request)
+	spaceUuid := util.ExtractRequestOptionalString(request, "spaceUuid", user.SpaceUuid)
+	space := this.spaceService.CheckWritableByUuid(request, user, spaceUuid)
+
 	file, handler, err := request.FormFile("file")
 	this.PanicError(err)
 	defer func() {
@@ -249,15 +242,10 @@ func (this *MatterController) Upload(writer http.ResponseWriter, request *http.R
 		this.PanicError(err)
 	}()
 
-	user := this.checkUser(request)
-	space := this.spaceDao.CheckByUuid(user.SpaceUuid)
-
-	privacy := privacyStr == TRUE
-
 	err = request.ParseMultipartForm(32 << 20)
 	this.PanicError(err)
 
-	//for IE browser. filename may contains filepath.
+	//for IE browser. filename may contain filepath.
 	fileName := handler.Filename
 	pos := strings.LastIndex(fileName, "\\")
 	if pos != -1 {
@@ -268,7 +256,7 @@ func (this *MatterController) Upload(writer http.ResponseWriter, request *http.R
 		fileName = fileName[pos+1:]
 	}
 
-	dirMatter := this.matterDao.CheckWithRootByUuid(puuid, user, space)
+	dirMatter := this.matterDao.CheckWithRootByUuid(puuid, space)
 
 	//support upload simultaneously
 	matter := this.matterService.Upload(request, file, user, space, dirMatter, fileName, privacy)
@@ -279,20 +267,18 @@ func (this *MatterController) Upload(writer http.ResponseWriter, request *http.R
 // crawl a file by url.
 func (this *MatterController) Crawl(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
-	url := request.FormValue("url")
-	destPath := request.FormValue("destPath")
-	filename := request.FormValue("filename")
+	url := util.ExtractRequestString(request, "url")
+	destPath := util.ExtractRequestString(request, "destPath")
+	filename := util.ExtractRequestString(request, "filename")
 
 	user := this.checkUser(request)
-	space := this.spaceDao.CheckByUuid(user.SpaceUuid)
+	spaceUuid := util.ExtractRequestOptionalString(request, "spaceUuid", user.SpaceUuid)
+	space := this.spaceService.CheckWritableByUuid(request, user, spaceUuid)
+
 	dirMatter := this.matterService.CreateDirectories(request, user, space, destPath)
 
 	if url == "" || (!strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://")) {
 		panic(" url must start with  http:// or https://")
-	}
-
-	if filename == "" {
-		panic("filename cannot be null")
 	}
 
 	matter := this.matterService.AtomicCrawl(request, url, filename, user, space, dirMatter, true)
@@ -303,16 +289,14 @@ func (this *MatterController) Crawl(writer http.ResponseWriter, request *http.Re
 // soft delete.
 func (this *MatterController) SoftDelete(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
-	uuid := request.FormValue("uuid")
-	if uuid == "" {
-		panic(result.BadRequest("uuid cannot be null"))
-	}
-
-	matter := this.matterDao.CheckByUuid(uuid)
+	uuid := util.ExtractRequestString(request, "uuid")
 
 	user := this.checkUser(request)
-	space := this.spaceDao.CheckByUuid(user.SpaceUuid)
-	if matter.UserUuid != user.Uuid {
+	spaceUuid := util.ExtractRequestOptionalString(request, "spaceUuid", user.SpaceUuid)
+	space := this.spaceService.CheckWritableByUuid(request, user, spaceUuid)
+
+	matter := this.matterDao.CheckByUuid(uuid)
+	if matter.SpaceUuid != space.Uuid {
 		panic(result.UNAUTHORIZED)
 	}
 
@@ -323,12 +307,11 @@ func (this *MatterController) SoftDelete(writer http.ResponseWriter, request *ht
 
 func (this *MatterController) SoftDeleteBatch(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
-	uuids := request.FormValue("uuids")
-	if uuids == "" {
-		panic(result.BadRequest("uuids cannot be null"))
-	}
+	uuids := util.ExtractRequestString(request, "uuids")
+
 	user := this.checkUser(request)
-	space := this.spaceDao.CheckByUuid(user.SpaceUuid)
+	spaceUuid := util.ExtractRequestOptionalString(request, "spaceUuid", user.SpaceUuid)
+	space := this.spaceService.CheckWritableByUuid(request, user, spaceUuid)
 
 	uuidArray := strings.Split(uuids, ",")
 
@@ -359,15 +342,15 @@ func (this *MatterController) SoftDeleteBatch(writer http.ResponseWriter, reques
 // recovery delete.
 func (this *MatterController) Recovery(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
-	uuid := request.FormValue("uuid")
-	if uuid == "" {
-		panic(result.BadRequest("uuid cannot be null"))
-	}
+	uuid := util.ExtractRequestString(request, "uuid")
+
+	user := this.checkUser(request)
+	spaceUuid := util.ExtractRequestOptionalString(request, "spaceUuid", user.SpaceUuid)
+	space := this.spaceService.CheckWritableByUuid(request, user, spaceUuid)
 
 	matter := this.matterDao.CheckByUuid(uuid)
 
-	user := this.checkUser(request)
-	if matter.UserUuid != user.Uuid {
+	if matter.SpaceUuid != space.Uuid {
 		panic(result.UNAUTHORIZED)
 	}
 
@@ -378,11 +361,11 @@ func (this *MatterController) Recovery(writer http.ResponseWriter, request *http
 
 // recovery batch.
 func (this *MatterController) RecoveryBatch(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+	uuids := util.ExtractRequestString(request, "uuids")
 
-	uuids := request.FormValue("uuids")
-	if uuids == "" {
-		panic(result.BadRequest("uuids cannot be null"))
-	}
+	user := this.checkUser(request)
+	spaceUuid := util.ExtractRequestOptionalString(request, "spaceUuid", user.SpaceUuid)
+	space := this.spaceService.CheckWritableByUuid(request, user, spaceUuid)
 
 	uuidArray := strings.Split(uuids, ",")
 
@@ -395,8 +378,7 @@ func (this *MatterController) RecoveryBatch(writer http.ResponseWriter, request 
 			continue
 		}
 
-		user := this.checkUser(request)
-		if matter.UserUuid != user.Uuid {
+		if matter.SpaceUuid != space.Uuid {
 			panic(result.UNAUTHORIZED)
 		}
 
@@ -410,16 +392,14 @@ func (this *MatterController) RecoveryBatch(writer http.ResponseWriter, request 
 // complete delete.
 func (this *MatterController) Delete(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
-	uuid := request.FormValue("uuid")
-	if uuid == "" {
-		panic(result.BadRequest("uuid cannot be null"))
-	}
-
-	matter := this.matterDao.CheckByUuid(uuid)
+	uuid := util.ExtractRequestString(request, "uuid")
 
 	user := this.checkUser(request)
-	space := this.spaceDao.CheckByUuid(user.SpaceUuid)
-	if matter.UserUuid != user.Uuid {
+	spaceUuid := util.ExtractRequestOptionalString(request, "spaceUuid", user.SpaceUuid)
+	space := this.spaceService.CheckWritableByUuid(request, user, spaceUuid)
+
+	matter := this.matterDao.CheckByUuid(uuid)
+	if matter.SpaceUuid != space.Uuid {
 		panic(result.UNAUTHORIZED)
 	}
 
@@ -430,14 +410,13 @@ func (this *MatterController) Delete(writer http.ResponseWriter, request *http.R
 
 func (this *MatterController) DeleteBatch(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
-	uuids := request.FormValue("uuids")
-	if uuids == "" {
-		panic(result.BadRequest("uuids cannot be null"))
-	}
+	uuids := util.ExtractRequestString(request, "uuids")
+
+	user := this.checkUser(request)
+	spaceUuid := util.ExtractRequestOptionalString(request, "spaceUuid", user.SpaceUuid)
+	space := this.spaceService.CheckWritableByUuid(request, user, spaceUuid)
 
 	uuidArray := strings.Split(uuids, ",")
-	user := this.checkUser(request)
-	space := this.spaceDao.CheckByUuid(user.SpaceUuid)
 	matters := make([]*Matter, 0)
 	for _, uuid := range uuidArray {
 
@@ -448,7 +427,7 @@ func (this *MatterController) DeleteBatch(writer http.ResponseWriter, request *h
 			continue
 		}
 
-		if matter.UserUuid != user.Uuid {
+		if matter.SpaceUuid != space.Uuid {
 			panic(result.UNAUTHORIZED)
 		}
 
@@ -473,14 +452,16 @@ func (this *MatterController) CleanExpiredDeletedMatters(writer http.ResponseWri
 
 func (this *MatterController) Rename(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
-	uuid := request.FormValue("uuid")
-	name := request.FormValue("name")
+	uuid := util.ExtractRequestString(request, "uuid")
+	name := util.ExtractRequestString(request, "name")
 
 	user := this.checkUser(request)
-	space := this.spaceDao.CheckByUuid(user.SpaceUuid)
+	spaceUuid := util.ExtractRequestOptionalString(request, "spaceUuid", user.SpaceUuid)
+	space := this.spaceService.CheckWritableByUuid(request, user, spaceUuid)
+
 	matter := this.matterDao.CheckByUuid(uuid)
 
-	if matter.UserUuid != user.Uuid {
+	if matter.SpaceUuid != space.Uuid {
 		panic(result.UNAUTHORIZED)
 	}
 
@@ -490,12 +471,13 @@ func (this *MatterController) Rename(writer http.ResponseWriter, request *http.R
 }
 
 func (this *MatterController) ChangePrivacy(writer http.ResponseWriter, request *http.Request) *result.WebResult {
-	uuid := request.FormValue("uuid")
-	privacyStr := request.FormValue("privacy")
-	privacy := false
-	if privacyStr == TRUE {
-		privacy = true
-	}
+
+	uuid := util.ExtractRequestString(request, "uuid")
+	privacy := util.ExtractRequestOptionalBool(request, "privacy", false)
+
+	user := this.checkUser(request)
+	spaceUuid := util.ExtractRequestOptionalString(request, "spaceUuid", user.SpaceUuid)
+	space := this.spaceService.CheckWritableByUuid(request, user, spaceUuid)
 
 	matter := this.matterDao.CheckByUuid(uuid)
 
@@ -507,8 +489,7 @@ func (this *MatterController) ChangePrivacy(writer http.ResponseWriter, request 
 		panic(result.BadRequest("not changed. Invalid operation."))
 	}
 
-	user := this.checkUser(request)
-	if matter.UserUuid != user.Uuid {
+	if matter.SpaceUuid != space.Uuid {
 		panic(result.UNAUTHORIZED)
 	}
 
@@ -519,25 +500,21 @@ func (this *MatterController) ChangePrivacy(writer http.ResponseWriter, request 
 }
 
 func (this *MatterController) Move(writer http.ResponseWriter, request *http.Request) *result.WebResult {
-
-	srcUuidsStr := request.FormValue("srcUuids")
-	destUuid := request.FormValue("destUuid")
+	srcUuidsStr := util.ExtractRequestString(request, "srcUuids")
+	destUuid := util.ExtractRequestString(request, "destUuid")
+	user := this.checkUser(request)
+	spaceUuid := util.ExtractRequestOptionalString(request, "spaceUuid", user.SpaceUuid)
+	space := this.spaceService.CheckWritableByUuid(request, user, spaceUuid)
 
 	var srcUuids []string
-	if srcUuidsStr == "" {
-		panic(result.BadRequest("srcUuids cannot be null"))
-	} else {
-		srcUuids = strings.Split(srcUuidsStr, ",")
-	}
+	srcUuids = strings.Split(srcUuidsStr, ",")
 
-	user := this.checkUser(request)
-	space := this.spaceDao.CheckByUuid(user.SpaceUuid)
-	var destMatter = this.matterDao.CheckWithRootByUuid(destUuid, user, space)
+	var destMatter = this.matterDao.CheckWithRootByUuid(destUuid, space)
 	if !destMatter.Dir {
 		panic(result.BadRequest("destination is not a directory"))
 	}
 
-	if destMatter.UserUuid != user.Uuid {
+	if destMatter.SpaceUuid != space.Uuid {
 		panic(result.UNAUTHORIZED)
 	}
 
@@ -579,21 +556,13 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 // mirror local files to EyeblueTank
 func (this *MatterController) Mirror(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
-	srcPath := request.FormValue("srcPath")
-	destPath := request.FormValue("destPath")
-	overwriteStr := request.FormValue("overwrite")
+	srcPath := util.ExtractRequestString(request, "srcPath")
+	destPath := util.ExtractRequestString(request, "destPath")
+	overwrite := util.ExtractRequestOptionalBool(request, "overwrite", false)
 
-	if srcPath == "" {
-		panic(result.BadRequest("srcPath cannot be null"))
-	}
-
-	overwrite := false
-	if overwriteStr == TRUE {
-		overwrite = true
-	}
-
-	user := this.userDao.checkUser(request)
-	space := this.spaceDao.CheckByUuid(user.SpaceUuid)
+	user := this.checkUser(request)
+	spaceUuid := util.ExtractRequestOptionalString(request, "spaceUuid", user.SpaceUuid)
+	space := this.spaceService.CheckWritableByUuid(request, user, spaceUuid)
 
 	this.matterService.AtomicMirror(request, srcPath, destPath, overwrite, user, space)
 
@@ -603,11 +572,10 @@ func (this *MatterController) Mirror(writer http.ResponseWriter, request *http.R
 
 // download zip.
 func (this *MatterController) Zip(writer http.ResponseWriter, request *http.Request) *result.WebResult {
-
-	uuids := request.FormValue("uuids")
-	if uuids == "" {
-		panic(result.BadRequest("uuids cannot be null"))
-	}
+	uuids := util.ExtractRequestString(request, "uuids")
+	user := this.checkUser(request)
+	spaceUuid := util.ExtractRequestOptionalString(request, "spaceUuid", user.SpaceUuid)
+	space := this.spaceService.CheckWritableByUuid(request, user, spaceUuid)
 
 	uuidArray := strings.Split(uuids, ",")
 
@@ -623,11 +591,10 @@ func (this *MatterController) Zip(writer http.ResponseWriter, request *http.Requ
 		}
 	}
 
-	user := this.checkUser(request)
 	puuid := matters[0].Puuid
 
 	for _, m := range matters {
-		if m.UserUuid != user.Uuid {
+		if m.SpaceUuid != space.Uuid {
 			panic(result.UNAUTHORIZED)
 		} else if m.Puuid != puuid {
 			panic(result.BadRequest("puuid not same"))
