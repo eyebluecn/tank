@@ -71,7 +71,7 @@ func (this *SpaceMemberController) Create(writer http.ResponseWriter, request *h
 
 	spaceUuid := util.ExtractRequestString(request, "spaceUuid")
 	userUuid := util.ExtractRequestString(request, "userUuid")
-	spaceRole := util.ExtractRequestString(request, "spaceRole")
+	spaceRole := util.ExtractRequestString(request, "role")
 
 	if spaceRole != SPACE_MEMBER_ROLE_READ_ONLY && spaceRole != SPACE_MEMBER_ROLE_READ_WRITE && spaceRole != SPACE_MEMBER_ROLE_ADMIN {
 		panic("spaceRole is not correct")
@@ -100,7 +100,7 @@ func (this *SpaceMemberController) Create(writer http.ResponseWriter, request *h
 
 func (this *SpaceMemberController) Edit(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 	uuid := util.ExtractRequestString(request, "uuid")
-	spaceRole := util.ExtractRequestString(request, "spaceRole")
+	spaceRole := util.ExtractRequestString(request, "role")
 
 	if spaceRole != SPACE_MEMBER_ROLE_READ_ONLY && spaceRole != SPACE_MEMBER_ROLE_READ_WRITE && spaceRole != SPACE_MEMBER_ROLE_ADMIN {
 		panic("spaceRole is not correct")
