@@ -8,7 +8,7 @@ import (
 )
 
 // system tasks service
-//@Service
+// @Service
 type TaskService struct {
 	BaseBean
 	footprintService  *FootprintService
@@ -16,6 +16,7 @@ type TaskService struct {
 	preferenceService *PreferenceService
 	matterService     *MatterService
 	userDao           *UserDao
+	spaceDao          *SpaceDao
 
 	//whether scan task is running
 	scanTaskRunning bool
@@ -48,11 +49,15 @@ func (this *TaskService) Init() {
 	if b, ok := b.(*UserDao); ok {
 		this.userDao = b
 	}
+	b = core.CONTEXT.GetBean(this.spaceDao)
+	if b, ok := b.(*SpaceDao); ok {
+		this.spaceDao = b
+	}
 
 	this.scanTaskRunning = false
 }
 
-//init the clean footprint task.
+// init the clean footprint task.
 func (this *TaskService) InitCleanFootprintTask() {
 
 	//use standard cron expression. 5 fields. ()
@@ -65,7 +70,7 @@ func (this *TaskService) InitCleanFootprintTask() {
 	this.logger.Info("[cron job] Every day 00:10 delete Footprint data of 8 days ago.")
 }
 
-//init the elt task.
+// init the elt task.
 func (this *TaskService) InitEtlTask() {
 
 	expression := "5 0 * * *"
@@ -77,7 +82,7 @@ func (this *TaskService) InitEtlTask() {
 	this.logger.Info("[cron job] Everyday 00:05 ETL dashboard data.")
 }
 
-//init the clean deleted matters task.
+// init the clean deleted matters task.
 func (this *TaskService) InitCleanDeletedMattersTask() {
 
 	expression := "0 1 * * *"
@@ -89,7 +94,7 @@ func (this *TaskService) InitCleanDeletedMattersTask() {
 	this.logger.Info("[cron job] Everyday 01:00 Clean deleted matters.")
 }
 
-//scan task.
+// scan task.
 func (this *TaskService) doScanTask() {
 
 	if this.scanTaskRunning {
@@ -121,12 +126,12 @@ func (this *TaskService) doScanTask() {
 
 	if scanConfig.Scope == SCAN_SCOPE_ALL {
 		//scan all user's root folder.
-		this.userDao.PageHandle("", "", func(user *User) {
+		this.userDao.PageHandle("", "", func(user *User, space *Space) {
 
 			core.RunWithRecovery(func() {
 
-				this.matterService.DeleteByPhysics(request, user)
-				this.matterService.ScanPhysics(request, user)
+				this.matterService.DeleteByPhysics(request, user, space)
+				this.matterService.ScanPhysics(request, user, space)
 
 			})
 
@@ -142,10 +147,11 @@ func (this *TaskService) doScanTask() {
 			} else {
 				this.logger.Info("scan custom user folder. username = %s", username)
 
+				space := this.spaceDao.CheckByUuid(user.SpaceUuid)
 				core.RunWithRecovery(func() {
 
-					this.matterService.DeleteByPhysics(request, user)
-					this.matterService.ScanPhysics(request, user)
+					this.matterService.DeleteByPhysics(request, user, space)
+					this.matterService.ScanPhysics(request, user, space)
 
 				})
 
@@ -155,7 +161,7 @@ func (this *TaskService) doScanTask() {
 
 }
 
-//init the scan task.
+// init the scan task.
 func (this *TaskService) InitScanTask() {
 
 	if this.scanTaskCron != nil {

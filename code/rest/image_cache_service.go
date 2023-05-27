@@ -14,7 +14,7 @@ import (
 	"strings"
 )
 
-//@Service
+// @Service
 type ImageCacheService struct {
 	BaseBean
 	imageCacheDao *ImageCacheDao
@@ -92,7 +92,7 @@ func (this *ImageCacheService) ResizeParams(request *http.Request) (needProcess 
 
 }
 
-//resize image.
+// resize image.
 func (this *ImageCacheService) ResizeImage(request *http.Request, filePath string) *image.NRGBA {
 
 	diskFile, err := os.Open(filePath)
@@ -148,7 +148,7 @@ func (this *ImageCacheService) ResizeImage(request *http.Request, filePath strin
 	}
 }
 
-//cache an image
+// cache an image
 func (this *ImageCacheService) cacheImage(writer http.ResponseWriter, request *http.Request, matter *Matter) *ImageCache {
 
 	//only these image can do.
@@ -177,7 +177,7 @@ func (this *ImageCacheService) cacheImage(writer http.ResponseWriter, request *h
 
 	cacheImageName := util.GetSimpleFileName(matter.Name) + "_" + mode + extension
 	cacheImageRelativePath := util.GetSimpleFileName(matter.Path) + "_" + mode + extension
-	cacheImageAbsolutePath := GetUserCacheRootDir(user.Username) + util.GetSimpleFileName(matter.Path) + "_" + mode + extension
+	cacheImageAbsolutePath := GetSpaceCacheRootDir(user.Username) + util.GetSimpleFileName(matter.Path) + "_" + mode + extension
 
 	//create directory
 	dir := filepath.Dir(cacheImageAbsolutePath)

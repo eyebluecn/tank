@@ -25,6 +25,7 @@ type DavController struct {
 	BaseController
 	uploadTokenDao    *UploadTokenDao
 	downloadTokenDao  *DownloadTokenDao
+	spaceDao          *SpaceDao
 	matterDao         *MatterDao
 	matterService     *MatterService
 	imageCacheDao     *ImageCacheDao
@@ -50,6 +51,11 @@ func (this *DavController) Init() {
 		this.matterDao = c
 	}
 
+	b = core.CONTEXT.GetBean(this.spaceDao)
+	if c, ok := b.(*SpaceDao); ok {
+		this.spaceDao = c
+	}
+
 	b = core.CONTEXT.GetBean(this.matterService)
 	if c, ok := b.(*MatterService); ok {
 		this.matterService = c
@@ -71,7 +77,7 @@ func (this *DavController) Init() {
 	}
 }
 
-//Auth user by BasicAuth
+// Auth user by BasicAuth
 func (this *DavController) CheckCurrentUser(writer http.ResponseWriter, request *http.Request) *User {
 
 	username, password, ok := request.BasicAuth()
@@ -100,7 +106,7 @@ func (this *DavController) RegisterRoutes() map[string]func(writer http.Response
 	return routeMap
 }
 
-//handle some special routes, eg. params in the url.
+// handle some special routes, eg. params in the url.
 func (this *DavController) HandleRoutes(writer http.ResponseWriter, request *http.Request) (func(writer http.ResponseWriter, request *http.Request), bool) {
 
 	path := request.URL.Path
@@ -166,7 +172,8 @@ func (this *DavController) Index(writer http.ResponseWriter, request *http.Reque
 	//this.debug(writer, request, subPath)
 
 	user := this.CheckCurrentUser(writer, request)
+	space := this.spaceDao.CheckByUuid(user.SpaceUuid)
 
-	this.davService.HandleDav(writer, request, user, subPath)
+	this.davService.HandleDav(writer, request, user, space, subPath)
 
 }

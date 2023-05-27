@@ -9,19 +9,19 @@ import (
 	"strconv"
 )
 
-//webdav url prefix.
+// webdav url prefix.
 var WEBDAV_PREFIX = "/api/dav"
 
-//live prop.
+// live prop.
 type LiveProp struct {
-	findFn func(user *User, matter *Matter) string
+	findFn func(space *Space, matter *Matter) string
 	dir    bool
 }
 
-//all live prop map.
+// all live prop map.
 var LivePropMap = map[xml.Name]LiveProp{
 	{Space: "DAV:", Local: "resourcetype"}: {
-		findFn: func(user *User, matter *Matter) string {
+		findFn: func(space *Space, matter *Matter) string {
 			if matter.Dir {
 				return `<D:collection xmlns:D="DAV:"/>`
 			} else {
@@ -31,7 +31,7 @@ var LivePropMap = map[xml.Name]LiveProp{
 		dir: true,
 	},
 	{Space: "DAV:", Local: "displayname"}: {
-		findFn: func(user *User, matter *Matter) string {
+		findFn: func(space *Space, matter *Matter) string {
 			if path.Clean("/"+matter.Name) == "/" {
 				return ""
 			} else {
@@ -41,13 +41,13 @@ var LivePropMap = map[xml.Name]LiveProp{
 		dir: true,
 	},
 	{Space: "DAV:", Local: "getcontentlength"}: {
-		findFn: func(user *User, matter *Matter) string {
+		findFn: func(space *Space, matter *Matter) string {
 			return strconv.FormatInt(matter.Size, 10)
 		},
 		dir: false,
 	},
 	{Space: "DAV:", Local: "getlastmodified"}: {
-		findFn: func(user *User, matter *Matter) string {
+		findFn: func(space *Space, matter *Matter) string {
 			return matter.UpdateTime.UTC().Format(http.TimeFormat)
 		},
 		// http://webdav.org/specs/rfc4918.html#PROPERTY_getlastmodified
@@ -68,7 +68,7 @@ var LivePropMap = map[xml.Name]LiveProp{
 		dir:    false,
 	},
 	{Space: "DAV:", Local: "getcontenttype"}: {
-		findFn: func(user *User, matter *Matter) string {
+		findFn: func(space *Space, matter *Matter) string {
 			if matter.Dir {
 				return ""
 			} else {
@@ -78,7 +78,7 @@ var LivePropMap = map[xml.Name]LiveProp{
 		dir: false,
 	},
 	{Space: "DAV:", Local: "getetag"}: {
-		findFn: func(user *User, matter *Matter) string {
+		findFn: func(space *Space, matter *Matter) string {
 			return fmt.Sprintf(`"%x%x"`, matter.UpdateTime.UnixNano(), matter.Size)
 		},
 		// findETag implements ETag as the concatenated hex values of a file's
@@ -91,7 +91,7 @@ var LivePropMap = map[xml.Name]LiveProp{
 	// active locks on a resource.
 	{Space: "DAV:", Local: "lockdiscovery"}: {},
 	{Space: "DAV:", Local: "supportedlock"}: {
-		findFn: func(user *User, matter *Matter) string {
+		findFn: func(space *Space, matter *Matter) string {
 			return `` +
 				`<D:lockentry xmlns:D="DAV:">` +
 				`<D:lockscope><D:exclusive/></D:lockscope>` +
@@ -101,11 +101,11 @@ var LivePropMap = map[xml.Name]LiveProp{
 		dir: true,
 	},
 	{Space: "DAV:", Local: "quota-available-bytes"}: {
-		findFn: func(user *User, matter *Matter) string {
+		findFn: func(space *Space, matter *Matter) string {
 			var size int64 = 0
-			if user.TotalSizeLimit >= 0 {
-				if user.TotalSizeLimit-user.TotalSize > 0 {
-					size = user.TotalSizeLimit - user.TotalSize
+			if space.TotalSizeLimit >= 0 {
+				if space.TotalSizeLimit-space.TotalSize > 0 {
+					size = space.TotalSizeLimit - space.TotalSize
 				} else {
 					size = 0
 				}
@@ -118,8 +118,8 @@ var LivePropMap = map[xml.Name]LiveProp{
 		dir: true,
 	},
 	{Space: "DAV:", Local: "quota-used-bytes"}: {
-		findFn: func(user *User, matter *Matter) string {
-			return fmt.Sprintf(`%d`, user.TotalSize)
+		findFn: func(space *Space, matter *Matter) string {
+			return fmt.Sprintf(`%d`, space.TotalSize)
 		},
 		dir: true,
 	},

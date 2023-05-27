@@ -11,10 +11,17 @@ import (
 
 type UserDao struct {
 	BaseDao
+	spaceDao *SpaceDao
 }
 
 func (this *UserDao) Init() {
 	this.BaseDao.Init()
+
+	b := core.CONTEXT.GetBean(this.spaceDao)
+	if b, ok := b.(*SpaceDao); ok {
+		this.spaceDao = b
+	}
+
 }
 
 func (this *UserDao) Create(user *User) *User {
@@ -36,7 +43,7 @@ func (this *UserDao) Create(user *User) *User {
 	return user
 }
 
-//find by uuid. if not found return nil.
+// find by uuid. if not found return nil.
 func (this *UserDao) FindByUuid(uuid string) *User {
 	var entity = &User{}
 	db := core.CONTEXT.GetDB().Where("uuid = ?", uuid).First(entity)
@@ -50,7 +57,7 @@ func (this *UserDao) FindByUuid(uuid string) *User {
 	return entity
 }
 
-//find by uuid. if not found panic NotFound error
+// find by uuid. if not found panic NotFound error
 func (this *UserDao) CheckByUuid(uuid string) *User {
 	entity := this.FindByUuid(uuid)
 	if entity == nil {
@@ -111,8 +118,8 @@ func (this *UserDao) PlainPage(page int, pageSize int, username string, status s
 	return int(count), users
 }
 
-//handle user page by page.
-func (this *UserDao) PageHandle(username string, status string, fun func(user *User)) {
+// handle user page by page.
+func (this *UserDao) PageHandle(username string, status string, fun func(user *User, space *Space)) {
 
 	//delete share and bridges.
 	pageSize := 1000
@@ -129,7 +136,8 @@ func (this *UserDao) PageHandle(username string, status string, fun func(user *U
 		for page = 0; page < totalPages; page++ {
 			_, users := this.PlainPage(0, pageSize, username, status, sortArray)
 			for _, u := range users {
-				fun(u)
+				space := this.spaceDao.CheckByUuid(u.SpaceUuid)
+				fun(u, space)
 			}
 		}
 	}
@@ -154,7 +162,7 @@ func (this *UserDao) Save(user *User) *User {
 	return user
 }
 
-//find all 2.0 users.
+// find all 2.0 users.
 func (this *UserDao) FindUsers20() []*User {
 	var users []*User
 	var wp = &builder.WherePair{}
@@ -179,7 +187,7 @@ func (this *UserDao) Delete(user *User) {
 	this.PanicError(db.Error)
 }
 
-//System cleanup.
+// System cleanup.
 func (this *UserDao) Cleanup() {
 	this.logger.Info("[UserDao] clean up. Delete all User")
 	db := core.CONTEXT.GetDB().Where("uuid is not null and role != ?", USER_ROLE_ADMINISTRATOR).Delete(User{})

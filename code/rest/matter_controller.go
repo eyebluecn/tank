@@ -18,6 +18,7 @@ type MatterController struct {
 	downloadTokenDao  *DownloadTokenDao
 	imageCacheDao     *ImageCacheDao
 	shareDao          *ShareDao
+	spaceDao          *SpaceDao
 	shareService      *ShareService
 	bridgeDao         *BridgeDao
 	imageCacheService *ImageCacheService
@@ -49,6 +50,11 @@ func (this *MatterController) Init() {
 	b = core.CONTEXT.GetBean(this.shareDao)
 	if b, ok := b.(*ShareDao); ok {
 		this.shareDao = b
+	}
+
+	b = core.CONTEXT.GetBean(this.spaceDao)
+	if b, ok := b.(*SpaceDao); ok {
+		this.spaceDao = b
 	}
 
 	b = core.CONTEXT.GetBean(this.shareService)
@@ -224,8 +230,9 @@ func (this *MatterController) CreateDirectory(writer http.ResponseWriter, reques
 	name := request.FormValue("name")
 
 	user := this.checkUser(request)
+	space := this.spaceDao.CheckByUuid(user.SpaceUuid)
 
-	var dirMatter = this.matterDao.CheckWithRootByUuid(puuid, user)
+	var dirMatter = this.matterDao.CheckWithRootByUuid(puuid, user, space)
 
 	matter := this.matterService.AtomicCreateDirectory(request, dirMatter, name, user)
 	return this.Success(matter)
@@ -243,6 +250,7 @@ func (this *MatterController) Upload(writer http.ResponseWriter, request *http.R
 	}()
 
 	user := this.checkUser(request)
+	space := this.spaceDao.CheckByUuid(user.SpaceUuid)
 
 	privacy := privacyStr == TRUE
 
@@ -260,10 +268,10 @@ func (this *MatterController) Upload(writer http.ResponseWriter, request *http.R
 		fileName = fileName[pos+1:]
 	}
 
-	dirMatter := this.matterDao.CheckWithRootByUuid(puuid, user)
+	dirMatter := this.matterDao.CheckWithRootByUuid(puuid, user, space)
 
 	//support upload simultaneously
-	matter := this.matterService.Upload(request, file, user, dirMatter, fileName, privacy)
+	matter := this.matterService.Upload(request, file, user, space, dirMatter, fileName, privacy)
 
 	return this.Success(matter)
 }
@@ -276,8 +284,8 @@ func (this *MatterController) Crawl(writer http.ResponseWriter, request *http.Re
 	filename := request.FormValue("filename")
 
 	user := this.checkUser(request)
-
-	dirMatter := this.matterService.CreateDirectories(request, user, destPath)
+	space := this.spaceDao.CheckByUuid(user.SpaceUuid)
+	dirMatter := this.matterService.CreateDirectories(request, user, space, destPath)
 
 	if url == "" || (!strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://")) {
 		panic(" url must start with  http:// or https://")
@@ -287,7 +295,7 @@ func (this *MatterController) Crawl(writer http.ResponseWriter, request *http.Re
 		panic("filename cannot be null")
 	}
 
-	matter := this.matterService.AtomicCrawl(request, url, filename, user, dirMatter, true)
+	matter := this.matterService.AtomicCrawl(request, url, filename, user, space, dirMatter, true)
 
 	return this.Success(matter)
 }
@@ -303,11 +311,12 @@ func (this *MatterController) SoftDelete(writer http.ResponseWriter, request *ht
 	matter := this.matterDao.CheckByUuid(uuid)
 
 	user := this.checkUser(request)
+	space := this.spaceDao.CheckByUuid(user.SpaceUuid)
 	if matter.UserUuid != user.Uuid {
 		panic(result.UNAUTHORIZED)
 	}
 
-	this.matterService.AtomicSoftDelete(request, matter, user)
+	this.matterService.AtomicSoftDelete(request, matter, user, space)
 
 	return this.Success("OK")
 }
@@ -319,6 +328,7 @@ func (this *MatterController) SoftDeleteBatch(writer http.ResponseWriter, reques
 		panic(result.BadRequest("uuids cannot be null"))
 	}
 	user := this.checkUser(request)
+	space := this.spaceDao.CheckByUuid(user.SpaceUuid)
 
 	uuidArray := strings.Split(uuids, ",")
 
@@ -340,7 +350,7 @@ func (this *MatterController) SoftDeleteBatch(writer http.ResponseWriter, reques
 	}
 
 	for _, matter := range matters {
-		this.matterService.AtomicSoftDelete(request, matter, user)
+		this.matterService.AtomicSoftDelete(request, matter, user, space)
 	}
 
 	return this.Success("OK")
@@ -408,11 +418,12 @@ func (this *MatterController) Delete(writer http.ResponseWriter, request *http.R
 	matter := this.matterDao.CheckByUuid(uuid)
 
 	user := this.checkUser(request)
+	space := this.spaceDao.CheckByUuid(user.SpaceUuid)
 	if matter.UserUuid != user.Uuid {
 		panic(result.UNAUTHORIZED)
 	}
 
-	this.matterService.AtomicDelete(request, matter, user)
+	this.matterService.AtomicDelete(request, matter, user, space)
 
 	return this.Success("OK")
 }
@@ -426,6 +437,7 @@ func (this *MatterController) DeleteBatch(writer http.ResponseWriter, request *h
 
 	uuidArray := strings.Split(uuids, ",")
 	user := this.checkUser(request)
+	space := this.spaceDao.CheckByUuid(user.SpaceUuid)
 	matters := make([]*Matter, 0)
 	for _, uuid := range uuidArray {
 
@@ -445,7 +457,7 @@ func (this *MatterController) DeleteBatch(writer http.ResponseWriter, request *h
 
 	for _, matter := range matters {
 
-		this.matterService.AtomicDelete(request, matter, user)
+		this.matterService.AtomicDelete(request, matter, user, space)
 	}
 
 	return this.Success("OK")
@@ -465,14 +477,14 @@ func (this *MatterController) Rename(writer http.ResponseWriter, request *http.R
 	name := request.FormValue("name")
 
 	user := this.checkUser(request)
-
+	space := this.spaceDao.CheckByUuid(user.SpaceUuid)
 	matter := this.matterDao.CheckByUuid(uuid)
 
 	if matter.UserUuid != user.Uuid {
 		panic(result.UNAUTHORIZED)
 	}
 
-	this.matterService.AtomicRename(request, matter, name, false, user)
+	this.matterService.AtomicRename(request, matter, name, false, user, space)
 
 	return this.Success(matter)
 }
@@ -519,8 +531,8 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 	}
 
 	user := this.checkUser(request)
-
-	var destMatter = this.matterDao.CheckWithRootByUuid(destUuid, user)
+	space := this.spaceDao.CheckByUuid(user.SpaceUuid)
+	var destMatter = this.matterDao.CheckWithRootByUuid(destUuid, user, space)
 	if !destMatter.Dir {
 		panic(result.BadRequest("destination is not a directory"))
 	}
@@ -559,7 +571,7 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 		srcMatters = append(srcMatters, srcMatter)
 	}
 
-	this.matterService.AtomicMoveBatch(request, srcMatters, destMatter, user)
+	this.matterService.AtomicMoveBatch(request, srcMatters, destMatter, user, space)
 
 	return this.Success(nil)
 }
@@ -581,8 +593,9 @@ func (this *MatterController) Mirror(writer http.ResponseWriter, request *http.R
 	}
 
 	user := this.userDao.checkUser(request)
+	space := this.spaceDao.CheckByUuid(user.SpaceUuid)
 
-	this.matterService.AtomicMirror(request, srcPath, destPath, overwrite, user)
+	this.matterService.AtomicMirror(request, srcPath, destPath, overwrite, user, space)
 
 	return this.Success(nil)
 

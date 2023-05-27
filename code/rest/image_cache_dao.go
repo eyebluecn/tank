@@ -17,7 +17,7 @@ type ImageCacheDao struct {
 	BaseDao
 }
 
-//find by uuid. if not found return nil.
+// find by uuid. if not found return nil.
 func (this *ImageCacheDao) FindByUuid(uuid string) *ImageCache {
 	var entity = &ImageCache{}
 	db := core.CONTEXT.GetDB().Where("uuid = ?", uuid).First(entity)
@@ -31,7 +31,7 @@ func (this *ImageCacheDao) FindByUuid(uuid string) *ImageCache {
 	return entity
 }
 
-//find by uuid. if not found panic NotFound error
+// find by uuid. if not found panic NotFound error
 func (this *ImageCacheDao) CheckByUuid(uuid string) *ImageCache {
 	entity := this.FindByUuid(uuid)
 	if entity == nil {
@@ -137,7 +137,7 @@ func (this *ImageCacheDao) Save(imageCache *ImageCache) *ImageCache {
 
 func (this *ImageCacheDao) deleteFileAndDir(imageCache *ImageCache) {
 
-	filePath := GetUserCacheRootDir(imageCache.Username) + imageCache.Path
+	filePath := GetSpaceCacheRootDir(imageCache.Username) + imageCache.Path
 
 	dirPath := filepath.Dir(filePath)
 
@@ -152,7 +152,7 @@ func (this *ImageCacheDao) deleteFileAndDir(imageCache *ImageCache) {
 
 }
 
-//delete a file from db and disk.
+// delete a file from db and disk.
 func (this *ImageCacheDao) Delete(imageCache *ImageCache) {
 
 	db := core.CONTEXT.GetDB().Delete(&imageCache)
@@ -162,7 +162,7 @@ func (this *ImageCacheDao) Delete(imageCache *ImageCache) {
 
 }
 
-//delete all the cache of a matter.
+// delete all the cache of a matter.
 func (this *ImageCacheDao) DeleteByMatterUuid(matterUuid string) {
 
 	var wp = &builder.WherePair{}
@@ -208,7 +208,7 @@ func (this *ImageCacheDao) SizeBetweenTime(startTime time.Time, endTime time.Tim
 	return size
 }
 
-//System cleanup.
+// System cleanup.
 func (this *ImageCacheDao) Cleanup() {
 	this.logger.Info("[ImageCacheDao]clean up. Delete all ImageCache ")
 	db := core.CONTEXT.GetDB().Where("uuid is not null").Delete(ImageCache{})

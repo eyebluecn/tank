@@ -56,7 +56,7 @@ func (this *MatterDao) CheckByUuid(uuid string) *Matter {
 }
 
 // find by uuid. if uuid=root, then return the Root Matter
-func (this *MatterDao) CheckWithRootByUuid(uuid string, user *User) *Matter {
+func (this *MatterDao) CheckWithRootByUuid(uuid string, user *User, space *Space) *Matter {
 
 	if uuid == "" {
 		panic(result.BadRequest("uuid cannot be null."))
@@ -67,7 +67,7 @@ func (this *MatterDao) CheckWithRootByUuid(uuid string, user *User) *Matter {
 		if user == nil {
 			panic(result.BadRequest("user cannot be null."))
 		}
-		matter = NewRootMatter(user)
+		matter = NewRootMatter(user, space)
 	} else {
 		matter = this.CheckByUuid(uuid)
 	}
@@ -76,7 +76,7 @@ func (this *MatterDao) CheckWithRootByUuid(uuid string, user *User) *Matter {
 }
 
 // find by path. if path=/, then return the Root Matter
-func (this *MatterDao) CheckWithRootByPath(path string, user *User) *Matter {
+func (this *MatterDao) CheckWithRootByPath(path string, user *User, space *Space) *Matter {
 
 	var matter *Matter
 
@@ -85,7 +85,7 @@ func (this *MatterDao) CheckWithRootByPath(path string, user *User) *Matter {
 	}
 
 	if path == "" || path == "/" {
-		matter = NewRootMatter(user)
+		matter = NewRootMatter(user, space)
 	} else {
 		matter = this.checkByUserUuidAndPath(user.Uuid, path)
 	}
@@ -94,7 +94,7 @@ func (this *MatterDao) CheckWithRootByPath(path string, user *User) *Matter {
 }
 
 // find by path. if path=/, then return the Root Matter
-func (this *MatterDao) FindWithRootByPath(path string, user *User) *Matter {
+func (this *MatterDao) FindWithRootByPath(path string, user *User, space *Space) *Matter {
 
 	var matter *Matter
 
@@ -103,7 +103,7 @@ func (this *MatterDao) FindWithRootByPath(path string, user *User) *Matter {
 	}
 
 	if path == "" || path == "/" {
-		matter = NewRootMatter(user)
+		matter = NewRootMatter(user, space)
 	} else {
 		matter = this.findByUserUuidAndPath(user.Uuid, path)
 	}
@@ -158,6 +158,36 @@ func (this *MatterDao) CountByUserUuidAndPuuidAndDirAndName(userUuid string, puu
 
 	if userUuid != "" {
 		wp = wp.And(&builder.WherePair{Query: "user_uuid = ?", Args: []interface{}{userUuid}})
+	}
+
+	if name != "" {
+		wp = wp.And(&builder.WherePair{Query: "name = ?", Args: []interface{}{name}})
+	}
+
+	wp = wp.And(&builder.WherePair{Query: "dir = ?", Args: []interface{}{dir}})
+
+	db := core.CONTEXT.GetDB().
+		Model(&matter).
+		Where(wp.Query, wp.Args...).
+		Count(&count)
+	this.PanicError(db.Error)
+
+	return int(count)
+}
+
+func (this *MatterDao) CountBySpaceUuidAndPuuidAndDirAndName(spaceUuid string, puuid string, dir bool, name string) int {
+
+	var matter Matter
+	var count int64
+
+	var wp = &builder.WherePair{}
+
+	if puuid != "" {
+		wp = wp.And(&builder.WherePair{Query: "puuid = ?", Args: []interface{}{puuid}})
+	}
+
+	if spaceUuid != "" {
+		wp = wp.And(&builder.WherePair{Query: "space_uuid = ?", Args: []interface{}{spaceUuid}})
 	}
 
 	if name != "" {

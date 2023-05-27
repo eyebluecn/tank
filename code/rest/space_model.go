@@ -20,7 +20,7 @@ type Space struct {
 	UpdateTime     time.Time `json:"updateTime" gorm:"type:timestamp not null;default:CURRENT_TIMESTAMP"`
 	CreateTime     time.Time `json:"createTime" gorm:"type:timestamp not null;default:'2018-01-01 00:00:00'"`
 	Name           string    `json:"name" gorm:"type:varchar(100) not null;unique"`
-	UserUuid       string    `json:"userUuid" gorm:"type:char(36);unique"`
+	UserUuid       string    `json:"userUuid" gorm:"type:char(36)"`
 	SizeLimit      int64     `json:"sizeLimit" gorm:"type:bigint(20) not null;default:-1"`
 	TotalSizeLimit int64     `json:"totalSizeLimit" gorm:"type:bigint(20) not null;default:-1"`
 	TotalSize      int64     `json:"totalSize" gorm:"type:bigint(20) not null;default:0"`

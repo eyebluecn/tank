@@ -24,5 +24,5 @@ type ImageCache struct {
 
 // get the absolute path. path in db means relative path.
 func (this *ImageCache) AbsolutePath() string {
-	return GetUserCacheRootDir(this.Username) + this.Path
+	return GetSpaceCacheRootDir(this.Username) + this.Path
 }

@@ -51,7 +51,6 @@ var (
 	SpaceNameExist                 = &Item{English: `space's name "%s" exists`, Chinese: `空间名称"%s"已被占用，请使用其他名字`}
 	SpaceExclusive                 = &Item{English: `user can only own ONE space`, Chinese: `一个用户只能拥有一个私有空间`}
 	SpaceMemberExist               = &Item{English: `space member exists`, Chinese: `该用于已经是空间的成员`}
-	SpaceMemberRoleConflict        = &Item{English: `space member cannot contain user with role space.`, Chinese: `空间成员不能是空间角色的用户`}
 	PermissionDenied               = &Item{English: `permission denied.`, Chinese: `没有操作权限`}
 )
 

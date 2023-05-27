@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-//@Service
+// @Service
 type AlienService struct {
 	BaseBean
 	matterDao         *MatterDao
@@ -135,7 +135,7 @@ func (this *AlienService) PreviewOrDownload(
 			}
 
 			//download the cache image file.
-			this.matterService.DownloadFile(writer, request, GetUserCacheRootDir(imageCache.Username)+imageCache.Path, imageCache.Name, withContentDisposition)
+			this.matterService.DownloadFile(writer, request, GetSpaceCacheRootDir(imageCache.Username)+imageCache.Path, imageCache.Name, withContentDisposition)
 
 		} else {
 			this.matterService.DownloadFile(writer, request, matter.AbsolutePath(), matter.Name, withContentDisposition)

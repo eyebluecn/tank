@@ -15,6 +15,7 @@ type AlienController struct {
 	uploadTokenDao    *UploadTokenDao
 	downloadTokenDao  *DownloadTokenDao
 	matterDao         *MatterDao
+	spaceDao          *SpaceDao
 	matterService     *MatterService
 	imageCacheDao     *ImageCacheDao
 	imageCacheService *ImageCacheService
@@ -38,6 +39,11 @@ func (this *AlienController) Init() {
 	b = core.CONTEXT.GetBean(this.matterDao)
 	if c, ok := b.(*MatterDao); ok {
 		this.matterDao = c
+	}
+
+	b = core.CONTEXT.GetBean(this.spaceDao)
+	if c, ok := b.(*SpaceDao); ok {
+		this.spaceDao = c
 	}
 
 	b = core.CONTEXT.GetBean(this.matterService)
@@ -80,7 +86,7 @@ func (this *AlienController) RegisterRoutes() map[string]func(writer http.Respon
 	return routeMap
 }
 
-//handle some special routes, eg. params in the url.
+// handle some special routes, eg. params in the url.
 func (this *AlienController) HandleRoutes(writer http.ResponseWriter, request *http.Request) (func(writer http.ResponseWriter, request *http.Request), bool) {
 
 	path := request.URL.Path
@@ -108,7 +114,7 @@ func (this *AlienController) HandleRoutes(writer http.ResponseWriter, request *h
 	return nil, false
 }
 
-//fetch a upload token for guest. Guest can upload file with this token.
+// fetch a upload token for guest. Guest can upload file with this token.
 func (this *AlienController) FetchUploadToken(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	filename := request.FormValue("filename")
@@ -151,7 +157,8 @@ func (this *AlienController) FetchUploadToken(writer http.ResponseWriter, reques
 	}
 
 	user := this.checkUser(request)
-	dirMatter := this.matterService.CreateDirectories(request, user, dirPath)
+	space := this.spaceDao.CheckByUuid(user.SpaceUuid)
+	dirMatter := this.matterService.CreateDirectories(request, user, space, dirPath)
 
 	uploadToken := &UploadToken{
 		UserUuid:   user.Uuid,
@@ -170,7 +177,7 @@ func (this *AlienController) FetchUploadToken(writer http.ResponseWriter, reques
 
 }
 
-//user confirm a file whether uploaded successfully.
+// user confirm a file whether uploaded successfully.
 func (this *AlienController) Confirm(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	matterUuid := request.FormValue("matterUuid")
@@ -188,7 +195,7 @@ func (this *AlienController) Confirm(writer http.ResponseWriter, request *http.R
 	return this.Success(matter)
 }
 
-//a guest upload a file with a upload token.
+// a guest upload a file with a upload token.
 func (this *AlienController) Upload(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 	//allow cors.
 	this.allowCORS(writer)
@@ -216,6 +223,7 @@ func (this *AlienController) Upload(writer http.ResponseWriter, request *http.Re
 	}
 
 	user := this.userDao.CheckByUuid(uploadToken.UserUuid)
+	space := this.spaceDao.CheckByUuid(user.SpaceUuid)
 
 	err = request.ParseMultipartForm(32 << 20)
 	this.PanicError(err)
@@ -228,9 +236,9 @@ func (this *AlienController) Upload(writer http.ResponseWriter, request *http.Re
 		panic(result.BadRequest("file size doesn't the one in uploadToken"))
 	}
 
-	dirMatter := this.matterDao.CheckWithRootByUuid(uploadToken.FolderUuid, user)
+	dirMatter := this.matterDao.CheckWithRootByUuid(uploadToken.FolderUuid, user, space)
 
-	matter := this.matterService.Upload(request, file, user, dirMatter, uploadToken.Filename, uploadToken.Privacy)
+	matter := this.matterService.Upload(request, file, user, space, dirMatter, uploadToken.Filename, uploadToken.Privacy)
 
 	//expire the upload token.
 	uploadToken.ExpireTime = time.Now()
@@ -239,7 +247,7 @@ func (this *AlienController) Upload(writer http.ResponseWriter, request *http.Re
 	return this.Success(matter)
 }
 
-//crawl a url with uploadToken. guest can visit this method.
+// crawl a url with uploadToken. guest can visit this method.
 func (this *AlienController) CrawlToken(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	//allow cors.
@@ -263,10 +271,11 @@ func (this *AlienController) CrawlToken(writer http.ResponseWriter, request *htt
 	}
 
 	user := this.userDao.CheckByUuid(uploadToken.UserUuid)
+	space := this.spaceDao.CheckByUuid(user.SpaceUuid)
 
-	dirMatter := this.matterDao.CheckWithRootByUuid(uploadToken.FolderUuid, user)
+	dirMatter := this.matterDao.CheckWithRootByUuid(uploadToken.FolderUuid, user, space)
 
-	matter := this.matterService.AtomicCrawl(request, url, uploadToken.Filename, user, dirMatter, uploadToken.Privacy)
+	matter := this.matterService.AtomicCrawl(request, url, uploadToken.Filename, user, space, dirMatter, uploadToken.Privacy)
 
 	//expire the upload token.
 	uploadToken.ExpireTime = time.Now()
@@ -275,7 +284,7 @@ func (this *AlienController) CrawlToken(writer http.ResponseWriter, request *htt
 	return this.Success(matter)
 }
 
-//crawl a url directly. only user can visit this method.
+// crawl a url directly. only user can visit this method.
 func (this *AlienController) CrawlDirect(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	filename := request.FormValue("filename")
@@ -291,14 +300,15 @@ func (this *AlienController) CrawlDirect(writer http.ResponseWriter, request *ht
 	}
 
 	user := this.checkUser(request)
-	dirMatter := this.matterService.CreateDirectories(request, user, dirPath)
+	space := this.spaceDao.CheckByUuid(user.SpaceUuid)
+	dirMatter := this.matterService.CreateDirectories(request, user, space, dirPath)
 
-	matter := this.matterService.AtomicCrawl(request, url, filename, user, dirMatter, privacy)
+	matter := this.matterService.AtomicCrawl(request, url, filename, user, space, dirMatter, privacy)
 
 	return this.Success(matter)
 }
 
-//fetch a download token for guest. Guest can download file with this token.
+// fetch a download token for guest. Guest can download file with this token.
 func (this *AlienController) FetchDownloadToken(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	matterUuid := request.FormValue("matterUuid")
@@ -338,13 +348,13 @@ func (this *AlienController) FetchDownloadToken(writer http.ResponseWriter, requ
 
 }
 
-//preview a file.
+// preview a file.
 func (this *AlienController) Preview(writer http.ResponseWriter, request *http.Request, uuid string, filename string) {
 
 	this.alienService.PreviewOrDownload(writer, request, uuid, filename, false)
 }
 
-//download a file.
+// download a file.
 func (this *AlienController) Download(writer http.ResponseWriter, request *http.Request, uuid string, filename string) {
 
 	this.alienService.PreviewOrDownload(writer, request, uuid, filename, true)

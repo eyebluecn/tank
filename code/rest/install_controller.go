@@ -370,9 +370,20 @@ func (this *InstallController) CreateAdmin(writer http.ResponseWriter, request *
 		panic(result.BadRequestI18n(request, i18n.UsernameExist, adminUsername))
 	}
 
-	user := &User{}
+	space := &Space{}
 	timeUUID, _ := uuid.NewV4()
-	user.Uuid = string(timeUUID.String())
+	space.Uuid = timeUUID.String()
+	space.CreateTime = time.Now()
+	space.UpdateTime = time.Now()
+	space.UserUuid = ""
+	space.SizeLimit = -1
+	space.Type = SPACE_TYPE_PRIVATE
+	db3 := db.Create(space)
+	this.PanicError(db3.Error)
+
+	user := &User{}
+	timeUUID, _ = uuid.NewV4()
+	user.Uuid = timeUUID.String()
 	user.CreateTime = time.Now()
 	user.UpdateTime = time.Now()
 	user.LastTime = time.Now()
@@ -380,11 +391,15 @@ func (this *InstallController) CreateAdmin(writer http.ResponseWriter, request *
 	user.Role = USER_ROLE_ADMINISTRATOR
 	user.Username = adminUsername
 	user.Password = util.GetBcrypt(adminPassword)
-	user.SizeLimit = -1
+	user.SpaceUuid = space.Uuid
 	user.Status = USER_STATUS_OK
 
-	db3 := db.Create(user)
-	this.PanicError(db3.Error)
+	db4 := db.Create(user)
+	this.PanicError(db4.Error)
+
+	space.UserUuid = user.Uuid
+	db5 := db.Save(space)
+	this.PanicError(db5.Error)
 
 	return this.Success("OK")
 

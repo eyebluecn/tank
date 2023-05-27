@@ -16,6 +16,8 @@ type UserController struct {
 	BaseController
 	preferenceService *PreferenceService
 	userService       *UserService
+	spaceDao          *SpaceDao
+	spaceService      *SpaceService
 	matterService     *MatterService
 }
 
@@ -32,6 +34,14 @@ func (this *UserController) Init() {
 		this.userService = b
 	}
 
+	b = core.CONTEXT.GetBean(this.spaceDao)
+	if b, ok := b.(*SpaceDao); ok {
+		this.spaceDao = b
+	}
+	b = core.CONTEXT.GetBean(this.spaceService)
+	if b, ok := b.(*SpaceService); ok {
+		this.spaceService = b
+	}
 	b = core.CONTEXT.GetBean(this.matterService)
 	if b, ok := b.(*MatterService); ok {
 		this.matterService = b
@@ -169,15 +179,7 @@ func (this *UserController) Register(writer http.ResponseWriter, request *http.R
 		panic(result.BadRequestI18n(request, i18n.UsernameExist, username))
 	}
 
-	user := &User{
-		Role:           USER_ROLE_USER,
-		Username:       username,
-		Password:       util.GetBcrypt(password),
-		TotalSizeLimit: preference.DefaultTotalSizeLimit,
-		Status:         USER_STATUS_OK,
-	}
-
-	user = this.userDao.Create(user)
+	user := this.userService.CreateUser(request, username, -1, preference.DefaultTotalSizeLimit, password, USER_ROLE_USER)
 
 	//auto login
 	this.innerLogin(writer, request, user)
@@ -190,31 +192,9 @@ func (this *UserController) Create(writer http.ResponseWriter, request *http.Req
 	username := request.FormValue("username")
 	password := request.FormValue("password")
 	role := request.FormValue("role")
-	sizeLimitStr := request.FormValue("sizeLimit")
-	totalSizeLimitStr := request.FormValue("totalSizeLimit")
 
-	//only admin can edit user's sizeLimit
-	var sizeLimit int64 = 0
-	if sizeLimitStr == "" {
-		panic("user's limit size is required")
-	} else {
-		intSizeLimit, err := strconv.Atoi(sizeLimitStr)
-		if err != nil {
-			this.PanicError(err)
-		}
-		sizeLimit = int64(intSizeLimit)
-	}
-
-	var totalSizeLimit int64 = 0
-	if totalSizeLimitStr == "" {
-		panic("user's total limit size is required")
-	} else {
-		intTotalSizeLimit, err := strconv.Atoi(totalSizeLimitStr)
-		if err != nil {
-			this.PanicError(err)
-		}
-		totalSizeLimit = int64(intTotalSizeLimit)
-	}
+	sizeLimit := util.ExtractRequestInt64(request, "sizeLimit", "space's limit size is required")
+	totalSizeLimit := util.ExtractRequestInt64(request, "totalSizeLimit", "space's total limit size is required")
 
 	//validation work.
 	if m, _ := regexp.MatchString(USERNAME_PATTERN, username); !m {
@@ -234,7 +214,7 @@ func (this *UserController) Create(writer http.ResponseWriter, request *http.Req
 		panic(result.BadRequestI18n(request, i18n.UserRoleError))
 	}
 
-	user := this.userService.CreateUser(request, username, password, role, sizeLimit, totalSizeLimit)
+	user := this.userService.CreateUser(request, username, sizeLimit, totalSizeLimit, password, role)
 
 	return this.Success(user)
 }
@@ -243,8 +223,6 @@ func (this *UserController) Edit(writer http.ResponseWriter, request *http.Reque
 
 	uuid := request.FormValue("uuid")
 	avatarUrl := request.FormValue("avatarUrl")
-	sizeLimitStr := request.FormValue("sizeLimit")
-	totalSizeLimitStr := request.FormValue("totalSizeLimit")
 	role := request.FormValue("role")
 
 	user := this.checkUser(request)
@@ -254,29 +232,6 @@ func (this *UserController) Edit(writer http.ResponseWriter, request *http.Reque
 
 	if user.Role == USER_ROLE_ADMINISTRATOR {
 		//only admin can edit user's sizeLimit
-		var sizeLimit int64 = 0
-		if sizeLimitStr == "" {
-			panic("user's limit size is required")
-		} else {
-			intSizeLimit, err := strconv.Atoi(sizeLimitStr)
-			if err != nil {
-				this.PanicError(err)
-			}
-			sizeLimit = int64(intSizeLimit)
-		}
-		currentUser.SizeLimit = sizeLimit
-
-		var totalSizeLimit int64 = 0
-		if totalSizeLimitStr == "" {
-			panic("user's total limit size is required")
-		} else {
-			intTotalSizeLimit, err := strconv.Atoi(totalSizeLimitStr)
-			if err != nil {
-				this.PanicError(err)
-			}
-			totalSizeLimit = int64(intTotalSizeLimit)
-		}
-		currentUser.TotalSizeLimit = totalSizeLimit
 
 		if role == USER_ROLE_USER || role == USER_ROLE_ADMINISTRATOR {
 			currentUser.Role = role
@@ -437,8 +392,9 @@ func (this *UserController) Scan(writer http.ResponseWriter, request *http.Reque
 
 	uuid := request.FormValue("uuid")
 	currentUser := this.userDao.CheckByUuid(uuid)
-	this.matterService.DeleteByPhysics(request, currentUser)
-	this.matterService.ScanPhysics(request, currentUser)
+	space := this.spaceDao.CheckByUuid(currentUser.SpaceUuid)
+	this.matterService.DeleteByPhysics(request, currentUser, space)
+	this.matterService.ScanPhysics(request, currentUser, space)
 
 	return this.Success("OK")
 }

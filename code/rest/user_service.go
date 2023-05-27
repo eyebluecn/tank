@@ -17,6 +17,8 @@ type UserService struct {
 	userDao    *UserDao
 	sessionDao *SessionDao
 
+	spaceService *SpaceService
+
 	//file lock
 	locker *cache.Table
 
@@ -41,6 +43,11 @@ func (this *UserService) Init() {
 	b = core.CONTEXT.GetBean(this.sessionDao)
 	if b, ok := b.(*SessionDao); ok {
 		this.sessionDao = b
+	}
+
+	b = core.CONTEXT.GetBean(this.spaceService)
+	if b, ok := b.(*SpaceService); ok {
+		this.spaceService = b
 	}
 
 	b = core.CONTEXT.GetBean(this.matterDao)
@@ -234,18 +241,25 @@ func (this *UserService) RemoveCacheUserByUuid(userUuid string) {
 }
 
 // create user
-func (this *UserService) CreateUser(request *http.Request, username string, password string, role string, sizeLimit int64, totalSizeLimit int64) *User {
+func (this *UserService) CreateUser(request *http.Request, username string, sizeLimit int64, totalSizeLimit int64, password string, role string) *User {
 
 	user := &User{
-		Username:       username,
-		Password:       util.GetBcrypt(password),
-		Role:           role,
-		SizeLimit:      sizeLimit,
-		TotalSizeLimit: totalSizeLimit,
-		Status:         USER_STATUS_OK,
+		Username: username,
+		Password: util.GetBcrypt(password),
+		Role:     role,
+		Status:   USER_STATUS_OK,
 	}
 
 	user = this.userDao.Create(user)
+
+	//create space.
+	space := this.spaceService.CreateSpace(request, username, user, sizeLimit, totalSizeLimit, SPACE_TYPE_PRIVATE)
+
+	//update user's space.
+	user.SpaceUuid = space.Uuid
+	this.userDao.Save(user)
+
+	user.Space = space
 
 	return user
 

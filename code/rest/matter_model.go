@@ -36,7 +36,8 @@ type Matter struct {
 	CreateTime time.Time `json:"createTime" gorm:"type:timestamp not null;default:'2018-01-01 00:00:00'"`
 	Puuid      string    `json:"puuid" gorm:"type:char(36);index:idx_matter_puuid"` //index should unique globally.
 	UserUuid   string    `json:"userUuid" gorm:"type:char(36);index:idx_matter_uu"`
-	Username   string    `json:"username" gorm:"type:varchar(45) not null"`
+	//TODO: check field usage.
+	SpaceName  string    `json:"space_name" gorm:"type:varchar(45) not null"`
 	Dir        bool      `json:"dir" gorm:"type:tinyint(1) not null;default:0"`
 	Name       string    `json:"name" gorm:"type:varchar(255) not null"`
 	Md5        string    `json:"md5" gorm:"type:varchar(45)"`
@@ -55,7 +56,7 @@ type Matter struct {
 
 // get matter's absolute path. the Path property is relative path in db.
 func (this *Matter) AbsolutePath() string {
-	return GetUserMatterRootDir(this.Username) + this.Path
+	return GetSpaceMatterRootDir(this.SpaceName) + this.Path
 }
 
 func (this *Matter) MimeType() string {
@@ -63,11 +64,11 @@ func (this *Matter) MimeType() string {
 }
 
 // Create a root matter. It's convenient for copy and move
-func NewRootMatter(user *User) *Matter {
+func NewRootMatter(user *User, space *Space) *Matter {
 	matter := &Matter{}
 	matter.Uuid = MATTER_ROOT
 	matter.UserUuid = user.Uuid
-	matter.Username = user.Username
+	matter.SpaceName = space.Name
 	matter.Dir = true
 	matter.Path = ""
 	matter.CreateTime = user.CreateTime
@@ -86,25 +87,25 @@ func GetUserSpaceRootDir(username string) (rootDirPath string) {
 }
 
 // get user's root absolute path
-func GetUserMatterRootDir(username string) (rootDirPath string) {
+func GetSpaceMatterRootDir(spaceName string) (rootDirPath string) {
 
-	rootDirPath = fmt.Sprintf("%s/%s/%s", core.CONFIG.MatterPath(), username, MATTER_ROOT)
+	rootDirPath = fmt.Sprintf("%s/%s/%s", core.CONFIG.MatterPath(), spaceName, MATTER_ROOT)
 
 	return rootDirPath
 }
 
 // get user's cache absolute path
-func GetUserCacheRootDir(username string) (rootDirPath string) {
+func GetSpaceCacheRootDir(spaceName string) (rootDirPath string) {
 
-	rootDirPath = fmt.Sprintf("%s/%s/%s", core.CONFIG.MatterPath(), username, MATTER_CACHE)
+	rootDirPath = fmt.Sprintf("%s/%s/%s", core.CONFIG.MatterPath(), spaceName, MATTER_CACHE)
 
 	return rootDirPath
 }
 
 // get user's zip absolute path
-func GetUserZipRootDir(username string) (rootDirPath string) {
+func GetSpaceZipRootDir(spaceName string) (rootDirPath string) {
 
-	rootDirPath = fmt.Sprintf("%s/%s/%s", core.CONFIG.MatterPath(), username, MATTER_ZIP)
+	rootDirPath = fmt.Sprintf("%s/%s/%s", core.CONFIG.MatterPath(), spaceName, MATTER_ZIP)
 
 	return rootDirPath
 }
