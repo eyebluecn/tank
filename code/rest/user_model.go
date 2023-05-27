@@ -7,8 +7,6 @@ import (
 const (
 	//guest
 	USER_ROLE_GUEST = "GUEST"
-	//空间
-	USER_ROLE_SPACE = "SPACE"
 	//normal user
 	USER_ROLE_USER = "USER"
 	//administrator

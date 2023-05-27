@@ -46,11 +46,11 @@ func (this *SpaceMemberService) Detail(uuid string) *SpaceMember {
 }
 
 // create space
-func (this *SpaceMemberService) CreateMember(space *Space, memeber *User, spaceRole string) *SpaceMember {
+func (this *SpaceMemberService) CreateMember(space *Space, user *User, spaceRole string) *SpaceMember {
 
 	spaceMember := &SpaceMember{
 		SpaceUuid: space.Uuid,
-		UserUuid:  memeber.Uuid,
+		UserUuid:  user.Uuid,
 		Role:      spaceRole,
 	}
 
