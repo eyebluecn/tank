@@ -2,6 +2,10 @@ package rest
 
 import (
 	"github.com/eyebluecn/tank/code/core"
+	"github.com/eyebluecn/tank/code/tool/i18n"
+	"github.com/eyebluecn/tank/code/tool/result"
+	"net/http"
+	"regexp"
 )
 
 // @Service
@@ -46,10 +50,47 @@ func (this *SpaceService) Detail(uuid string) *Space {
 }
 
 // create space
-func (this *SpaceService) CreateSpace(userUuid string) *Space {
+func (this *SpaceService) CreateSpace(
+	request *http.Request,
+	name string,
+	user *User,
+	sizeLimit int64,
+	totalSizeLimit int64,
+	spaceType string) *Space {
+
+	userUuid := ""
+	//validation work.
+	if m, _ := regexp.MatchString(USERNAME_PATTERN, name); !m {
+		panic(result.BadRequestI18n(request, i18n.SpaceNameError))
+	}
+
+	if spaceType == SPACE_TYPE_PRIVATE {
+		if user == nil {
+			panic("private space requires user.")
+		}
+
+		userUuid = user.Uuid
+		if this.spaceDao.CountByUserUuid(userUuid) > 0 {
+			panic(result.BadRequestI18n(request, i18n.SpaceExclusive, name))
+		}
+
+	} else if spaceType == SPACE_TYPE_SHARED {
+
+	} else {
+		panic("Not supported spaceType:" + spaceType)
+	}
+
+	if this.spaceDao.CountByName(name) > 0 {
+		panic(result.BadRequestI18n(request, i18n.SpaceNameExist, name))
+	}
 
 	space := &Space{
-		UserUuid: userUuid,
+		Name:           name,
+		UserUuid:       userUuid,
+		SizeLimit:      sizeLimit,
+		TotalSizeLimit: totalSizeLimit,
+		TotalSize:      0,
+		Type:           spaceType,
 	}
 
 	space = this.spaceDao.Create(space)

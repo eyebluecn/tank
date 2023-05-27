@@ -38,20 +38,40 @@ func (this *SpaceDao) CheckByUuid(uuid string) *Space {
 	return entity
 }
 
-// TODO:
-func (this *SpaceDao) SelfPage(page int, pageSize int, userUuid string, sortArray []builder.OrderPair) *Pager {
+func (this *SpaceDao) CountByName(name string) int {
+	var count int64
+	db := core.CONTEXT.GetDB().
+		Model(&Space{}).
+		Where("name = ?", name).
+		Count(&count)
+	this.PanicError(db.Error)
+	return int(count)
+}
 
-	countSqlTemplate := fmt.Sprintf("SELECT COUNT(*) FROM `%sspace` WHERE uuid IN (SELECT space_uuid FROM `%sspace_member` WHERE user_uuid = ?)", core.TABLE_PREFIX, core.TABLE_PREFIX)
+func (this *SpaceDao) CountByUserUuid(userUuid string) int {
+	var count int64
+	db := core.CONTEXT.GetDB().
+		Model(&Space{}).
+		Where("user_uuid = ?", userUuid).
+		Count(&count)
+	this.PanicError(db.Error)
+	return int(count)
+}
+
+// TODO:
+func (this *SpaceDao) SelfPage(page int, pageSize int, userUuid string, spaceType string, sortArray []builder.OrderPair) *Pager {
+
+	countSqlTemplate := fmt.Sprintf("SELECT COUNT(*) FROM `%sspace` WHERE uuid IN (SELECT space_uuid FROM `%sspace_member` WHERE user_uuid = ?) AND type = ?", core.TABLE_PREFIX, core.TABLE_PREFIX)
 	var count int
-	core.CONTEXT.GetDB().Raw(countSqlTemplate, userUuid).Scan(&count)
+	core.CONTEXT.GetDB().Raw(countSqlTemplate, userUuid, spaceType).Scan(&count)
 
 	orderByString := this.GetSortString(sortArray)
 	if orderByString == "" {
 		orderByString = "uuid"
 	}
-	querySqlTemplate := fmt.Sprintf("SELECT * FROM `%sspace` WHERE uuid IN (SELECT space_uuid FROM `%sspace_member` WHERE user_uuid = ?) ORDER BY ? LIMIT ?,?", core.TABLE_PREFIX, core.TABLE_PREFIX)
+	querySqlTemplate := fmt.Sprintf("SELECT * FROM `%sspace` WHERE uuid IN (SELECT space_uuid FROM `%sspace_member` WHERE user_uuid = ?) AND type = ? ORDER BY ? LIMIT ?,?", core.TABLE_PREFIX, core.TABLE_PREFIX)
 	var spaces []*Space
-	core.CONTEXT.GetDB().Raw(querySqlTemplate, userUuid, orderByString, page*pageSize, pageSize).Scan(&spaces)
+	core.CONTEXT.GetDB().Raw(querySqlTemplate, userUuid, spaceType, orderByString, page*pageSize, pageSize).Scan(&spaces)
 
 	pager := NewPager(page, pageSize, count, spaces)
 
@@ -59,16 +79,16 @@ func (this *SpaceDao) SelfPage(page int, pageSize int, userUuid string, sortArra
 
 }
 
-func (this *SpaceDao) Page(page int, pageSize int, sortArray []builder.OrderPair) *Pager {
-	count, spaces := this.PlainPage(page, pageSize, sortArray)
+func (this *SpaceDao) Page(page int, pageSize int, spaceType string, sortArray []builder.OrderPair) *Pager {
+	count, spaces := this.PlainPage(page, pageSize, spaceType, sortArray)
 	pager := NewPager(page, pageSize, count, spaces)
 
 	return pager
 }
 
-func (this *SpaceDao) PlainPage(page int, pageSize int, sortArray []builder.OrderPair) (int, []*Space) {
+func (this *SpaceDao) PlainPage(page int, pageSize int, spaceType string, sortArray []builder.OrderPair) (int, []*Space) {
 
-	var wp = &builder.WherePair{}
+	var wp = &builder.WherePair{Query: "type = ?", Args: []interface{}{spaceType}}
 
 	var conditionDB *gorm.DB
 	conditionDB = core.CONTEXT.GetDB().Model(&Space{}).Where(wp.Query, wp.Args...)

@@ -4,6 +4,13 @@ import (
 	"time"
 )
 
+const (
+	//private space
+	SPACE_TYPE_PRIVATE = "PRIVATE"
+	//group shared space.
+	SPACE_TYPE_SHARED = "SHARED"
+)
+
 /**
  * shared space
  */
@@ -13,7 +20,7 @@ type Space struct {
 	UpdateTime     time.Time `json:"updateTime" gorm:"type:timestamp not null;default:CURRENT_TIMESTAMP"`
 	CreateTime     time.Time `json:"createTime" gorm:"type:timestamp not null;default:'2018-01-01 00:00:00'"`
 	Name           string    `json:"name" gorm:"type:varchar(100) not null;unique"`
-	UserUuid       string    `json:"userUuid" gorm:"type:char(36);index:idx_user_uuid"`
+	UserUuid       string    `json:"userUuid" gorm:"type:char(36);unique"`
 	SizeLimit      int64     `json:"sizeLimit" gorm:"type:bigint(20) not null;default:-1"`
 	TotalSizeLimit int64     `json:"totalSizeLimit" gorm:"type:bigint(20) not null;default:-1"`
 	TotalSize      int64     `json:"totalSize" gorm:"type:bigint(20) not null;default:0"`
