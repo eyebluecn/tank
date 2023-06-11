@@ -45,7 +45,7 @@
 
 当然你可以加入钉钉群（一群已满员）一起直接交流，在钉钉群中可以获取最新beta版本。
 
-![](./build/doc/img/dingding.jpg)
+![](./build/doc/img/dingding.jpeg)
 
 群号：44754005
 
