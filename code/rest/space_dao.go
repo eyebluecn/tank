@@ -62,6 +62,9 @@ func (this *SpaceDao) CountByUserUuid(userUuid string) int {
 func (this *SpaceDao) SelfPage(page int, pageSize int, userUuid string, spaceType string, sortArray []builder.OrderPair) *Pager {
 
 	countSqlTemplate := fmt.Sprintf("SELECT COUNT(*) FROM `%sspace` WHERE uuid IN (SELECT space_uuid FROM `%sspace_member` WHERE user_uuid = ?) AND type = ?", core.TABLE_PREFIX, core.TABLE_PREFIX)
+	if spaceType == SPACE_TYPE_PRIVATE {
+		countSqlTemplate = fmt.Sprintf("SELECT COUNT(*) FROM `%sspace` WHERE user_uuid = ? AND type = ?", core.TABLE_PREFIX)
+	}
 	var count int
 	core.CONTEXT.GetDB().Raw(countSqlTemplate, userUuid, spaceType).Scan(&count)
 
@@ -70,6 +73,9 @@ func (this *SpaceDao) SelfPage(page int, pageSize int, userUuid string, spaceTyp
 		orderByString = "uuid"
 	}
 	querySqlTemplate := fmt.Sprintf("SELECT * FROM `%sspace` WHERE uuid IN (SELECT space_uuid FROM `%sspace_member` WHERE user_uuid = ?) AND type = ? ORDER BY ? LIMIT ?,?", core.TABLE_PREFIX, core.TABLE_PREFIX)
+	if spaceType == SPACE_TYPE_PRIVATE {
+		querySqlTemplate = fmt.Sprintf("SELECT * FROM `%sspace` WHERE user_uuid = ? AND type = ? ORDER BY ? LIMIT ?,?", core.TABLE_PREFIX)
+	}
 	var spaces []*Space
 	core.CONTEXT.GetDB().Raw(querySqlTemplate, userUuid, spaceType, orderByString, page*pageSize, pageSize).Scan(&spaces)
 
