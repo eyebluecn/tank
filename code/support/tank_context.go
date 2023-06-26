@@ -81,7 +81,7 @@ func (this *TankContext) OpenDb() {
 		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
 		logger.Config{
 			SlowThreshold:             time.Second, // slow SQL 1s
-			LogLevel:                  logger.Info, // log level. open when debug.
+			LogLevel:                  logger.Warn, // log level. open when debug.
 			IgnoreRecordNotFoundError: true,        // ignore ErrRecordNotFound
 			Colorful:                  false,       // colorful print
 		},

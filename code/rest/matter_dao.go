@@ -242,6 +242,43 @@ func (this *MatterDao) FindByUserUuidAndPuuidAndDirAndName(userUuid string, puui
 	return matter
 }
 
+func (this *MatterDao) FindBySpaceNameAndPuuidAndDirAndName(spaceName string, puuid string, dir string, name string) *Matter {
+
+	var matter = &Matter{}
+
+	var wp = &builder.WherePair{}
+
+	if puuid != "" {
+		wp = wp.And(&builder.WherePair{Query: "puuid = ?", Args: []interface{}{puuid}})
+	}
+
+	if spaceName != "" {
+		wp = wp.And(&builder.WherePair{Query: "space_name = ?", Args: []interface{}{spaceName}})
+	}
+
+	if name != "" {
+		wp = wp.And(&builder.WherePair{Query: "name = ?", Args: []interface{}{name}})
+	}
+
+	if dir == TRUE {
+		wp = wp.And(&builder.WherePair{Query: "dir = ?", Args: []interface{}{true}})
+	} else if dir == FALSE {
+		wp = wp.And(&builder.WherePair{Query: "dir = ?", Args: []interface{}{false}})
+	}
+
+	db := core.CONTEXT.GetDB().Where(wp.Query, wp.Args...).First(matter)
+
+	if db.Error != nil {
+		if db.Error.Error() == result.DB_ERROR_NOT_FOUND {
+			return nil
+		} else {
+			this.PanicError(db.Error)
+		}
+	}
+
+	return matter
+}
+
 func (this *MatterDao) FindByPuuidAndUserUuid(puuid string, userUuid string, sortArray []builder.OrderPair) []*Matter {
 	return this.FindByPuuidAndUserUuidAndDeleted(puuid, userUuid, "", sortArray)
 }

@@ -33,6 +33,11 @@ func (this *SpaceController) Init() {
 		this.spaceMemberDao = b
 	}
 
+	b = core.CONTEXT.GetBean(this.spaceMemberService)
+	if b, ok := b.(*SpaceMemberService); ok {
+		this.spaceMemberService = b
+	}
+
 	b = core.CONTEXT.GetBean(this.matterDao)
 	if b, ok := b.(*MatterDao); ok {
 		this.matterDao = b

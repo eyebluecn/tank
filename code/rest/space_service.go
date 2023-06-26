@@ -112,7 +112,7 @@ func (this *SpaceService) CheckWritableByUuid(request *http.Request, user *User,
 		return space
 	}
 
-	manage := this.spaceMemberService.canManage(user, spaceUuid)
+	manage := this.spaceMemberService.canWrite(user, spaceUuid)
 	if !manage {
 		panic(result.BadRequestI18n(request, i18n.PermissionDenied))
 	}

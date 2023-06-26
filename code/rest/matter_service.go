@@ -613,7 +613,7 @@ func (this *MatterService) createDirectory(request *http.Request, dirMatter *Mat
 	}
 
 	//if exist. return.
-	matter := this.matterDao.FindByUserUuidAndPuuidAndDirAndName(user.Uuid, dirMatter.Uuid, TRUE, name)
+	matter := this.matterDao.FindBySpaceNameAndPuuidAndDirAndName(space.Name, dirMatter.Uuid, TRUE, name)
 	if matter != nil {
 		return matter
 	}
@@ -637,7 +637,7 @@ func (this *MatterService) createDirectory(request *http.Request, dirMatter *Mat
 		Puuid:     dirMatter.Uuid,
 		UserUuid:  user.Uuid,
 		SpaceUuid: space.Uuid,
-		SpaceName: user.Username,
+		SpaceName: space.Name,
 		Dir:       true,
 		Name:      name,
 		Path:      relativePath,
@@ -914,7 +914,7 @@ func (this *MatterService) AtomicRename(request *http.Request, matter *Matter, n
 	}
 
 	//check whether the name used by another matter.
-	oldMatter := this.matterDao.FindByUserUuidAndPuuidAndDirAndName(user.Uuid, matter.Puuid, "", name)
+	oldMatter := this.matterDao.FindBySpaceNameAndPuuidAndDirAndName(space.Name, matter.Puuid, "", name)
 	if oldMatter != nil {
 		if overwrite {
 			//delete this one.
@@ -1022,7 +1022,7 @@ func (this *MatterService) mirror(request *http.Request, srcPath string, destDir
 	if fileStat.IsDir() {
 
 		//判断当前文件夹下，文件是否已经存在了。
-		srcDirMatter := this.matterDao.FindByUserUuidAndPuuidAndDirAndName(user.Uuid, destDirMatter.Uuid, TRUE, fileStat.Name())
+		srcDirMatter := this.matterDao.FindBySpaceNameAndPuuidAndDirAndName(space.Name, destDirMatter.Uuid, TRUE, fileStat.Name())
 
 		if srcDirMatter == nil {
 			srcDirMatter = this.createDirectory(request, destDirMatter, fileStat.Name(), user, space)
@@ -1041,7 +1041,7 @@ func (this *MatterService) mirror(request *http.Request, srcPath string, destDir
 	} else {
 
 		//判断当前文件夹下，文件是否已经存在了。
-		matter := this.matterDao.FindByUserUuidAndPuuidAndDirAndName(user.Uuid, destDirMatter.Uuid, FALSE, fileStat.Name())
+		matter := this.matterDao.FindBySpaceNameAndPuuidAndDirAndName(space.Name, destDirMatter.Uuid, FALSE, fileStat.Name())
 		if matter != nil {
 			//如果是覆盖，那么删除之前的文件
 			if overwrite {

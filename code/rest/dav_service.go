@@ -402,13 +402,13 @@ func (this *DavService) HandleMkcol(writer http.ResponseWriter, request *http.Re
 	}
 
 	//check whether col exists. (RFC2518:8.3.1)
-	dbMatter := this.matterDao.FindByUserUuidAndPuuidAndDirAndName(user.Uuid, dirMatter.Uuid, TRUE, thisDirName)
+	dbMatter := this.matterDao.FindBySpaceNameAndPuuidAndDirAndName(space.Name, dirMatter.Uuid, TRUE, thisDirName)
 	if dbMatter != nil {
 		panic(result.CustomWebResult(result.METHOD_NOT_ALLOWED, fmt.Sprintf("%s already exists", dirPath)))
 	}
 
 	//check whether file exists. (RFC2518:8.3.1)
-	fileMatter := this.matterDao.FindByUserUuidAndPuuidAndDirAndName(user.Uuid, dirMatter.Uuid, FALSE, thisDirName)
+	fileMatter := this.matterDao.FindBySpaceNameAndPuuidAndDirAndName(space.Name, dirMatter.Uuid, FALSE, thisDirName)
 	if fileMatter != nil {
 		panic(result.CustomWebResult(result.METHOD_NOT_ALLOWED, fmt.Sprintf("%s file already exists", dirPath)))
 	}
