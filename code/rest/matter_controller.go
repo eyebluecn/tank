@@ -596,8 +596,8 @@ func (this *MatterController) Move(writer http.ResponseWriter, request *http.Req
 			panic(result.BadRequestI18n(request, i18n.MatterExist, srcMatter.Name))
 		}
 
-		if srcMatter.UserUuid != destMatter.UserUuid {
-			panic("owner not the same")
+		if srcMatter.SpaceUuid != destMatter.SpaceUuid {
+			panic("space not the same")
 		}
 
 		srcMatters = append(srcMatters, srcMatter)
