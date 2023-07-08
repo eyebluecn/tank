@@ -213,6 +213,9 @@ func (this *UserController) Create(writer http.ResponseWriter, request *http.Req
 	if this.userDao.CountByUsername(username) > 0 {
 		panic(result.BadRequestI18n(request, i18n.UsernameExist, username))
 	}
+	if this.spaceDao.CountByName(username) > 0 {
+		panic(result.BadRequestI18n(request, i18n.SpaceNameExist, username))
+	}
 
 	//check user role.
 	if role != USER_ROLE_USER && role != USER_ROLE_ADMINISTRATOR {
