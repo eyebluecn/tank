@@ -394,7 +394,7 @@ func (this *ShareController) MatterPage(writer http.ResponseWriter, request *htt
 
 	//validate the shareUuid,shareCode,shareRootUuid.
 	user := this.findUser(request)
-	this.shareService.ValidateMatter(request, shareUuid, shareCode, user, shareRootUuid, dirMatter)
+	share := this.shareService.ValidateMatter(request, shareUuid, shareCode, user, shareRootUuid, dirMatter)
 	puuid = dirMatter.Uuid
 
 	var extensions []string
@@ -419,7 +419,7 @@ func (this *ShareController) MatterPage(writer http.ResponseWriter, request *htt
 		dir,
 		deleted,
 		extensions,
-		dirMatter.SpaceUuid,
+		share.SpaceUuid,
 	)
 
 	return this.Success(pager)

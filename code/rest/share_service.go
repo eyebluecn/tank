@@ -75,15 +75,10 @@ func (this *ShareService) CheckShare(request *http.Request, shareUuid string, co
 }
 
 // check whether a user can access a matter. shareRootUuid is matter's parent(or parent's parent and so on)
-func (this *ShareService) ValidateMatter(request *http.Request, shareUuid string, code string, user *User, shareRootUuid string, matter *Matter) {
+func (this *ShareService) ValidateMatter(request *http.Request, shareUuid string, code string, user *User, shareRootUuid string, matter *Matter) *Share {
 
 	if matter == nil {
 		panic(result.Unauthorized("matter cannot be nil"))
-	}
-
-	//if self's matter, ok.
-	if user != nil && matter.UserUuid == user.Uuid {
-		return
 	}
 
 	if shareUuid == "" || code == "" || shareRootUuid == "" {
@@ -113,6 +108,8 @@ func (this *ShareService) ValidateMatter(request *http.Request, shareUuid string
 			panic(result.BadRequest("%s is not %s's children", matter.Uuid, shareRootUuid))
 		}
 	}
+
+	return share
 
 }
 
