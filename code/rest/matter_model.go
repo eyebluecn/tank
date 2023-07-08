@@ -34,8 +34,8 @@ type Matter struct {
 	Sort       int64     `json:"sort" gorm:"type:bigint(20) not null"`
 	UpdateTime time.Time `json:"updateTime" gorm:"type:timestamp not null;default:CURRENT_TIMESTAMP"`
 	CreateTime time.Time `json:"createTime" gorm:"type:timestamp not null;default:'2018-01-01 00:00:00'"`
-	Puuid      string    `json:"puuid" gorm:"type:char(36);index:idx_matter_puuid"` //index should unique globally.
-	UserUuid   string    `json:"userUuid" gorm:"type:char(36);index:idx_matter_uu"`
+	Puuid      string    `json:"puuid" gorm:"type:char(36);index:idx_puuid"` //index should unique globally.
+	UserUuid   string    `json:"userUuid" gorm:"type:char(36);index:idx_uu"`
 	//TODO: check field usage.
 	SpaceName  string    `json:"space_name" gorm:"type:varchar(45) not null"`
 	Dir        bool      `json:"dir" gorm:"type:tinyint(1) not null;default:0"`
@@ -47,8 +47,8 @@ type Matter struct {
 	Times      int64     `json:"times" gorm:"type:bigint(20) not null;default:0"`
 	Prop       string    `json:"prop" gorm:"type:varchar(1024) not null;default:'{}'"`
 	VisitTime  time.Time `json:"visitTime" gorm:"type:timestamp not null;default:'2018-01-01 00:00:00'"`
-	Deleted    bool      `json:"deleted" gorm:"type:tinyint(1) not null;index:idx_matter_del;default:0"`
-	DeleteTime time.Time `json:"deleteTime" gorm:"type:timestamp not null;index:idx_matter_delt;default:'2018-01-01 00:00:00'"`
+	Deleted    bool      `json:"deleted" gorm:"type:tinyint(1) not null;index:idx_del;default:0"`
+	DeleteTime time.Time `json:"deleteTime" gorm:"type:timestamp not null;index:idx_delt;default:'2018-01-01 00:00:00'"`
 	SpaceUuid  string    `json:"spaceUuid" gorm:"type:char(36) not null;index:idx_space_uuid"`
 	Parent     *Matter   `json:"parent" gorm:"-"`
 	Children   []*Matter `json:"-" gorm:"-"`
