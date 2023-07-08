@@ -76,6 +76,67 @@ func (this *MatterService) Init() {
 
 }
 
+// get the page of matters.
+func (this *MatterService) Page(
+	request *http.Request,
+	page int,
+	pageSize int,
+	orderCreateTime string,
+	orderUpdateTime string,
+	orderDeleteTime string,
+	orderSort string,
+	orderTimes string,
+	orderDir string,
+	orderSize string,
+	orderName string,
+	puuid string,
+	name string,
+	dir string,
+	deleted string,
+	extensions []string,
+	spaceUuid string,
+) *Pager {
+
+	sortArray := []builder.OrderPair{
+		{
+			Key:   "dir",
+			Value: orderDir,
+		},
+		{
+			Key:   "create_time",
+			Value: orderCreateTime,
+		},
+		{
+			Key:   "update_time",
+			Value: orderUpdateTime,
+		},
+		{
+			Key:   "delete_time",
+			Value: orderDeleteTime,
+		},
+		{
+			Key:   "sort",
+			Value: orderSort,
+		},
+		{
+			Key:   "size",
+			Value: orderSize,
+		},
+		{
+			Key:   "name",
+			Value: orderName,
+		},
+		{
+			Key:   "times",
+			Value: orderTimes,
+		},
+	}
+
+	pager := this.matterDao.Page(page, pageSize, puuid, "", spaceUuid, name, dir, deleted, extensions, sortArray)
+
+	return pager
+}
+
 // Download. Support chunk download.
 func (this *MatterService) DownloadFile(
 	writer http.ResponseWriter,

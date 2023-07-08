@@ -2,7 +2,6 @@ package rest
 
 import (
 	"github.com/eyebluecn/tank/code/core"
-	"github.com/eyebluecn/tank/code/tool/builder"
 	"github.com/eyebluecn/tank/code/tool/i18n"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
@@ -117,7 +116,6 @@ func (this *MatterController) Detail(writer http.ResponseWriter, request *http.R
 
 }
 
-// TODO: 分享的列表接口不走这个接口了。
 func (this *MatterController) Page(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	page := util.ExtractRequestOptionalInt(request, "page", 0)
@@ -127,60 +125,44 @@ func (this *MatterController) Page(writer http.ResponseWriter, request *http.Req
 	orderDeleteTime := util.ExtractRequestOptionalString(request, "orderDeleteTime", "")
 	orderSort := util.ExtractRequestOptionalString(request, "orderSort", "")
 	orderTimes := util.ExtractRequestOptionalString(request, "orderTimes", "")
-	puuid := util.ExtractRequestOptionalString(request, "puuid", "")
-	name := util.ExtractRequestOptionalString(request, "name", "")
-	dir := util.ExtractRequestOptionalString(request, "dir", "")
-	deleted := util.ExtractRequestOptionalString(request, "deleted", "")
 	orderDir := util.ExtractRequestOptionalString(request, "orderDir", "")
 	orderSize := util.ExtractRequestOptionalString(request, "orderSize", "")
 	orderName := util.ExtractRequestOptionalString(request, "orderName", "")
+
+	puuid := util.ExtractRequestString(request, "puuid")
+	name := util.ExtractRequestOptionalString(request, "name", "")
+	dir := util.ExtractRequestOptionalString(request, "dir", "")
+	deleted := util.ExtractRequestOptionalString(request, "deleted", "")
 	extensionsStr := util.ExtractRequestOptionalString(request, "extensions", "")
 
 	user := this.checkUser(request)
 	spaceUuid := util.ExtractRequestOptionalString(request, "spaceUuid", user.SpaceUuid)
-	space := this.spaceService.CheckReadableByUuid(request, user, spaceUuid)
+	this.spaceService.CheckReadableByUuid(request, user, spaceUuid)
 
 	var extensions []string
 	if extensionsStr != "" {
 		extensions = strings.Split(extensionsStr, ",")
 	}
 
-	sortArray := []builder.OrderPair{
-		{
-			Key:   "dir",
-			Value: orderDir,
-		},
-		{
-			Key:   "create_time",
-			Value: orderCreateTime,
-		},
-		{
-			Key:   "update_time",
-			Value: orderUpdateTime,
-		},
-		{
-			Key:   "delete_time",
-			Value: orderDeleteTime,
-		},
-		{
-			Key:   "sort",
-			Value: orderSort,
-		},
-		{
-			Key:   "size",
-			Value: orderSize,
-		},
-		{
-			Key:   "name",
-			Value: orderName,
-		},
-		{
-			Key:   "times",
-			Value: orderTimes,
-		},
-	}
-
-	pager := this.matterDao.Page(page, pageSize, puuid, "", space.Uuid, name, dir, deleted, extensions, sortArray)
+	pager := this.matterService.Page(
+		request,
+		page,
+		pageSize,
+		orderCreateTime,
+		orderUpdateTime,
+		orderDeleteTime,
+		orderSort,
+		orderTimes,
+		orderDir,
+		orderSize,
+		orderName,
+		puuid,
+		name,
+		dir,
+		deleted,
+		extensions,
+		spaceUuid,
+	)
 
 	return this.Success(pager)
 }
