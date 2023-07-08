@@ -19,6 +19,7 @@ type ShareController struct {
 	matterDao     *MatterDao
 	matterService *MatterService
 	shareService  *ShareService
+	alienService  *AlienService
 }
 
 func (this *ShareController) Init() {
@@ -49,6 +50,11 @@ func (this *ShareController) Init() {
 		this.shareService = b
 	}
 
+	b = core.CONTEXT.GetBean(this.alienService)
+	if b, ok := b.(*AlienService); ok {
+		this.alienService = b
+	}
+
 }
 
 func (this *ShareController) RegisterRoutes() map[string]func(writer http.ResponseWriter, request *http.Request) {
@@ -63,7 +69,9 @@ func (this *ShareController) RegisterRoutes() map[string]func(writer http.Respon
 	routeMap["/api/share/browse"] = this.Wrap(this.Browse, USER_ROLE_GUEST)
 	routeMap["/api/share/zip"] = this.Wrap(this.Zip, USER_ROLE_GUEST)
 
-	routeMap["/api/share/matter/page"] = this.Wrap(this.MatterPage, USER_ROLE_USER)
+	routeMap["/api/share/matter/page"] = this.Wrap(this.MatterPage, USER_ROLE_GUEST)
+	routeMap["/api/share/matter/preview"] = this.WrapPure(this.MatterPreview, USER_ROLE_GUEST)
+	routeMap["/api/share/matter/download"] = this.WrapPure(this.MatterDownload, USER_ROLE_GUEST)
 
 	return routeMap
 }
@@ -423,4 +431,26 @@ func (this *ShareController) MatterPage(writer http.ResponseWriter, request *htt
 	)
 
 	return this.Success(pager)
+}
+
+func (this *ShareController) MatterPreviewOrDownload(writer http.ResponseWriter, request *http.Request, withContentDisposition bool) {
+	//auth by shareUuid.
+	matterUuid := util.ExtractRequestString(request, "matterUuid")
+	shareUuid := util.ExtractRequestString(request, "shareUuid")
+	shareCode := util.ExtractRequestString(request, "shareCode")
+	shareRootUuid := util.ExtractRequestString(request, "shareRootUuid")
+
+	matter := this.matterDao.CheckByUuid(matterUuid)
+	operator := this.findUser(request)
+
+	this.shareService.ValidateMatter(request, shareUuid, shareCode, operator, shareRootUuid, matter)
+	this.alienService.PreviewOrDownload(writer, request, matter, withContentDisposition)
+}
+
+func (this *ShareController) MatterPreview(writer http.ResponseWriter, request *http.Request) {
+	this.MatterPreviewOrDownload(writer, request, false)
+}
+
+func (this *ShareController) MatterDownload(writer http.ResponseWriter, request *http.Request) {
+	this.MatterPreviewOrDownload(writer, request, true)
 }

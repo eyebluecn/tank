@@ -99,6 +99,49 @@ func (this *BaseController) Wrap(f func(writer http.ResponseWriter, request *htt
 	}
 }
 
+// wrap the handle method without result.
+func (this *BaseController) WrapPure(f func(writer http.ResponseWriter, request *http.Request), qualifiedRole string) func(w http.ResponseWriter, r *http.Request) {
+
+	return func(writer http.ResponseWriter, request *http.Request) {
+
+		var webResult *result.WebResult = nil
+
+		//if the api not annotated with GUEST. login is required.
+		if qualifiedRole != USER_ROLE_GUEST {
+			user := this.checkUser(request)
+
+			if user.Status == USER_STATUS_DISABLED {
+				//check user's status
+				webResult = result.CustomWebResultI18n(request, result.USER_DISABLED, i18n.UserDisabled)
+			} else {
+				if qualifiedRole == USER_ROLE_ADMINISTRATOR && user.Role != USER_ROLE_ADMINISTRATOR {
+					webResult = result.ConstWebResult(result.UNAUTHORIZED)
+				}
+			}
+
+		}
+
+		//if webResult not nil. response a json. if webResult is nil, return empty body or binary content.
+		if webResult != nil {
+
+			writer.Header().Set("Content-Type", "application/json;charset=UTF-8")
+
+			b, err := jsoniter.ConfigCompatibleWithStandardLibrary.Marshal(webResult)
+
+			this.PanicError(err)
+
+			writer.WriteHeader(result.FetchHttpStatus(webResult.Code))
+
+			_, err = fmt.Fprintf(writer, string(b))
+			this.PanicError(err)
+		}
+
+		//no error.
+		f(writer, request)
+
+	}
+}
+
 // response a success result. 1.string 2. WebResult 3.nil pointer 4.any type
 func (this *BaseController) Success(data interface{}) *result.WebResult {
 	var webResult *result.WebResult = nil

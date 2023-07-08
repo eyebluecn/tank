@@ -350,12 +350,12 @@ func (this *AlienController) FetchDownloadToken(writer http.ResponseWriter, requ
 
 // preview a file.
 func (this *AlienController) Preview(writer http.ResponseWriter, request *http.Request, uuid string, filename string) {
-
-	this.alienService.PreviewOrDownload(writer, request, uuid, filename, false)
+	matter := this.alienService.ValidMatter(writer, request, uuid, filename)
+	this.alienService.PreviewOrDownload(writer, request, matter, false)
 }
 
 // download a file.
 func (this *AlienController) Download(writer http.ResponseWriter, request *http.Request, uuid string, filename string) {
-
-	this.alienService.PreviewOrDownload(writer, request, uuid, filename, true)
+	matter := this.alienService.ValidMatter(writer, request, uuid, filename)
+	this.alienService.PreviewOrDownload(writer, request, matter, true)
 }

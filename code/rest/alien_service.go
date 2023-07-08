@@ -19,6 +19,7 @@ type AlienService struct {
 	shareService      *ShareService
 	imageCacheDao     *ImageCacheDao
 	imageCacheService *ImageCacheService
+	spaceService      *SpaceService
 }
 
 func (this *AlienService) Init() {
@@ -63,14 +64,18 @@ func (this *AlienService) Init() {
 	if c, ok := b.(*ImageCacheService); ok {
 		this.imageCacheService = c
 	}
+	b = core.CONTEXT.GetBean(this.spaceService)
+	if c, ok := b.(*SpaceService); ok {
+		this.spaceService = c
+	}
 }
 
-func (this *AlienService) PreviewOrDownload(
+// check whether the request params ok.
+func (this *AlienService) ValidMatter(
 	writer http.ResponseWriter,
 	request *http.Request,
 	uuid string,
-	filename string,
-	withContentDisposition bool) {
+	filename string) *Matter {
 
 	matter := this.matterDao.CheckByUuid(uuid)
 
@@ -104,18 +109,28 @@ func (this *AlienService) PreviewOrDownload(
 
 		} else {
 
+			//whether this is myself's matter.
 			operator := this.findUser(request)
+			if operator == nil {
+				panic(result.BadRequest("no auth"))
+			}
 
-			//use share code to auth.
-			shareUuid := request.FormValue("shareUuid")
-			shareCode := request.FormValue("shareCode")
-			shareRootUuid := request.FormValue("shareRootUuid")
-
-			this.shareService.ValidateMatter(request, shareUuid, shareCode, operator, shareRootUuid, matter)
+			if matter.SpaceUuid != operator.SpaceUuid {
+				//whether user has the space's read auth.
+				this.spaceService.CheckReadableByUuid(request, operator, matter.SpaceUuid)
+			}
 
 		}
 	}
+	return matter
+}
 
+func (this *AlienService) PreviewOrDownload(
+	writer http.ResponseWriter,
+	request *http.Request,
+	matter *Matter,
+	withContentDisposition bool,
+) {
 	//download directory
 	if matter.Dir {
 
@@ -145,7 +160,6 @@ func (this *AlienService) PreviewOrDownload(
 
 	//async increase the download times.
 	go core.RunWithRecovery(func() {
-		this.matterDao.TimesIncrement(uuid)
+		this.matterDao.TimesIncrement(matter.Uuid)
 	})
-
 }
