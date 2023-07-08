@@ -153,6 +153,11 @@ func (this *UserController) AuthenticationLogin(writer http.ResponseWriter, requ
 // fetch current user's info.
 func (this *UserController) Info(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 	user := this.checkUser(request)
+
+	//append the space info.
+	space := this.spaceDao.FindByUuid(user.SpaceUuid)
+	user.Space = space
+
 	return this.Success(user)
 }
 
