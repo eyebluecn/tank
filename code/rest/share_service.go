@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-//@Service
+// @Service
 type ShareService struct {
 	BaseBean
 	shareDao  *ShareDao
@@ -74,7 +74,7 @@ func (this *ShareService) CheckShare(request *http.Request, shareUuid string, co
 	return share
 }
 
-//check whether a user can access a matter. shareRootUuid is matter's parent(or parent's parent and so on)
+// check whether a user can access a matter. shareRootUuid is matter's parent(or parent's parent and so on)
 func (this *ShareService) ValidateMatter(request *http.Request, shareUuid string, code string, user *User, shareRootUuid string, matter *Matter) {
 
 	if matter == nil {
@@ -116,7 +116,7 @@ func (this *ShareService) ValidateMatter(request *http.Request, shareUuid string
 
 }
 
-//delete user's shares and corresponding bridges.
+// delete user's shares and corresponding bridges.
 func (this *ShareService) DeleteSharesByUser(request *http.Request, currentUser *User) {
 
 	//delete share and bridges.
@@ -138,5 +138,10 @@ func (this *ShareService) DeleteSharesByUser(request *http.Request, currentUser 
 		}
 
 	}
+
+}
+
+// edit space's info.
+func (this *ShareService) Edit(spaceUuid string, sizeLimit int64, totalSizeLimit int64) {
 
 }

@@ -86,17 +86,14 @@ func (this *SpaceController) Create(writer http.ResponseWriter, request *http.Re
 }
 
 func (this *SpaceController) Edit(writer http.ResponseWriter, request *http.Request) *result.WebResult {
-	//space's name
+
+	//space's uuid
 	uuid := util.ExtractRequestString(request, "uuid")
 	sizeLimit := util.ExtractRequestInt64(request, "sizeLimit")
 	totalSizeLimit := util.ExtractRequestInt64(request, "totalSizeLimit")
 
-	space := this.spaceDao.CheckByUuid(uuid)
-
-	space.SizeLimit = sizeLimit
-	space.TotalSizeLimit = totalSizeLimit
-
-	space = this.spaceDao.Save(space)
+	user := this.checkUser(request)
+	space := this.spaceService.Edit(request, user, uuid, sizeLimit, totalSizeLimit)
 
 	return this.Success(space)
 }

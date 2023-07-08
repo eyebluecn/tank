@@ -225,6 +225,9 @@ func (this *UserController) Edit(writer http.ResponseWriter, request *http.Reque
 	avatarUrl := request.FormValue("avatarUrl")
 	role := request.FormValue("role")
 
+	sizeLimit := util.ExtractRequestInt64(request, "sizeLimit")
+	totalSizeLimit := util.ExtractRequestInt64(request, "totalSizeLimit")
+
 	user := this.checkUser(request)
 	currentUser := this.userDao.CheckByUuid(uuid)
 
@@ -241,10 +244,16 @@ func (this *UserController) Edit(writer http.ResponseWriter, request *http.Reque
 		panic(result.UNAUTHORIZED)
 	}
 
+	//edit user's info
 	currentUser = this.userDao.Save(currentUser)
+
+	//edit user's private space info.
+	space := this.spaceService.Edit(request, user, currentUser.SpaceUuid, sizeLimit, totalSizeLimit)
 
 	//remove cache user.
 	this.userService.RemoveCacheUserByUuid(currentUser.Uuid)
+
+	currentUser.Space = space
 
 	return this.Success(currentUser)
 }
@@ -254,6 +263,10 @@ func (this *UserController) Detail(writer http.ResponseWriter, request *http.Req
 	uuid := request.FormValue("uuid")
 
 	user := this.userDao.CheckByUuid(uuid)
+
+	//append the space info.
+	space := this.spaceDao.FindByUuid(user.SpaceUuid)
+	user.Space = space
 
 	return this.Success(user)
 
@@ -338,6 +351,12 @@ func (this *UserController) Page(writer http.ResponseWriter, request *http.Reque
 	}
 
 	pager := this.userDao.Page(page, pageSize, username, status, sortArray)
+
+	//append the space info. FIXME: user better way to get Space.
+	for _, u := range pager.Data.([]*User) {
+		space := this.spaceDao.FindByUuid(u.SpaceUuid)
+		u.Space = space
+	}
 
 	return this.Success(pager)
 }

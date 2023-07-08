@@ -134,3 +134,22 @@ func (this *SpaceService) CheckReadableByUuid(request *http.Request, user *User,
 
 	return space
 }
+
+// edit space's info
+func (this *SpaceService) Edit(request *http.Request, user *User, spaceUuid string, sizeLimit int64, totalSizeLimit int64) *Space {
+	space := this.CheckWritableByUuid(request, user, spaceUuid)
+
+	if sizeLimit < 0 && sizeLimit != -1 {
+		panic("sizeLimit cannot be negative expect -1.")
+	}
+
+	if totalSizeLimit < 0 && totalSizeLimit != -1 {
+		panic("totalSizeLimit cannot be negative expect -1.")
+	}
+
+	space.SizeLimit = sizeLimit
+	space.TotalSizeLimit = totalSizeLimit
+	space = this.spaceDao.Save(space)
+
+	return space
+}
