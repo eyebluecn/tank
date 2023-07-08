@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
+	"time"
 )
 
 // param is required. when missing, panic error.
@@ -23,6 +25,20 @@ func ExtractRequestStringWithErrorHint(request *http.Request, key string, errorH
 		panic(errorHint)
 	} else {
 		return str
+	}
+}
+
+// split by comma , param is required. when missing, panic error.
+func ExtractRequestArray(request *http.Request, key string) []string {
+	str := request.FormValue(key)
+	if str == "" {
+		panic(fmt.Sprintf("%s is required", key))
+	} else {
+		arr := strings.Split(str, ",")
+		if len(arr) == 0 {
+			panic(fmt.Sprintf("%s cannot be empty", key))
+		}
+		return arr
 	}
 }
 
@@ -85,6 +101,22 @@ func ExtractRequestOptionalString(request *http.Request, key string, defaultValu
 }
 
 // param is required. when missing, panic error.
+func ExtractRequestBool(request *http.Request, key string) bool {
+	str := request.FormValue(key)
+	if str == "true" {
+		return true
+	} else {
+		return false
+	}
+}
+
+// param is required. when missing, panic error.
+func ExtractRequestTime(request *http.Request, key string) time.Time {
+	str := request.FormValue(key)
+	return ConvertDateTimeStringToTime(str)
+}
+
+// param is optional. when missing, use default.
 func ExtractRequestOptionalBool(request *http.Request, key string, defaultValue bool) bool {
 	str := request.FormValue(key)
 	if str == "" {

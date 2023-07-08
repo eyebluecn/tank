@@ -33,6 +33,7 @@ type Share struct {
 	Code           string    `json:"code" gorm:"type:varchar(45) not null"`
 	ExpireInfinity bool      `json:"expireInfinity" gorm:"type:tinyint(1) not null;default:0"`
 	ExpireTime     time.Time `json:"expireTime" gorm:"type:timestamp not null;default:'2018-01-01 00:00:00'"`
+	SpaceUuid      string    `json:"spaceUuid" gorm:"type:char(36) not null;index:idx_space_uuid"`
 	DirMatter      *Matter   `json:"dirMatter" gorm:"-"`
 	Matters        []*Matter `json:"matters" gorm:"-"`
 }

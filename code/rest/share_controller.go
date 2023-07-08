@@ -70,38 +70,19 @@ func (this *ShareController) RegisterRoutes() map[string]func(writer http.Respon
 
 func (this *ShareController) Create(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
-	matterUuids := request.FormValue("matterUuids")
-	expireInfinityStr := request.FormValue("expireInfinity")
-	expireTimeStr := request.FormValue("expireTime")
+	uuidArray := util.ExtractRequestArray(request, "matterUuids")
+	expireInfinity := util.ExtractRequestBool(request, "expireInfinity")
+	spaceUuid := util.ExtractRequestString(request, "spaceUuid")
 
-	if matterUuids == "" {
-		panic(result.BadRequest("matterUuids cannot be null"))
-	}
-
-	var expireTime time.Time
-	expireInfinity := false
-	if expireInfinityStr == TRUE {
-		expireInfinity = true
-		expireTime = time.Now()
-	} else {
-
-		if expireTimeStr == "" {
-			panic(result.BadRequest("time format error"))
-		} else {
-			expireTime = util.ConvertDateTimeStringToTime(expireTimeStr)
-		}
-
+	var expireTime = time.Now()
+	if !expireInfinity {
+		expireTime = util.ExtractRequestTime(request, "expireTime")
 		if expireTime.Before(time.Now()) {
 			panic(result.BadRequest("expire time cannot before now"))
 		}
-
 	}
 
-	uuidArray := strings.Split(matterUuids, ",")
-
-	if len(uuidArray) == 0 {
-		panic(result.BadRequest("share at least one file"))
-	} else if len(uuidArray) > SHARE_MAX_NUM {
+	if len(uuidArray) > SHARE_MAX_NUM {
 		panic(result.BadRequestI18n(request, i18n.ShareNumExceedLimit, len(uuidArray), SHARE_MAX_NUM))
 	}
 
@@ -150,6 +131,7 @@ func (this *ShareController) Create(writer http.ResponseWriter, request *http.Re
 		Code:           util.RandomString4(),
 		ExpireInfinity: expireInfinity,
 		ExpireTime:     expireTime,
+		SpaceUuid:      spaceUuid,
 	}
 	this.shareDao.Create(share)
 
@@ -194,14 +176,14 @@ func (this *ShareController) DeleteBatch(writer http.ResponseWriter, request *ht
 
 	for _, uuid := range uuidArray {
 
-		imageCache := this.shareDao.FindByUuid(uuid)
+		share := this.shareDao.FindByUuid(uuid)
 
 		user := this.checkUser(request)
-		if imageCache.UserUuid != user.Uuid {
+		if share.UserUuid != user.Uuid {
 			panic(result.UNAUTHORIZED)
 		}
 
-		this.shareDao.Delete(imageCache)
+		this.shareDao.Delete(share)
 	}
 
 	return this.Success("OK")
