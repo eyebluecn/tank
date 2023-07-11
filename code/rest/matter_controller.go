@@ -529,7 +529,7 @@ func (this *MatterController) Zip(writer http.ResponseWriter, request *http.Requ
 	uuids := util.ExtractRequestString(request, "uuids")
 	user := this.checkUser(request)
 	spaceUuid := util.ExtractRequestOptionalString(request, "spaceUuid", user.SpaceUuid)
-	space := this.spaceService.CheckWritableByUuid(request, user, spaceUuid)
+	space := this.spaceService.CheckReadableByUuid(request, user, spaceUuid)
 
 	uuidArray := strings.Split(uuids, ",")
 
