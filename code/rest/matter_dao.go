@@ -484,6 +484,26 @@ func (this *MatterDao) SizeByPuuidAndUserUuid(matterUuid string, userUuid string
 	return sumSize
 }
 
+func (this *MatterDao) SizeByPuuidAndSpaceUuid(matterUuid string, spaceUuid string) int64 {
+
+	var wp = &builder.WherePair{Query: "puuid = ? AND space_uuid = ?", Args: []interface{}{matterUuid, spaceUuid}}
+
+	var count int64
+	db := core.CONTEXT.GetDB().Model(&Matter{}).Where(wp.Query, wp.Args...).Count(&count)
+	if count == 0 {
+		return 0
+	}
+
+	var sumSize int64
+	db = core.CONTEXT.GetDB().Model(&Matter{}).Where(wp.Query, wp.Args...).Select("SUM(size)")
+	this.PanicError(db.Error)
+	row := db.Row()
+	err := row.Scan(&sumSize)
+	core.PanicError(err)
+
+	return sumSize
+}
+
 // delete a file from db and disk.
 func (this *MatterDao) Delete(matter *Matter) {
 

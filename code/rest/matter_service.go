@@ -564,10 +564,9 @@ func (this *MatterService) ComputeRouteSize(matterUuid string, user *User, space
 	//if to root directory, then update to user's info.
 	if matterUuid == MATTER_ROOT {
 
-		size := this.matterDao.SizeByPuuidAndUserUuid(MATTER_ROOT, user.Uuid)
+		size := this.matterDao.SizeByPuuidAndSpaceUuid(MATTER_ROOT, space.Uuid)
 
-		db := core.CONTEXT.GetDB().Model(&Space{}).Where("uuid = ?", space.Uuid).Update("total_size", size)
-		this.PanicError(db.Error)
+		this.spaceDao.UpdateTotalSize(space.Uuid, size)
 
 		//update user total size info in cache.
 		space.TotalSize = size
@@ -580,12 +579,11 @@ func (this *MatterService) ComputeRouteSize(matterUuid string, user *User, space
 	//only compute dir
 	if matter.Dir {
 		//compute the total size.
-		size := this.matterDao.SizeByPuuidAndUserUuid(matterUuid, user.Uuid)
+		size := this.matterDao.SizeByPuuidAndSpaceUuid(matterUuid, space.Uuid)
 
 		//when changed, we update
 		if matter.Size != size {
-			db := core.CONTEXT.GetDB().Model(&Matter{}).Where("uuid = ?", matterUuid).Update("size", size)
-			this.PanicError(db.Error)
+			this.spaceDao.UpdateTotalSize(space.Uuid, size)
 		}
 
 	}
@@ -617,22 +615,20 @@ func (this *MatterService) ComputeDirSize(dirMatter *Matter, user *User, space *
 	//if to root directory, then update to user's info.
 	if dirMatter.Uuid == MATTER_ROOT {
 
-		size := this.matterDao.SizeByPuuidAndUserUuid(MATTER_ROOT, user.Uuid)
+		size := this.matterDao.SizeByPuuidAndSpaceUuid(MATTER_ROOT, space.Uuid)
 
-		db := core.CONTEXT.GetDB().Model(&User{}).Where("uuid = ?", user.Uuid).Update("total_size", size)
-		this.PanicError(db.Error)
+		this.spaceDao.UpdateTotalSize(space.Uuid, size)
 
 		//update user total size info in cache.
 		space.TotalSize = size
 	} else {
 
 		//compute self.
-		size := this.matterDao.SizeByPuuidAndUserUuid(dirMatter.Uuid, user.Uuid)
+		size := this.matterDao.SizeByPuuidAndSpaceUuid(dirMatter.Uuid, user.Uuid)
 
 		//when changed, we update
 		if dirMatter.Size != size {
-			db := core.CONTEXT.GetDB().Model(&Matter{}).Where("uuid = ?", dirMatter.Uuid).Update("size", size)
-			this.PanicError(db.Error)
+			this.spaceDao.UpdateTotalSize(space.Uuid, size)
 		}
 	}
 

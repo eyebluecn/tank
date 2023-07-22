@@ -132,6 +132,11 @@ func (this *SpaceDao) Save(space *Space) *Space {
 	return space
 }
 
+func (this *SpaceDao) UpdateTotalSize(spaceUuid string, totalSize int64) {
+	db := core.CONTEXT.GetDB().Model(&Space{}).Where("uuid = ?", spaceUuid).Update("total_size", totalSize)
+	this.PanicError(db.Error)
+}
+
 func (this *SpaceDao) Delete(space *Space) {
 
 	db := core.CONTEXT.GetDB().Delete(&space)
