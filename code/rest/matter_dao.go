@@ -65,7 +65,7 @@ func (this *MatterDao) CheckWithRootByUuid(uuid string, space *Space) *Matter {
 	var matter *Matter
 	if uuid == MATTER_ROOT {
 		if space == nil {
-			panic(result.BadRequest("user cannot be null."))
+			panic(result.BadRequest("space cannot be null."))
 		}
 		matter = NewRootMatter(space)
 	} else {

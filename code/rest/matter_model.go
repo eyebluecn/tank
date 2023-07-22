@@ -151,11 +151,12 @@ func (this *Matter) FetchPropMap() map[string]string {
 func (this *Matter) SetPropMap(propMap map[string]string) {
 
 	//恢复panic
-	//defer func() {
-	//	if err := recover(); err != nil {
-	//		fmt.Printf("occur error while set prop map %s\r\n", err)
-	//	}
-	//}()
+	defer func() {
+		fmt.Printf("panic recover check")
+		if err := recover(); err != nil {
+			fmt.Printf("occur error while set prop map %s\r\n", err)
+		}
+	}()
 
 	b, err := jsoniter.ConfigCompatibleWithStandardLibrary.Marshal(propMap)
 	if err != nil {

@@ -232,7 +232,7 @@ func (this *MatterController) Crawl(writer http.ResponseWriter, request *http.Re
 
 	var dirMatter *Matter
 	if puuid == "" {
-		dirMatter = this.matterDao.CheckByUuid(puuid)
+		dirMatter = this.matterDao.CheckWithRootByUuid(puuid, space)
 		if dirMatter.SpaceUuid != space.Uuid {
 			panic(result.UNAUTHORIZED)
 		}
