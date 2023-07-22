@@ -251,7 +251,7 @@ func (this *DavService) HandleProppatch(writer http.ResponseWriter, request *htt
 	patches, status, err := webdav.ReadProppatch(request.Body)
 	this.PanicError(err)
 
-	fmt.Println("status:%v", status)
+	fmt.Printf("status:%v\n", status)
 
 	//prepare a multiStatusWriter.
 	multiStatusWriter := &dav.MultiStatusWriter{Writer: writer}

@@ -117,10 +117,16 @@ func (this *DavController) HandleRoutes(writer http.ResponseWriter, request *htt
 	strs := reg.FindStringSubmatch(path)
 	if len(strs) == 2 {
 		var f = func(writer http.ResponseWriter, request *http.Request) {
+
+			if err := recover(); err != nil {
+				this.logger.Error("occur error in webdav: %v", err)
+			}
+
 			subPath := strs[1]
 			//guarantee subPath not end with /
 			subPath = strings.TrimSuffix(subPath, "/")
 			this.Index(writer, request, subPath)
+
 		}
 		return f, true
 	}

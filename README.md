@@ -37,6 +37,16 @@
 
 ## [安装文档](https://tank-doc.eyeblue.cn/basic/install.html)
 
+### 快速运行
+安装依赖
+```shell
+go mod tidy
+```
+运行main文件即可：
+```shell
+./main.go
+```
+
 ### Contribution
 
 感谢所有蓝眼云盘的贡献者 [@zicla](https://github.com/zicla)，[@seaheart](https://github.com/seaheart)，[@yemuhe](https://github.com/yemuhe)，[@hxsherry](https://github.com/hxsherry)
