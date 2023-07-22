@@ -231,7 +231,7 @@ func (this *MatterController) Crawl(writer http.ResponseWriter, request *http.Re
 	space := this.spaceService.CheckWritableByUuid(request, user, spaceUuid)
 
 	var dirMatter *Matter
-	if puuid == "" {
+	if puuid != "" {
 		dirMatter = this.matterDao.CheckWithRootByUuid(puuid, space)
 		if dirMatter.SpaceUuid != space.Uuid {
 			panic(result.UNAUTHORIZED)
