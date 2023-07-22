@@ -112,6 +112,13 @@ func (this *MatterController) Detail(writer http.ResponseWriter, request *http.R
 		panic(result.UNAUTHORIZED)
 	}
 
+	//add the user's info.
+	if space.Uuid == user.SpaceUuid {
+		matter.User = user
+	} else {
+		matter.User = this.userDao.FindByUuid(user.Uuid)
+	}
+
 	return this.Success(matter)
 
 }

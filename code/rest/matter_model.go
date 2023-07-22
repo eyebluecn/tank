@@ -50,6 +50,7 @@ type Matter struct {
 	Deleted    bool      `json:"deleted" gorm:"type:tinyint(1) not null;index:idx_del;default:0"`
 	DeleteTime time.Time `json:"deleteTime" gorm:"type:timestamp not null;index:idx_delt;default:'2018-01-01 00:00:00'"`
 	SpaceUuid  string    `json:"spaceUuid" gorm:"type:char(36) not null;index:idx_space_uuid"`
+	User       *User     `json:"user" gorm:"-"`
 	Parent     *Matter   `json:"parent" gorm:"-"`
 	Children   []*Matter `json:"-" gorm:"-"`
 }

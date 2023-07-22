@@ -12,15 +12,16 @@ import (
 
 type AlienController struct {
 	BaseController
-	uploadTokenDao    *UploadTokenDao
-	downloadTokenDao  *DownloadTokenDao
-	matterDao         *MatterDao
-	spaceDao          *SpaceDao
-	matterService     *MatterService
-	imageCacheDao     *ImageCacheDao
-	imageCacheService *ImageCacheService
-	alienService      *AlienService
-	shareService      *ShareService
+	uploadTokenDao     *UploadTokenDao
+	downloadTokenDao   *DownloadTokenDao
+	matterDao          *MatterDao
+	spaceDao           *SpaceDao
+	matterService      *MatterService
+	imageCacheDao      *ImageCacheDao
+	imageCacheService  *ImageCacheService
+	alienService       *AlienService
+	shareService       *ShareService
+	spaceMemberService *SpaceMemberService
 }
 
 func (this *AlienController) Init() {
@@ -69,6 +70,11 @@ func (this *AlienController) Init() {
 	b = core.CONTEXT.GetBean(this.shareService)
 	if c, ok := b.(*ShareService); ok {
 		this.shareService = c
+	}
+
+	b = core.CONTEXT.GetBean(this.spaceMemberService)
+	if b, ok := b.(*SpaceMemberService); ok {
+		this.spaceMemberService = b
 	}
 }
 
@@ -321,8 +327,9 @@ func (this *AlienController) FetchDownloadToken(writer http.ResponseWriter, requ
 	user := this.checkUser(request)
 
 	matter := this.matterDao.CheckByUuid(matterUuid)
-	if matter.UserUuid != user.Uuid {
-		panic(result.BadRequest("matter not belong to you"))
+	canRead := this.spaceMemberService.canRead(user, matter.SpaceUuid)
+	if !canRead {
+		panic(result.BadRequest("no auth to visit this file."))
 	}
 
 	var expireTime time.Time
