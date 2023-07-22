@@ -1241,6 +1241,10 @@ func (this *MatterService) AtomicCrawl(request *http.Request, url string, filena
 	//download from url.
 	resp, err := http.Get(url)
 	this.PanicError(err)
+	//if resp is not ok.
+	if resp.StatusCode != 200 {
+		panic(result.BadRequest("error when crawl from url."))
+	}
 
 	return this.Upload(request, resp.Body, nil, user, space, dirMatter, filename, privacy)
 }
