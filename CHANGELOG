@@ -52,6 +52,22 @@ go get xxx/xxx
 go mod tidy
 
 
+tank-4.0.0.beta1 2023-07-22
+1. Shared space
+2. Copy and paste upload
+3. Crawl upload
+4. Space size selection control upgrade
+5. Some style modifications
+
+
+1. 共享空间
+2. 文件复制粘贴上传
+3. 文件抓取上传
+4. 空间大小选择控件升级
+5. 一些样式修改
+
+
+
 tank-3.1.5 2022-03-21
 1. Support Sqlite.
 2. Upgrade webpack.
