@@ -105,6 +105,21 @@ func (this *SpaceService) CreateSpace(
 
 }
 
+// checkout a adminAble space.
+func (this *SpaceService) CheckAdminAbleByUuid(request *http.Request, user *User, spaceUuid string) *Space {
+	space := this.spaceDao.CheckByUuid(spaceUuid)
+	if space.Type == SPACE_TYPE_PRIVATE && user.Uuid == space.UserUuid {
+		return space
+	}
+
+	manage := this.spaceMemberService.canManage(user, spaceUuid)
+	if !manage {
+		panic(result.BadRequestI18n(request, i18n.PermissionDenied))
+	}
+
+	return space
+}
+
 // checkout a writable space.
 func (this *SpaceService) CheckWritableByUuid(request *http.Request, user *User, spaceUuid string) *Space {
 	space := this.spaceDao.CheckByUuid(spaceUuid)
@@ -112,8 +127,8 @@ func (this *SpaceService) CheckWritableByUuid(request *http.Request, user *User,
 		return space
 	}
 
-	manage := this.spaceMemberService.canWrite(user, spaceUuid)
-	if !manage {
+	writable := this.spaceMemberService.canWrite(user, spaceUuid)
+	if !writable {
 		panic(result.BadRequestI18n(request, i18n.PermissionDenied))
 	}
 
@@ -137,7 +152,7 @@ func (this *SpaceService) CheckReadableByUuid(request *http.Request, user *User,
 
 // edit space's info
 func (this *SpaceService) Edit(request *http.Request, user *User, spaceUuid string, sizeLimit int64, totalSizeLimit int64) *Space {
-	space := this.CheckWritableByUuid(request, user, spaceUuid)
+	space := this.CheckAdminAbleByUuid(request, user, spaceUuid)
 
 	if sizeLimit < 0 && sizeLimit != -1 {
 		panic("sizeLimit cannot be negative expect -1.")

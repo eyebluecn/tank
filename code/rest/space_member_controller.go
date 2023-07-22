@@ -58,9 +58,11 @@ func (this *SpaceMemberController) RegisterRoutes() map[string]func(writer http.
 
 	routeMap := make(map[string]func(writer http.ResponseWriter, request *http.Request))
 
+	//admin user can create/edit/delete
 	routeMap["/api/space/member/create"] = this.Wrap(this.Create, USER_ROLE_USER)
 	routeMap["/api/space/member/edit"] = this.Wrap(this.Edit, USER_ROLE_USER)
 	routeMap["/api/space/member/delete"] = this.Wrap(this.Delete, USER_ROLE_USER)
+
 	routeMap["/api/space/member/detail"] = this.Wrap(this.Detail, USER_ROLE_USER)
 	routeMap["/api/space/member/mine"] = this.Wrap(this.Mine, USER_ROLE_USER)
 	routeMap["/api/space/member/page"] = this.Wrap(this.Page, USER_ROLE_USER)
@@ -110,7 +112,7 @@ func (this *SpaceMemberController) Edit(writer http.ResponseWriter, request *htt
 	spaceMember := this.spaceMemberDao.CheckByUuid(uuid)
 
 	currentUser := this.checkUser(request)
-	canManage := this.spaceMemberService.canManageBySpaceMember(currentUser, spaceMember)
+	canManage := this.spaceMemberService.canManage(currentUser, spaceMember.SpaceUuid)
 	if !canManage {
 		panic(result.BadRequestI18n(request, i18n.PermissionDenied))
 	}
@@ -126,7 +128,7 @@ func (this *SpaceMemberController) Delete(writer http.ResponseWriter, request *h
 
 	spaceMember := this.spaceMemberDao.CheckByUuid(uuid)
 	user := this.checkUser(request)
-	canManage := this.spaceMemberService.canManageBySpaceMember(user, spaceMember)
+	canManage := this.spaceMemberService.canManage(user, spaceMember.SpaceUuid)
 	if !canManage {
 		panic(result.BadRequestI18n(request, i18n.PermissionDenied))
 	}

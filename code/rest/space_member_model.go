@@ -5,13 +5,13 @@ import (
 )
 
 const (
-	//read only member
+	//guest member
 	SPACE_MEMBER_GUEST = "GUEST"
 	//read only member
 	SPACE_MEMBER_ROLE_READ_ONLY = "READ_ONLY"
 	//read write member
 	SPACE_MEMBER_ROLE_READ_WRITE = "READ_WRITE"
-	//read write member
+	//admin member
 	SPACE_MEMBER_ROLE_ADMIN = "ADMIN"
 )
 
