@@ -159,6 +159,12 @@ func (this *SpaceMemberController) Mine(writer http.ResponseWriter, request *htt
 
 	user := this.checkUser(request)
 	spaceMember := this.spaceMemberDao.FindBySpaceUuidAndUserUuid(spaceUuid, user.Uuid)
+	if spaceMember == nil {
+		spaceMember = &SpaceMember{SpaceUuid: spaceUuid, Role: SPACE_MEMBER_GUEST}
+	}
+	if user.Role == USER_ROLE_ADMINISTRATOR {
+		spaceMember.Role = SPACE_MEMBER_ROLE_ADMIN
+	}
 
 	return this.Success(spaceMember)
 
