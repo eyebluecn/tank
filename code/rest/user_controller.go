@@ -126,6 +126,10 @@ func (this *UserController) Login(writer http.ResponseWriter, request *http.Requ
 	}
 	this.innerLogin(writer, request, user)
 
+	//append the space info.
+	space := this.spaceDao.FindByUuid(user.SpaceUuid)
+	user.Space = space
+
 	return this.Success(user)
 }
 
