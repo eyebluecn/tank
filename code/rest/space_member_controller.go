@@ -62,6 +62,7 @@ func (this *SpaceMemberController) RegisterRoutes() map[string]func(writer http.
 	routeMap["/api/space/member/edit"] = this.Wrap(this.Edit, USER_ROLE_USER)
 	routeMap["/api/space/member/delete"] = this.Wrap(this.Delete, USER_ROLE_USER)
 	routeMap["/api/space/member/detail"] = this.Wrap(this.Detail, USER_ROLE_USER)
+	routeMap["/api/space/member/mine"] = this.Wrap(this.Mine, USER_ROLE_USER)
 	routeMap["/api/space/member/page"] = this.Wrap(this.Page, USER_ROLE_USER)
 
 	return routeMap
@@ -146,6 +147,18 @@ func (this *SpaceMemberController) Detail(writer http.ResponseWriter, request *h
 	if spaceMember.UserUuid != user.Uuid {
 		panic(result.UNAUTHORIZED)
 	}
+
+	return this.Success(spaceMember)
+
+}
+
+// find my role in the space.
+func (this *SpaceMemberController) Mine(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+
+	spaceUuid := util.ExtractRequestString(request, "spaceUuid")
+
+	user := this.checkUser(request)
+	spaceMember := this.spaceMemberDao.FindBySpaceUuidAndUserUuid(spaceUuid, user.Uuid)
 
 	return this.Success(spaceMember)
 

@@ -222,14 +222,29 @@ func (this *MatterController) Upload(writer http.ResponseWriter, request *http.R
 func (this *MatterController) Crawl(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	url := util.ExtractRequestString(request, "url")
-	destPath := util.ExtractRequestString(request, "destPath")
+	destPath := util.ExtractRequestOptionalString(request, "destPath", "")
+	puuid := util.ExtractRequestOptionalString(request, "puuid", "")
 	filename := util.ExtractRequestString(request, "filename")
 
 	user := this.checkUser(request)
 	spaceUuid := util.ExtractRequestOptionalString(request, "spaceUuid", user.SpaceUuid)
 	space := this.spaceService.CheckWritableByUuid(request, user, spaceUuid)
 
-	dirMatter := this.matterService.CreateDirectories(request, user, space, destPath)
+	var dirMatter *Matter
+	if puuid == "" {
+		dirMatter = this.matterDao.CheckByUuid(puuid)
+		if dirMatter.SpaceUuid != space.Uuid {
+			panic(result.UNAUTHORIZED)
+		}
+		if !dirMatter.Dir {
+			panic(" puuid is not a dir.")
+		}
+	} else {
+		if destPath == "" {
+			panic(" puuid or destPath cannot be null")
+		}
+		dirMatter = this.matterService.CreateDirectories(request, user, space, destPath)
+	}
 
 	if url == "" || (!strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://")) {
 		panic(" url must start with  http:// or https://")
