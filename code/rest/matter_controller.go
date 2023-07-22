@@ -129,7 +129,7 @@ func (this *MatterController) Page(writer http.ResponseWriter, request *http.Req
 	orderSize := util.ExtractRequestOptionalString(request, "orderSize", "")
 	orderName := util.ExtractRequestOptionalString(request, "orderName", "")
 
-	puuid := util.ExtractRequestString(request, "puuid")
+	puuid := util.ExtractRequestOptionalString(request, "puuid", "")
 	name := util.ExtractRequestOptionalString(request, "name", "")
 	dir := util.ExtractRequestOptionalString(request, "dir", "")
 	deleted := util.ExtractRequestOptionalString(request, "deleted", "")
