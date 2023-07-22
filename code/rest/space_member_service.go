@@ -65,6 +65,9 @@ func (this *SpaceMemberService) canManage(user *User, spaceUuid string) bool {
 	if user.Role == USER_ROLE_ADMINISTRATOR {
 		return true
 	}
+	if user.SpaceUuid == spaceUuid {
+		return true
+	}
 
 	//only space's admin can add member.
 	spaceMember := this.spaceMemberDao.FindBySpaceUuidAndUserUuid(spaceUuid, user.Uuid)
@@ -76,6 +79,9 @@ func (this *SpaceMemberService) canRead(user *User, spaceUuid string) bool {
 	if user.Role == USER_ROLE_ADMINISTRATOR {
 		return true
 	}
+	if user.SpaceUuid == spaceUuid {
+		return true
+	}
 
 	//only space's admin can add member.
 	spaceMember := this.spaceMemberDao.FindBySpaceUuidAndUserUuid(spaceUuid, user.Uuid)
@@ -85,6 +91,9 @@ func (this *SpaceMemberService) canRead(user *User, spaceUuid string) bool {
 // 当前用户对于此空间，是否有可写权限。
 func (this *SpaceMemberService) canWrite(user *User, spaceUuid string) bool {
 	if user.Role == USER_ROLE_ADMINISTRATOR {
+		return true
+	}
+	if user.SpaceUuid == spaceUuid {
 		return true
 	}
 
