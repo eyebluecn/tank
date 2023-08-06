@@ -583,7 +583,9 @@ func (this *MatterService) ComputeRouteSize(matterUuid string, user *User, space
 
 		//when changed, we update
 		if matter.Size != size {
-			this.spaceDao.UpdateTotalSize(space.Uuid, size)
+			this.matterDao.UpdateSize(matterUuid, size)
+
+			matter.Size = size
 		}
 
 	}

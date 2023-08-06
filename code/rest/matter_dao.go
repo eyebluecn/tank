@@ -648,6 +648,11 @@ func (this *MatterDao) SumSizeByUserUuidAndPath(userUuid string, path string) in
 
 }
 
+func (this *MatterDao) UpdateSize(matterUuid string, size int64) {
+	db := core.CONTEXT.GetDB().Model(&Matter{}).Where("uuid = ?", matterUuid).Update("size", size)
+	this.PanicError(db.Error)
+}
+
 func (this *MatterDao) CountByUserUuidAndPath(userUuid string, path string) int64 {
 
 	var wp = &builder.WherePair{Query: "user_uuid = ? AND path like ?", Args: []interface{}{userUuid, path + "%"}}
