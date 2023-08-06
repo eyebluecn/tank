@@ -116,7 +116,7 @@ func (this *MatterController) Detail(writer http.ResponseWriter, request *http.R
 	if space.Uuid == user.SpaceUuid {
 		matter.User = user
 	} else {
-		matter.User = this.userDao.FindByUuid(user.Uuid)
+		matter.User = this.userDao.FindByUuid(matter.UserUuid)
 	}
 
 	return this.Success(matter)
