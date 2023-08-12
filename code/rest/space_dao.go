@@ -171,9 +171,9 @@ func (this *SpaceDao) PageHandle(fun func(space *Space)) {
 		var totalPages = int(math.Ceil(float64(count) / float64(pageSize)))
 		var page int
 		for page = 0; page < totalPages; page++ {
-			_, users := this.PlainPage(0, pageSize, "", sortArray)
-			for _, s := range users {
-				fun(s)
+			_, spaces := this.PlainPage(0, pageSize, "", sortArray)
+			for _, space := range spaces {
+				fun(space)
 			}
 		}
 	}

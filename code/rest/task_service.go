@@ -130,6 +130,8 @@ func (this *TaskService) doScanTask() {
 
 			core.RunWithRecovery(func() {
 
+				this.logger.Info("scan spaceName = %s", space.Name)
+
 				//find admin as operator.
 				adminUser := this.userDao.FindAnAdmin()
 				this.matterService.DeleteByPhysics(request, adminUser, space)
