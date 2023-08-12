@@ -100,19 +100,23 @@ func (this *SpaceDao) SelfPage(page int, pageSize int, userUuid string, spaceTyp
 
 }
 
-func (this *SpaceDao) Page(page int, pageSize int, spaceType string, sortArray []builder.OrderPair) *Pager {
-	count, spaces := this.PlainPage(page, pageSize, spaceType, sortArray)
+func (this *SpaceDao) Page(page int, pageSize int, spaceType string, name string, sortArray []builder.OrderPair) *Pager {
+	count, spaces := this.PlainPage(page, pageSize, spaceType, name, sortArray)
 	pager := NewPager(page, pageSize, count, spaces)
 
 	return pager
 }
 
-func (this *SpaceDao) PlainPage(page int, pageSize int, spaceType string, sortArray []builder.OrderPair) (int, []*Space) {
+func (this *SpaceDao) PlainPage(page int, pageSize int, spaceType string, name string, sortArray []builder.OrderPair) (int, []*Space) {
 
 	var wp = &builder.WherePair{}
 
 	if spaceType != "" {
-		wp = &builder.WherePair{Query: "type = ?", Args: []interface{}{spaceType}}
+		wp = wp.And(&builder.WherePair{Query: "type = ?", Args: []interface{}{spaceType}})
+	}
+
+	if name != "" {
+		wp = wp.And(&builder.WherePair{Query: "name LIKE ?", Args: []interface{}{"%" + name + "%"}})
 	}
 
 	var conditionDB *gorm.DB
@@ -166,12 +170,12 @@ func (this *SpaceDao) PageHandle(fun func(space *Space)) {
 			Value: DIRECTION_ASC,
 		},
 	}
-	count, _ := this.PlainPage(0, pageSize, "", sortArray)
+	count, _ := this.PlainPage(0, pageSize, "", "", sortArray)
 	if count > 0 {
 		var totalPages = int(math.Ceil(float64(count) / float64(pageSize)))
 		var page int
 		for page = 0; page < totalPages; page++ {
-			_, spaces := this.PlainPage(0, pageSize, "", sortArray)
+			_, spaces := this.PlainPage(0, pageSize, "", "", sortArray)
 			for _, space := range spaces {
 				fun(space)
 			}

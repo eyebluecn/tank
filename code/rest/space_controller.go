@@ -138,6 +138,7 @@ func (this *SpaceController) Page(writer http.ResponseWriter, request *http.Requ
 	pageSize := util.ExtractRequestOptionalInt(request, "pageSize", 20)
 	orderCreateTime := util.ExtractRequestOptionalString(request, "orderCreateTime", "")
 	spaceType := util.ExtractRequestOptionalString(request, "type", "")
+	name := util.ExtractRequestOptionalString(request, "name", "")
 
 	user := this.checkUser(request)
 
@@ -155,7 +156,7 @@ func (this *SpaceController) Page(writer http.ResponseWriter, request *http.Requ
 		}
 		pager = this.spaceDao.SelfPage(page, pageSize, user.Uuid, spaceType, sortArray)
 	} else if user.Role == USER_ROLE_ADMINISTRATOR {
-		pager = this.spaceDao.Page(page, pageSize, spaceType, sortArray)
+		pager = this.spaceDao.Page(page, pageSize, spaceType, name, sortArray)
 	}
 
 	return this.Success(pager)
