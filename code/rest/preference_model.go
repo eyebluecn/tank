@@ -32,19 +32,19 @@ const (
 	SCAN_SCOPE_CUSTOM = "CUSTOM"
 )
 
-//scan config struct.
+// scan config struct.
 type ScanConfig struct {
 	//whether enable the scan task.
 	Enable bool `json:"enable"`
 	//when to process the task. five fields. @every 1s
 	Cron string `json:"cron"`
-	//username
-	Usernames []string `json:"usernames"`
+	//spaceNames
+	SpaceNames []string `json:"spaceNames"`
 	//scan scope. see SCAN_SCOPE
 	Scope string `json:"scope"`
 }
 
-//fetch the scan config
+// fetch the scan config
 func (this *Preference) FetchScanConfig() *ScanConfig {
 
 	json := this.ScanConfig

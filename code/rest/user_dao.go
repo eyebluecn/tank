@@ -80,6 +80,20 @@ func (this *UserDao) FindByUsername(username string) *User {
 	return user
 }
 
+func (this *UserDao) FindAnAdmin() *User {
+
+	var user = &User{}
+	db := core.CONTEXT.GetDB().Where(&User{Role: USER_ROLE_ADMINISTRATOR}).First(user)
+	if db.Error != nil {
+		if db.Error.Error() == result.DB_ERROR_NOT_FOUND {
+			return nil
+		} else {
+			panic(db.Error)
+		}
+	}
+	return user
+}
+
 func (this *UserDao) Page(page int, pageSize int, username string, status string, sortArray []builder.OrderPair) *Pager {
 
 	count, users := this.PlainPage(page, pageSize, username, status, sortArray)

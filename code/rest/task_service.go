@@ -126,12 +126,14 @@ func (this *TaskService) doScanTask() {
 
 	if scanConfig.Scope == SCAN_SCOPE_ALL {
 		//scan all user's root folder.
-		this.userDao.PageHandle("", "", func(user *User, space *Space) {
+		this.spaceDao.PageHandle(func(space *Space) {
 
 			core.RunWithRecovery(func() {
 
-				this.matterService.DeleteByPhysics(request, user, space)
-				this.matterService.ScanPhysics(request, user, space)
+				//find admin as operator.
+				adminUser := this.userDao.FindAnAdmin()
+				this.matterService.DeleteByPhysics(request, adminUser, space)
+				this.matterService.ScanPhysics(request, adminUser, space)
 
 			})
 
@@ -139,19 +141,20 @@ func (this *TaskService) doScanTask() {
 
 	} else if scanConfig.Scope == SCAN_SCOPE_CUSTOM {
 		//scan custom user's folder.
+		//find admin as operator.
+		adminUser := this.userDao.FindAnAdmin()
 
-		for _, username := range scanConfig.Usernames {
-			user := this.userDao.FindByUsername(username)
-			if user == nil {
-				this.logger.Error("username = %s not exist.", username)
+		for _, spaceName := range scanConfig.SpaceNames {
+			space := this.spaceDao.FindByName(spaceName)
+			if space == nil {
+				this.logger.Error("name = %s not exist.", spaceName)
 			} else {
-				this.logger.Info("scan custom user folder. username = %s", username)
+				this.logger.Info("scan custom user folder. spaceName = %s", spaceName)
 
-				space := this.spaceDao.CheckByUuid(user.SpaceUuid)
 				core.RunWithRecovery(func() {
 
-					this.matterService.DeleteByPhysics(request, user, space)
-					this.matterService.ScanPhysics(request, user, space)
+					this.matterService.DeleteByPhysics(request, adminUser, space)
+					this.matterService.ScanPhysics(request, adminUser, space)
 
 				})
 

@@ -6,6 +6,7 @@ import (
 	"github.com/eyebluecn/tank/code/tool/builder"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"gorm.io/gorm"
+	"math"
 
 	"github.com/eyebluecn/tank/code/tool/uuid"
 	"time"
@@ -46,6 +47,20 @@ func (this *SpaceDao) CountByName(name string) int {
 		Count(&count)
 	this.PanicError(db.Error)
 	return int(count)
+}
+
+func (this *SpaceDao) FindByName(name string) *Space {
+
+	var space = &Space{}
+	db := core.CONTEXT.GetDB().Where(&Space{Name: name}).First(space)
+	if db.Error != nil {
+		if db.Error.Error() == result.DB_ERROR_NOT_FOUND {
+			return nil
+		} else {
+			panic(db.Error)
+		}
+	}
+	return space
 }
 
 func (this *SpaceDao) CountByUserUuid(userUuid string) int {
@@ -94,7 +109,11 @@ func (this *SpaceDao) Page(page int, pageSize int, spaceType string, sortArray [
 
 func (this *SpaceDao) PlainPage(page int, pageSize int, spaceType string, sortArray []builder.OrderPair) (int, []*Space) {
 
-	var wp = &builder.WherePair{Query: "type = ?", Args: []interface{}{spaceType}}
+	var wp = &builder.WherePair{}
+
+	if spaceType != "" {
+		wp = &builder.WherePair{Query: "type = ?", Args: []interface{}{spaceType}}
+	}
 
 	var conditionDB *gorm.DB
 	conditionDB = core.CONTEXT.GetDB().Model(&Space{}).Where(wp.Query, wp.Args...)
@@ -135,6 +154,29 @@ func (this *SpaceDao) Save(space *Space) *Space {
 func (this *SpaceDao) UpdateTotalSize(spaceUuid string, totalSize int64) {
 	db := core.CONTEXT.GetDB().Model(&Space{}).Where("uuid = ?", spaceUuid).Update("total_size", totalSize)
 	this.PanicError(db.Error)
+}
+
+// handle user page by page.
+func (this *SpaceDao) PageHandle(fun func(space *Space)) {
+
+	pageSize := 1000
+	sortArray := []builder.OrderPair{
+		{
+			Key:   "uuid",
+			Value: DIRECTION_ASC,
+		},
+	}
+	count, _ := this.PlainPage(0, pageSize, "", sortArray)
+	if count > 0 {
+		var totalPages = int(math.Ceil(float64(count) / float64(pageSize)))
+		var page int
+		for page = 0; page < totalPages; page++ {
+			_, users := this.PlainPage(0, pageSize, "", sortArray)
+			for _, s := range users {
+				fun(s)
+			}
+		}
+	}
 }
 
 func (this *SpaceDao) Delete(space *Space) {

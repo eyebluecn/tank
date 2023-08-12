@@ -62,7 +62,7 @@ func (this *PreferenceController) RegisterRoutes() map[string]func(writer http.R
 	return routeMap
 }
 
-//ping the application. Return current version.
+// ping the application. Return current version.
 func (this *PreferenceController) Ping(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	return this.Success(core.VERSION)
@@ -76,7 +76,7 @@ func (this *PreferenceController) Fetch(writer http.ResponseWriter, request *htt
 	return this.Success(preference)
 }
 
-//edit basic info.
+// edit basic info.
 func (this *PreferenceController) Edit(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	name := request.FormValue("name")
@@ -163,7 +163,7 @@ func (this *PreferenceController) Edit(writer http.ResponseWriter, request *http
 	return this.Success(preference)
 }
 
-//edit preview config.
+// edit preview config.
 func (this *PreferenceController) EditPreviewConfig(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	previewConfig := request.FormValue("previewConfig")
@@ -200,7 +200,7 @@ func (this *PreferenceController) EditScanConfig(writer http.ResponseWriter, req
 
 		//validate scope.
 		if scanConfig.Scope == SCAN_SCOPE_CUSTOM {
-			if len(scanConfig.Usernames) == 0 {
+			if len(scanConfig.SpaceNames) == 0 {
 				panic(result.BadRequest("scope cannot be null"))
 			}
 		} else if scanConfig.Scope == SCAN_SCOPE_ALL {
@@ -219,14 +219,14 @@ func (this *PreferenceController) EditScanConfig(writer http.ResponseWriter, req
 	return this.Success(preference)
 }
 
-//scan immediately according the current config.
+// scan immediately according the current config.
 func (this *PreferenceController) ScanOnce(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	this.taskService.doScanTask()
 	return this.Success("OK")
 }
 
-//cleanup system data.
+// cleanup system data.
 func (this *PreferenceController) SystemCleanup(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	user := this.checkUser(request)

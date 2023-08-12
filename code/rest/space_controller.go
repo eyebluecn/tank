@@ -69,7 +69,6 @@ func (this *SpaceController) RegisterRoutes() map[string]func(writer http.Respon
 	routeMap["/api/space/delete"] = this.Wrap(this.Delete, USER_ROLE_ADMINISTRATOR)
 	routeMap["/api/space/detail"] = this.Wrap(this.Detail, USER_ROLE_USER)
 	routeMap["/api/space/page"] = this.Wrap(this.Page, USER_ROLE_USER)
-
 	return routeMap
 }
 
@@ -138,7 +137,7 @@ func (this *SpaceController) Page(writer http.ResponseWriter, request *http.Requ
 	page := util.ExtractRequestOptionalInt(request, "page", 0)
 	pageSize := util.ExtractRequestOptionalInt(request, "pageSize", 20)
 	orderCreateTime := util.ExtractRequestOptionalString(request, "orderCreateTime", "")
-	spaceType := util.ExtractRequestOptionalString(request, "type", SPACE_TYPE_SHARED)
+	spaceType := util.ExtractRequestOptionalString(request, "type", "")
 
 	user := this.checkUser(request)
 
@@ -151,6 +150,9 @@ func (this *SpaceController) Page(writer http.ResponseWriter, request *http.Requ
 
 	var pager *Pager
 	if user.Role == USER_ROLE_USER {
+		if spaceType != SPACE_TYPE_SHARED {
+			panic(result.BadRequest("user can only query shared space type."))
+		}
 		pager = this.spaceDao.SelfPage(page, pageSize, user.Uuid, spaceType, sortArray)
 	} else if user.Role == USER_ROLE_ADMINISTRATOR {
 		pager = this.spaceDao.Page(page, pageSize, spaceType, sortArray)
