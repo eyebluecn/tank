@@ -375,6 +375,7 @@ func (this *InstallController) CreateAdmin(writer http.ResponseWriter, request *
 	space.Uuid = timeUUID.String()
 	space.CreateTime = time.Now()
 	space.UpdateTime = time.Now()
+	space.Name = adminUsername
 	space.UserUuid = ""
 	space.SizeLimit = -1
 	space.Type = SPACE_TYPE_PRIVATE
