@@ -133,9 +133,10 @@ func (this *TaskService) doScanTask() {
 				this.logger.Info("scan spaceName = %s", space.Name)
 
 				//find admin as operator.
-				adminUser := this.userDao.FindAnAdmin()
-				this.matterService.DeleteByPhysics(request, adminUser, space)
-				this.matterService.ScanPhysics(request, adminUser, space)
+				// adminUser := this.userDao.FindAnAdmin()
+				user := this.userDao.FindByUuid(space.UserUuid)
+				this.matterService.DeleteByPhysics(request, user, space)
+				this.matterService.ScanPhysics(request, user, space)
 
 			})
 

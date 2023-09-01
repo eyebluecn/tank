@@ -518,9 +518,10 @@ func (this *MatterDao) Delete(matter *Matter) {
 		//delete from db.
 		db := core.CONTEXT.GetDB().Delete(&matter)
 		this.PanicError(db.Error)
-
-		//delete dir from disk.
-		util.DeleteEmptyDir(matter.AbsolutePath())
+		if util.PathExists(matter.AbsolutePath()) {
+			//delete dir from disk.
+			util.DeleteEmptyDir(matter.AbsolutePath())
+		}
 
 	} else {
 
