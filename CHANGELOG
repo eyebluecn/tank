@@ -52,6 +52,27 @@ go get xxx/xxx
 go mod tidy
 
 
+
+tank-4.0.1 2023-09-09
+1.修复一些文件扫描的bug https://github.com/eyebluecn/tank/issues/221 https://github.com/eyebluecn/tank/issues/220
+
+1.Fix scan bug. https://github.com/eyebluecn/tank/issues/221 https://github.com/eyebluecn/tank/issues/220
+
+
+tank-4.0.0 2023-08-13
+1.增加空间概念，可以多人共同维护一个共享空间中的文件 #201
+2.新增粘贴上传文件功能 #188
+3.文件大小单位选择体验优化 #179
+4.支持使用url的方式抓取文件
+5.一些UI优化
+
+1.Add space, supports multi users maintaining a shared space. #201
+2.Add the feature of uploading by pasting files. #188
+3.Human readable file size unit. #179
+4.Add the feature of uploading by url.
+6.Some user experience enhancement.
+
+
 tank-4.0.0.beta1 2023-07-22
 1. Shared space
 2. Copy and paste upload
