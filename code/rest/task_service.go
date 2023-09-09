@@ -134,6 +134,9 @@ func (this *TaskService) doScanTask() {
 
 				//find user by space
 				user := this.userDao.FindByUuid(space.UserUuid)
+				if user == nil {
+					user = this.userDao.FindAnAdmin()
+				}
 				this.matterService.DeleteByPhysics(request, user, space)
 				this.matterService.ScanPhysics(request, user, space)
 
@@ -153,6 +156,9 @@ func (this *TaskService) doScanTask() {
 				core.RunWithRecovery(func() {
 					//find user by space
 					user := this.userDao.FindByUuid(space.UserUuid)
+					if user == nil {
+						user = this.userDao.FindAnAdmin()
+					}
 					this.matterService.DeleteByPhysics(request, user, space)
 					this.matterService.ScanPhysics(request, user, space)
 
