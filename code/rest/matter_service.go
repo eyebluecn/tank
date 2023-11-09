@@ -700,6 +700,7 @@ func (this *MatterService) createDirectory(request *http.Request, dirMatter *Mat
 		Dir:       true,
 		Name:      name,
 		Path:      relativePath,
+		Privacy:   false,
 		VisitTime: time.Now(),
 	}
 
