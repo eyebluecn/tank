@@ -52,6 +52,15 @@ go get xxx/xxx
 go mod tidy
 
 
+tank-4.0.2 2023-11-10
+1. 修复BUG https://github.com/eyebluecn/tank/issues/229
+2. 新增了分享提取码快速提取
+3. 分享文件默认按照创建时间倒序排列。
+
+1. Fix BUG https://github.com/eyebluecn/tank/issues/229
+2. Fast share using code.
+3. Share list order by create time desc.
+
 
 tank-4.0.1 2023-09-09
 1.修复一些文件扫描的bug https://github.com/eyebluecn/tank/issues/221 https://github.com/eyebluecn/tank/issues/220
