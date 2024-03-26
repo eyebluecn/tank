@@ -3,8 +3,6 @@ package download
 import (
 	"errors"
 	"fmt"
-	"github.com/eyebluecn/tank/code/tool/result"
-	"github.com/eyebluecn/tank/code/tool/util"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -14,6 +12,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/eyebluecn/tank/code/tool/result"
+	"github.com/eyebluecn/tank/code/tool/util"
 )
 
 // HttpRange specifies the byte range to be sent to the client.
@@ -313,6 +314,8 @@ func DownloadFile(
 			sendSize = ra.length
 			code = http.StatusPartialContent
 			writer.Header().Set("Content-Range", ra.contentRange(size))
+			//  把文件放进去
+			io.CopyN(writer, diskFile, int64(ra.length))
 		case len(ranges) > 1:
 			sendSize = RangesMIMESize(ranges, ctype, size)
 			code = http.StatusPartialContent
