@@ -52,6 +52,9 @@ go get xxx/xxx
 go mod tidy
 
 
+tank-4.0.3 2024-3-26
+1. 修复已知问题
+
 tank-4.0.2 2023-11-10
 1. 修复BUG https://github.com/eyebluecn/tank/issues/229
 2. 新增了分享提取码快速提取
