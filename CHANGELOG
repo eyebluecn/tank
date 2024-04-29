@@ -51,6 +51,8 @@ c. 在github上发布新版本。
 go get xxx/xxx
 go mod tidy
 
+tank-4.0.4 2024-4-29
+1. 修复已知问题
 
 tank-4.0.3 2024-3-26
 1. 修复已知问题
