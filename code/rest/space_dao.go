@@ -183,6 +183,13 @@ func (this *SpaceDao) PageHandle(fun func(space *Space)) {
 	}
 }
 
+func (this *SpaceDao) DeleteByUserUuid(userUuid string) {
+
+	db := core.CONTEXT.GetDB().Where("user_uuid = ?", userUuid).Delete(Space{})
+	this.PanicError(db.Error)
+
+}
+
 func (this *SpaceDao) Delete(space *Space) {
 
 	db := core.CONTEXT.GetDB().Delete(&space)

@@ -25,6 +25,8 @@ type UserService struct {
 	matterDao        *MatterDao
 	matterService    *MatterService
 	imageCacheDao    *ImageCacheDao
+	spaceDao         *SpaceDao
+	spaceMemberDao   *SpaceMemberDao
 	shareDao         *ShareDao
 	shareService     *ShareService
 	downloadTokenDao *DownloadTokenDao
@@ -65,6 +67,15 @@ func (this *UserService) Init() {
 		this.imageCacheDao = b
 	}
 
+	b = core.CONTEXT.GetBean(this.spaceDao)
+	if b, ok := b.(*SpaceDao); ok {
+		this.spaceDao = b
+	}
+
+	b = core.CONTEXT.GetBean(this.spaceMemberDao)
+	if b, ok := b.(*SpaceMemberDao); ok {
+		this.spaceMemberDao = b
+	}
 	b = core.CONTEXT.GetBean(this.shareService)
 	if b, ok := b.(*ShareService); ok {
 		this.shareService = b
@@ -299,6 +310,15 @@ func (this *UserService) DeleteUser(request *http.Request, currentUser *User) {
 	//delete matters
 	this.logger.Info("delete matters")
 	this.matterDao.DeleteByUserUuid(currentUser.Uuid)
+
+	//delete space members
+	space := this.spaceDao.CheckByUuid(currentUser.SpaceUuid)
+	this.logger.Info("delete space members")
+	this.spaceMemberDao.DeleteBySpaceUuid(space.Uuid)
+
+	//delete spaces
+	this.logger.Info("delete spaces")
+	this.spaceDao.DeleteByUserUuid(currentUser.Uuid)
 
 	//delete this user
 	this.logger.Info("delete this user.")
