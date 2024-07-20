@@ -77,6 +77,7 @@ func (this *MatterController) RegisterRoutes() map[string]func(writer http.Respo
 	routeMap := make(map[string]func(writer http.ResponseWriter, request *http.Request))
 	routeMap["/api/matter/detail"] = this.Wrap(this.Detail, USER_ROLE_USER)
 	routeMap["/api/matter/page"] = this.Wrap(this.Page, USER_ROLE_USER)
+	routeMap["/api/matter/search"] = this.Wrap(this.Search, USER_ROLE_USER)
 
 	routeMap["/api/matter/create/directory"] = this.Wrap(this.CreateDirectory, USER_ROLE_USER)
 	routeMap["/api/matter/upload"] = this.Wrap(this.Upload, USER_ROLE_USER)
@@ -172,6 +173,34 @@ func (this *MatterController) Page(writer http.ResponseWriter, request *http.Req
 	)
 
 	return this.Success(pager)
+}
+
+//DFS search.
+func (this *MatterController) Search(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+
+	limit := util.ExtractRequestOptionalInt(request, "limit", 200)
+	puuid := util.ExtractRequestString(request, "puuid")
+	keyword := util.ExtractRequestString(request, "keyword")
+	deletedStr := util.ExtractRequestOptionalString(request, "deleted", "")
+	var deleted = false
+	if deletedStr == TRUE {
+		deleted = true
+	}
+
+	user := this.checkUser(request)
+	spaceUuid := util.ExtractRequestOptionalString(request, "spaceUuid", user.SpaceUuid)
+	this.spaceService.CheckReadableByUuid(request, user, spaceUuid)
+
+	matters := this.matterService.DfsSearch(
+		request,
+		limit,
+		puuid,
+		keyword,
+		spaceUuid,
+		deleted,
+	)
+
+	return this.Success(matters)
 }
 
 func (this *MatterController) CreateDirectory(writer http.ResponseWriter, request *http.Request) *result.WebResult {

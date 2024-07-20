@@ -137,6 +137,62 @@ func (this *MatterService) Page(
 	return pager
 }
 
+// search files by dfs.
+func (this *MatterService) DfsSearch(
+	request *http.Request,
+	limit int,
+	puuid string,
+	keyword string,
+	spaceUuid string,
+	deleted bool,
+) []*Matter {
+
+	deletedStr := FALSE
+	if deleted {
+		deletedStr = FALSE
+	}
+
+	//find all matters including dir and files.
+	_, matters := this.matterDao.PlainPage(0, limit, puuid, "", spaceUuid, keyword, "", deletedStr, nil, nil, nil)
+	if len(matters) >= limit {
+		return matters
+	}
+
+	var resultList []*Matter
+	for _, matter := range matters {
+		if !matter.Dir {
+			resultList = append(resultList, matter)
+		}
+	}
+
+	//dfs from puuid.
+	_, dirMatters := this.matterDao.PlainPage(0, 1000, puuid, "", spaceUuid, keyword, "", "", nil, nil, nil)
+	for _, dirMatter := range dirMatters {
+
+		//add dir if match.
+		if strings.Contains(dirMatter.Name, keyword) {
+			if deleted == dirMatter.Deleted {
+				resultList = append(resultList, dirMatter)
+			}
+		}
+
+		remainLimit := limit - len(resultList)
+		subMatters := this.DfsSearch(request, remainLimit, dirMatter.Uuid, keyword, spaceUuid, deleted)
+		for _, subMatter := range subMatters {
+			resultList = append(resultList, subMatter)
+		}
+
+		//enough then return
+		if len(resultList) >= limit {
+			return resultList
+		}
+
+	}
+
+	//not enough ,return.
+	return resultList
+}
+
 // Download. Support chunk download.
 func (this *MatterService) DownloadFile(
 	writer http.ResponseWriter,

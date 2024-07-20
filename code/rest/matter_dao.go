@@ -354,6 +354,8 @@ func (this *MatterDao) FindByUuids(uuids []string, sortArray []builder.OrderPair
 
 	return matters
 }
+
+// pagination is 0 base.
 func (this *MatterDao) PlainPage(
 	page int,
 	pageSize int,
