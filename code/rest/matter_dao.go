@@ -205,6 +205,38 @@ func (this *MatterDao) CountBySpaceUuidAndPuuidAndDirAndName(spaceUuid string, p
 	return int(count)
 }
 
+func (this *MatterDao) FindBySpaceUuidAndPuuidAndDirAndName(spaceUuid string, puuid string, dir bool, name string) *Matter {
+
+	var matter = &Matter{}
+	var wp = &builder.WherePair{}
+
+	if puuid != "" {
+		wp = wp.And(&builder.WherePair{Query: "puuid = ?", Args: []interface{}{puuid}})
+	}
+
+	if spaceUuid != "" {
+		wp = wp.And(&builder.WherePair{Query: "space_uuid = ?", Args: []interface{}{spaceUuid}})
+	}
+
+	if name != "" {
+		wp = wp.And(&builder.WherePair{Query: "name = ?", Args: []interface{}{name}})
+	}
+
+	wp = wp.And(&builder.WherePair{Query: "dir = ?", Args: []interface{}{dir}})
+
+	db := core.CONTEXT.GetDB().Where(wp.Query, wp.Args...).First(matter)
+
+	if db.Error != nil {
+		if db.Error.Error() == result.DB_ERROR_NOT_FOUND {
+			return nil
+		} else {
+			this.PanicError(db.Error)
+		}
+	}
+
+	return matter
+}
+
 func (this *MatterDao) FindByUserUuidAndPuuidAndDirAndName(userUuid string, puuid string, dir string, name string) *Matter {
 
 	var matter = &Matter{}

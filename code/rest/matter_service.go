@@ -449,9 +449,14 @@ func (this *MatterService) Upload(request *http.Request, file io.Reader, fileHea
 
 	dirAbsolutePath := dirMatter.AbsolutePath()
 
-	count := this.matterDao.CountBySpaceUuidAndPuuidAndDirAndName(space.Uuid, dirMatter.Uuid, false, filename)
-	if count > 0 {
-		panic(result.BadRequestI18n(request, i18n.MatterExist, filename))
+	dbMatter := this.matterDao.FindBySpaceUuidAndPuuidAndDirAndName(space.Uuid, dirMatter.Uuid, false, filename)
+	if dbMatter != nil {
+		if dbMatter.Deleted {
+			panic(result.BadRequestI18n(request, i18n.MatterRecycleBinExist, filename))
+		} else {
+			panic(result.BadRequestI18n(request, i18n.MatterExist, filename))
+		}
+
 	}
 
 	fileAbsolutePath := dirAbsolutePath + "/" + filename

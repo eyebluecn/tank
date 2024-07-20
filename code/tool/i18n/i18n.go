@@ -34,6 +34,7 @@ var (
 	UserDisabled                   = &Item{English: `user has been disabled`, Chinese: `用户已经被禁用了`}
 	MatterDestinationMustDirectory = &Item{English: `destination must be directory'`, Chinese: `目标对象只能是文件夹。`}
 	MatterExist                    = &Item{English: `"%s" already exists, invalid operation`, Chinese: `"%s" 已经存在了，操作无效`}
+	MatterRecycleBinExist          = &Item{English: `"%s" already exists in recycle bin, invalid operation`, Chinese: `"%s" 已经存在于回收站，请彻底删除后再操作`}
 	MatterDepthExceedLimit         = &Item{English: `directory's depth exceed the limit %d > %d`, Chinese: `文件加层数超过限制 %d > %d `}
 	MatterNameLengthExceedLimit    = &Item{English: `filename's length exceed the limit %d > %d`, Chinese: `文件名称长度超过限制 %d > %d `}
 	MatterSelectNumExceedLimit     = &Item{English: `selected files' num exceed the limit %d > %d`, Chinese: `选择的文件数量超出限制了 %d > %d `}
