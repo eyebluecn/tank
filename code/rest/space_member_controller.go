@@ -7,6 +7,7 @@ import (
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
 	"net/http"
+	"strings"
 )
 
 type SpaceMemberController struct {
@@ -73,13 +74,20 @@ func (this *SpaceMemberController) RegisterRoutes() map[string]func(writer http.
 func (this *SpaceMemberController) Create(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	spaceUuid := util.ExtractRequestString(request, "spaceUuid")
-	userUuid := util.ExtractRequestString(request, "userUuid")
+	userUuidsStr := util.ExtractRequestString(request, "userUuids")
 	spaceRole := util.ExtractRequestString(request, "role")
 
 	if spaceRole != SPACE_MEMBER_ROLE_READ_ONLY && spaceRole != SPACE_MEMBER_ROLE_READ_WRITE && spaceRole != SPACE_MEMBER_ROLE_ADMIN {
 		panic("spaceRole is not correct")
 	}
 
+	//validate userUuids
+	if userUuidsStr == "" {
+		panic("userUuids is required")
+	}
+	userUuids := strings.Split(userUuidsStr, ",")
+
+	// check operator's permission
 	currentUser := this.checkUser(request)
 	canManage := this.spaceMemberService.canManage(currentUser, spaceUuid)
 	if !canManage {
@@ -87,18 +95,24 @@ func (this *SpaceMemberController) Create(writer http.ResponseWriter, request *h
 	}
 
 	//check whether exists.
-	spaceMember := this.spaceMemberDao.FindBySpaceUuidAndUserUuid(spaceUuid, userUuid)
-	if spaceMember != nil {
-		panic(result.BadRequestI18n(request, i18n.SpaceMemberExist))
+	for _, userUuid := range userUuids {
+		spaceMember := this.spaceMemberDao.FindBySpaceUuidAndUserUuid(spaceUuid, userUuid)
+		user := this.userDao.CheckByUuid(userUuid)
+		if spaceMember != nil {
+			panic(result.BadRequestI18n(request, i18n.SpaceMemberExist, user.Username))
+		}
 	}
 
 	//check whether space exists.
 	space := this.spaceDao.CheckByUuid(spaceUuid)
-	user := this.userDao.CheckByUuid(userUuid)
 
-	spaceMember = this.spaceMemberService.CreateMember(space, user, spaceRole)
+	//check whether exists.
+	for _, userUuid := range userUuids {
+		user := this.userDao.CheckByUuid(userUuid)
+		this.spaceMemberService.CreateMember(space, user, spaceRole)
+	}
 
-	return this.Success(spaceMember)
+	return this.Success("OK")
 }
 
 func (this *SpaceMemberController) Edit(writer http.ResponseWriter, request *http.Request) *result.WebResult {

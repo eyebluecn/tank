@@ -10,7 +10,7 @@ import (
 
 func TestHello(t *testing.T) {
 
-	split := strings.Split("good", "/")
+	split := strings.Split("", "")
 	fmt.Printf("%v", split)
 
 	var i int
