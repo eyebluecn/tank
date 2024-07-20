@@ -240,19 +240,31 @@ func (this *UserController) Edit(writer http.ResponseWriter, request *http.Reque
 	sizeLimit := util.ExtractRequestInt64(request, "sizeLimit")
 	totalSizeLimit := util.ExtractRequestInt64(request, "totalSizeLimit")
 
-	user := this.checkUser(request)
+	operator := this.checkUser(request)
 	currentUser := this.userDao.CheckByUuid(uuid)
 
 	currentUser.AvatarUrl = avatarUrl
 
-	if user.Role == USER_ROLE_ADMINISTRATOR {
-		//only admin can edit user's sizeLimit
+	if operator.Role == USER_ROLE_ADMINISTRATOR {
+		//only admin can edit user's role and sizeLimit
 
 		if role == USER_ROLE_USER || role == USER_ROLE_ADMINISTRATOR {
 			currentUser.Role = role
 		}
 
-	} else if user.Uuid != uuid {
+	} else if operator.Uuid == uuid {
+		//cannot edit sizeLimit, totalSizeLimit
+		space := this.spaceDao.CheckByUuid(currentUser.SpaceUuid)
+		if space.SizeLimit != sizeLimit {
+			this.logger.Error(" %s try to modify sizeLimit from %d to %d.", operator.Uuid, space.SizeLimit, sizeLimit)
+			panic(result.BadRequestI18n(request, i18n.PermissionDenied))
+		}
+		if space.TotalSizeLimit != totalSizeLimit {
+			this.logger.Error(" %s try to modify TotalSizeLimit from %d to %d.", operator.Uuid, space.TotalSizeLimit, totalSizeLimit)
+			panic(result.BadRequestI18n(request, i18n.PermissionDenied))
+		}
+
+	} else {
 		panic(result.UNAUTHORIZED)
 	}
 
@@ -260,7 +272,7 @@ func (this *UserController) Edit(writer http.ResponseWriter, request *http.Reque
 	currentUser = this.userDao.Save(currentUser)
 
 	//edit user's private space info.
-	space := this.spaceService.Edit(request, user, currentUser.SpaceUuid, sizeLimit, totalSizeLimit)
+	space := this.spaceService.Edit(request, operator, currentUser.SpaceUuid, sizeLimit, totalSizeLimit)
 
 	//remove cache user.
 	this.userService.RemoveCacheUserByUuid(currentUser.Uuid)
