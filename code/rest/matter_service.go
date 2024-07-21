@@ -158,7 +158,7 @@ func (this *MatterService) DfsSearch(
 		return matters
 	}
 
-	var resultList []*Matter
+	var resultList = make([]*Matter, 0)
 	for _, matter := range matters {
 		if !matter.Dir {
 			resultList = append(resultList, matter)
@@ -166,7 +166,7 @@ func (this *MatterService) DfsSearch(
 	}
 
 	//dfs from puuid.
-	_, dirMatters := this.matterDao.PlainPage(0, 1000, puuid, "", spaceUuid, keyword, "", "", nil, nil, nil)
+	_, dirMatters := this.matterDao.PlainPage(0, 1000, puuid, "", spaceUuid, "", TRUE, "", nil, nil, nil)
 	for _, dirMatter := range dirMatters {
 
 		//add dir if match.
