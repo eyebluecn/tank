@@ -175,7 +175,7 @@ func (this *MatterController) Page(writer http.ResponseWriter, request *http.Req
 	return this.Success(pager)
 }
 
-//DFS search.
+// DFS search.
 func (this *MatterController) Search(writer http.ResponseWriter, request *http.Request) *result.WebResult {
 
 	limit := util.ExtractRequestOptionalInt(request, "limit", 200)
@@ -330,7 +330,7 @@ func (this *MatterController) SoftDeleteBatch(writer http.ResponseWriter, reques
 			continue
 		}
 
-		if matter.UserUuid != user.Uuid {
+		if matter.SpaceUuid != spaceUuid {
 			panic(result.UNAUTHORIZED)
 		}
 
