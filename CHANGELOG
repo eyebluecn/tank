@@ -51,6 +51,21 @@ c. 在github上发布新版本。
 go get xxx/xxx
 go mod tidy
 
+tank-4.1.0 2024-7-27
+1. 删除用户后，空间一并删除。 #222
+2. 增加批量绑定空间成员功能。 #227
+3. 共享空间增加回收站逻辑。 #232
+4. 修复用户修改空间单位问题。 #233 #253
+5. 增强搜索功能，会进行dfs深度优先搜索。 #239
+
+
+1. When delete user, it's space will be deleted #222
+2. Batch creating space member #227
+3. Add feature of recycle bin for space #232
+4. Fix issue of changing unit #233 #253
+5. Enhance the search ability, using dfs #239
+
+
 tank-4.0.4 2024-4-29
 1. 修复已知问题
 
