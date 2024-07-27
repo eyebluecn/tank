@@ -209,7 +209,7 @@ func (this *MatterController) Search(writer http.ResponseWriter, request *http.R
 		if matter1.Dir {
 			return true
 		} else if matter2.Dir {
-			return true
+			return false
 		} else {
 			cmp := strings.Compare(matter1.Name, matter2.Name)
 			if cmp < 0 {
