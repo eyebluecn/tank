@@ -1,5 +1,5 @@
-# use golang 1.18
-FROM golang:1.18
+# use golang 1.22.5
+FROM golang:1.22.5
 
 # maintainer. Author's name and email.
 MAINTAINER eyeblue "eyebluecn@126.com"
