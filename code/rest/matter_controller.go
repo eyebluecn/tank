@@ -6,6 +6,7 @@ import (
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
 	"net/http"
+	"sort"
 	"strings"
 )
 
@@ -199,6 +200,27 @@ func (this *MatterController) Search(writer http.ResponseWriter, request *http.R
 		spaceUuid,
 		deleted,
 	)
+
+	//sort.
+	//从小到大自定义排序
+	sort.Slice(matters, func(i, j int) bool {
+		matter1 := matters[i]
+		matter2 := matters[j]
+		if matter1.Dir {
+			return true
+		} else if matter2.Dir {
+			return true
+		} else {
+			cmp := strings.Compare(matter1.Name, matter2.Name)
+			if cmp < 0 {
+				return true
+			} else if cmp == 0 {
+				return true
+			} else {
+				return false
+			}
+		}
+	})
 
 	return this.Success(matters)
 }
