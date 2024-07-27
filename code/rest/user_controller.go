@@ -64,6 +64,7 @@ func (this *UserController) RegisterRoutes() map[string]func(writer http.Respons
 	routeMap["/api/user/change/password"] = this.Wrap(this.ChangePassword, USER_ROLE_USER)
 	routeMap["/api/user/reset/password"] = this.Wrap(this.ResetPassword, USER_ROLE_ADMINISTRATOR)
 	routeMap["/api/user/page"] = this.Wrap(this.Page, USER_ROLE_ADMINISTRATOR)
+	routeMap["/api/user/search"] = this.Wrap(this.Search, USER_ROLE_USER)
 	routeMap["/api/user/toggle/status"] = this.Wrap(this.ToggleStatus, USER_ROLE_ADMINISTRATOR)
 	routeMap["/api/user/transfiguration"] = this.Wrap(this.Transfiguration, USER_ROLE_ADMINISTRATOR)
 	routeMap["/api/user/scan"] = this.Wrap(this.Scan, USER_ROLE_ADMINISTRATOR)
@@ -383,6 +384,23 @@ func (this *UserController) Page(writer http.ResponseWriter, request *http.Reque
 	}
 
 	return this.Success(pager)
+}
+
+func (this *UserController) Search(writer http.ResponseWriter, request *http.Request) *result.WebResult {
+
+	keyword := request.FormValue("keyword")
+
+	pager := this.userDao.Page(0, 10, keyword, "", nil)
+
+	var resultList []*User = make([]*User, 0)
+	for _, u := range pager.Data.([]*User) {
+		resultList = append(resultList, &User{
+			Uuid:     u.Uuid,
+			Username: u.Username,
+		})
+	}
+
+	return this.Success(resultList)
 }
 
 func (this *UserController) ToggleStatus(writer http.ResponseWriter, request *http.Request) *result.WebResult {
