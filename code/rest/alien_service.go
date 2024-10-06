@@ -99,8 +99,10 @@ func (this *AlienService) ValidMatter(
 			}
 
 			tokenUser := this.userDao.CheckByUuid(downloadToken.UserUuid)
-			if matter.UserUuid != tokenUser.Uuid {
-				panic(result.UNAUTHORIZED)
+
+			if matter.SpaceUuid != tokenUser.SpaceUuid {
+				//whether user has the space's read auth.
+				this.spaceService.CheckReadableByUuid(request, tokenUser, matter.SpaceUuid)
 			}
 
 			//TODO: expire the download token. If download by chunk, do this later.
