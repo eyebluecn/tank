@@ -3,12 +3,6 @@ package rest
 import (
 	"archive/zip"
 	"fmt"
-	"github.com/eyebluecn/tank/code/core"
-	"github.com/eyebluecn/tank/code/tool/builder"
-	"github.com/eyebluecn/tank/code/tool/download"
-	"github.com/eyebluecn/tank/code/tool/i18n"
-	"github.com/eyebluecn/tank/code/tool/result"
-	"github.com/eyebluecn/tank/code/tool/util"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -19,6 +13,13 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/eyebluecn/tank/code/core"
+	"github.com/eyebluecn/tank/code/tool/builder"
+	"github.com/eyebluecn/tank/code/tool/download"
+	"github.com/eyebluecn/tank/code/tool/i18n"
+	"github.com/eyebluecn/tank/code/tool/result"
+	"github.com/eyebluecn/tank/code/tool/util"
 )
 
 /**
@@ -213,12 +214,12 @@ func (this *MatterService) DownloadZip(
 	if matters == nil || len(matters) == 0 {
 		panic(result.BadRequest("matters cannot be nil."))
 	}
-	userUuid := matters[0].UserUuid
+	spaceUuid := matters[0].SpaceUuid
 	puuid := matters[0].Puuid
 
 	for _, m := range matters {
-		if m.UserUuid != userUuid {
-			panic(result.BadRequest("userUuid not same"))
+		if m.SpaceUuid != spaceUuid {
+			panic(result.BadRequest("spaceUuid not same"))
 		} else if m.Puuid != puuid {
 			panic(result.BadRequest("puuid not same"))
 		}
@@ -285,13 +286,13 @@ func (this *MatterService) zipMatters(request *http.Request, matters []*Matter, 
 	if matters == nil || len(matters) == 0 {
 		panic(result.BadRequest("matters cannot be nil."))
 	}
-	userUuid := matters[0].UserUuid
+	spaceUuid := matters[0].SpaceUuid
 	puuid := matters[0].Puuid
 	baseDirPath := util.GetDirOfPath(matters[0].AbsolutePath()) + "/"
 
 	for _, m := range matters {
-		if m.UserUuid != userUuid {
-			panic(result.BadRequest("userUuid not same"))
+		if m.SpaceUuid != spaceUuid {
+			panic(result.BadRequest("spaceUuid not same"))
 		} else if m.Puuid != puuid {
 			panic(result.BadRequest("puuid not same"))
 		}
