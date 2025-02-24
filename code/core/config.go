@@ -14,7 +14,7 @@ const (
 	//db table's prefix. tank41_ means current version is tank:4.1.x
 	TABLE_PREFIX = "tank41_"
 
-	VERSION = "4.1.1"
+	VERSION = "4.1.2"
 )
 
 type Config interface {
