@@ -1261,7 +1261,7 @@ func (this *MatterService) WrapChildrenDetail(request *http.Request, matter *Mat
 
 	if matter.Dir {
 
-		children := this.matterDao.FindByPuuidAndUserUuid(matter.Uuid, matter.UserUuid, nil)
+		children := this.matterDao.FindByPuuidAndSpaceUuid(matter.Uuid, matter.SpaceUuid, nil)
 		matter.Children = children
 
 		for _, child := range matter.Children {

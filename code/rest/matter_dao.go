@@ -1,15 +1,16 @@
 package rest
 
 import (
+	"math"
+	"os"
+	"time"
+
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/builder"
 	"github.com/eyebluecn/tank/code/tool/result"
 	"github.com/eyebluecn/tank/code/tool/util"
 	"github.com/eyebluecn/tank/code/tool/uuid"
 	"gorm.io/gorm"
-	"math"
-	"os"
-	"time"
 )
 
 type MatterDao struct {
@@ -309,6 +310,32 @@ func (this *MatterDao) FindBySpaceNameAndPuuidAndDirAndName(spaceName string, pu
 	}
 
 	return matter
+}
+
+func (this *MatterDao) FindByPuuidAndSpaceUuid(puuid string, spaceUuid string, sortArray []builder.OrderPair) []*Matter {
+	var matters []*Matter
+
+	var wp = &builder.WherePair{}
+	wp = wp.And(&builder.WherePair{Query: "puuid = ? AND space_uuid = ?", Args: []interface{}{puuid, spaceUuid}})
+
+	if sortArray == nil {
+
+		sortArray = []builder.OrderPair{
+			{
+				Key:   "dir",
+				Value: DIRECTION_DESC,
+			},
+			{
+				Key:   "create_time",
+				Value: DIRECTION_DESC,
+			},
+		}
+	}
+
+	db := core.CONTEXT.GetDB().Model(&Matter{}).Where(wp.Query, wp.Args...).Order(this.GetSortString(sortArray)).Find(&matters)
+	this.PanicError(db.Error)
+
+	return matters
 }
 
 func (this *MatterDao) FindByPuuidAndUserUuid(puuid string, userUuid string, sortArray []builder.OrderPair) []*Matter {
