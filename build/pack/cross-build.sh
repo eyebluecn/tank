@@ -250,6 +250,9 @@ build_platform() {
     if [[ -d "${BUILD_DIR}/html" ]]; then
         cp -r "${BUILD_DIR}/html" "${component_dir}/"
     fi
+    if [[ -d "${BUILD_DIR}/service" ]]; then
+        cp -r "${BUILD_DIR}/service" "${component_dir}/"
+    fi
 
     # Create archive
     log_info "  Creating archive..."
