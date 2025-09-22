@@ -230,10 +230,12 @@ build_platform() {
     export GOPROXY="$GOPROXY"
     export CGO_ENABLED=0  # Disable CGO for cross-compilation
 
+    log_info "  Starting go build..."  # 添加此行
     if ! go build -mod=readonly -ldflags="-s -w" -o "${binary_name}"; then
         log_error "Failed to build for ${platform}"
         return 1
     fi
+    log_info "  go build completed"  # 添加此行
 
     # Copy binary
     log_info "  Copying binary..."
