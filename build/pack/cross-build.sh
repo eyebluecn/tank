@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+#set -e
 
 ###########################################################################
 #
@@ -161,6 +161,7 @@ validate_platform() {
         log_warn "Platform ${platform} may not be fully tested"
         return 1
     fi
+    log_info "Platform ${platform} supported"
     return 0
 }
 
