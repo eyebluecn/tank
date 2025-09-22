@@ -230,7 +230,7 @@ build_platform() {
     export GOPROXY="$GOPROXY"
     export CGO_ENABLED=0  # Disable CGO for cross-compilation
 
-    if ! go build -mod=readonly -ldflags="-s -w" -o "${binary_name}" 2>/dev/null; then
+    if ! go build -mod=readonly -ldflags="-s -w" -o "${binary_name}"; then
         log_error "Failed to build for ${platform}"
         return 1
     fi
