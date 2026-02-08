@@ -19,6 +19,7 @@ type Preference struct {
 	DownloadDirMaxNum     int64     `json:"downloadDirMaxNum" gorm:"type:bigint(20) not null;default:-1"`
 	DefaultTotalSizeLimit int64     `json:"defaultTotalSizeLimit" gorm:"type:bigint(20) not null;default:-1"`
 	AllowRegister         bool      `json:"allowRegister" gorm:"type:tinyint(1) not null;default:0"`
+	AllowChunkUpload      bool      `json:"allowChunkUpload" gorm:"type:tinyint(1) not null;default:0"`
 	PreviewConfig         string    `json:"previewConfig" gorm:"type:text"`
 	ScanConfig            string    `json:"scanConfig" gorm:"type:text"`
 	DeletedKeepDays       int64     `json:"deletedKeepDays" gorm:"type:bigint(20) not null;default:7"`

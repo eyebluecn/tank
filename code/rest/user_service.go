@@ -1,6 +1,9 @@
 package rest
 
 import (
+	"sync"
+	"time"
+
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/tool/cache"
 	"github.com/eyebluecn/tank/code/tool/result"
@@ -8,7 +11,6 @@ import (
 	"github.com/eyebluecn/tank/code/tool/uuid"
 	"net/http"
 	"os"
-	"time"
 )
 
 // @Service
@@ -19,8 +21,10 @@ type UserService struct {
 
 	spaceService *SpaceService
 
-	//file lock
+	//file lock (legacy, kept for compatibility)
 	locker *cache.Table
+	// matterLocker is used for atomic matter operations with retry support
+	matterLocker sync.Map
 
 	matterDao        *MatterDao
 	matterService    *MatterService
@@ -100,32 +104,33 @@ func (this *UserService) Init() {
 	this.locker = cache.NewTable()
 }
 
-// lock a user's operation. If lock, user cannot operate file.
+// lock a user's operation with retry mechanism.
+// This allows concurrent operations to wait for each other instead of immediately failing.
+// Uses sync.Map for thread-safe atomic operations.
 func (this *UserService) MatterLock(userUuid string) {
+	maxRetries := 30        // Maximum retry attempts (30 * 200ms = 6 seconds max wait)
+	retryInterval := 200    // Retry interval in milliseconds
 
-	cacheItem, err := this.locker.Value(userUuid)
-	if err != nil {
-		this.logger.Error("error while get cache" + err.Error())
+	for i := 0; i < maxRetries; i++ {
+		// Try to acquire lock atomically
+		if _, loaded := this.matterLocker.LoadOrStore(userUuid, true); !loaded {
+			// Successfully acquired the lock
+			return
+		}
+
+		// Lock is held by another operation, wait and retry
+		if i < maxRetries-1 {
+			time.Sleep(time.Duration(retryInterval) * time.Millisecond)
+		}
 	}
 
-	if cacheItem != nil && cacheItem.Data() != nil {
-		panic(result.BadRequest("file is being operating, retry later"))
-	}
-
-	duration := 12 * time.Hour
-	this.locker.Add(userUuid, duration, true)
+	// After all retries, still cannot acquire lock
+	panic(result.BadRequest("file is being operating, retry later"))
 }
 
 // unlock
 func (this *UserService) MatterUnlock(userUuid string) {
-
-	exist := this.locker.Exists(userUuid)
-	if exist {
-		_, err := this.locker.Delete(userUuid)
-		this.PanicError(err)
-	} else {
-		this.logger.Error("unlock error. %s has no matter lock ", userUuid)
-	}
+	this.matterLocker.Delete(userUuid)
 }
 
 // load session to SessionCache. This method will be invoked in every request.

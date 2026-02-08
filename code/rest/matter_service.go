@@ -483,9 +483,7 @@ func (this *MatterService) Upload(request *http.Request, file io.Reader, fileHea
 		panic(result.BadRequest("Dir has been deleted. Cannot upload under it."))
 	}
 
-	if len(filename) > MATTER_NAME_MAX_LENGTH {
-		panic(result.BadRequestI18n(request, i18n.MatterNameLengthExceedLimit, len(filename), MATTER_NAME_MAX_LENGTH))
-	}
+	CheckMatterName(request, filename)
 
 	//if fileHeader.Size not nill . check size in advance.
 	if fileHeader != nil {

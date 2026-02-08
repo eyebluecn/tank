@@ -81,6 +81,8 @@ func (this *InstallController) Init() {
 		&Space{},
 		&SpaceMember{},
 		&UploadToken{},
+		&UploadSession{},
+		&UploadChunk{},
 		&User{},
 	}
 

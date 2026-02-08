@@ -89,6 +89,7 @@ func (this *PreferenceController) Edit(writer http.ResponseWriter, request *http
 	downloadDirMaxNumStr := request.FormValue("downloadDirMaxNum")
 	defaultTotalSizeLimitStr := request.FormValue("defaultTotalSizeLimit")
 	allowRegisterStr := request.FormValue("allowRegister")
+	allowChunkUploadStr := request.FormValue("allowChunkUpload")
 	deletedKeepDaysStr := request.FormValue("deletedKeepDays")
 
 	if name == "" {
@@ -140,6 +141,11 @@ func (this *PreferenceController) Edit(writer http.ResponseWriter, request *http
 		allowRegister = true
 	}
 
+	var allowChunkUpload = false
+	if allowChunkUploadStr == TRUE {
+		allowChunkUpload = true
+	}
+
 	preference := this.preferenceDao.Fetch()
 	oldDeletedKeepDays := preference.DeletedKeepDays
 	preference.Name = name
@@ -151,6 +157,7 @@ func (this *PreferenceController) Edit(writer http.ResponseWriter, request *http
 	preference.DownloadDirMaxNum = downloadDirMaxNum
 	preference.DefaultTotalSizeLimit = defaultTotalSizeLimit
 	preference.AllowRegister = allowRegister
+	preference.AllowChunkUpload = allowChunkUpload
 	preference.DeletedKeepDays = deletedKeepDays
 
 	preference = this.preferenceService.Save(preference)

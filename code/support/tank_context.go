@@ -217,6 +217,12 @@ func (this *TankContext) registerBeans() {
 	//uploadToken
 	this.registerBean(new(rest.UploadTokenDao))
 
+	//chunk upload
+	this.registerBean(new(rest.ChunkController))
+	this.registerBean(new(rest.ChunkService))
+	this.registerBean(new(rest.UploadSessionDao))
+	this.registerBean(new(rest.UploadChunkDao))
+
 	//task
 	this.registerBean(new(rest.TaskService))
 

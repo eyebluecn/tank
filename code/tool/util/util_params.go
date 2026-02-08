@@ -46,16 +46,14 @@ func ExtractRequestArray(request *http.Request, key string) []string {
 func ExtractRequestInt64(request *http.Request, key string) int64 {
 	keyStr := request.FormValue(key)
 
-	var num int64 = 0
 	if keyStr == "" {
 		panic(fmt.Sprintf("%s is required", key))
 	} else {
-		intVal, err := strconv.Atoi(keyStr)
+		intVal, err := strconv.ParseInt(keyStr, 10, 64)
 		if err != nil {
 			panic(err)
 		}
-		num = int64(intVal)
-		return num
+		return intVal
 	}
 }
 
@@ -76,7 +74,36 @@ func ExtractRequestInt64WithErrorHint(request *http.Request, key string, errorHi
 	}
 }
 
+// param is optional. when missing, use default.
+func ExtractRequestOptionalInt64(request *http.Request, key string, defaultValue int64) int64 {
+	str := request.FormValue(key)
+	if str == "" {
+		return defaultValue
+	} else {
+		intVal, err := strconv.ParseInt(str, 10, 64)
+		if err != nil {
+			panic(err)
+		}
+		return intVal
+	}
+}
+
 // param is required. when missing, panic error.
+func ExtractRequestInt(request *http.Request, key string) int {
+	keyStr := request.FormValue(key)
+
+	if keyStr == "" {
+		panic(fmt.Sprintf("%s is required", key))
+	} else {
+		intVal, err := strconv.Atoi(keyStr)
+		if err != nil {
+			panic(err)
+		}
+		return intVal
+	}
+}
+
+// param is optional. when missing, use default.
 func ExtractRequestOptionalInt(request *http.Request, key string, defaultValue int) int {
 	str := request.FormValue(key)
 	if str == "" {
