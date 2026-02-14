@@ -15,6 +15,7 @@ type TaskService struct {
 	dashboardService  *DashboardService
 	preferenceService *PreferenceService
 	matterService     *MatterService
+	chunkService      *ChunkService
 	userDao           *UserDao
 	spaceDao          *SpaceDao
 
@@ -45,6 +46,12 @@ func (this *TaskService) Init() {
 	if b, ok := b.(*MatterService); ok {
 		this.matterService = b
 	}
+
+	b = core.CONTEXT.GetBean(this.chunkService)
+	if b, ok := b.(*ChunkService); ok {
+		this.chunkService = b
+	}
+
 	b = core.CONTEXT.GetBean(this.userDao)
 	if b, ok := b.(*UserDao); ok {
 		this.userDao = b
@@ -92,6 +99,18 @@ func (this *TaskService) InitCleanDeletedMattersTask() {
 	cronJob.Start()
 
 	this.logger.Info("[cron job] Everyday 01:00 Clean deleted matters.")
+}
+
+// init the clean chunk sessions task.
+func (this *TaskService) InitCleanExpiredChunkSessions() {
+
+	expression := "0 2 * * *"
+	cronJob := cron.New()
+	_, err := cronJob.AddFunc(expression, this.chunkService.CleanExpiredSessions)
+	core.PanicError(err)
+	cronJob.Start()
+
+	this.logger.Info("[cron job] Everyday 02:00 Clean expired chunk sessions.")
 }
 
 // scan task.
@@ -209,6 +228,9 @@ func (this *TaskService) Bootstrap() {
 
 	//load the clean deleted matters task.
 	this.InitCleanDeletedMattersTask()
+
+	//load the clean chunk sessions task.
+	this.InitCleanExpiredChunkSessions()
 
 	//load the scan task.
 	this.InitScanTask()

@@ -9,10 +9,13 @@
 2. build/pack/build.sh
     VERSION_NAME=tank-x.x.x
 
-3. core/config.go
+3. build/pack/cross-build.sh
+    VERSION_NAME=tank-x.x.x
+
+4. core/config.go
     VERSION = x.x.x
 
-4. readme.md 修改 eyeblue/tank:x.x.x
+5. readme.md 修改 eyeblue/tank:x.x.x
     eyeblue/tank:x.x.x
 
 

@@ -20,7 +20,7 @@ usage() {
     echo "Usage: $0 [OPTIONS]"
     echo ""
     echo "Options:"
-    echo "  -v, --version VERSION    Version name (default: tank-4.1.3)"
+    echo "  -v, --version VERSION    Version name (default: tank-4.2.0)"
     echo "  -o, --os OS             Target OS: linux, windows, darwin, or 'all'"
     echo "  -a, --arch ARCH         Target architecture: amd64, arm64, 386, or 'all'"
     echo "  -p, --platform PLATFORM Specific platform (OS/ARCH format, e.g. linux/amd64)"
@@ -70,7 +70,7 @@ log_error() {
 }
 
 # Default values
-VERSION_NAME="tank-4.1.3"
+VERSION_NAME="tank-4.2.0"
 TARGET_OS=""
 TARGET_ARCH=""
 SPECIFIC_PLATFORM=""
