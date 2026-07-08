@@ -230,8 +230,12 @@ func DownloadFile(
 
 	//content-disposition tell browser to download rather than preview.
 	if withContentDisposition {
-		fileName := url.QueryEscape(filename)
-		writer.Header().Set("content-disposition", "attachment; filename=\""+fileName+"\"")
+		encoded := url.QueryEscape(filename)
+		// RFC 5987: Use filename*=UTF-8'' for non-ASCII filenames.
+		// Safari requires the filename* parameter for proper Chinese filename display.
+		writer.Header().Set("content-disposition",
+			fmt.Sprintf("attachment; filename=\"%s\"; filename*=UTF-8''%s",
+				filename, encoded))
 	}
 
 	fileInfo, err := diskFile.Stat()
