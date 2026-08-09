@@ -221,7 +221,15 @@ func (this *TankRouter) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 			writer.Header().Set("Cache-Control", "no-cache")
 		}
 		if info, statErr := os.Stat(filePath); statErr == nil {
-			writer.Header().Set("Last-Modified", info.ModTime().UTC().Format(http.TimeFormat))
+			modTime := info.ModTime().UTC()
+			writer.Header().Set("Last-Modified", modTime.Format(http.TimeFormat))
+			// Honor If-Modified-Since: reply 304 when the asset is unchanged.
+			if t, perr := http.ParseTime(request.Header.Get("If-Modified-Since")); perr == nil {
+				if !modTime.Truncate(time.Second).After(t.Truncate(time.Second)) {
+					writer.WriteHeader(http.StatusNotModified)
+					return
+				}
+			}
 		}
 
 		diskFile, err := os.Open(filePath)
