@@ -212,6 +212,18 @@ func (this *TankRouter) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 
 		writer.Header().Set("Content-Type", util.GetMimeType(util.GetExtension(filePath)))
 
+		// Cache policy. Assets under /static/ carry content hashes in their
+		// filenames, so they are safe to cache forever. Other responses
+		// (e.g. index.html) must be revalidated so new deployments take effect.
+		if strings.HasPrefix(path, "/static/") {
+			writer.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+		} else {
+			writer.Header().Set("Cache-Control", "no-cache")
+		}
+		if info, statErr := os.Stat(filePath); statErr == nil {
+			writer.Header().Set("Last-Modified", info.ModTime().UTC().Format(http.TimeFormat))
+		}
+
 		diskFile, err := os.Open(filePath)
 		if err != nil {
 			panic("cannot get file.")
