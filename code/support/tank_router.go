@@ -1,6 +1,7 @@
 package support
 
 import (
+	"compress/gzip"
 	"fmt"
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/rest"
@@ -221,11 +222,31 @@ func (this *TankRouter) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 				panic(err)
 			}
 		}()
-		_, err = io.Copy(writer, diskFile)
+
+		// Compress text-like assets on the fly when the client supports gzip.
+		if strings.Contains(request.Header.Get("Accept-Encoding"), "gzip") &&
+			isCompressibleAsset(util.GetExtension(filePath)) {
+			writer.Header().Set("Content-Encoding", "gzip")
+			writer.Header().Add("Vary", "Accept-Encoding")
+			gz := gzip.NewWriter(writer)
+			defer gz.Close()
+			_, err = io.Copy(gz, diskFile)
+		} else {
+			_, err = io.Copy(writer, diskFile)
+		}
 		if err != nil {
 			panic("cannot get file.")
 		}
 
 	}
 
+}
+
+// isCompressibleAsset reports whether the asset extension is worth gzipping.
+func isCompressibleAsset(ext string) bool {
+	switch ext {
+	case ".js", ".css", ".html", ".htm", ".json", ".svg", ".map", ".txt", ".xml", ".csv":
+		return true
+	}
+	return false
 }
