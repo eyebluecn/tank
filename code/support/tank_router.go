@@ -1,6 +1,7 @@
 package support
 
 import (
+	"compress/gzip"
 	"fmt"
 	"github.com/eyebluecn/tank/code/core"
 	"github.com/eyebluecn/tank/code/rest"
@@ -211,6 +212,26 @@ func (this *TankRouter) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 
 		writer.Header().Set("Content-Type", util.GetMimeType(util.GetExtension(filePath)))
 
+		// Cache policy. Assets under /static/ carry content hashes in their
+		// filenames, so they are safe to cache forever. Other responses
+		// (e.g. index.html) must be revalidated so new deployments take effect.
+		if strings.HasPrefix(path, "/static/") {
+			writer.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+		} else {
+			writer.Header().Set("Cache-Control", "no-cache")
+		}
+		if info, statErr := os.Stat(filePath); statErr == nil {
+			modTime := info.ModTime().UTC()
+			writer.Header().Set("Last-Modified", modTime.Format(http.TimeFormat))
+			// Honor If-Modified-Since: reply 304 when the asset is unchanged.
+			if t, perr := http.ParseTime(request.Header.Get("If-Modified-Since")); perr == nil {
+				if !modTime.Truncate(time.Second).After(t.Truncate(time.Second)) {
+					writer.WriteHeader(http.StatusNotModified)
+					return
+				}
+			}
+		}
+
 		diskFile, err := os.Open(filePath)
 		if err != nil {
 			panic("cannot get file.")
@@ -221,11 +242,31 @@ func (this *TankRouter) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 				panic(err)
 			}
 		}()
-		_, err = io.Copy(writer, diskFile)
+
+		// Compress text-like assets on the fly when the client supports gzip.
+		if strings.Contains(request.Header.Get("Accept-Encoding"), "gzip") &&
+			isCompressibleAsset(util.GetExtension(filePath)) {
+			writer.Header().Set("Content-Encoding", "gzip")
+			writer.Header().Add("Vary", "Accept-Encoding")
+			gz := gzip.NewWriter(writer)
+			defer gz.Close()
+			_, err = io.Copy(gz, diskFile)
+		} else {
+			_, err = io.Copy(writer, diskFile)
+		}
 		if err != nil {
 			panic("cannot get file.")
 		}
 
 	}
 
+}
+
+// isCompressibleAsset reports whether the asset extension is worth gzipping.
+func isCompressibleAsset(ext string) bool {
+	switch ext {
+	case ".js", ".css", ".html", ".htm", ".json", ".svg", ".map", ".txt", ".xml", ".csv":
+		return true
+	}
+	return false
 }
